@@ -188,9 +188,23 @@ struct nrpeer {
   struct nrpeer *next;
   uint8 call[AXALEN];
   int anyssid;                  /* written without one: any SSID will do */
+  int id;                       /* id of the link we last saw.  A different
+                                 * one is a different connection, and nothing
+                                 * agreed on the old one still holds. */
 };
 
 static struct nrpeer *nrpeers;
+static struct timer nrpeer_timer;
+
+/* How often we look whether the interlinks are still up.  A minute is short
+ * enough that a link comes back soon after the far end does, and long enough
+ * that a station which is simply not there costs one call a minute.  AX.25
+ * retries do the rest of the waiting - open_ax25() is not a fast operation
+ * that is being repeated here, it is a connection attempt that either stands
+ * or is still running.
+ */
+
+#define NRPEER_INTERVAL 60
 
 static struct broadcast *broadcasts;
 static struct node *nodes, *mynode;
@@ -462,6 +476,80 @@ static struct nrpeer *nrpeer_find(const uint8 *call)
 int nr_is_peer(const uint8 *call)
 {
   return nrpeer_find(call) != NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Which callsign to CALL for this entry, or nothing if we cannot know.
+ *
+ * With an SSID written it is that one.  Without, the entry says "whichever he
+ * uses" - which answers who may connect to us, and does not answer whom to
+ * connect to.  Guessing SSID 0 would be a guess.  But if we have heard of him
+ * we no longer need to guess: the node table has the callsign he really uses,
+ * and that is what "netrom peer" shows under "Known as".  Until then we wait
+ * for him, which is what an entry written that way is for.
+ */
+
+static uint8 *nrpeer_target(struct nrpeer *pp)
+{
+  struct node *pn;
+
+  if (!pp->anyssid) return pp->call;
+  for (pn = nodes; pn; pn = pn->next)
+    if (pn != mynode && nrpeer_match(pp, pn->call)) return pn->call;
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The interlink itself: keep an AX.25 connection to every configured partner.
+ *
+ * L3 frames already travel connected - send_packet_to_neighbor() opens a link
+ * when it has something to send - so this adds one thing only, and INP3 needs
+ * exactly that one: the link stands BEFORE there is traffic.  A protocol that
+ * announces changes has nothing to send at the moment it comes up, and the
+ * round trip measurement it uses for its metric has to run on a link that is
+ * already there.
+ *
+ * The connection is looked up rather than remembered, the way FlexNet's
+ * setaxp() does it: an ax25_cb can go away underneath us and a stored pointer
+ * would be the one thing that breaks.  What is remembered is its id, because
+ * a new id means a new connection and nothing agreed on the old one holds.
+ */
+
+static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
+{
+  uint8 *call;
+  struct ax25 hdr;
+  struct ax25_cb *axp;
+
+  if (isnew) *isnew = 0;
+  if (!(call = nrpeer_target(pp))) return NULL;
+  if (!(axp = find_ax25(call))) {
+    memset(&hdr, 0, sizeof(struct ax25));
+    addrcp(hdr.dest, call);
+    if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return NULL;
+  }
+  if (pp->id != axp->id) {
+    pp->id = axp->id;
+    if (isnew) *isnew = 1;
+  }
+  return axp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void nrpeer_service(void *arg)
+{
+  int isnew;
+  struct nrpeer *pp;
+
+  (void) arg;
+  set_timer(&nrpeer_timer, NRPEER_INTERVAL * 1000L);
+  start_timer(&nrpeer_timer);
+
+  for (pp = nrpeers; pp; pp = pp->next)
+    (void) nrpeer_link(pp, &isnew);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1033,6 +1121,10 @@ static void routing_manager_initialize(void)
   broadcast_timer.func = send_broadcast;
   set_timer(&broadcast_timer, 10 * 1000L);
   start_timer(&broadcast_timer);
+  /* Not started here: with no partners configured there is nothing to do, and
+   * net.rc is read after this.  donrpeer() starts it with the first entry.
+   */
+  nrpeer_timer.func = nrpeer_service;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2333,12 +2425,19 @@ static int donrpeer(int argc, char *argv[], void *p)
       printf("No interlink partners - \"netrom peer add <call>\"\n");
       return 0;
     }
-    printf("Call       SSID   Known as\n");
+    printf("Call       SSID   Interlink     Known as\n");
     for (pp = nrpeers; pp; pp = pp->next) {
+      uint8 *target = nrpeer_target(pp);
+      struct ax25_cb *axp = target ? find_ax25(target) : NULL;
       int seen = 0;
 
-      printf("%-9s  %-5s  ", pax25(buf, pp->call),
-	     pp->anyssid ? "any" : "exact");
+      printf("%-9s  %-5s  %-12s  ", pax25(buf, pp->call),
+	     pp->anyssid ? "any" : "exact",
+	     /* Not "down" when we do not even know whom to call: an SSID-less
+	      * entry with nobody heard of yet is waiting, not failing.
+	      */
+	     axp    ? Ax25states[axp->state] :
+	     target ? "down" : "no call yet");
       /* What the entry actually catches today.  With "any" it may be more
        * than one, and that is the whole point of writing it that way - so
        * show them rather than leaving the operator to guess.
@@ -2392,6 +2491,15 @@ static int donrpeer(int argc, char *argv[], void *p)
     pp->anyssid = anyssid;
     pp->next = nrpeers;
     nrpeers = pp;
+    /* Call him now rather than at the end of the first interval: a line in
+     * net.rc should not mean a minute of nothing.  The timer runs from here
+     * on and is not started before there is a partner to look after.
+     */
+    (void) nrpeer_link(pp, NULL);
+    if (!run_timer(&nrpeer_timer)) {
+      set_timer(&nrpeer_timer, NRPEER_INTERVAL * 1000L);
+      start_timer(&nrpeer_timer);
+    }
     return 0;
   }
 

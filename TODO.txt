@@ -1326,6 +1326,25 @@
       netrom peer                   list
       netrom peer add <call>
       netrom peer del <call>
+
+  DER INTERLINK STEHT (zweiter Bauschritt, 2026-08-19): zu jedem Eintrag
+  wird eine AX.25-Verbindung gehalten, aufgebaut sofort beim Eintragen und
+  danach jede Minute nachgesehen (NRPEER_INTERVAL). Die Verbindung wird
+  NICHT gespeichert, sondern per find_ax25() geholt - ein ax25_cb kann
+  unter uns verschwinden, und genau der gemerkte Zeiger waere das Problem;
+  gemerkt wird nur seine id, denn eine neue id ist eine neue Verbindung.
+  Das ist FlexNets setaxp()-Muster.
+  WAS DAS HINZUFUEGT, und INP3 braucht genau das: der Link steht, BEVOR
+  Verkehr anliegt. Ein Protokoll, das Aenderungen meldet, hat beim
+  Hochkommen nichts zu senden, und die Laufzeitmessung braucht eine
+  Verbindung, die schon da ist. L3-Frames liefen ohnehin schon verbunden -
+  send_packet_to_neighbor() macht bei Bedarf auf.
+  EIN EINTRAG OHNE SSID WIRD NICHT GERUFEN, solange wir den Partner nicht
+  kennen: "jede SSID" beantwortet, wer zu uns darf, nicht wen wir rufen.
+  Sobald er in der Knotentabelle steht, ist die Frage beantwortet und wir
+  rufen dieses Call. Die Anzeige sagt "no call yet" statt "down".
+  Gemessen: der Knoten ruft nach einer Sekunde von selbst (SABM -> UA),
+  ohne dass Verkehr anlag.
   <call> ist Rufzeichen oder Rufzeichen-SSID, UND HIER IST LAZY ZU SEIN:
   ohne SSID geschrieben passt jede SSID, mit SSID genau diese. Vorbild ist
   addrmatch() (flexnet.c:868), das genau so einen Bereichsvergleich macht,
