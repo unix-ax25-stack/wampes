@@ -403,6 +403,10 @@ int axlisten_ui_deliver(struct iface *ifp,struct ax25 *hdr,int pid,
 			struct mbuf **bpp);
 
 int axlisten_active(const uint8 *call);
+/* The port a session is shown as coming in on: the interface, or "local"
+ * where it never left the node - the field ax25d picks its stanza by.
+ */
+const char *axlisten_portname(const struct ax25_cb *axp);
 int axlisten_client_claim(const uint8 *call,int pid,int ui,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);
 int axserv_pipe_attach(struct axservice *sp,int binary,int *fdp);

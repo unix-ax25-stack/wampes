@@ -724,6 +724,25 @@ int axlisten_client_claim(const uint8 *call, int pid, int ui, int fd,
  * answered with the question that was probably meant.
  */
 
+/* WHERE THE CALL CAME IN, as the client is told it - and the client picks
+ * what to run by it: ax25d chooses its stanza by port and callsign.
+ *
+ * A session that never left the node has no interface, and "?" would leave
+ * the client with nothing to match.  It is called "local", which is a name a
+ * sysop can write in ax25d.conf like any other port.  (If an interface is
+ * ever named "local" the two read alike - nothing breaks, but the line no
+ * longer says which of the two it was.)
+ */
+
+const char *axlisten_portname(const struct ax25_cb *axp)
+{
+	if (axp->iface != NULL)
+		return axp->iface->name;
+	return axp->loop != NULL ? "local" : "?";
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void portlist_warn_unknown(const char *spec)
 {
   char copy[256];
@@ -1530,7 +1549,7 @@ static void axpipe_announce(struct axpipe *pp, struct ax25_cb *axp)
   int i;
 
   sprintf(buf, "*** incoming %s %s",
-	  axp->iface ? axp->iface->name : "?", pax25(call, axp->hdr.dest));
+	  axlisten_portname(axp), pax25(call, axp->hdr.dest));
   strcat(buf, ">");
   strcat(buf, pax25(call, axp->hdr.source));
   for (i = 0; i < axp->hdr.ndigis; i++) {
@@ -1979,7 +1998,7 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
       if (lp->clientfd < 0) break;      /* nobody there - fall through to
 					 * the refusal below, with a reason */
       snprintf(line, sizeof(line), "%s %s",
-	       axp->iface ? axp->iface->name : "?", pax25(call, axp->hdr.dest));
+	       axlisten_portname(axp), pax25(call, axp->hdr.dest));
       for (i = 0; i < axp->hdr.ndigis; i++) {
 	strcat(line, ",");
 	strcat(line, pax25(call, axp->hdr.digis[i]));
