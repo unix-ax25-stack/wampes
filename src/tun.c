@@ -5,7 +5,14 @@
    parts and idea taken from FreeBSD's ppp implementation
  */
 
-#if defined __FreeBSD__ || defined __MACOSX__ || defined __APPLE__
+/* Three ways to the same interface, and the command is the same everywhere:
+ * FreeBSD opens /dev/tunN, macOS has no such device and uses a kernel control
+ * socket (utun), Linux opens /dev/net/tun and asks for the mode it wants.
+ * What differs beyond opening is only what sits in front of a packet.
+ */
+
+#if defined __FreeBSD__ || defined __MACOSX__ || defined __APPLE__ \
+    || defined linux
 
 #include "global.h"
 #undef  hiword
@@ -25,7 +32,9 @@
 #ifdef	__FreeBSD__
 #include <net/if_tun.h>
 #endif
-#include <net/route.h>
+#ifndef	linux
+#include <net/route.h>          /* BSD only, and nothing here needs it */
+#endif
 #include <netinet/in.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -35,6 +44,11 @@
 #include <sys/kern_control.h>
 #include <sys/sys_domain.h>
 #include <net/if_utun.h>
+#include <string.h>
+#endif
+
+#ifdef	linux
+#include <linux/if_tun.h>
 #include <string.h>
 #endif
 
@@ -126,6 +140,67 @@ static int utun_open(char *ifname, size_t ifnamelen)
 
 #endif /* __MACOSX__ || __APPLE__ */
 
+#ifdef	linux
+
+/* Linux has one device for both kinds and is told which one it is to be.
+ *
+ * IFF_TUN is the point of this driver: IP with no ethernet header in front of
+ * it.  "attach ethertap" opens the same /dev/net/tun and asks for IFF_TAP,
+ * because what it carries is BPQether - AX.25 inside ethernet frames - and
+ * that needs the header.  For plain IP the header is nothing but ballast, and
+ * a route through it would have to be given a MAC address that means nothing.
+ *
+ * IFF_NO_PI drops the two flag words the kernel would otherwise put in front
+ * of every packet.  Without it every read and write would have to step over
+ * them, which is exactly the sort of thing the other two backends already do
+ * differently enough.
+ *
+ * The label is asked for as the device name, the way "attach ethertap" does
+ * it: then "attach tun tun0 1500" is followed by "ifconfig tun0" on the shell
+ * and there is nothing to look up.  Where the kernel refuses the name - taken
+ * already, or too long - it picks the next free tunN and says which, so the
+ * attach still works.  (macOS cannot be asked at all; utun numbers itself.)
+ */
+
+static int tun_open_linux(const char *want, char *ifname, size_t ifnamelen)
+{
+  int fd;
+  struct ifreq ifr;
+
+  if ((fd = open("/dev/net/tun", O_RDWR)) < 0) {
+    perror("tun: /dev/net/tun");
+    return -1;
+  }
+  memset(&ifr, 0, sizeof(ifr));
+  ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+  if (want != NULL && *want != '\0' && strlen(want) < IFNAMSIZ)
+    strncpy(ifr.ifr_name, want, IFNAMSIZ - 1);
+  if (ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
+    if (ifr.ifr_name[0] == '\0') {
+      perror("tun: TUNSETIFF");
+      close(fd);
+      return -1;
+    }
+    /* A name was asked for, and it is the only thing that can have been
+     * refused - taken already, or not a name the kernel will take.  Ask again
+     * without one rather than give up on the interface.
+     */
+    perror("tun: TUNSETIFF with that name, taking any");
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    if (ioctl(fd, TUNSETIFF, (void *) &ifr) < 0) {
+      perror("tun: TUNSETIFF");
+      close(fd);
+      return -1;
+    }
+  }
+  strncpy(ifname, ifr.ifr_name, ifnamelen - 1);
+  ifname[ifnamelen - 1] = '\0';
+  return fd;
+}
+
+#endif /* linux */
+
 struct edv_t {
   int fd;
 };
@@ -136,8 +211,10 @@ struct tun_packet {
 };
 
 static char *IfDevName;
+#ifndef	linux
 static int IfIndex;
-static struct ifaliasreq ifra;
+static struct ifaliasreq ifra;  /* BSD; set up here and never read */
+#endif
 static struct ifreq ifrq;
 
 /*---------------------------------------------------------------------------*/
@@ -178,6 +255,12 @@ static int tun_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 t
     if (writev(edv->fd, iov, 2) < 0)
       return -1;
   }
+#elif defined linux
+  /* Nothing in front of it: IFF_NO_PI, and IFF_TUN has no header of its own.
+   * What goes out is the IP datagram and nothing else.
+   */
+  if (write(edv->fd, tun_packet.data, (size_t) l) < 0)
+    return -1;
 #else
   tun_packet.addr.sa_family = AF_INET;
 
@@ -219,6 +302,10 @@ static void tun_recv(void *argp)
     if (ntohl(af) != AF_INET)
       return;
   }
+#elif defined linux
+  l = (int) read(edv->fd, tun_packet.data, sizeof(tun_packet.data));
+  if (l <= 0)
+    goto Fail;
 #else
   l = read(edv->fd, &tun_packet, sizeof(tun_packet));
   if (l <= 0)
@@ -234,6 +321,8 @@ Fail:
 }
 
 /*---------------------------------------------------------------------------*/
+
+#ifndef	linux                   /* counts AF_LINK entries, which Linux has not */
 
 static int GetIfIndex(char *name)
 {
@@ -278,6 +367,8 @@ static int GetIfIndex(char *name)
   return -1;
 }
 
+#endif /* !linux */
+
 /*---------------------------------------------------------------------------*/
 
 int tun_attach(int argc, char *argv[], void *p)
@@ -316,6 +407,11 @@ int tun_attach(int argc, char *argv[], void *p)
   (void) enoentcount;
   if ((fd = utun_open(ifname, sizeof(ifname))) < 0)
     return -1;
+#elif defined linux
+  (void) devname;
+  (void) enoentcount;
+  if ((fd = tun_open_linux(ifnamew, ifname, sizeof(ifname))) < 0)
+    return -1;
 #else
   for (unit = 0; unit <= MAX_TUN; unit++) {
     sprintf(devname, "/dev/tun%d", unit);
@@ -341,11 +437,15 @@ int tun_attach(int argc, char *argv[], void *p)
   strcpy(ifname, devname + 5);
 #endif
 
+#ifndef	linux
   bzero((char *) &ifra, sizeof(ifra));
+#endif
   bzero((char *) &ifrq, sizeof(ifrq));
 
   strncpy(ifrq.ifr_name, ifname, IFNAMSIZ);
+#ifndef	linux
   strncpy(ifra.ifra_name, ifname, IFNAMSIZ);
+#endif
 
   s = socket(AF_INET, SOCK_DGRAM, 0);
   if (s < 0) {
@@ -377,12 +477,25 @@ int tun_attach(int argc, char *argv[], void *p)
     perror("TUNSIFINFO");
 #endif
 
-#if defined __MACOSX__ || defined __APPLE__
-  IfDevName = ifname;           /* utun_open() found out which one we got */
+#if defined linux || defined __MACOSX__ || defined __APPLE__
+  /* The same length on both sides of the device, which is what FreeBSD has
+   * always done here through TUNSIFINFO.  Not a necessity - the kernel's mtu
+   * only bounds what it hands US, and anything longer than our own ports take
+   * gets fragmented on the way out - but the symmetric one is the answer that
+   * needs no explaining.  Whoever wants them different says so on the unix
+   * side afterwards, where the address has to be set anyway.
+   */
+  ifrq.ifr_mtu = ifmtu;
+  if (ioctl(s, SIOCSIFMTU, &ifrq) < 0)
+    perror("SIOCSIFMTU");
+#endif
+
+#if defined __MACOSX__ || defined __APPLE__ || defined linux
+  IfDevName = ifname;           /* the kernel told us which one we got */
 #else
   IfDevName = devname + 5;
 #endif
-#if defined __MACOSX__ || defined __APPLE__
+#if defined __MACOSX__ || defined __APPLE__ || defined linux
   /* Not asked for here.  GetIfIndex() counts AF_LINK entries out of
    * SIOCGIFCONF, which a freshly made utun with no address yet does not
    * appear among - and its buffer holds 32 interfaces where this machine has
@@ -390,6 +503,9 @@ int tun_attach(int argc, char *argv[], void *p)
    * index it computes is stored in IfIndex and never read, by anything.  The
    * name, which is what is actually needed, came from UTUN_OPT_IFNAME and is
    * not a guess.
+   *
+   * On Linux the question does not arise at all - there is no AF_LINK, and
+   * TUNSETIFF hands back the name for the same reason.
    */
 #else
   if (GetIfIndex(IfDevName) < 0) {

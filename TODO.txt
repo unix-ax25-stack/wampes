@@ -1,18 +1,27 @@
-- tun/tap device: /dev/tun testen (Linux)
-  Recherche macOS (2026-08): aktuelle Implementierung (src/tun.c) ist
-  FreeBSD-Stil von 2006 und auf heutigen Macs funktionslos. Sie oeffnet
-  /dev/tun0..N (Zeile 194) - das gab es nur mit der tuntaposx Kext, die
-  seit 2015 ungepflegt ist und ab Big Sur (SIP/Notarisierung) bzw. auf
-  Apple Silicon gar nicht mehr laedt. macOS hat seit 10.6.4 eingebaute
-  "utun"-Interfaces, aber KEIN Char-Device: Man oeffnet einen
-  Kernel-Control-Socket socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL),
-  ioctl(CTLIOCGINFO, "com.apple.net.utun_control"), connect(ctl_id,
-  unit+1) und liest/schreibt dann IP-Pakete direkt auf dem Socket.
-  So machen es openconnect/tinc/scapy. IP-Konfiguration am besten via
-  ifconfig utunN (SIOCSIFADDR reicht teils nicht). TAP gibt es auf macOS
-  NICHT eingebaut, nur tun/utun (tap bräuchte NetworkExtension).
-  Der vorhandene tun_packet-Header (AF_INET + data, tun.c:48) passt
-  schon gut fuer utun. TODO: utun-Backend implementieren (spaeter).
+- tun: GEBAUT FUER ALLE DREI SYSTEME, "attach tun <label> <mtu>" heisst
+  ueberall gleich. src/tun.c traegt jetzt drei Wege zum selben Geraet, und
+  sie unterscheiden sich nur im Oeffnen und in dem, was vor einem Paket
+  steht:
+    * FreeBSD  /dev/tunN, davor die sockaddr - wie seit 1996.
+    * macOS    utun, ein Kernel-Control-Socket, davor vier Byte
+               Adressfamilie. Gebaut, weil es dort KEIN Char-Device gibt:
+               die tuntaposx-Kext ist seit 2015 ungepflegt und laedt ab Big
+               Sur bzw. auf Apple Silicon gar nicht mehr. Kein Entitlement
+               noetig, Root reicht. TAP gaebe es auf macOS nur ueber
+               NetworkExtension - deshalb dort nur tun.
+    * Linux    /dev/net/tun mit IFF_TUN | IFF_NO_PI, also gar nichts vor
+               dem Paket. Der Label wird als Geraetename gewuenscht
+               ("attach tun tun0 1500" -> "ifconfig tun0"); nimmt der
+               Kernel ihn nicht, waehlt er selbst und sagt welchen. Die
+               MTU wird per SIOCSIFMTU auch am Geraet gesetzt, nicht nur
+               in unserer eigenen Vorstellung davon.
+  NOCH NICHT AUF LINUX GEBAUT ODER GEFAHREN - der Zweig entstand auf einem
+  Mac und ist dort nicht uebersetzbar. Erster Verdacht, falls der Ueber-
+  setzer klemmt: <net/if.h> zusammen mit <linux/if_tun.h>.
+  ETHERTAP BLEIBT, und zwar nicht als Altlast: es oeffnet dasselbe
+  /dev/net/tun, fragt aber nach IFF_TAP, weil es BPQether traegt - AX.25
+  in Ethernetrahmen zum Kernel-AX.25, wofuer der Ethernetkopf gebraucht
+  wird. Fuer reines IP ist er Ballast, und dafuer ist tun da.
 - IPIP (src/ipip.c) auch via IPv6 - der letzte Rest der Umstellung. Erledigt
   sind AXIP/AXUDP und alles, was ueber build_sockaddr() geht: der Dienstsocket
   samt seiner tcp:-Ziele (2026-08-14 mit tcp:[::1]:9099 durchgefahren),

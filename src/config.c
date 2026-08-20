@@ -195,9 +195,13 @@ struct cmds Attab[] = {
 	"attach ni <label> <dest> [mask]" },
 #endif
 
-#if defined __FreeBSD__ || defined __MACOSX__
+#if defined __FreeBSD__ || defined __MACOSX__ || defined linux
 	{ "tun", tun_attach, 0, 3,
-	"attach tun <label> <mtu>" },
+	"attach tun <label> <mtu>\n"
+	"  IP with no ethernet header, which is what a point to point link\n"
+	"  wants.  For AX.25 over ethernet - BPQether to the kernel's own\n"
+	"  AX.25 - there is \"attach ethertap\", which asks the same Linux\n"
+	"  device for a tap instead." },
 #endif
 
 #ifdef	linux
