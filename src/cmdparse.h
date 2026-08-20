@@ -12,6 +12,14 @@ struct cmds {
 	int stksize;            /* Size of stack if subprocess, 0 if synch */
 	int  argcmin;           /* Minimum number of args */
 	char *argc_errmsg;      /* Message to print if insufficient args */
+	/* The table this entry hands the rest of the line to, where it is one
+	 * of those - and it is only here so that "<command> ?" can answer with
+	 * the LIST rather than with a usage line that names no name.  An entry
+	 * that carries both a usage text and subcommands otherwise loses the
+	 * list: the text wins, and only a WRONG word ever showed what exists.
+	 * Left out everywhere else, which makes it a null pointer.
+	 */
+	struct cmds *subtab;
 };
 
 /* In cmdparse.c: */

@@ -51,6 +51,11 @@ struct mbuf *Hopper;            /* Queue of incoming packets */
 unsigned Nsessions = 20;
 int Shortstatus;
 
+/* Named before the table that points at it: "attach ?" is answered with the
+ * list of hardware types, and that list is this table.
+ */
+extern struct cmds Attab[];
+
 /* Command lookup and branch tables */
 struct cmds Cmds[] = {
 	/* The "go" command must be first */
@@ -58,7 +63,11 @@ struct cmds Cmds[] = {
 	{ "!",            doshell,        0, 0, NULL },
 	{ "arp",          doarp,          0, 0, NULL },
 	{ "asystat",      doasystat,      0, 0, NULL },
-	{ "attach",       doattach,       0, 2, "attach <hardware> <hw specific options>" },
+	{ "attach",       doattach,       0, 2,
+	  "attach <hardware> <hw specific options>\n"
+	  "  \"attach ?\" lists the hardware types - which are not the same in\n"
+	  "  every build: \"tun\" on FreeBSD and macOS, \"kernel\" on Linux.",
+	  Attab },
 	{ "ax25",         doax25,         0, 0, NULL },
 	{ "axip",         doaxip,         0, 0, NULL },
 	{ "bye",          dobye,          0, 0, NULL },

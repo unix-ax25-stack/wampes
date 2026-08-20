@@ -90,7 +90,20 @@ static int print_usage(struct cmds *cmdp)
 
 static int query_arg(struct cmds *cmdp, int argc, char *argv[])
 {
-	if (argc < 2 || strcmp(argv[1], "?") || cmdp->argc_errmsg == NULL)
+	if (argc < 2 || strcmp(argv[1], "?"))
+		return 0;
+	/* Where the entry hands the line on, the list of what it accepts is
+	 * the answer, not the syntax line above it - and it is the answer the
+	 * question was asking for.  Before this, an entry with both a text and
+	 * subcommands printed the text, and the list appeared only for a word
+	 * that was WRONG: "attach ?" said "attach <hardware>", "attach xxx"
+	 * named the six drivers this build has.
+	 */
+	if (cmdp->subtab != NULL) {
+		printf("\"%s\" subcommands:\n", cmdp->name);
+		return print_help(cmdp->subtab) == 0;
+	}
+	if (cmdp->argc_errmsg == NULL)
 		return 0;
 	printf("Usage: %s\n", cmdp->argc_errmsg);
 	return 1;
