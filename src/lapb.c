@@ -1540,35 +1540,90 @@ void lapb_loop_up(struct ax25_cb *axp)
  * send, so it is read back off there and each one is delivered on its own.
  */
 
+/* Hand ONE frame over on the next turn of the event loop, then let go of
+ * everything.
+ *
+ * Delivering from inside send_ax25() looked obvious and was wrong: the first
+ * frame is what starts the listener on the other side, a listener may refuse
+ * - "is not answering" - and the refusal disconnects, which takes this side
+ * down with it: control block, service and, for a console session, the
+ * session itself.  send_ax25() would then return into a caller that goes on
+ * using exactly those.  axclient_parse() does:
+ *
+ *      send_ax25(Current->cb.ax25, &bp, PID_NO_L3);
+ *      if (Current->record) ...              <- Current is gone by now
+ *
+ * Nobody calling send_ax25() expects sending to tear the link down under
+ * them, and a real link never does - what is sent goes on a queue and leaves
+ * later.  So this one queues too.
+ *
+ * One frame per turn, and the timer for the next is started BEFORE the
+ * delivery: after handleit() neither block may be touched again, because
+ * either of them may be gone.  A block that dies takes its timers with it
+ * (del_ax25 stops them), so the one just started dies with it.
+ */
+
+static void loop_flush_soon(struct ax25_cb *axp);
+
+static void loop_flush(void *p)
+{
+	struct ax25_cb *axp = (struct ax25_cb *) p;
+	struct mbuf *bp;
+	int pid;
+
+	if(axp->loop == NULL){
+		free_q(&axp->txq);
+		return;
+	}
+	if((bp = dequeue(&axp->txq)) == NULL)
+		return;
+	if(axp->txq != NULL)
+		loop_flush_soon(axp);
+	if((pid = PULLCHAR(&bp)) == -1){
+		free_p(&bp);
+		return;
+	}
+	handleit(axp->loop,pid,&bp);
+}
+
+static void loop_flush_soon(struct ax25_cb *axp)
+{
+	axp->t2.func = loop_flush;
+	axp->t2.arg = axp;
+	set_timer(&axp->t2,1);
+	start_timer(&axp->t2);
+}
+
 int lapb_loop_send(struct ax25_cb *axp,struct mbuf **bpp,int pid)
 {
 	int len;
-	struct ax25_cb *peer = axp->loop;
 	struct mbuf *bp;
 	struct mbuf *next;
 
-	if(peer == NULL || bpp == NULL || *bpp == NULL){
+	if(axp->loop == NULL || bpp == NULL || *bpp == NULL){
 		free_p(bpp);
 		return -1;
 	}
 	len = (int) len_p(*bpp);
+	/* The protocol id goes on the front, the way it does in a frame on the
+	 * air, so the queue holds one kind of thing and the delivery reads it
+	 * back off.  With pid == -1 it is already there.
+	 */
 	if(pid != -1){
-		handleit(peer,pid,bpp);
-		return len;
-	}
-	for(bp = *bpp;bp != NULL;bp = next){
-		struct mbuf *one = bp;
-		int onepid;
+		pushdown(bpp,NULL,1);
+		(*bpp)->data[0] = (uint8) pid;
+		enqueue(&axp->txq,bpp);
+	} else {
+		for(bp = *bpp;bp != NULL;bp = next){
+			struct mbuf *one = bp;
 
-		next = bp->anext;
-		one->anext = NULL;
-		if((onepid = PULLCHAR(&one)) == -1){
-			free_p(&one);
-			continue;
+			next = bp->anext;
+			one->anext = NULL;
+			enqueue(&axp->txq,&one);
 		}
-		handleit(peer,onepid,&one);
+		*bpp = NULL;
 	}
-	*bpp = NULL;
+	loop_flush_soon(axp);
 	return len;
 }
 
