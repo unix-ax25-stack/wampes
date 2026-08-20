@@ -88,6 +88,13 @@ static struct ax25_cb *open_ax25_loop(struct ax25 *hdr)
 	peer->hdr.nextdigi = 0;
 	axp->loop = peer;
 	peer->loop = axp;
+	/* Room for more than one frame at a time.  The window of one is what a
+	 * link starts with until the other end agrees to more, and here there
+	 * is no other end to ask - every frame arrives, in order, at once.
+	 * With one, a writer that asks space_ax25() first would go a frame at
+	 * a time through the timer, which is slow for no reason.
+	 */
+	axp->maxframe = peer->maxframe = 7;
 	return axp;
 }
 

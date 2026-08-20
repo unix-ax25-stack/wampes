@@ -141,6 +141,7 @@ del_ax25(struct ax25_cb *conn)
 	stop_timer(&axp->t3);
 	stop_timer(&axp->t4);
 	stop_timer(&axp->t5);
+	stop_timer(&axp->loop_timer);
 
 	/* Free allocated resources */
 	for (i = 0; i < 8; i++)

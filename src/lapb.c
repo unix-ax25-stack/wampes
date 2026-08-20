@@ -1568,10 +1568,14 @@ static void loop_flush_soon(struct ax25_cb *axp);
 static void loop_flush(void *p)
 {
 	struct ax25_cb *axp = (struct ax25_cb *) p;
+	struct ax25_cb *peer = axp->loop;
+	struct axservice *sp;
+	struct axservice *spnext;
 	struct mbuf *bp;
 	int pid;
+	int room;
 
-	if(axp->loop == NULL){
+	if(peer == NULL){
 		free_q(&axp->txq);
 		return;
 	}
@@ -1583,15 +1587,36 @@ static void loop_flush(void *p)
 		free_p(&bp);
 		return;
 	}
-	handleit(axp->loop,pid,&bp);
+	handleit(peer,pid,&bp);
+
+	/* AND NOW SAY THERE IS ROOM AGAIN, which is what the far end's
+	 * acknowledgement does on a link that goes out over the air.  Without
+	 * it a writer that asks space_ax25() first stops for good: the window
+	 * is one frame, so as soon as one sits in the queue there is no room,
+	 * and nothing would ever tell it otherwise.  That is a session that
+	 * greets and then falls silent.
+	 *
+	 * After the delivery, because that may have taken the whole link down
+	 * - so ask whether this block is still there at all.
+	 */
+	if(!ax25_alive(axp))
+		return;
+	room = space_ax25(axp);
+	if(room <= 0)
+		return;
+	for(sp = axp->services;sp != NULL;sp = spnext){
+		spnext = sp->next;
+		if(sp->t_upcall != NULL)
+			(*sp->t_upcall)(sp,room);
+	}
 }
 
 static void loop_flush_soon(struct ax25_cb *axp)
 {
-	axp->t2.func = loop_flush;
-	axp->t2.arg = axp;
-	set_timer(&axp->t2,1);
-	start_timer(&axp->t2);
+	axp->loop_timer.func = loop_flush;
+	axp->loop_timer.arg = axp;
+	set_timer(&axp->loop_timer,1);
+	start_timer(&axp->loop_timer);
 }
 
 int lapb_loop_send(struct ax25_cb *axp,struct mbuf **bpp,int pid)

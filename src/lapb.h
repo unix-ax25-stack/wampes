@@ -136,6 +136,11 @@ struct ax25_cb {
 	 * which is the whole point of not making it invisible.
 	 */
 	struct ax25_cb *loop;
+	/* Its own timer, not one of the five below: those belong to the state
+	 * machine, which stops them at every state change - and a delivery
+	 * that stops because the link said "connected" would simply hang.
+	 */
+	struct timer loop_timer;
 
 	struct {
 		int32 remotebusy;               /* Remote sent RNR */
