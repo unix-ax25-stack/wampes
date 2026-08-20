@@ -490,8 +490,20 @@ struct ax25_cb *axp)
 	 * first, because closing the far side comes back here.
 	 */
 	if(axp->loop != NULL){
-		struct ax25_cb *peer = axp->loop;
+		struct ax25_cb *peer;
 
+		/* WHAT IS STILL IN HAND GOES FIRST, exactly as it does on a
+		 * link over the air: the flag below means "disconnect when the
+		 * transmit queue is empty", and loop_flush() comes back here
+		 * when it is.  Without this, a program that writes its last
+		 * lines and exits loses them - the close overtakes the
+		 * delivery, and 300 lines arrived as 272.
+		 */
+		if(axp->txq != NULL && !axp->flags.closed){
+			axp->flags.closed = 1;
+			return 0;
+		}
+		peer = axp->loop;
 		axp->loop = NULL;
 		peer->loop = NULL;
 		axp->reason = LB_NORMAL;

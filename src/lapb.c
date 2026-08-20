@@ -1601,6 +1601,14 @@ static void loop_flush(void *p)
 	 */
 	if(!ax25_alive(axp))
 		return;
+	/* Everything handed over, and somebody asked to disconnect while it
+	 * was still in hand - now it may happen.  disc_ax25() set the flag and
+	 * left rather than throw the rest away.
+	 */
+	if(axp->txq == NULL && axp->flags.closed){
+		disc_ax25(axp);
+		return;
+	}
 	room = space_ax25(axp);
 	if(room <= 0)
 		return;
