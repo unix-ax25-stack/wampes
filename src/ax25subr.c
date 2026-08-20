@@ -91,6 +91,27 @@ del_ax25(struct ax25_cb *conn)
 	if(axp == NULL)
 		return; /* Not found */
 
+	/* Half a link that stays in the node is no link at all, so the other
+	 * half goes too.  Here and not only in disc_ax25(), because a block
+	 * can be taken away without ever being disconnected - "reset" does
+	 * exactly that - and the far half would then sit there as "Connected"
+	 * with nobody at the other end.
+	 *
+	 * Unlinked before, so that taking the far half down does not come
+	 * back round to this one.  lapbstate() is the way, not disc_ax25():
+	 * that one would try to send a DISC, and there is no port to send it
+	 * on.  Its consumers hear the state change, close, and the block goes
+	 * with the last of them.
+	 */
+	if(conn->loop != NULL){
+		struct ax25_cb *peer = conn->loop;
+
+		conn->loop = NULL;
+		peer->loop = NULL;
+		peer->reason = LB_NORMAL;
+		lapbstate(peer,LAPB_DISCONNECTED);
+	}
+
 	/* Remove from list */
 	if(axlast != NULL)
 		axlast->next = axp->next;

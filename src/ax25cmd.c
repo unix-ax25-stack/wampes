@@ -294,6 +294,16 @@ void *p)
 			 axp->mmask + 1,
 			 Ax25states[axp->state],
 			 ax25hdr_to_string(&axp->hdr));
+			/* A session that never leaves the node is shown, and
+			 * shown as what it is: it has no port, no timers and
+			 * no sequence numbers, so the figures on its line say
+			 * nothing.  What matters is that it is here at all -
+			 * a sysop looking for something that is stuck should
+			 * not have to guess that a whole class of sessions is
+			 * invisible.
+			 */
+			if(axp->loop != NULL)
+				printf("%*s(local, no port)\n", 47, "");
 		}
 		if (Axserver_enabled)
 			printf("                                Listening      *\n");

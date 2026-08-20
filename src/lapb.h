@@ -123,6 +123,20 @@ struct ax25_cb {
 
 	struct ax25 hdr;                /* AX25 header */
 
+	/* The other end of a link that never leaves the node: a connect to a
+	 * callsign we answer to ourselves.  Two control blocks, this one for
+	 * the caller and one turned round for the called side, and what one
+	 * sends the other receives - no interface, no timers, no sequence
+	 * numbers, because there is no channel to lose anything on.
+	 *
+	 * A block, rather than short-circuiting the two sessions, because
+	 * everything that serves an incoming call hangs off a control block:
+	 * the listeners, the login, the handover to a libax25 client.  With a
+	 * block they all work unchanged, and "status" can show the session -
+	 * which is the whole point of not making it invisible.
+	 */
+	struct ax25_cb *loop;
+
 	struct {
 		int32 remotebusy;               /* Remote sent RNR */
 		unsigned int rejsent:1;         /* REJ frame has been sent */
@@ -341,6 +355,14 @@ void ax25_resolve_path(struct ax25 *hdr,struct iface **ifpp,
  */
 void ax25_adopt_path(struct ax25_cb *axp,struct iface *ifp,
 	const struct ax25 *hdr);
+/* The called side of a link that stays in the node: bring it up and let
+ * whatever serves that callsign start, exactly as an arriving SABM does.
+ */
+void lapb_loop_up(struct ax25_cb *axp);
+/* And what the caller writes, handed to the other side's consumers - the same
+ * function a received I frame goes through.
+ */
+int lapb_loop_send(struct ax25_cb *axp,struct mbuf **bpp,int pid);
 
 /* In lapbtimer.c: */
 void pollthem(void *p);

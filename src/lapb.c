@@ -1503,6 +1503,77 @@ path_timing(struct ax25_cb *axp)
  * callsign over the source, so running it twice on one header is not running
  * it once.
  */
+/* The called side of a link that never leaves the node.  This is the SABM
+ * branch of lapb_input() with everything left out that only makes sense on a
+ * channel: no UA to send, no timers to start, no sequence numbers to reset,
+ * because nothing here can be lost or arrive twice.  What remains is the part
+ * that matters - the state change, so the consumers hear it, and the same
+ * question the incoming path asks: is a service configured for the callsign
+ * that was called, and does it want to greet before a byte arrives?
+ */
+
+void lapb_loop_up(struct ax25_cb *axp)
+{
+	struct ax_route *axr;
+
+	lapbstate(axp,LAPB_CONNECTED);
+	if(axp->services != NULL)
+		return;
+	/* hdr.source is the callsign that was called - the header of the
+	 * called side is already turned round, as after build_path(reverse).
+	 */
+	axr = ax_routeptr(axp->hdr.dest,0);
+	if(axr && axr->jumpstart)
+		axserv_start(axp,PID_NO_L3);
+	axserv_connected(axp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What the caller sends is what the called side receives, and handleit() is
+ * where a received frame goes anyway - so the consumers, the listeners and
+ * the handover to a client see no difference at all.
+ *
+ * No segmenting: paclen bounds what fits in a frame on the air, and there is
+ * no frame and no air here.  With pid == -1 the protocol id is already on the
+ * front of each buffer in the chain, which is how NET/ROM and a relayed leg
+ * send, so it is read back off there and each one is delivered on its own.
+ */
+
+int lapb_loop_send(struct ax25_cb *axp,struct mbuf **bpp,int pid)
+{
+	int len;
+	struct ax25_cb *peer = axp->loop;
+	struct mbuf *bp;
+	struct mbuf *next;
+
+	if(peer == NULL || bpp == NULL || *bpp == NULL){
+		free_p(bpp);
+		return -1;
+	}
+	len = (int) len_p(*bpp);
+	if(pid != -1){
+		handleit(peer,pid,bpp);
+		return len;
+	}
+	for(bp = *bpp;bp != NULL;bp = next){
+		struct mbuf *one = bp;
+		int onepid;
+
+		next = bp->anext;
+		one->anext = NULL;
+		if((onepid = PULLCHAR(&one)) == -1){
+			free_p(&one);
+			continue;
+		}
+		handleit(peer,onepid,&one);
+	}
+	*bpp = NULL;
+	return len;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void
 ax25_adopt_path(
 struct ax25_cb *axp,

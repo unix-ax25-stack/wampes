@@ -16,6 +16,47 @@
 #include "lapb.h"
 #include "pidfilter.h"
 
+/* Both ends of a link that stays in the node.  The caller gets the block it
+ * asked for; the second one is the called side, with the addresses the other
+ * way round, and the two point at each other.
+ *
+ * NEITHER IS BROUGHT UP HERE, and that is deliberate: whatever is listening
+ * on the called side may greet as soon as its link stands - a mailbox always
+ * does - and there would be nobody on this side to hear it yet.  The caller
+ * opens its service next, and open_axservice() starts the pair then.
+ */
+
+static struct ax25_cb *open_ax25_loop(struct ax25 *hdr)
+{
+	struct ax25_cb *axp;
+	struct ax25_cb *peer;
+
+	if((axp = find_ax25(hdr->source,hdr->dest)) != NULL){
+		Net_error = CON_EXISTS;
+		return NULL;
+	}
+	if((axp = cr_ax25(hdr->dest)) == NULL){
+		Net_error = NO_MEM;
+		return NULL;
+	}
+	if((peer = cr_ax25(hdr->source)) == NULL){
+		del_ax25(axp);
+		Net_error = NO_MEM;
+		return NULL;
+	}
+	axp->hdr = *hdr;
+	peer->hdr = *hdr;
+	addrcp(peer->hdr.dest,hdr->source);
+	addrcp(peer->hdr.source,hdr->dest);
+	peer->hdr.ndigis = 0;
+	peer->hdr.nextdigi = 0;
+	axp->loop = peer;
+	peer->loop = axp;
+	return axp;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Open an AX.25 connection */
 struct ax25_cb *
 open_ax25(
@@ -35,6 +76,23 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 	 * DB0FHN made DL9SAU-5 -> DB0FHN "busy", though the two share nothing
 	 * but the far end.
 	 */
+	/* A CALLSIGN WE ANSWER TO OURSELVES: the session has no business on the
+	 * air.  Sending a SABM for our own callsign only works where something
+	 * out there routes it back - db0fhn-12 reached through the xnet next
+	 * door and came home as an incoming call - and where nothing does, the
+	 * caller waits for an answer that cannot come.  Which of the two you
+	 * got depended on whether a route happened to exist, so the same
+	 * connect said "no route to host" on one port and nothing at all on
+	 * another.
+	 *
+	 * A path given by hand is left alone: "connect db0fhn-8 via db0fhn" is
+	 * somebody asking for the long way round on purpose, and that is a
+	 * legitimate way to test the real one.
+	 */
+	if(hdr->ndigis == 0 && mode == AX_ACTIVE
+	   && (ismyax25addr(hdr->dest) != NULL || axlisten_active(hdr->dest)))
+		return open_ax25_loop(hdr);
+
 	ax25_resolve_path(hdr,&ifp,opts);
 	axp = find_ax25(hdr->source,hdr->dest);
 	if(axp != NULL && axp->services != NULL){
@@ -105,6 +163,12 @@ int pid
 		free_p(bpp);
 		return -1;
 	}
+	/* Nothing below this is about a link that never leaves the node: no
+	 * segmenting, no queue, no window - what is written here is received
+	 * on the other side, and that is the whole of it.
+	 */
+	if(axp->loop != NULL)
+		return lapb_loop_send(axp,bpp,pid);
 	if(pid != -1){
 		/* Ahead of the segmenter on purpose: what leaves here as
 		 * PID_SEGMENT says nothing about what is inside, so this is the
@@ -198,6 +262,18 @@ void *user
 	sp->user = user;
 	sp->next = axp->services;
 	axp->services = sp;
+	/* The caller of a link that stays in the node now has somewhere to be
+	 * answered, so the pair can come up: this side first, so its own
+	 * service hears the state change, and then the called side, where a
+	 * listener may greet at once.  The test says "caller": the called side
+	 * gets its service from that very start, and by then this one has one.
+	 */
+	if(axp->loop != NULL && axp->state == LAPB_DISCONNECTED
+	   && axp->loop->state == LAPB_DISCONNECTED
+	   && axp->loop->services == NULL){
+		lapbstate(axp,LAPB_CONNECTED);
+		lapb_loop_up(axp->loop);
+	}
 	return sp;
 }
 
@@ -320,7 +396,23 @@ close_axservice(struct axservice *sp)
 		}
 	free_q(&sp->rxq);
 	free(sp);
-	if(axp->services == NULL)
+	if(axp->services != NULL)
+		return;
+	/* THE LAST CONSUMER IS GONE.  On a link that still stands, that is a
+	 * reason to take it down, and disc_ax25() does it.  On one that is
+	 * ALREADY down it is the moment the block becomes rubbish: nothing is
+	 * left to answer a late frame for, and disc_ax25() would do nothing
+	 * ("Ignored" below), so nobody would ever delete it.
+	 *
+	 * That is where the "Disconn" lines came from that outlive every timer
+	 * and stand until the node is restarted: a connect that ran into its
+	 * timeout reached LAPB_DISCONNECTED while the caller's service was
+	 * still attached, so lapbstate() left the block - and when the caller
+	 * then gave up, this was the path that had nothing more to say.
+	 */
+	if(axp->state == LAPB_DISCONNECTED)
+		del_ax25(axp);
+	else
 		disc_ax25(axp);
 }
 
@@ -333,6 +425,29 @@ struct ax25_cb *axp)
 {
 	if(axp == NULL)
 		return -1;
+	/* A link that stays in the node ends at once and takes the other half
+	 * with it: there is no DISC to send, nothing in flight to wait for,
+	 * and no timer that would ever come back to finish the job.  Unlinked
+	 * first, because closing the far side comes back here.
+	 */
+	if(axp->loop != NULL){
+		struct ax25_cb *peer = axp->loop;
+
+		axp->loop = NULL;
+		peer->loop = NULL;
+		axp->reason = LB_NORMAL;
+		peer->reason = LB_NORMAL;
+		/* Both blocks are cleared up by the paths that clear up any
+		 * other: lapbstate() deletes one that has no consumer left,
+		 * and close_axservice() deletes the one whose last consumer
+		 * goes here.  Not by hand - whoever is called below may free
+		 * the block, and a pointer kept across that is a pointer into
+		 * freed memory.
+		 */
+		lapbstate(peer,LAPB_DISCONNECTED);
+		lapbstate(axp,LAPB_DISCONNECTED);
+		return 0;
+	}
 	switch(axp->state){
 	case LAPB_DISCONNECTED:
 		break;          /* Ignored */
