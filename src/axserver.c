@@ -161,7 +161,7 @@ int axlisten_active(const uint8 *call)
  *      /path/to/program args   run it and pipe, circumstances in the
  *                              environment
  *
- * <switch> is --silent/--noisy, --wait/--nowait, --ascii/--binary.  The
+ * <switch> is --silent/--verbose, --wait/--nowait, --ascii/--binary.  The
  * defaults follow what is being carried:
  *
  *                announcement   wait for first frame   conversion
@@ -181,36 +181,59 @@ int axlisten_active(const uint8 *call)
 
 char Axlisten_usage[] =
 "listen                              show what we answer to\n"
-"       listen ax25 add [pid=<n>] [I|UI] [port=<list>] [<switch>...]\n"
+"       listen ax25 add [pid=<n>] [I|UI] [iface=<list>] [<switch>...]\n"
 "                       <call> <target>\n"
 "       listen ax25 drop [I|UI] [pid=<n>] <call>\n"
 "       listen netrom add [<switch>...] <target>\n"
 "       listen netrom drop\n"
 "       listen ax25|netrom enable <n>       switch an entry back on\n"
 "\n"
+"  Each target says how a line ends where it goes, and that is what an\n"
+"  entry converts to unless --ascii or --binary says otherwise:\n"
+"\n"
 "  <target>   builtin:login          the node's own login, as it always was\n"
+"                                    ASCII - the login lives on CR\n"
 "             tcp:<host>:<port>      dial it and pipe; unix:<path> likewise\n"
+"                                    ASCII - measured: the announcement goes\n"
+"                                    out as \"...\\n\", and a CR from the AX.25\n"
+"                                    side arrives at the socket as LF\n"
 "             /path/to/program args  run it and pipe\n"
+"                                    ASCII - an ordinary unix program wants LF\n"
 "             client                 give the call to a libax25 program that\n"
 "                                    claims this callsign over the service\n"
 "                                    socket - ax25d, a mailbox, anything that\n"
 "                                    binds and listens.  This line IS the\n"
 "                                    permission: a callsign nobody configured\n"
 "                                    cannot be claimed.  doc/LIBAX25-BRIDGE.md\n"
+"                                    BINARY - a libax25 program speaks the\n"
+"                                    packet radio convention itself, and\n"
+"                                    converting for it corrupts quietly\n"
 "             client:<call>          netrom only: hand the session to whoever\n"
 "                                    holds <call>, shown as a call to <call>.\n"
 "                                    Same callsign as an ax25 listener meshes\n"
 "                                    the two; a different one keeps them\n"
 "                                    apart, since the program is told which\n"
 "                                    callsign was reached\n"
-"  <switch>   --silent/--noisy, --wait/--nowait, --ascii/--binary\n"
-"  port=      a comma separated list of ports, \"!\" in front to exclude\n"
-"  pid=       the protocol id, default text (0xf0).  I and UI are two\n"
-"             separate listeners and each may name its own ports.\n"
+"  <switch>   --silent/--verbose, --wait/--nowait, --ascii/--binary\n"
 "\n"
-"  The defaults follow what is carried: pid=text announces, does not wait\n"
-"  and converts to ascii; another pid does none of the three, and the two\n"
-"  that would corrupt a binary protocol are refused rather than ignored.";
+"  iface=     WHICH INTERFACE the call may come in on - the name attach and\n"
+"             ifconfig give it, not a protocol and not a TCP port.  It is\n"
+"             what the rest of the AX.25 world calls a \"port\" (axports,\n"
+"             ax25d), and it is not called that here because \"port\" is\n"
+"             already the number in tcp:<host>:<port> on the same line.\n"
+"             A comma separated list; \"!\" in front of the whole list\n"
+"             excludes instead; \"all\" is every interface and is also what\n"
+"             leaving it out means.  A name that is no interface is not\n"
+"             refused - one may be attached later - but it is said, because\n"
+"             until then the entry answers nothing.\n"
+"  pid=       WHICH PROTOCOL rides on the connection, default text (0xf0) -\n"
+"             see \"ax25 pid-info\".  I and UI are two separate listeners and\n"
+"             each may name its own interfaces.\n"
+"\n"
+"  What is carried decides the rest: pid=text announces, does not wait, and\n"
+"  converts as the target above says; another pid does none of the three,\n"
+"  and the two switches that would corrupt a binary protocol are refused\n"
+"  rather than ignored.";
 
 static void axlisten_usage(void)
 {
@@ -269,7 +292,7 @@ static const char *axlisten_targetname(const struct axlisten *lp)
 
 static void axlisten_header(void)
 {
-  printf(" #  Call       I/UI Pid       Kind    Mode     Ports      "
+  printf(" #  Call       I/UI Pid       Kind    Mode     Iface      "
 	 "State                          Handed to\n");
 }
 
@@ -383,13 +406,24 @@ static int axlisten_add(int netrom, int argc, char *argv[])
       continue;
     }
     if (!strcmp(cp, "--silent")) { silent = 1; continue; }
-    if (!strcmp(cp, "--noisy"))  { silent = 0; noisy_set = 1; continue; }
+    if (!strcmp(cp, "--verbose")) { silent = 0; noisy_set = 1; continue; }
     if (!strcmp(cp, "--wait"))   { wait = 1; continue; }
     if (!strcmp(cp, "--nowait")) { wait = 0; continue; }
     /* Connections or datagrams, and which ports.  Written without dashes
      * because they say what the entry IS, not how it behaves.
      */
-    if (!strncmp(cp, "port=", 5)) { ports = cp + 5; continue; }
+    if (!strncmp(cp, "iface=", 6)) { ports = cp + 6; continue; }
+    if (!strncmp(cp, "port=", 5)) {
+      /* The AX.25 world says "port" and means the interface - axports, ax25d,
+       * the port column there.  Here it is called what attach and ifconfig
+       * call it, and saying so is better than "unknown option": whoever
+       * typed it was not guessing, only coming from the other direction.
+       */
+      printf("\"port=\" is called \"iface=\" here - the interface, the way "
+	     "attach and\nifconfig name it.  For the protocol id there is "
+	     "pid=\n");
+      return 1;
+    }
     if (!strcmp(cp, "UI") || !strcmp(cp, "ui")) { ui = 1; continue; }
     if (!strcmp(cp, "I")  || !strcmp(cp, "i"))  { ui = 0; continue; }
     if (!strcmp(cp, "--binary")) { binary = 1; continue; }
@@ -469,7 +503,9 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   } else {
     if (silent < 0) silent = 0;
     if (wait < 0) wait = 0;
-    if (binary < 0) binary = 0;
+    /* binary is left open on purpose: for text it depends on WHERE the
+     * session goes, and the target is not known yet.  See below.
+     */
   }
 
   /* "client" hands the call to a program that claimed a CALLSIGN over the
@@ -560,6 +596,24 @@ static int axlisten_add(int netrom, int argc, char *argv[])
      */
     if (!strncmp(target, "tcp:", 4)) target += 4;
   }
+  /* THE END-OF-LINE DEFAULT FOLLOWS THE TARGET, because the target is what
+   * decides which convention the other side speaks.  Only where neither
+   * --ascii nor --binary was given, and only for text - anything else was
+   * settled above, where converting would corrupt the protocol.
+   *
+   *   builtin:login   ascii - the node's own login lives on CR
+   *   /path/program   ascii - an ordinary unix program wants LF
+   *   tcp:host:port   ascii - measured on db0fhn 2026-08-20: the announcement
+   *                   leaves as "...\n", and a CR typed on the AX.25 side
+   *                   arrives at the socket as LF
+   *   client          BINARY - the other end is a libax25 program, which
+   *                   speaks the packet radio convention itself.  Converting
+   *                   for it corrupts quietly, and having to remember
+   *                   --binary on every such line is the wrong way round.
+   */
+  if (binary < 0)
+    binary = (lp->kind == LK_CLIENT);
+
   portlist_free(&lp->ports);
   lp->ports = newports;
   lp->target = strdup(target);
@@ -661,6 +715,36 @@ int axlisten_client_claim(const uint8 *call, int pid, int ui, int fd,
  * miss every port attached after it.
  */
 
+/* A name that is no port is not refused - a port may be attached after the
+ * listen entry is written, and that is why this was never checked - but it is
+ * SAID, because the entry is then deaf and looks exactly like a working one.
+ *
+ * "port=text" is the way it happens: port and pid sit next to each other in
+ * the same line, and "text" is a pid.  So a name that names a protocol is
+ * answered with the question that was probably meant.
+ */
+
+static void portlist_warn_unknown(const char *spec)
+{
+  char copy[256];
+  char *name;
+  char *rest;
+
+  snprintf(copy, sizeof(copy), "%s", spec);
+  for (name = strtok_r(copy, ",", &rest); name;
+       name = strtok_r(NULL, ",", &rest)) {
+    if (*name == '!') name++;
+    if (!*name || if_lookup(name)) continue;
+    printf("No interface called \"%s\" - this entry answers nothing until one "
+	   "is attached\n", name);
+    if (pid_number(name) >= 0)
+      printf("  (\"%s\" is a protocol id - did you mean pid=%s?)\n",
+	     name, name);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 int portlist_set(struct portlist *pl, const char *spec, char *err, int errlen)
 {
   const char *p;
@@ -670,6 +754,12 @@ int portlist_set(struct portlist *pl, const char *spec, char *err, int errlen)
   pl->exclude = 0;
 
   if (!spec || !*spec) return 0;        /* every port */
+
+  /* "all" says out loud what an empty list means.  Worth having: an entry
+   * that listens everywhere then looks different from one where the port was
+   * forgotten, and the two are impossible to tell apart in a config file.
+   */
+  if (!strcmp(spec, "all")) return 0;
 
   if (*spec == '!') {
     pl->exclude = 1;
@@ -715,6 +805,7 @@ int portlist_set(struct portlist *pl, const char *spec, char *err, int errlen)
     snprintf(err, errlen, "no memory");
     return 1;
   }
+  portlist_warn_unknown(spec);
   return 0;
 }
 
