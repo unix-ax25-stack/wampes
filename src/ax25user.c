@@ -23,10 +23,23 @@
 
 static void loop_up_timeout(void *p)
 {
-	struct ax25_cb *axp = (struct ax25_cb *) p;
+	struct ax25_cb *peer = (struct ax25_cb *) p;    /* the called side */
+	struct ax25_cb *caller = peer->loop;
 
-	if(axp->loop != NULL && axp->state == LAPB_DISCONNECTED)
-		lapb_loop_up(axp);
+	if(caller == NULL || caller->state != LAPB_DISCONNECTED)
+		return;
+	/* The caller first, so its own service hears "connected" before
+	 * anything arrives.  THIS UPCALL IS WHY BOTH HALVES WAIT FOR THE
+	 * TIMER: on the service socket it is where a "handover" gives the
+	 * connection away, and it may close it again on the spot - all of it
+	 * inside the caller's open_axservice(), which had not even returned
+	 * yet, so connect_command() went on to use what was already gone.
+	 */
+	lapbstate(caller,LAPB_CONNECTED);
+	/* And it may have taken us with it, so ask before touching either. */
+	if(!ax25_alive(peer) || peer->loop == NULL)
+		return;
+	lapb_loop_up(peer);
 }
 
 static void peer_up_soon(struct ax25_cb *peer)
@@ -294,17 +307,22 @@ void *user
 	if(axp->loop != NULL && axp->state == LAPB_DISCONNECTED
 	   && axp->loop->state == LAPB_DISCONNECTED
 	   && axp->loop->services == NULL){
-		lapbstate(axp,LAPB_CONNECTED);
-		/* THE FAR SIDE COMES UP AFTER WE HAVE RETURNED, and that is not
-		 * tidiness but necessity: it may refuse.  A "client" listener
-		 * with nobody holding the callsign says "is not answering" and
-		 * disconnects, and that takes this half down too - block,
-		 * service and session, all of them freed - while our caller is
-		 * still inside open_axservice() and about to use what it got
-		 * back.  It cost a segfault on db0fhn to find out.
+		/* BOTH HALVES COME UP AFTER WE HAVE RETURNED, and that is not
+		 * tidiness but necessity.  Neither state change may happen
+		 * inside this call:
 		 *
-		 * The timer of the far side is free for it: a link that never
-		 * leaves the node has nothing to retransmit.
+		 * - "connected" on this side reaches our caller's own upcall,
+		 *   and on the service socket that is where a "handover" hands
+		 *   the connection to a program and may close it again at once
+		 *   - while connect_command() has not yet been given what it
+		 *   is about to use.
+		 * - the far side may refuse: a "client" listener with nobody
+		 *   holding the callsign says "is not answering" and hangs up,
+		 *   taking this half with it - block, service and session.
+		 *
+		 * Both cost a segfault on db0fhn before they were understood.
+		 * The far side's timer is free for it: a link that never leaves
+		 * the node has nothing to retransmit.
 		 */
 		peer_up_soon(axp->loop);
 	}

@@ -264,6 +264,10 @@ void del_ax25(struct ax25_cb *axp);
  * decision is deciding on someone else's connection.
  */
 struct ax25_cb *find_ax25(uint8 *local, uint8 *remote);
+/* Whether a block is still in the table - for a caller that let go of it
+ * inside an upcall and wants to know before touching it again.
+ */
+int ax25_alive(const struct ax25_cb *conn);
 
 /* In ax25user.c: */
 int ax25val(struct ax25_cb *axp);

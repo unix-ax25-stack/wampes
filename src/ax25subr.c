@@ -76,6 +76,22 @@ find_ax25(uint8 *local, uint8 *remote)
 	return NULL;
 }
 
+/* Is this block still in the table?  For a caller that had to let go of it -
+ * an upcall may have taken it away while that caller was inside one - and
+ * wants to know before touching it again.
+ */
+int ax25_alive(const struct ax25_cb *conn)
+{
+	struct ax25_cb *axp;
+
+	for(axp = Ax25_cb; axp != NULL; axp = axp->next)
+		if(axp == conn)
+			return 1;
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Remove entry from connection table */
 void
 del_ax25(struct ax25_cb *conn)
@@ -83,6 +99,7 @@ del_ax25(struct ax25_cb *conn)
 	int i;
 	struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULL;
+	struct ax25_cb *peer;
 
 	for(axp = Ax25_cb; axp != NULL; axlast=axp,axp = axp->next){
 		if(axp == conn)
@@ -97,19 +114,19 @@ del_ax25(struct ax25_cb *conn)
 	 * exactly that - and the far half would then sit there as "Connected"
 	 * with nobody at the other end.
 	 *
-	 * Unlinked before, so that taking the far half down does not come
-	 * back round to this one.  lapbstate() is the way, not disc_ax25():
-	 * that one would try to send a DISC, and there is no port to send it
-	 * on.  Its consumers hear the state change, close, and the block goes
-	 * with the last of them.
+	 * REMEMBERED HERE AND USED AT THE END, after this block is out of the
+	 * list and freed.  Taking the far half down runs consumers' upcalls,
+	 * and one of those may well come back through del_ax25() for THIS
+	 * block - which would find it still listed, unlink it a second time
+	 * and free it twice.  Unlinking the pair first stops the far half
+	 * from finding its way back, but not a path that has the pointer
+	 * already.
 	 */
-	if(conn->loop != NULL){
-		struct ax25_cb *peer = conn->loop;
-
+	peer = conn->loop;
+	if(peer != NULL){
 		conn->loop = NULL;
 		peer->loop = NULL;
 		peer->reason = LB_NORMAL;
-		lapbstate(peer,LAPB_DISCONNECTED);
 	}
 
 	/* Remove from list */
@@ -144,6 +161,13 @@ del_ax25(struct ax25_cb *conn)
         }
 #endif
 	free(axp);
+
+	/* And now the far half of a local link, with this one gone: whatever
+	 * its consumers do on the way down, they cannot come back to a block
+	 * that is no longer in the list.
+	 */
+	if(peer != NULL)
+		lapbstate(peer,LAPB_DISCONNECTED);
 }
 
 /* Create an ax25 control block: a NEW structure, filled with all the
