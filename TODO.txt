@@ -4171,8 +4171,15 @@ nicht mehr - ein umgekehrter Bereich entstuende gar nicht erst.
 ------------------------------------------------------------------------
 EINE AX.25-VERBINDUNG IST EIN PAAR, KEIN ZIEL (Befund 2026-08-19)
 ------------------------------------------------------------------------
-BEAUFTRAGT, NOCH NICHT ANGEFANGEN. Aufgeschrieben nach dem Befund, damit
-er nicht nur im Gedaechtnis der Sitzung steht.
+STAND 2026-08-20: DER ERSTE SCHRITT IST GEBAUT UND GEMESSEN, Commit
+5162981. Der Schluessel ist jetzt das Paar - find_ax25(lokal, entfernt) -,
+build_path() ist dafuer in ax25_resolve_path() und ax25_adopt_path()
+zerlegt, weil das eigene Rufzeichen erst in axroute() entsteht, und
+cr_ax25() sucht nicht mehr selbst. Was gemessen wurde und was noch offen
+ist, steht unten bei "UMFANG" und "GEMESSEN AM 2026-08-20".
+
+Der Text darunter ist der Befund, wie er am 2026-08-19 aufgeschrieben
+wurde, damit er nicht nur im Gedaechtnis der Sitzung steht.
 
 WIE ES AUFFIEL, im Betrieb gegen db0fhn (axudp, xnet): ein Connect von
 Linux her ueber die neue libax25-Bruecke, mit einem ANDEREN Quellcall,
@@ -4502,13 +4509,16 @@ Thomas' eigene Einschaetzung zum Rose-Fall oben: "das ist echt komplex
 und hat noch mehr Randbedingungen". Also nicht nebenbei bauen.
 
 UMFANG, gemessen am Baum vom 2026-08-19 (Zeilen wandern, Funktionen
-nicht). Paarweise werden muessen:
+nicht). Paarweise werden muessen - ERLEDIGT mit 5162981:
 
     lapb.c:84        lapb_input(), Empfang
     ax25user.c:28    open_ax25()
-    ax25subr.c:132   cr_ax25()
+    ax25subr.c:132   cr_ax25() - die Suche dort ist ersatzlos weg, jeder
+                     Aufrufer hatte vorher schon gesucht
 
-Lokales Call explizit machen, heute implizit ueber Interface/Mycall:
+OFFEN: lokales Call explizit machen, heute implizit ueber Interface und
+Mycall. Alle diese Stellen haben jetzt find_ax25(NULL, ...) - dieselbe
+Frage wie vorher, nur sichtbar gemacht und im Code als solche vermerkt:
 
     ax25.c:90        IP ueber AX.25
     flexnet.c        400 setaxp(), 612, 645, 834
@@ -4541,3 +4551,45 @@ RISIKO beim Umbau bei DAMA, FlexNet und NET/ROM - alle gehen ueber
 dieselbe Tabelle. Abzusichern mit wampes-import/testtools (peer.py,
 eaxpeer.py, damachan.py, inp3peer.py): zwei lokale Calls zum selben Ziel,
 zwei Ziele von einem Call, digipeatet, dazu DAMA- und FlexNet-Regression.
+
+------------------------------------------------------------------------
+EIN NODES-BROADCAST MIT KOMMANDOBIT KOMMT NICHT AN (2026-08-20)
+------------------------------------------------------------------------
+Aufgefallen beim Bau eines Pruefstands, nicht im Betrieb, und deshalb
+zuerst fuer einen Fehler des Werkzeugs gehalten. Isoliert ist es das
+nicht: drei Rahmen aus EINEM Prozess, auf EINEM Socket, die sich in genau
+einem Bit unterscheiden - dem Kommandobit im Zieloktett:
+
+    NODES, Zielbyte 0xe0 (Kommando)     kommt nicht an
+    NODES, Zielbyte 0x60 (kein Kommando) kommt an und wird ausgewertet
+    NODES, Zielbyte 0xe0, noch einmal    kommt nicht an
+
+Der angenommene liegt ZWISCHEN den beiden verworfenen, also ist es nicht
+der Startzeitpunkt des Knotens - die naheliegende Erklaerung, die bei den
+ersten Messungen tatsaechlich zutraf und mich zweimal in die Irre fuehrte
+(der Knoten oeffnet seinen Port erst am Ende der net.rc, und ein Rahmen
+davor ist weg; nrpeer.py schickt seinen einzigen Broadcast sofort).
+
+WO ES VERWORFEN WIRD, IST NOCH NICHT GEFUNDEN. Nicht in axip_recv() - die
+CRC-Zaehler bleiben null und die Adressfeldschleife bricht bei gesetztem
+E-Bit gar nicht erst ab. Die Multicast-Pruefung in ax_recv() (ax25.c:582)
+kann es dem Anschein nach auch nicht sein: sie vergleicht mit addreq(),
+und das maskiert das letzte Oktett mit SSID (0x1e), also gerade das
+Kommandobit weg. Trotzdem taucht der Rahmen im Trace nie auf, und der
+Trace sitzt hinter dieser Pruefung.
+
+WARUM ES ZAEHLT: ein Nodes-Broadcast ist ein UI-Rahmen, und ob eine
+fremde Implementierung ihn als Kommando oder ohne Bit sendet, ist nichts,
+worauf man sich verlassen sollte. Bevor daran etwas geaendert wird, ist
+zu klaeren, was TheNet, xnet und der Linux-Kernel dort setzen - und ob
+WAMPES beim eigenen Senden das Bit setzt. Wir sehen es nur nicht, weil
+unsere eigenen Broadcasts durch dieselbe Tuer wieder hereinkommen.
+
+PRUEFSTAND DAZU in wampes-import/testtools: axpartner.py (Gegenstelle mit
+Digipfad), axcaller.py (Rufe mit frei waehlbaren Adresspaaren),
+axclaim.py (claimt mehrere Rufzeichen am Dienstsocket und zeigt die
+uebergebenen Sitzungen), axproxycall.py (zwei unix-seitige Clients mit je
+eigenem Quellcall), axnrboth.py (AX.25 und NET/ROM-L4 gleichzeitig auf
+EINEM Socket - noetig, weil axip sich den UDP-Quellport je Host merkt).
+nrproxy.py hat seit heute --announce, damit der Zielknoten bekannt ist,
+bevor gerufen wird.
