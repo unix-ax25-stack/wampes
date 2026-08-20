@@ -16,6 +16,29 @@
 #include "lapb.h"
 #include "pidfilter.h"
 
+/* Bring the called side up on the next turn of the event loop rather than
+ * from inside the caller's own call - see the note at the use.  One
+ * millisecond, which is the shortest a timer can say "not now".
+ */
+
+static void loop_up_timeout(void *p)
+{
+	struct ax25_cb *axp = (struct ax25_cb *) p;
+
+	if(axp->loop != NULL && axp->state == LAPB_DISCONNECTED)
+		lapb_loop_up(axp);
+}
+
+static void peer_up_soon(struct ax25_cb *peer)
+{
+	peer->t1.func = loop_up_timeout;
+	peer->t1.arg = peer;
+	set_timer(&peer->t1,1);
+	start_timer(&peer->t1);
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Both ends of a link that stays in the node.  The caller gets the block it
  * asked for; the second one is the called side, with the addresses the other
  * way round, and the two point at each other.
@@ -272,7 +295,18 @@ void *user
 	   && axp->loop->state == LAPB_DISCONNECTED
 	   && axp->loop->services == NULL){
 		lapbstate(axp,LAPB_CONNECTED);
-		lapb_loop_up(axp->loop);
+		/* THE FAR SIDE COMES UP AFTER WE HAVE RETURNED, and that is not
+		 * tidiness but necessity: it may refuse.  A "client" listener
+		 * with nobody holding the callsign says "is not answering" and
+		 * disconnects, and that takes this half down too - block,
+		 * service and session, all of them freed - while our caller is
+		 * still inside open_axservice() and about to use what it got
+		 * back.  It cost a segfault on db0fhn to find out.
+		 *
+		 * The timer of the far side is free for it: a link that never
+		 * leaves the node has nothing to retransmit.
+		 */
+		peer_up_soon(axp->loop);
 	}
 	return sp;
 }
