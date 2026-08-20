@@ -191,14 +191,41 @@ library loaded first.  No recompiling:
 
     Linux:   LD_PRELOAD=/usr/local/lib/libax25.so.0 program
 
-    macOS:   DYLD_INSERT_LIBRARIES=/usr/local/lib/libax25.0.dylib \
-             DYLD_FORCE_FLAT_NAMESPACE=1 program
+ELF has a flat namespace: the first definition of `socket` in the search
+order is the one every reference binds to, wherever the reference comes
+from, so getting the library loaded first is the whole trick.
 
-The second variable on macOS is not optional: Mach-O binds two-level, so
-every symbol remembers which library it came from and inserting the library
-alone changes nothing.  ELF has a flat namespace and needs no equivalent.
+**On macOS the recipe that stood here was wrong, and the library now does
+something else instead.**  Mach-O binds two-level - every import remembers
+which library it came from - and `DYLD_FORCE_FLAT_NAMESPACE`, which was the
+answer to that, is no longer honoured.  Measured on macOS 15.7.9 (x86_64)
+with a program that calls `socket(AF_AX25, SOCK_SEQPACKET, 0)` and has
+nothing linked into it: `DYLD_PRINT_LIBRARIES` shows `libax25.0.dylib` loaded
+directly after the executable and before libSystem, and the call still goes
+to libSystem - with the variable set and without it, with the executable
+built the ordinary way and with `-Wl,-no_fixup_chains`, and whether the
+inserted library itself is built flat or two-level.
 
-What this cannot reach, on either system:
+So libax25 carries a `__DATA,__interpose` table on macOS, which dyld does
+still honour, and the insertion alone is enough:
+
+    macOS:   DYLD_INSERT_LIBRARIES=/usr/local/lib/libax25.0.dylib program
+
+Measured through the whole chain against `fakewampes.py`: connect, listen and
+accept, data both ways, from an ordinary compiled program that calls
+`socket()` straight and has never heard of libax25.
+
+Interposing brings one rule that shaped the library: dyld leaves the bindings
+of the image that *provides* the interposition alone and rewrites everyone
+else's - including what `dlsym` hands back, on any handle.  So on macOS the
+entry points do not carry the libc names, and the fall-through to the real
+call is a plain call rather than a `dlsym` pointer.  Both were measured
+first; a `dlsym` fall-through recurses until the stack is gone.  The details
+are in `axsock(7)`, along with the two consequences: a statically linked
+libax25 is not intercepted on macOS, and everything must be relinked, since
+the libc names are no longer exported from the library.
+
+What preloading cannot reach, on either system:
 
 * setuid and setgid programs - the loader drops the variables in secure
   execution mode.  Run them as root without the setuid bit instead.
@@ -211,6 +238,12 @@ It works process-wide, but that costs nothing but a function call and a list
 lookup: everything that is not `AF_AX25` falls through to the real call, so a
 program can serve telnet over IPv4 or IPv6 and AX.25 side by side in one
 process, which is exactly what a mailbox does.
+
+None of this is particular to WAMPES - it is how `libax25` serves AX.25 from
+userspace at all, the AGWPE backend included - so it belongs on the Linux
+side as well, and is written down there in `axsock(7)`, with the environment
+variables and what `ax25d` hands its children.  This section is the short
+version for somebody reading about the WAMPES bridge.
 
 ## Verified
 
