@@ -4456,6 +4456,51 @@ Link beim Ende einer Textsitzung am Leben zu halten, weil formal noch
 ein Service dranhaengt, sieht nach der saubereren Loesung aus und nimmt
 dem Benutzer die einzige Rueckmeldung, die er hat.
 
+DIE UMKEHRUNG, UND SIE IST DIE SCHWIERIGE (Thomas, 2026-08-20). Fuer
+PID=Text gilt die Regel oben in beide Richtungen: schliesst das Programm
+auf der Unix-Seite, ist der DISC die einzige Art, das zu melden, und die
+FlexNet-Sitzung auf demselben Link stirbt mit. Bei einem Listener mit
+EINEM ANDEREN PID - Thomas' Beispiel ist Rose - gilt das nicht: der darf
+gehen, ohne den Link mitzunehmen, weil sein Protokoll eigene Mittel hat.
+Dann steht die Verbindung, und der Abnehmer auf der Unix-Seite fehlt.
+Kommt jetzt ein Rose-Paket herein, sind es zwei Faelle:
+
+  a) es gibt wieder einen Abnehmer - gut, aber ihm gegenueber muss ein
+     NEUER CONNECT nachgebildet werden, denn sein Socket ist ein anderer
+     als der des verstorbenen Vorgaengers.
+  b) es hoert niemand auf diesen PID - Paket verwerfen.
+
+WAS DAVON SCHON DA IST, und es ist mehr, als man denkt: lapb_input()
+fragt bei JEDEM Rahmen zuerst find_axservice(axp,pid) und ruft, wenn
+nichts da ist, axserv_start(axp,pid) - also genau (a), den Listener neu
+fragen und die Sitzung neu aufmachen (lapb.c:1336ff). Erst wenn auch das
+nichts liefert, wird die Axlink-Tabelle der knoteneigenen Protokolle
+gefragt und danach verworfen, also (b). Der Weg ist gebaut; was fehlt,
+ist die Erlaubnis fuer den Nicht-Text-Dienst, beim Schliessen den Link
+NICHT mitzunehmen - dieselbe Unterscheidung wie beim Zombie weiter oben.
+
+WO DIE ENTSCHEIDUNG SITZT, ist damit auch klar: in der Consumer-Liste
+axp->services. Sie ist es, die den Link am Leben haelt, und ihr letzter
+Eintrag nimmt ihn mit. Der Fall, an dem das haengt (Thomas, 2026-08-20):
+die Gegenstelle schickt neben NET/ROM auch PID=Text - eine Begruessung
+etwa -, wir sind auf Verwerfen eingestellt, haben uns dafuer aber schon
+einen Textconsumer gemerkt. Der ist ENTBEHRLICH: er darf den Link nicht
+halten.
+
+Zwei Wege, und der erste ist der richtige:
+
+  * ein Kennzeichen am Eintrag, "zaehlt nicht als Lebensgrund". Der
+    Verwerfer bleibt stehen und tut weiter, wofuer er da ist - Text
+    abfangen, bevor er beim Login landet -, ohne den Link zu halten.
+    Faellt der letzte ECHTE Consumer weg, geht der Block, und del_ax25()
+    raeumt die Liste dabei ohnehin ab (ax25subr.c:104).
+  * ihn aus der Liste NEHMEN, sobald er der letzte waere. Ergibt
+    dasselbe Ende, verliert aber unterwegs seinen Zweck: bis der Link
+    wirklich endet, faende ankommender Text wieder den Login.
+
+Thomas' eigene Einschaetzung zum Rose-Fall oben: "das ist echt komplex
+und hat noch mehr Randbedingungen". Also nicht nebenbei bauen.
+
 UMFANG, gemessen am Baum vom 2026-08-19 (Zeilen wandern, Funktionen
 nicht). Paarweise werden muessen:
 
@@ -4481,6 +4526,16 @@ FLEXNET-VERBINDUNG" - setaxp() nimmt irgendeinen Link zu diesem
 Rufzeichen, auch einen, der fuer etwas anderes geoeffnet wurde. Und in
 doc/ROUTE-FILTER.md steht der schon gemessene Fall, wo genau das einem
 Benutzer die Sitzung abschnitt.
+
+GEMESSEN AM 2026-08-20, und es zeigt, was der erste Bauschritt noch offen
+laesst: steht die BENUTZERSITZUNG zu einem Nachbarn zuerst, legt NET/ROM
+seine L3-Rahmen darauf, statt sich einen eigenen Link zu oeffnen - im
+Mitschnitt fehlt dann das SABM DL9SAU-15 -> DB0NRP, und der CONAK laeuft
+ueber DL9SAU -> DB0NRP. Umgekehrt (Interlink zuerst) sind es nach dem
+Umbau zwei Links; vorher kaperte der Ruf des Benutzers den Interlink und
+wurde unter DESSEN Rufzeichen beantwortet. Der Empfangspfad ist also
+repariert, die Sendeseite von NET/ROM noch nicht - das ist die
+NULL-Wildcard in nrpeer_link() und send_packet_to_neighbor().
 
 RISIKO beim Umbau bei DAMA, FlexNet und NET/ROM - alle gehen ueber
 dieselbe Tabelle. Abzusichern mit wampes-import/testtools (peer.py,
