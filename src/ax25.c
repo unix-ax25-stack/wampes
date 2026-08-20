@@ -87,7 +87,15 @@ uint8 tos
 		return (*iface->output)(iface,hw_addr,iface->hwaddr,PID_IP,bpp);
 	}
 	/* Reliability is needed; use I-frames in AX.25 connection */
-	if((axp = find_ax25(hw_addr)) == NULL){
+	/* NULL: any link to him, under any callsign of ours - the question as
+	 * it has always been asked here.  Riding on a link that already
+	 * carries a text session to the same station is WANTED, otherwise IP
+	 * to that partner would stop for the length of the session; what is
+	 * not wanted is taking a link whose local callsign is not the one this
+	 * route belongs to.  Telling the two apart is its own step - see
+	 * TODO.txt, "IP DARF SICH AUF EINE BESTEHENDE VERBINDUNG AUFSCHWINGEN".
+	 */
+	if((axp = find_ax25(NULL, hw_addr)) == NULL){
 		/* Open a new connection */
 		struct ax25 hdr;
 		memset(&hdr,0,sizeof(struct ax25));

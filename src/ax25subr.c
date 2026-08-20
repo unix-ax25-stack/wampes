@@ -44,16 +44,24 @@ int   Axigntos;                 /* Ignore TOS */
 
 static int Nextid = 1;          /* Next control block ID */
 
-/* Look up entry in connection table */
+/* Look up entry in connection table.  A link is the PAIR (ours, his), both
+ * with ssid - see the note at the declaration.  A null local address asks the
+ * old question, "any link to him", and is for displays only.
+ *
+ * Relay legs are skipped as before: their hdr.source carries the CALLER's
+ * address, which we speak in but do not answer to, and axp->peer is what
+ * tells them apart.
+ */
 struct ax25_cb *
-find_ax25(uint8 *addr)
+find_ax25(uint8 *local, uint8 *remote)
 {
 	struct ax25_cb *axp;
 	struct ax25_cb *axlast = NULL;
 
 	/* Search list */
 	for(axp = Ax25_cb; axp != NULL; axlast=axp,axp = axp->next){
-		if(axp->peer == NULL && addreq(axp->hdr.dest,addr)){
+		if(axp->peer == NULL && addreq(axp->hdr.dest,remote)
+		   && (local == NULL || addreq(axp->hdr.source,local))){
 			if(axlast != NULL){
 				/* Move entry to top of list to speed
 				 * future searches
@@ -117,37 +125,39 @@ del_ax25(struct ax25_cb *conn)
 	free(axp);
 }
 
-/* Create an ax25 control block. Allocate a new structure, if necessary,
- * and fill it with all the defaults. The caller
- * is still responsible for filling in the reply address
+/* Create an ax25 control block: a NEW structure, filled with all the
+ * defaults.  The caller is still responsible for filling in the reply
+ * address, and build_path() is what normally does it.
+ *
+ * It used to look the address up first and hand back what it found.  Every
+ * caller had already searched by then - one of them by passing a blank
+ * address, which was a way of saying "and do not find anything" - so the
+ * search only made it possible to get a block back that was someone else's
+ * link.  Now: whoever wants an existing link asks find_ax25() and gets to say
+ * which link that is; whoever asks here gets a new one.
+ *
+ * The address is used for nothing but the VJ compression setting, and may be
+ * null where the caller has not got one yet.
  */
 struct ax25_cb *
-cr_ax25(uint8 *addr)
+cr_ax25(uint8 *remote)
 {
 	struct ax25_cb *axp;
-
-	if(addr == NULL)
-		return NULL;
-
-	if((axp = find_ax25(addr)) == NULL){
-		/* Not already in table; create an entry
-		 * and insert it at the head of the chain
-		 */
 #ifdef	AX25_VJCOMP
-		struct ax_route *rp;
+	struct ax_route *rp;
 #endif
-		axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
-		axp->next = Ax25_cb;
-		Ax25_cb = axp;
-#ifdef	AX25_VJCOMP
-		/* MW: init structures for VJ */
-                if ((rp = ax_routeptr(addr, 0)) != NULL) {
-                    if (rp->vjcomp)
-                        axp->slcomp_enable = 1;
 
-                }
-#endif
+	axp = (struct ax25_cb *)callocw(1,sizeof(struct ax25_cb));
+	axp->next = Ax25_cb;
+	Ax25_cb = axp;
+#ifdef	AX25_VJCOMP
+	/* MW: init structures for VJ */
+	if (remote != NULL && (rp = ax_routeptr(remote, 0)) != NULL) {
+	    if (rp->vjcomp)
+		axp->slcomp_enable = 1;
+
 	}
+#endif
 	axp->state = LAPB_DISCONNECTED;
 	/* Modulo-8 until something says otherwise.  This must be set and not
 	 * left at the zero callocw() gives, because every sequence number on

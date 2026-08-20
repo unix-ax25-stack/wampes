@@ -371,7 +371,7 @@ static void send_packet_to_neighbor(struct mbuf **bpp, struct node *pn)
   struct ax25 hdr;
   struct ax25_cb *axp;
 
-  if (!(axp = find_ax25(pn->call))) {
+  if (!(axp = find_ax25(NULL, pn->call))) {
     memset(&hdr, 0, sizeof(struct ax25));
     addrcp(hdr.dest, pn->call);
     axp = open_ax25(&hdr, AX_ACTIVE, 0);
@@ -673,7 +673,13 @@ static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
 
   if (isnew) *isnew = 0;
   if (!(call = nrpeer_target(pp))) return NULL;
-  if (!(axp = find_ax25(call))) {
+  /* NULL: any link to him under any callsign of ours, which is what this
+   * asked before the pair became the key - and it is a decision, not a
+   * display, so it is one of the places still to be made explicit.  Same for
+   * the three other find_ax25() here; the one in donrpeer() is a display and
+   * NULL is right there.
+   */
+  if (!(axp = find_ax25(NULL, call))) {
     memset(&hdr, 0, sizeof(struct ax25));
     addrcp(hdr.dest, call);
     if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return NULL;
@@ -693,7 +699,7 @@ static void nrpeer_seen(struct nrpeer *pp)
   struct ax25_cb *axp;
   uint8 *call;
 
-  if ((call = nrpeer_target(pp)) && (axp = find_ax25(call)))
+  if ((call = nrpeer_target(pp)) && (axp = find_ax25(NULL, call)))
     nrpeer_isnew(pp, axp);
 }
 
@@ -870,7 +876,7 @@ static void nrpeer_read_flags(struct mbuf *bp, struct node *fromneighbor)
       uint8 *call = nrpeer_target(pp);
 
       pp->inp3 = 1;
-      if (!pp->rttstart && call && (axp = find_ax25(call)))
+      if (!pp->rttstart && call && (axp = find_ax25(NULL, call)))
 	nrpeer_send_rtt(pp, axp);
     }
   }
@@ -3616,7 +3622,7 @@ static int donrpeer(int argc, char *argv[], void *p)
     for (pp = nrpeers; pp; pp = pp->next) {
       char inp3[16], sntt[16], last[16], his[16];
       uint8 *target = nrpeer_target(pp);
-      struct ax25_cb *axp = target ? find_ax25(target) : NULL;
+      struct ax25_cb *axp = target ? find_ax25(NULL, target) : NULL;
       int seen = 0;
 
       /* Seconds for reading, 10 ms units on the wire.  A dash rather than

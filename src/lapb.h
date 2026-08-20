@@ -233,9 +233,23 @@ extern int Axserver_enabled;
 void st_ax25(struct ax25_cb *axp);
 
 /* In ax25subr.c: */
-struct ax25_cb *cr_ax25(uint8 *addr);
+/* A control block, always a new one.  The address is only what the VJ
+ * compression setting is looked up under; null where the caller has not got
+ * it yet, because build_path() is about to fill the header in.
+ */
+struct ax25_cb *cr_ax25(uint8 *remote);
 void del_ax25(struct ax25_cb *axp);
-struct ax25_cb *find_ax25(uint8 *);
+/* THE LINK IS NAMED BY BOTH ITS ADDRESSES, ours and his, each with its ssid.
+ * A node answers to more than one callsign - interface callsigns, the ones we
+ * listen for, the one a caller asked for - so a destination alone does not
+ * name a link, and two stations may well be talking to the same partner under
+ * different calls of ours at the same time.
+ *
+ * A null local address asks the old question, "any link to him at all".  It
+ * is right for a display and for nothing else; whoever passes it in a
+ * decision is deciding on someone else's connection.
+ */
+struct ax25_cb *find_ax25(uint8 *local, uint8 *remote);
 
 /* In ax25user.c: */
 int ax25val(struct ax25_cb *axp);
@@ -311,6 +325,22 @@ void ax_t2_timeout(void *p);
 void ax_t5_timeout(void *p);
 void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse,
 	const struct ax25_opts *opts);
+/* The first half of build_path(), on its own: which interface, which
+ * digipeaters, and WHICH OF OUR CALLSIGNS goes in the source.  It is split
+ * out because that answer is needed BEFORE there is a control block to put it
+ * in - the link is looked up by both addresses, and until axroute() has run,
+ * one of the two is not known.  Works on the caller's header, touches nothing
+ * else.
+ */
+void ax25_resolve_path(struct ax25 *hdr,struct iface **ifpp,
+	const struct ax25_opts *opts);
+/* The second half: hang a header that has already been resolved on a control
+ * block, without asking the routing table again.  axroute() is not idempotent
+ * - it inserts digipeaters and stamps our callsign over the source - so the
+ * path is resolved once and then adopted.
+ */
+void ax25_adopt_path(struct ax25_cb *axp,struct iface *ifp,
+	const struct ax25 *hdr);
 
 /* In lapbtimer.c: */
 void pollthem(void *p);

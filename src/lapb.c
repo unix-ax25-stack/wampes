@@ -81,12 +81,24 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				break;
 			}
 	} else
-		axp = find_ax25(hdr->source);
+		/* THE PAIR, exactly as the digipeat branch above has always
+		 * done it, only the other way round: the frame is addressed
+		 * to us, so hdr->dest is the callsign of ours it was sent to
+		 * and hdr->source is his.  Looking him up alone found the
+		 * first link to him under ANY of our callsigns - and a SABM
+		 * landing on that link is answered with UA and resets its
+		 * counters, so a second session to a different service of
+		 * ours tore down the first instead of opening beside it.
+		 */
+		axp = find_ax25(hdr->dest,hdr->source);
 	if(axp == NULL){
-		axp = cr_ax25((uint8 *) " ");
+		/* No address yet: build_path() fills the header in, and the
+		 * VJ setting with it, from the frame.
+		 */
+		axp = cr_ax25(NULL);
 		build_path(axp,iface,hdr,1,0);
 		if(digipeat){
-			axp->peer = cr_ax25((uint8 *) " ");
+			axp->peer = cr_ax25(NULL);
 			axp->peer->peer = axp;
 			build_path(axp->peer,NULL,hdr,0,0);
 		}
@@ -1436,6 +1448,73 @@ void *p)
 	}
 }
 
+/* WHICH OF OUR CALLSIGNS, and over which port.  This is the first half of
+ * build_path(), and it stands on its own because a link is named by BOTH
+ * addresses: until axroute() has stamped the source, one half of the name
+ * does not exist yet, so open_ax25() cannot even look the link up.  It works
+ * on the caller's header and touches no control block.
+ */
+void
+ax25_resolve_path(
+struct ax25 *hdr,
+struct iface **ifpp,
+const struct ax25_opts *opts)
+{
+	uint8 wanted[AXALEN];
+	struct iface *ifp;
+
+	/* axroute() picks the interface and stamps its callsign over the
+	 * source.  Where the caller has chosen either of those, put its choice
+	 * back afterwards rather than teaching the router about it - the
+	 * routing itself is unchanged.
+	 */
+	addrcp(wanted, hdr->source);
+	axroute(hdr,&ifp);
+	if (opts) {
+		if (opts->iface) {
+			ifp = opts->iface;
+			/* axroute() stamps the source with the callsign of the
+			 * interface it chose; a caller who named a port must
+			 * get that port's callsign instead, not the node's.
+			 */
+			if (!opts->ownsource && ifp->hwaddr)
+				addrcp(hdr->source, ifp->hwaddr);
+		}
+		if (opts->ownsource)
+			addrcp(hdr->source, wanted);
+	}
+	*ifpp = ifp;
+}
+
+/* What follows from the path once it is settled, and the same for a link we
+ * open and one we answer.
+ */
+static void
+path_timing(struct ax25_cb *axp)
+{
+	axp->srt = 0;
+	axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi)) + 2) / 4;
+	set_timer(&axp->t1, 4 * axp->mdev);
+	ax25_apply_iface_limits(axp);
+}
+
+/* Take a path that has ALREADY been resolved.  Not the same as calling
+ * build_path() a second time: axroute() inserts digipeaters and stamps our
+ * callsign over the source, so running it twice on one header is not running
+ * it once.
+ */
+void
+ax25_adopt_path(
+struct ax25_cb *axp,
+struct iface *ifp,
+const struct ax25 *hdr)
+{
+	axp->routing_changes++;
+	axp->iface = ifp;
+	axp->hdr = *hdr;
+	path_timing(axp);
+}
+
 void
 build_path(
 struct ax25_cb *axp,
@@ -1445,7 +1524,6 @@ int reverse,
 const struct ax25_opts *opts)
 {
 	int i;
-	uint8 wanted[AXALEN];
 
 	axp->routing_changes++;
 	if(reverse){
@@ -1462,34 +1540,13 @@ const struct ax25_opts *opts)
 			}
 		axp->iface = ifp;
 	} else {
-		/* axroute() picks the interface and stamps its callsign over
-		 * the source.  Where the caller has chosen either of those,
-		 * put its choice back afterwards rather than teaching the
-		 * router about it - the routing itself is unchanged.
-		 */
-		addrcp(wanted, hdr->source);
-		axroute(hdr,&axp->iface);
-		if (opts) {
-			if (opts->iface) {
-				axp->iface = opts->iface;
-				/* axroute() stamps the source with the
-				 * callsign of the interface it chose; a
-				 * caller who named a port must get that
-				 * port's callsign instead, not the node's.
-				 */
-				if (!opts->ownsource && axp->iface->hwaddr)
-					addrcp(hdr->source,
-					       axp->iface->hwaddr);
-			}
-			if (opts->ownsource)
-				addrcp(hdr->source, wanted);
-		}
+		struct iface *chosen;
+
+		ax25_resolve_path(hdr,&chosen,opts);
+		axp->iface = chosen;
 		axp->hdr = *hdr;
 	}
-	axp->srt = 0;
-	axp->mdev = (T1init * (1 + 2 * (axp->hdr.ndigis - axp->hdr.nextdigi)) + 2) / 4;
-	set_timer(&axp->t1, 4 * axp->mdev);
-	ax25_apply_iface_limits(axp);
+	path_timing(axp);
 }
 
 /* The window this link may grow to.  Per port if the port says so, else the

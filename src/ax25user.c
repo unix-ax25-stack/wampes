@@ -24,8 +24,19 @@ int mode,               /* active/passive/server */
 const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 ){
 	struct ax25_cb *axp;
+	struct iface *ifp;
 
-	axp = find_ax25(hdr->dest);
+	/* THE PATH FIRST, THE SEARCH AFTER IT, and that order is the whole
+	 * point.  A link is named by both addresses, and OURS is not settled
+	 * until axroute() has stamped it into the source - so before this
+	 * runs, there is nothing to search for.  Asking after the destination
+	 * alone is what refused a second connect to a node we already had a
+	 * link to under another callsign: the FlexNet partner DK0CCC-10 ->
+	 * DB0FHN made DL9SAU-5 -> DB0FHN "busy", though the two share nothing
+	 * but the far end.
+	 */
+	ax25_resolve_path(hdr,&ifp,opts);
+	axp = find_ax25(hdr->source,hdr->dest);
 	if(axp != NULL && axp->services != NULL){
 		/* Only one to a customer.  Say which refusal this is: a caller
 		 * that hears "busy" can try again under another SSID, one that
@@ -36,22 +47,21 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 		return NULL;
 	}
 	if(axp == NULL){
-		if((axp = cr_ax25(hdr->dest)) == NULL){
-			Net_error = NO_MEM;
-			return NULL;
-		}
-		build_path(axp,NULL,hdr,0,opts);
 		/* No port to send on: axroute() knew no route and the caller
 		 * named none.  Without this the link sits in SETUP forever
 		 * with no interface - no SABM ever leaves, so nothing times
 		 * out either, and the caller waits for an answer that cannot
 		 * come.  A refusal with a reason is the whole point.
 		 */
-		if(axp->iface == NULL){
-			del_ax25(axp);
+		if(ifp == NULL){
 			Net_error = NO_ROUTE;
 			return NULL;
 		}
+		if((axp = cr_ax25(hdr->dest)) == NULL){
+			Net_error = NO_MEM;
+			return NULL;
+		}
+		ax25_adopt_path(axp,ifp,hdr);
 	}
 
 	switch(mode){
