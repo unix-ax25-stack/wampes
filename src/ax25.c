@@ -87,20 +87,34 @@ uint8 tos
 		return (*iface->output)(iface,hw_addr,iface->hwaddr,PID_IP,bpp);
 	}
 	/* Reliability is needed; use I-frames in AX.25 connection */
-	/* NULL: any link to him, under any callsign of ours - the question as
-	 * it has always been asked here.  Riding on a link that already
-	 * carries a text session to the same station is WANTED, otherwise IP
-	 * to that partner would stop for the length of the session; what is
-	 * not wanted is taking a link whose local callsign is not the one this
-	 * route belongs to.  Telling the two apart is its own step - see
-	 * TODO.txt, "IP DARF SICH AUF EINE BESTEHENDE VERBINDUNG AUFSCHWINGEN".
+	/* THE PORT'S OWN CALLSIGN, not any link that happens to reach him.
+	 * Two lines above, the UI branch already says it - iface->hwaddr - and
+	 * the connected branch has to say the same: a datagram and a
+	 * connection over one port come from one station.
+	 *
+	 * Riding on a link that already carries a text session to the same
+	 * partner is still wanted and still happens, as long as it is OUR
+	 * port's link: otherwise IP to him would stop for the length of that
+	 * session.  What must not happen is taking a link that somebody opened
+	 * under a different ssid - from the linux side, say.  The far end
+	 * answers to what it hears, so it would relearn its ARP and look for
+	 * us under a callsign this route knows nothing about.
 	 */
-	if((axp = find_ax25(NULL, hw_addr)) == NULL){
+	if((axp = find_ax25(iface->hwaddr, hw_addr)) == NULL){
 		/* Open a new connection */
 		struct ax25 hdr;
+		struct ax25_opts opts;
+
 		memset(&hdr,0,sizeof(struct ax25));
+		memset(&opts,0,sizeof(opts));
 		addrcp(hdr.dest,hw_addr);
-		axp = open_ax25(&hdr,AX_ACTIVE,0);
+		/* Over THIS port: the routing table would pick one of its own,
+		 * and here the port is not a guess - the datagram arrived for
+		 * it.  ax25_resolve_path() then stamps its callsign as the
+		 * source, which is the pair we just looked for.
+		 */
+		opts.iface = iface;
+		axp = open_ax25(&hdr,AX_ACTIVE,&opts);
 		if(axp == NULL){
 			free_p(bpp);
 			return -1;
