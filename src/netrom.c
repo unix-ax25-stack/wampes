@@ -127,6 +127,7 @@ static void set_circuit_state(struct circuit *pc, enum netrom_state newstate);
 static void l4_t1_timeout(void *arg);
 static void l4_t3_timeout(void *arg);
 static void l4_t4_timeout(void *arg);
+static struct ax25_cb *neighbour_link(uint8 *call);
 static struct circuit *create_circuit(void);
 static void circuit_manager(struct mbuf **bpp, const uint8 *answeras);
 static int nr_proxy_l4(struct mbuf **bpp);
@@ -368,18 +369,12 @@ static struct node *nodeptr(const uint8 *call, int create)
 static void send_packet_to_neighbor(struct mbuf **bpp, struct node *pn)
 {
 
-  struct ax25 hdr;
   struct ax25_cb *axp;
 
-  if (!(axp = find_ax25(NULL, pn->call))) {
-    memset(&hdr, 0, sizeof(struct ax25));
-    addrcp(hdr.dest, pn->call);
-    axp = open_ax25(&hdr, AX_ACTIVE, 0);
-    if (!axp) {
-      if (update_link(mynode, pn, 1, 0)) calculate_all();
-      free_p(bpp);
-      return;
-    }
+  if (!(axp = neighbour_link(pn->call))) {
+    if (update_link(mynode, pn, 1, 0)) calculate_all();
+    free_p(bpp);
+    return;
   }
   pushdown(bpp, NULL, 1);
   (*bpp)->data[0] = PID_NETROM;
@@ -665,25 +660,50 @@ static int nrpeer_isnew(struct nrpeer *pp, struct ax25_cb *axp)
  * remembered, the way FlexNet's setaxp() does it.
  */
 
+/* THE LINK TO A NEIGHBOUR, under the callsign of the port he is reached over.
+ * Which port that is only the routing table knows, so the path is resolved
+ * first and the pair looked up with what it says - the same order open_ax25()
+ * follows, and for the same reason: our own callsign does not exist until
+ * axroute() has stamped it.
+ *
+ * Asking for "any link to him" instead, as this did, hands NET/ROM whatever
+ * is open to that station - a user session someone opened under a different
+ * ssid included, and then his L3 frames ride in it.  Unlike FlexNet there is
+ * no protocol reason to prefer some other callsign of ours: the neighbour
+ * does not read our address as an anchor for anything, he answers to what he
+ * hears.
+ */
+
+static struct ax25_cb *neighbour_link(uint8 *call)
+{
+  struct ax25 hdr;
+  struct ax25_cb *axp;
+  struct iface *ifp;
+
+  memset(&hdr, 0, sizeof(hdr));
+  addrcp(hdr.dest, call);
+  ax25_resolve_path(&hdr, &ifp, 0);
+  if (ifp != NULL && (axp = find_ax25(hdr.source, call)) != NULL)
+    return axp;
+  /* Not there, so open it - with a FRESH header.  axroute() has been over
+   * that one already, and it is not idempotent: it inserts digipeaters and
+   * stamps the source, so running it twice is not running it once.
+   */
+  memset(&hdr, 0, sizeof(hdr));
+  addrcp(hdr.dest, call);
+  return open_ax25(&hdr, AX_ACTIVE, 0);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static struct ax25_cb *nrpeer_link(struct nrpeer *pp, int *isnew)
 {
   uint8 *call;
-  struct ax25 hdr;
   struct ax25_cb *axp;
 
   if (isnew) *isnew = 0;
   if (!(call = nrpeer_target(pp))) return NULL;
-  /* NULL: any link to him under any callsign of ours, which is what this
-   * asked before the pair became the key - and it is a decision, not a
-   * display, so it is one of the places still to be made explicit.  Same for
-   * the three other find_ax25() here; the one in donrpeer() is a display and
-   * NULL is right there.
-   */
-  if (!(axp = find_ax25(NULL, call))) {
-    memset(&hdr, 0, sizeof(struct ax25));
-    addrcp(hdr.dest, call);
-    if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return NULL;
-  }
+  if (!(axp = neighbour_link(call))) return NULL;
   if (nrpeer_isnew(pp, axp) && isnew) *isnew = 1;
   return axp;
 }
