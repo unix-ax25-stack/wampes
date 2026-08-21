@@ -6,6 +6,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <syslog.h>
@@ -84,6 +86,21 @@ struct axlisten {
 					 * when nobody does.  The entry is the
 					 * sysop's permission, the claim is
 					 * what makes it answer. */
+  /* WHO THE PROGRAM RUNS AS.  A node usually runs as root - it binds ports
+   * and reads /dev/tun - and without this the program behind a listener
+   * inherited that, for no reason anybody chose.  Default "daemon", which is
+   * uid 1 and gid 1 on Linux and macOS alike, unlike "nobody" (65534 against
+   * 4294967294).  Only for a program: "client" hands the session to something
+   * that is already running under its own account, and there is nothing to
+   * set.
+   */
+  uid_t uid;
+  gid_t gid;
+  char *username;                       /* for initgroups(), if we have one */
+  char *home;                           /* pw_dir: where the program runs,
+                                         * so it does not inherit whatever
+                                         * directory the node was started
+                                         * from - "/" when there is none */
 };
 
 static struct axlisten *Axlisten;
@@ -179,6 +196,9 @@ int axlisten_active(const uint8 *call)
  * command with this many words is unusable without it.
  */
 
+static int user_id(const char *name, uid_t *uid, char **keep, char **home);
+static int group_id(const char *name, gid_t *gid);
+
 char Axlisten_usage[] =
 "listen                              show what we answer to\n"
 "       listen ax25 add [pid=<n>] [I|UI] [iface=<list>] [<switch>...]\n"
@@ -215,6 +235,11 @@ char Axlisten_usage[] =
 "                                    apart, since the program is told which\n"
 "                                    callsign was reached\n"
 "  <switch>   --silent/--verbose, --wait/--nowait, --ascii/--binary\n"
+"             --user <name|uid>, --group <name|gid> - who a PROGRAM\n"
+"             runs as, default daemon (uid 1 and gid 1 on Linux and\n"
+"             macOS alike, which \"nobody\" is not).  Without this it\n"
+"             inherited whatever the node runs as, usually root.  A\n"
+"             name nothing knows falls back to 1 and says so.\n"
 "\n"
 "  iface=     WHICH INTERFACE the call may come in on - the name attach and\n"
 "             ifconfig give it, not a protocol and not a TCP port.  It is\n"
@@ -325,6 +350,13 @@ static void axlisten_show(struct axlisten *lp, int n)
 	 lp->disabled ? (lp->why ? lp->why : "inactive") : "active",
 	 axlisten_targetname(lp),
 	 lp->silent ? "  silent" : "", lp->wait ? "  wait" : "");
+  /* Who it runs as, where we run anything - a rights change nobody can see
+   * is one nobody checks.
+   */
+  if (lp->kind == LK_PROGRAM)
+    printf("%*sas %s(%lu) group %lu\n", 66, "",
+	   lp->username ? lp->username : "uid",
+	   (unsigned long) lp->uid, (unsigned long) lp->gid);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,6 +406,8 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   int replaced = 0;
   int wasclient = 0;
   int noisy_set = 0;
+  char *user = 0;
+  char *group = 0;
   int pid = PID_NO_L3;
   long n;
   struct axlisten *lp;
@@ -427,6 +461,16 @@ static int axlisten_add(int netrom, int argc, char *argv[])
     if (!strcmp(cp, "UI") || !strcmp(cp, "ui")) { ui = 1; continue; }
     if (!strcmp(cp, "I")  || !strcmp(cp, "i"))  { ui = 0; continue; }
     if (!strcmp(cp, "--binary")) { binary = 1; continue; }
+    if (!strcmp(cp, "--user")) {
+      if (++i >= argc) { printf("--user needs a name\n"); return 1; }
+      user = argv[i];
+      continue;
+    }
+    if (!strcmp(cp, "--group")) {
+      if (++i >= argc) { printf("--group needs a name\n"); return 1; }
+      group = argv[i];
+      continue;
+    }
     if (!strcmp(cp, "--ascii"))  { binary = 0; ascii_set = 1; continue; }
     if (!strncmp(cp, "--", 2)) {
       printf("Unknown option \"%s\"\n", cp);
@@ -614,6 +658,19 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   if (binary < 0)
     binary = (lp->kind == LK_CLIENT);
 
+  /* WHO IT RUNS AS, and only where we run something: "client" hands the
+   * session to a program that is already running under its own account, and
+   * "builtin:login" asks the system who this is before it grants anything.
+   */
+  if (lp->kind == LK_PROGRAM) {
+    free(lp->username);
+    lp->username = 0;
+    user_id(user ? user : "daemon", &lp->uid, &lp->username, &lp->home);
+    group_id(group ? group : "daemon", &lp->gid);
+  } else if (user || group)
+    printf("--user and --group are for a program; \"%s\" runs elsewhere\n",
+	   axlisten_targetname(lp));
+
   portlist_free(&lp->ports);
   lp->ports = newports;
   lp->target = strdup(target);
@@ -714,6 +771,75 @@ int axlisten_client_claim(const uint8 *call, int pid, int ui, int fd,
  * lines come first - and a list resolved at configuration time would quietly
  * miss every port attached after it.
  */
+
+/* "--user" and "--group" take a name or a number.  A name that no system
+ * knows is not a reason to run the program with the node's own rights, so it
+ * falls back to 1 - which is "daemon" on Linux and macOS both, and the reason
+ * "daemon" is the default rather than "nobody" (65534 against 4294967294).
+ * Said out loud, because a program silently running as somebody else than
+ * configured is the sort of thing found much later.
+ */
+
+static int user_id(const char *name, uid_t *uid, char **keep, char **home)
+{
+  struct passwd *pw;
+  char *end;
+  long n;
+
+  if ((pw = getpwnam(name)) != NULL) {
+    *uid = pw->pw_uid;
+    free(*keep);
+    *keep = strdup(name);
+    free(*home);
+    *home = (pw->pw_dir && *pw->pw_dir) ? strdup(pw->pw_dir) : 0;
+    return 0;
+  }
+  n = strtol(name, &end, 10);
+  if (*name && !*end && n >= 0) {
+    /* A number is allowed, and the account behind it is still worth asking
+     * about: it carries the groups and the home directory.
+     */
+    *uid = (uid_t) n;
+    free(*keep);
+    free(*home);
+    *keep = 0;
+    *home = 0;
+    if ((pw = getpwuid(*uid)) != NULL) {
+      *keep = strdup(pw->pw_name);
+      if (pw->pw_dir && *pw->pw_dir) *home = strdup(pw->pw_dir);
+    }
+    return 0;
+  }
+  printf("No user \"%s\" - running as uid 1 (daemon)\n", name);
+  *uid = 1;
+  free(*keep);
+  free(*home);
+  *keep = 0;
+  *home = 0;
+  return 0;
+}
+
+static int group_id(const char *name, gid_t *gid)
+{
+  struct group *gr;
+  char *end;
+  long n;
+
+  if ((gr = getgrnam(name)) != NULL) {
+    *gid = gr->gr_gid;
+    return 0;
+  }
+  n = strtol(name, &end, 10);
+  if (*name && !*end && n >= 0) {
+    *gid = (gid_t) n;
+    return 0;
+  }
+  printf("No group \"%s\" - running as gid 1 (daemon)\n", name);
+  *gid = 1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
 
 /* A name that is no port is not refused - a port may be attached after the
  * listen entry is written, and that is why this was never checked - but it is
@@ -1642,8 +1768,8 @@ static int axspawn_fd(struct axlisten *lp, const char *user, int netrom,
 
   char *argv[32];
   char buf[512];
-  char env[8][200];
-  char *envp[9];
+  char env[10][200];
+  char *envp[11];
   char *p;
   int argc;
   int envc = 0;
@@ -1702,6 +1828,13 @@ static int axspawn_fd(struct axlisten *lp, const char *user, int netrom,
      * until now.
      */
     sprintf(env[envc++], "PATH=/usr/local/bin:/usr/bin:/bin");
+    /* And the same two things the shell would have set, since we set who the
+     * program is: a program that looks for its files under $HOME would
+     * otherwise find the node's.
+     */
+    sprintf(env[envc++], "HOME=%.150s", lp->home ? lp->home : "/");
+    if (lp->username)
+      sprintf(env[envc++], "USER=%.60s", lp->username);
     for (i = 0; i < envc; i++) envp[i] = env[i];
     envp[envc] = 0;
   }
@@ -1718,6 +1851,23 @@ static int axspawn_fd(struct axlisten *lp, const char *user, int netrom,
     dup2(sv[1], 1);
     dup2(sv[1], 2);
     for (fd = 3; fd < FD_SETSIZE; fd++) close(fd);
+    /* GIVE UP WHAT THE NODE HAS before running anything.  The group first:
+     * afterwards there is no privilege left to change it with.  A failure
+     * here is fatal to the child and not a warning - carrying on would run
+     * the program with exactly the rights this is here to take away.
+     */
+    if (getuid() == 0) {
+      if (lp->username != NULL)
+	(void) initgroups(lp->username, lp->gid);
+      if (setgid(lp->gid) < 0 || setuid(lp->uid) < 0)
+	_exit(1);
+    }
+    /* And somewhere it may be: without this the program stands wherever the
+     * node was started from, which depends on the start script and on nothing
+     * the sysop configured here.
+     */
+    if (lp->home == NULL || chdir(lp->home) < 0)
+      (void) chdir("/");
     execve(argv[0], argv, envp);
     _exit(1);
   }
