@@ -127,6 +127,7 @@ static void set_circuit_state(struct circuit *pc, enum netrom_state newstate);
 static void l4_t1_timeout(void *arg);
 static void l4_t3_timeout(void *arg);
 static void l4_t4_timeout(void *arg);
+static struct ax25_cb *neighbour_find(uint8 *call);
 static struct ax25_cb *neighbour_link(uint8 *call);
 static struct circuit *create_circuit(void);
 static void circuit_manager(struct mbuf **bpp, const uint8 *answeras);
@@ -674,16 +675,33 @@ static int nrpeer_isnew(struct nrpeer *pp, struct ax25_cb *axp)
  * hears.
  */
 
-static struct ax25_cb *neighbour_link(uint8 *call)
+/* The same question without opening anything: which link to him is OURS.
+ * Asked where a frame has arrived and the answer decides what is done with
+ * it - whether the interlink is new, whether a round trip may be timed - and
+ * there "any link to him" would pick up a user session just as readily.
+ */
+
+static struct ax25_cb *neighbour_find(uint8 *call)
 {
   struct ax25 hdr;
-  struct ax25_cb *axp;
   struct iface *ifp;
 
   memset(&hdr, 0, sizeof(hdr));
   addrcp(hdr.dest, call);
   ax25_resolve_path(&hdr, &ifp, 0);
-  if (ifp != NULL && (axp = find_ax25(hdr.source, call)) != NULL)
+  if (ifp == NULL)
+    return NULL;
+  return find_ax25(hdr.source, call);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static struct ax25_cb *neighbour_link(uint8 *call)
+{
+  struct ax25 hdr;
+  struct ax25_cb *axp;
+
+  if ((axp = neighbour_find(call)) != NULL)
     return axp;
   /* Not there, so open it - with a FRESH header.  axroute() has been over
    * that one already, and it is not idempotent: it inserts digipeaters and
@@ -719,7 +737,7 @@ static void nrpeer_seen(struct nrpeer *pp)
   struct ax25_cb *axp;
   uint8 *call;
 
-  if ((call = nrpeer_target(pp)) && (axp = find_ax25(NULL, call)))
+  if ((call = nrpeer_target(pp)) && (axp = neighbour_find(call)))
     nrpeer_isnew(pp, axp);
 }
 
@@ -896,7 +914,7 @@ static void nrpeer_read_flags(struct mbuf *bp, struct node *fromneighbor)
       uint8 *call = nrpeer_target(pp);
 
       pp->inp3 = 1;
-      if (!pp->rttstart && call && (axp = find_ax25(NULL, call)))
+      if (!pp->rttstart && call && (axp = neighbour_find(call)))
 	nrpeer_send_rtt(pp, axp);
     }
   }
