@@ -55,6 +55,8 @@ int Shortstatus;
  * list of hardware types, and that list is this table.
  */
 extern struct cmds Attab[];
+static struct cmds Startcmds[];
+static struct cmds Stopcmds[];
 
 /* Command lookup and branch tables */
 struct cmds Cmds[] = {
@@ -129,8 +131,14 @@ struct cmds Cmds[] = {
 	{ "smtp",         dosmtp,         0, 0, NULL },
 	{ "sntp",         dosntp,         0, 0, NULL },
 	{ "source",       dosource,       0, 2, "source <filename>" },
-	{ "start",        dostart,        0, 2, "start <servername>" },
-	{ "stop",         dostop,         0, 2, "stop <servername>" },
+	{ "start",        dostart,        0, 2,
+	  "start <servername>\n"
+	  "  \"start ?\" lists the servers this build has.",
+	  Startcmds },
+	{ "stop",         dostop,         0, 2,
+	  "stop <servername>\n"
+	  "  \"stop ?\" lists what can be stopped.",
+	  Stopcmds },
 	{ "tcp",          dotcp,          0, 0, NULL },
 	{ "telnet",       dotelnet,       0, 2, "telnet <address>" },
 	{ "topt",         dotopt,         0, 0, NULL },
