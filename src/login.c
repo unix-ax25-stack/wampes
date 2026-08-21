@@ -815,6 +815,31 @@ void login_write(struct login_cb *tp, struct mbuf **bpp)
 
 /*---------------------------------------------------------------------------*/
 
+/* "start ax25" and "start netrom" read like switching on a protocol.  What
+ * they switch on is the login of this machine, reachable from the radio:
+ * every caller who gets through lands in front of /bin/login above, and
+ * under "login auto" the account he is offered is derived from his callsign.
+ * None of that is in the two words, and an operator should not have to read
+ * the source to find it out.
+ *
+ * Console AND log, the same way the EAX25 hint in lapb.c does it: logmsg()
+ * returns at once when no "log" file is configured, and the console is
+ * nothing on a node started without one.
+ */
+
+void login_announce(const char *protocol, int on)
+{
+  char msg[128];
+
+  sprintf(msg, on ?
+	  "NOTICE: %s: user login to local unix is activated now" :
+	  "INFO: %s: user login to local unix now stopped", protocol);
+  printf("%s\n", msg);
+  logmsg(NULL, "%s", msg);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int dologinauto(int argc, char *argv[], void *p)
 {
   return setbool(&Auto, "Auto login", argc, argv);

@@ -76,7 +76,10 @@ static void tnserv_state_upcall(struct tcb *tcb, enum tcp_state old, enum tcp_st
 
 int telnet0(int argc, char *argv[], void *p)
 {
-  if (tcb_server) close_tcp(tcb_server);
+  if (tcb_server) {
+    close_tcp(tcb_server);
+    login_announce("TELNET", 0);
+  }
   return 0;
 }
 
@@ -86,7 +89,10 @@ int telnet1(int argc, char *argv[], void *p)
 {
   struct socket lsocket;
 
-  if (tcb_server) close_tcp(tcb_server);
+  if (tcb_server)
+    close_tcp(tcb_server);               /* a second "start" moves the port */
+  else
+    login_announce("TELNET", 1);
   lsocket.address = INADDR_ANY;
   lsocket.port = (argc < 2) ? IPPORT_TELNET : tcp_port_number(argv[1]);
   tcb_server = open_tcp(&lsocket, NULL, TCP_SERVER, 0, tnserv_recv_upcall,

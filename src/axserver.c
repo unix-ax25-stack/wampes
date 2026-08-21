@@ -2255,6 +2255,7 @@ void axserv_connected(struct ax25_cb *axp)
 
 int ax25start(int argc, char *argv[], void *p)
 {
+  if (!Axserver_enabled) login_announce("AX.25", 1);
   Axserver_enabled = 1;
   return 0;
 }
@@ -2263,6 +2264,7 @@ int ax25start(int argc, char *argv[], void *p)
 
 int ax250(int argc, char *argv[], void *p)
 {
+  if (Axserver_enabled) login_announce("AX.25", 0);
   Axserver_enabled = 0;
   return 0;
 }

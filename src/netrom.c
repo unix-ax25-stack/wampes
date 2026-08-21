@@ -4142,6 +4142,7 @@ int donetrom(int argc, char *argv[], void *p)
 
 int nr4start(int argc, char *argv[], void *p)
 {
+  if (!server_enabled) login_announce("NET/ROM", 1);
   server_enabled = 1;
   return 0;
 }
@@ -4150,6 +4151,7 @@ int nr4start(int argc, char *argv[], void *p)
 
 int nr40(int argc, char *argv[], void *p)
 {
+  if (server_enabled) login_announce("NET/ROM", 0);
   server_enabled = 0;
   return 0;
 }

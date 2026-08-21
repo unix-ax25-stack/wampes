@@ -10,6 +10,7 @@ struct login_cb *login_open(const char *user, const char *protocol,
 	void (*read_upcall)(void *arg),
 	void (*close_upcall)(void *arg),
 	void *upcall_arg);
+void login_announce(const char *protocol, int on);
 void login_close(struct login_cb *tp);
 struct mbuf *login_read(struct login_cb *tp, int cnt);
 void login_write(struct login_cb *tp, struct mbuf **bpp);
