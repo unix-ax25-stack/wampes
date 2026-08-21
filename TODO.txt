@@ -4664,12 +4664,20 @@ AX.25-Absenderadresse ein:
     if (ap == NULL || (ap->state == ARP_VALID && run_timer(&ap->timer)))
         arp_add(ipaddr, ARP_AX25, hwaddr, 0);
 
-Zwei Dinge fehlen: die EIGENEN Adressen sind nicht ausgenommen -
-ismyaddr() (iface.c:872) beantwortet das und wird an anderen Stellen auch
-gefragt (arp.c:122, ip.c:103) - und ein bestehender Eintrag wird
-ueberschrieben, sobald sein Timer laeuft. Der auskommentierte Zweig
-daneben traegt ausgerechnet den Kommentar "Don't ever overwrite ARPs,
-only refresh them".
+WAS FEHLT, IST EINE SACHE UND NICHT ZWEI. Zuerst gelesen als "und es
+ueberschreibt bestehende Eintraege" - das stimmt so nicht, und der Code
+ist besser als der erste Blick: run_timer() ist nur wahr, wo ein Eintrag
+eine Verfallszeit hat, ein PERMANENTER hat keine. Was von Hand steht
+("arp add 44.130.254.254 ax25 igate" in der net.rc) ist also geschuetzt,
+aufgefrischt wird nur, was ohnehin gelernt war - verstaendlich, denn eine
+Station kann unter neuer AX.25-Adresse auftauchen. (Thomas' Vermutung, es
+gehe um das VJ-Bit, trifft nicht: das sitzt an der AX.25-Route,
+ax25.h:72, nicht am ARP-Eintrag.)
+
+Die eine Luecke: die EIGENEN Adressen sind nicht ausgenommen. Genau da
+fiel die .101 hinein - einen Eintrag gab es nicht (ap == NULL), also
+wurde gelernt. ismyaddr() (iface.c:872) beantwortet die Frage und wird
+anderswo auch gefragt (arp.c:122, ip.c:103).
 
 WAS ES ANRICHTET ist dieselbe Sorte Fehler wie ein Connect auf das eigene
 Rufzeichen, nur eine Schicht hoeher: Pakete an die eigene Adresse gingen
