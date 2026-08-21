@@ -138,7 +138,16 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 
 	ax25_resolve_path(hdr,&ifp,opts);
 	axp = find_ax25(hdr->source,hdr->dest);
-	if(axp != NULL && axp->services != NULL){
+	/* Taken, and a consumer is not the only way to be taken: IP in
+	 * connected mode runs over the Axlink table and attaches none at all,
+	 * so a link carrying it looks free by that question alone.  Whoever
+	 * opened it said what for (openpid), and while it stands that answer
+	 * holds - otherwise a "connect" to the same pair would adopt the link
+	 * silently and hear nothing back: it is CONNECTED already, so no state
+	 * change is left to report to the new session.
+	 */
+	if(axp != NULL && (axp->services != NULL
+	   || (axp->openpid != 0 && axp->state != LAPB_DISCONNECTED))){
 		/* Only one to a customer.  Say which refusal this is: a caller
 		 * that hears "busy" can try again under another SSID, one that
 		 * hears "invalid" can only give up - and until now it heard
