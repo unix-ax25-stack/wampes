@@ -661,9 +661,14 @@ showiface(struct iface *ifp)
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
 	dama_show(ifp);
+	/* "never" where nothing has gone yet.  The counter starts at zero, so
+	 * the difference to now is the time since 1970 - which came out as
+	 * "20686:12:19:36" on a loopback nobody had used, and reads as though
+	 * the port had been idle since before there was one.
+	 */
 	printf("           sent: ip %lu tot %lu idle %s qlen %u",
 	 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->rawsndcnt,
-	 tformat(secclock() - ifp->lastsent),
+	 ifp->lastsent ? tformat(secclock() - ifp->lastsent) : "never",
 		len_q(ifp->outq));
 	if(ifp->outlim != 0)
 		printf("/%u",ifp->outlim);
@@ -672,7 +677,7 @@ showiface(struct iface *ifp)
 	printf("\n");
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
-	 tformat(secclock() - ifp->lastrecv));
+	 ifp->lastrecv ? tformat(secclock() - ifp->lastrecv) : "never");
 	if(ifp->paclen || ifp->maxframe || ifp->emaxframe || ifp->framemax){
 		printf("           paclen %d maxframe %d emaxframe %d",
 		 ifp->paclen ? ifp->paclen : Paclen,
