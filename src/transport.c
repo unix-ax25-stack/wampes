@@ -188,12 +188,15 @@ static struct ax25_cb *transport_open_ax25(const char *address, struct transport
   int argc;
   struct ax25 hdr;
   struct ax25_cb *axp;
+  struct ax25_opts axopts;
 
   argc = 0;
   for (s = strtok(strcpy(tmp, address), delim); s; s = strtok(NULL, delim))
     argv[argc++] = s;
   if (ax25args_to_hdr(argc, argv, &hdr)) return 0;
-  if (!(axp = open_ax25(&hdr, AX_ACTIVE, 0))) return 0;
+  memset(&axopts, 0, sizeof(axopts));
+  axopts.pid = tp->pid;                 /* what we open it for, see openpid */
+  if (!(axp = open_ax25(&hdr, AX_ACTIVE, &axopts))) return 0;
   tp->svc = open_axservice(axp, tp->pid, transport_recv_upcall_ax25,
 			   transport_send_upcall_ax25,
 			   transport_state_upcall_ax25, tp);
@@ -244,6 +247,7 @@ static struct tcb *transport_open_tcp(const char *address, struct transport_cb *
 
 struct transport_cb *transport_open_target(struct ax25 *hdr, const struct ax25_opts *opts, int pid, void (*r_upcall)(struct transport_cb *tp, int cnt), void (*t_upcall)(struct transport_cb *tp, int cnt), void (*s_upcall)(struct transport_cb *tp), void *user)
 {
+  struct ax25_opts axopts;
   struct transport_cb *tp;
 
   tp = (struct transport_cb *) calloc(1, sizeof(struct transport_cb));
@@ -256,7 +260,16 @@ struct transport_cb *transport_open_target(struct ax25 *hdr, const struct ax25_o
   tp->timer.func = transport_close;
   tp->timer.arg = tp;
   Net_error = INVALID;
-  if ((tp->cb.axp = open_ax25(hdr, AX_ACTIVE, opts))
+  /* The client's pid is what this link is opened for, whatever else the
+   * caller put in opts - see openpid in lapb.h.  A client that asked for
+   * pid=flexnet gets no login started by a greeting from the far end.
+   */
+  if (opts)
+    axopts = *opts;
+  else
+    memset(&axopts, 0, sizeof(axopts));
+  axopts.pid = pid;
+  if ((tp->cb.axp = open_ax25(hdr, AX_ACTIVE, &axopts))
       && (tp->svc = open_axservice(tp->cb.axp, pid,
 				   transport_recv_upcall_ax25,
 				   transport_send_upcall_ax25,

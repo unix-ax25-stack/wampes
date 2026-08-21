@@ -172,6 +172,13 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 		axp->state = LAPB_LISTEN;
 		return axp;
 	case AX_ACTIVE:
+		/* What this link is being opened FOR.  Set before the SABM
+		 * goes out, because the answer can arrive with a greeting in
+		 * it - see openpid in lapb.h.  Nothing said means text, which
+		 * is what a plain "connect" is.
+		 */
+		axp->openpid = (opts != NULL && opts->pid) ?
+			opts->pid : PID_NO_L3;
 		break;
 	}
 	switch(axp->state){

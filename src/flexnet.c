@@ -440,8 +440,12 @@ static struct ax25_cb *setaxp(struct peer *pp)
 		 */
 		if (flex_mycall(hdr.source))
 			opts.ownsource = 1;
-		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE,
-					  opts.ownsource ? &opts : 0)))
+		/* We are calling him to speak FlexNet.  If he greets in text -
+		 * an XNET does - that frame must not reach a login here, and
+		 * must not make axserv_start() answer into the interlink.
+		 */
+		opts.pid = PID_FLEXNET;
+		if (!(pp->axp = open_ax25(&hdr, AX_ACTIVE, &opts)))
 			return 0;
 	}
 	if (pp->id != pp->axp->id) {

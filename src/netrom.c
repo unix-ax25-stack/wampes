@@ -700,6 +700,7 @@ static struct ax25_cb *neighbour_link(uint8 *call)
 {
   struct ax25 hdr;
   struct ax25_cb *axp;
+  struct ax25_opts opts;
 
   if ((axp = neighbour_find(call)) != NULL)
     return axp;
@@ -709,7 +710,9 @@ static struct ax25_cb *neighbour_link(uint8 *call)
    */
   memset(&hdr, 0, sizeof(hdr));
   addrcp(hdr.dest, call);
-  return open_ax25(&hdr, AX_ACTIVE, 0);
+  memset(&opts, 0, sizeof(opts));
+  opts.pid = PID_NETROM;                /* not a text session - see openpid */
+  return open_ax25(&hdr, AX_ACTIVE, &opts);
 }
 
 /*---------------------------------------------------------------------------*/

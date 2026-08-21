@@ -121,6 +121,22 @@ struct ax25_cb {
 	struct axservice *services;     /* Consumers, one per protocol id,
 					 * each with a queue of its own */
 
+	/* WHAT WE OPENED THIS LINK FOR, and 0 when the other end opened it.
+	 * An AX.25 link carries every protocol id at once and that is the
+	 * point - but plain text is not a protocol, it is a person or a login,
+	 * and it has no frame in which "not for you" could be written.  So a
+	 * node we called to speak FlexNet or NET/ROM, greeting us in text the
+	 * way an XNET does, would start a login here, or - worse, see
+	 * axserv_start() - answer "is not answering" into the link and hang up
+	 * the interlink.  Text flows where a text consumer asked for the link;
+	 * everywhere else an incoming text frame is dropped.
+	 *
+	 * Only for links WE opened.  On an incoming one the other end is the
+	 * one who knows what it called for, and "ax25 jumpstart" / "--wait"
+	 * are where that is decided.
+	 */
+	int openpid;
+
 	struct ax25 hdr;                /* AX25 header */
 
 	/* The other end of a link that never leaves the node: a connect to a
@@ -287,6 +303,9 @@ int kick_ax25(struct ax25_cb *axp);
 struct ax25_opts {
 	struct iface *iface;    /* go out here, whatever the route says */
 	int ownsource;          /* hdr->source is the caller's, keep it */
+	int pid;                /* WHAT WE ARE OPENING IT FOR - see openpid in
+				 * struct ax25_cb.  0 where the caller has
+				 * nothing to say, which is read as text. */
 };
 
 /* Attach a consumer to a link for one protocol id.  Returns the existing one

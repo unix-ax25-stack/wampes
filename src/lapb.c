@@ -1345,8 +1345,28 @@ struct mbuf **bpp
 	 * protocols, so that a service configured for a callsign takes what
 	 * arrives there without taking the protocol away from the node.
 	 */
-	if((sp = find_axservice(axp,pid)) == NULL)
+	if((sp = find_axservice(axp,pid)) == NULL){
+		/* PLAIN TEXT ON A LINK WE OPENED FOR SOMETHING ELSE.  We
+		 * called this station to speak FlexNet, NET/ROM or IP, and it
+		 * greets us in text the way an XNET does.  Starting a login on
+		 * that is wrong twice over: the greeting would talk to a shell
+		 * that answers it with command errors until the far end gives
+		 * up, and where a listener is configured but nobody answers,
+		 * axserv_start() sends "*** ... is not answering" into the
+		 * link and disconnects - taking the interlink with it.
+		 *
+		 * Every other protocol id rides on regardless, in both
+		 * directions: carrying several at once is what the pid is for.
+		 * Text is the exception because it is not a protocol - it has
+		 * no frame in which "not for you" could be said.
+		 */
+		if(pid == PID_NO_L3 && axp->openpid != 0
+		   && axp->openpid != PID_NO_L3){
+			free_p(bpp);
+			return;
+		}
 		sp = axserv_start(axp,pid);
+	}
 	if(sp != NULL){
 		/* One frame stays one entry on the queue.  Kernel AX.25 was
 		 * SOCK_SEQPACKET and the protocols that ride on a connection

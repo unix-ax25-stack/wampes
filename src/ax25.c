@@ -114,15 +114,18 @@ uint8 tos
 		 * source, which is the pair we just looked for.
 		 */
 		opts.iface = iface;
+		/* Opened for IP, and that is now on the record: an XNET at the
+		 * far end greets in text, which used to reach the login here.
+		 * That was the reason for the hand-made text consumer that
+		 * threw such frames away - openpid does it for every protocol
+		 * now, so the special case goes.
+		 */
+		opts.pid = PID_IP;
 		axp = open_ax25(&hdr,AX_ACTIVE,&opts);
 		if(axp == NULL){
 			free_p(bpp);
 			return -1;
 		}
-		// xnet compatibily patch by dl9sau:
-		// discard ax25 PID=text CText for compatibilty with xnet
-		(void)open_axservice(axp,PID_NO_L3,
-		 axserv_recv_upcall_discard,0,0,0);
 	}
 	if(axp->state == LAPB_DISCONNECTED){
 		est_link(axp);
