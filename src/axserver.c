@@ -196,7 +196,8 @@ int axlisten_active(const uint8 *call)
  * command with this many words is unusable without it.
  */
 
-static int user_id(const char *name, uid_t *uid, char **keep, char **home);
+static int user_id(const char *name, uid_t *uid, gid_t *gid, char **keep,
+		   char **home);
 static int group_id(const char *name, gid_t *gid);
 
 char Axlisten_usage[] =
@@ -665,8 +666,15 @@ static int axlisten_add(int netrom, int argc, char *argv[])
   if (lp->kind == LK_PROGRAM) {
     free(lp->username);
     lp->username = 0;
-    user_id(user ? user : "daemon", &lp->uid, &lp->username, &lp->home);
-    group_id(group ? group : "daemon", &lp->gid);
+    /* The user first: without --group he brings his own, which is what "su"
+     * does and what "--user root" plainly means.  Only where no account
+     * answers at all does 1 remain.
+     */
+    lp->gid = 1;
+    user_id(user ? user : "daemon", &lp->uid, &lp->gid, &lp->username,
+	    &lp->home);
+    if (group)
+      group_id(group, &lp->gid);
   } else if (user || group)
     printf("--user and --group are for a program; \"%s\" runs elsewhere\n",
 	   axlisten_targetname(lp));
@@ -780,7 +788,8 @@ int axlisten_client_claim(const uint8 *call, int pid, int ui, int fd,
  * configured is the sort of thing found much later.
  */
 
-static int user_id(const char *name, uid_t *uid, char **keep, char **home)
+static int user_id(const char *name, uid_t *uid, gid_t *gid, char **keep,
+		   char **home)
 {
   struct passwd *pw;
   char *end;
@@ -788,6 +797,7 @@ static int user_id(const char *name, uid_t *uid, char **keep, char **home)
 
   if ((pw = getpwnam(name)) != NULL) {
     *uid = pw->pw_uid;
+    *gid = pw->pw_gid;                  /* his own group, unless --group */
     free(*keep);
     *keep = strdup(name);
     free(*home);
@@ -805,6 +815,7 @@ static int user_id(const char *name, uid_t *uid, char **keep, char **home)
     *keep = 0;
     *home = 0;
     if ((pw = getpwuid(*uid)) != NULL) {
+      *gid = pw->pw_gid;
       *keep = strdup(pw->pw_name);
       if (pw->pw_dir && *pw->pw_dir) *home = strdup(pw->pw_dir);
     }

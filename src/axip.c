@@ -224,6 +224,10 @@ int axip_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname = "axip";
+  char *bindhost = 0;
+  char *av[8];
+  int ac = 0;
+  int i;
   int fd;
   int family = AF_INET;
   int port = AX25_PTCL;
@@ -233,6 +237,26 @@ int axip_attach(int argc, char *argv[], void *p)
   struct iface *ifp;
   struct sockaddr_storage addr;
   socklen_t addrlen;
+
+  /* WHICH ADDRESS TO LISTEN ON, and the only word here that is not
+   * positional - the rest is "each word needs the one before it", and a
+   * setting that is usually left out cannot live at the end of such a chain.
+   *
+   * Left out it is every address, which is what it always was and what a node
+   * on the air wants: peers turn up on whatever interface the routing gives
+   * them.  Named, it is the one - "bind=127.0.0.1" or "bind=::1" for a node
+   * that only talks to programs on the same machine, so the axudp port is not
+   * reachable from outside without a firewall in front of it.
+   */
+  for (i = 0; i < argc && ac < (int) (sizeof(av) / sizeof(av[0])); i++) {
+    if (!strncmp(argv[i], "bind=", 5)) {
+      bindhost = argv[i] + 5;
+      continue;
+    }
+    av[ac++] = argv[i];
+  }
+  argc = ac;
+  argv = av;
 
   if (argc >= 2) ifname = argv[1];
 
@@ -327,8 +351,31 @@ int axip_attach(int argc, char *argv[], void *p)
   }
 #endif
 
-  if (type == USE_UDP) {
+  if (type == USE_UDP || bindhost != NULL) {
     memset(&addr, 0, sizeof(addr));
+    if (bindhost != NULL) {
+      struct sockaddr *sa;
+      int len;
+
+      /* A raw socket has no port; binding it to an address still says which
+       * one we answer on, so the host is asked for with port 0 there.
+       */
+      if (!(sa = build_sockaddr_host(bindhost,
+				     type == USE_UDP ? port : 0, &len))) {
+	printf("cannot look up \"%s\"\n", bindhost);
+	close(fd);
+	return -1;
+      }
+      if (sa->sa_family != family) {
+	printf("\"%s\" is not an address of the family this interface "
+	       "speaks -\nuse \"udp6\"/\"ip6\" for an IPv6 address\n",
+	       bindhost);
+	close(fd);
+	return -1;
+      }
+      memcpy(&addr, sa, (size_t) len);
+      addrlen = (socklen_t) len;
+    } else {
 #if HAS_AF_INET6
     if (family == AF_INET6) {
       struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &addr;
@@ -346,6 +393,7 @@ int axip_attach(int argc, char *argv[], void *p)
       si->sin_port = htons(port);
     }
     addrlen = sockaddr_len((struct sockaddr *) &addr);
+    }
     if (bind(fd, (struct sockaddr *) &addr, addrlen)) {
       printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
