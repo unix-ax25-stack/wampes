@@ -184,7 +184,7 @@ main(int argc,char *argv[])
 	time((time_t *) &StartTime);
 	Hostname = strdup("net");
 
-	while((c = getopt(argc,argv,"gv")) != EOF){
+	while((c = getopt(argc,argv,"ghv")) != EOF){
 		switch(c){
 		case 'g':
 			Debug = 1;
@@ -192,8 +192,28 @@ main(int argc,char *argv[])
 		case 'v':
 			Verbose = 1;
 			break;
+		case 'h':
 		case '?':
-			exit(1);
+			/* There are two of them and they were written down
+			 * nowhere: no usage text, and "--help" answered with
+			 * silence, so the only way to learn them was to read
+			 * this loop.  What is NOT here is worth saying too -
+			 * everything else is a command, and the ones that
+			 * take an address or a port are asked for inside.
+			 */
+			printf("Usage: %s [-g] [-h] [-v] [<config file>]\n"
+			       "  -g  debug: keep the terminal, do not detach\n"
+			       "  -v  verbose: say what the config file does\n"
+			       "  -h  this\n"
+			       "\n"
+			       "  <config file> defaults to net.rc under the\n"
+			       "  node's directory.  Everything else is a\n"
+			       "  command, in that file or typed at the prompt;\n"
+			       "  \"?\" lists them, and \"<command> ?\" explains\n"
+			       "  one.  The service socket over TCP, for\n"
+			       "  instance, is \"start axtcp\".\n",
+			       argv[0]);
+			exit(c == 'h' ? 0 : 1);
 			break;
 		}
 	}

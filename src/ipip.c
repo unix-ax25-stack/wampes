@@ -20,6 +20,7 @@
 
 #include "mbuf.h"
 #include "iface.h"
+#include "buildsaddr.h"
 #include "timer.h"
 #include "internet.h"
 #include "netuser.h"
@@ -153,6 +154,10 @@ int ipip_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname = "ipip";
+  char *bindhost = 0;
+  char *av[8];
+  int ac = 0;
+  int i;
   int fd;
   int port = IP4_PTCL;
   int dport = 0;
@@ -160,6 +165,20 @@ int ipip_attach(int argc, char *argv[], void *p)
   struct edv_t *edv;
   struct iface *ifp;
   struct sockaddr_in addr;
+
+  /* "bind=<addr>" - which local address to answer on, the same word "attach
+   * axip" takes and for the same reason.  Left out it is every address; named
+   * it is that one.  Not positional, so it may stand anywhere in the line.
+   */
+  for (i = 0; i < argc && ac < (int) (sizeof(av) / sizeof(av[0])); i++) {
+    if (!strncmp(argv[i], "bind=", 5)) {
+      bindhost = argv[i] + 5;
+      continue;
+    }
+    av[ac++] = argv[i];
+  }
+  argc = ac;
+  argv = av;
 
   if (argc >= 2) ifname = argv[1];
 
@@ -220,11 +239,32 @@ int ipip_attach(int argc, char *argv[], void *p)
     return -1;
   }
 
-  if (type == USE_UDP) {
+  if (type == USE_UDP || bindhost != NULL) {
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(type == USE_UDP ? port : 0);
+    if (bindhost != NULL) {
+      /* IPv4 only here - ipip has no v6 transport yet, so an address that is
+       * not v4 is a mistake worth naming rather than a family to switch to.
+       */
+      struct sockaddr *sa;
+      int len;
+
+      if (!(sa = build_sockaddr_host(bindhost,
+				     type == USE_UDP ? port : 0, &len))) {
+	printf("cannot look up \"%s\"\n", bindhost);
+	close(fd);
+	return -1;
+      }
+      if (sa->sa_family != AF_INET) {
+	printf("\"%s\" is not an IPv4 address - ipip has no IPv6 transport\n",
+	       bindhost);
+	close(fd);
+	return -1;
+      }
+      memcpy(&addr, sa, sizeof(addr));
+    }
     if (bind(fd, (struct sockaddr *) &addr, sizeof(addr))) {
       printf("cannot bind address: %s\n", strerror(errno));
       close(fd);
