@@ -4684,3 +4684,77 @@ Rufzeichen, nur eine Schicht hoeher: Pakete an die eigene Adresse gingen
 ueber die Luft statt an uns selbst. Zu klaeren ist noch, WOHER ein Paket
 mit unserer Quelladresse kommt - zurueckgespiegelt, ueber eine Schleife,
 oder von einer Station, die sie fuehrt.
+
+------------------------------------------------------------------------
+IP-ROUTEN LERNEN: DREI PFADE, EIN SCHALTER, UND WAS DARAUS FOLGT
+------------------------------------------------------------------------
+Ausgangspunkt war Thomas' Beobachtung auf db0fhn: eine Hostroute wird
+immer wieder gelernt, OBWOHL das Interface auf "autoroute no" steht.
+
+    44.130.19.142   32   xnet   44.130.254.254   1   2147474
+
+DAS LERNEN SITZT AN DREI STELLEN, mit je eigener Logik, und nur eine
+fragt nach dem Schalter:
+
+    iproute.c:102   jede Quell-IP als /32 ohne Gateway.  Fragt
+                    NO_RT_ADD und nimmt ismyaddr() aus - der einzige
+                    Pfad, der beides tut.
+    config.c:459    IP ueber AX.25.  Fragt den Schalter NICHT; es SETZT
+                    ihn sogar selbst, um den generischen abzuschalten,
+                    weil es die Zuordnung besser weiss als jener.
+    ipip.c:141      IP ueber IPIP.  Fragt ihn auch nicht.
+
+WOHER DIE ROUTE KOMMT, ist damit erklaert und sie ist gewollt: der
+mittlere Pfad sieht einen PERMANENTEN ARP-Eintrag fuer die AX.25-Adresse
+des Absenders ("arp add 44.130.254.254 ax25 igate", also ohne Timer),
+dessen IP eine andere ist als die im Paket - und schliesst daraus, dass
+die fremde Adresse ueber diesen Nachbarn erreichbar ist. Genau dafuer
+traegt er eine Route MIT Gateway ein. Der Schalter greift dort nicht,
+weil dieser Pfad seine eigene Regel hat.
+
+DIE EINSCHAETZUNG ZU THOMAS' ENTWURF (2026-08-21), an seinem eigenen
+Massstab gemessen - "berechenbar, verstaendlich, ueberschaubar":
+
+  TRAEGT: EINE ACHSE, geschuetzt oder nicht. Der Haken dafuer ist schon
+  da (rt_add() weist eine Route mit ttl != 0 ab, deren Ziel ipfilter()
+  verbietet), und "ttl == 0" heisst "von Hand gesetzt". Damit ist die
+  Unterscheidung Infrastruktur/gelernt vorhanden und braucht keine neue
+  Kategorie: eine Hostroute zum tun-Interface ist permanent, also
+  unantastbar - und zwar fuer ALLE drei Pfade, nicht nur fuer den, der
+  heute zufaellig prueft.
+
+  TRAEGT NICHT: der Vertrauensrang zwischen Quellen (RIP vor NET/ROM vor
+  AX.25). Er erzeugt fuer jedes Paar eine Frage, die niemand allgemein
+  beantworten kann - Thomas stellt sie sich selbst dreimal und
+  beantwortet sie mit "vermutlich". Ohne Rang gilt: wer zuletzt kommt,
+  gewinnt, und was geschuetzt ist, wird nie ueberschrieben.
+
+  TRAEGT NICHT: "kein Match und Default vorhanden -> nicht lernen". Das
+  macht das Verhalten davon abhaengig, ob anderswo eine Default-Route
+  steht; dieselbe Konfiguration lernt dann mal und mal nicht.
+
+  DER WICHTIGSTE SATZ ist Thomas' eigener: IP UEBER AX.25 IST NICHT
+  ENTSCHEIDBAR. Ein Benutzer aus 44.130.5.x, der ueber mehrere Digis
+  direkt zu uns kommt, ist genauso legitim wie einer aus dem eigenen
+  Bereich ueber den Nachbarrepeater. Wo man nicht entscheiden kann,
+  soll man nicht raten: dort weiter lernen wie heute, nur die
+  Schutzliste achten.
+
+VORSCHLAG, DREI REGELN STATT NEUN:
+
+  1. Die drei Lernpfade auf eine gemeinsame Stelle bringen, die
+     dieselben drei Fragen stellt: ist es eine unserer Adressen
+     (ismyaddr), faellt sie in ein geschuetztes Praefix, erlaubt das
+     Interface autoroute. Heute macht das jeder anders, und genau daran
+     ist die Beobachtung entstanden.
+  2. Geschuetzt heisst: von Hand gesetzt (ttl == 0), plus was der Sysop
+     ausdruecklich in die Filterliste schreibt.
+  3. Alles Feinere spaeter in den Filter, pro Interface und Quelle - so
+     wie die Route-Filter fuer NET/ROM und FlexNet es koennen. Erst
+     wenn die Praxis es verlangt, nicht auf Verdacht.
+
+Deckt Thomas' Faelle ab: tun geschuetzt, INP3-Subnetze unangetastet,
+Benutzer-/32 lernbar, die eigene Adresse nie. Noch offen aus derselben
+Ecke: NETROM-L4-"userconnects" fuer IP - welche Netzbereiche man von
+ihnen annimmt - gehoert nach Regel 3 in den Filter und nicht in die
+Grundregel.
