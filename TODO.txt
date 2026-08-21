@@ -4602,3 +4602,77 @@ eigenem Quellcall), axnrboth.py (AX.25 und NET/ROM-L4 gleichzeitig auf
 EINEM Socket - noetig, weil axip sich den UDP-Quellport je Host merkt).
 nrproxy.py hat seit heute --announce, damit der Zielknoten bekannt ist,
 bevor gerufen wird.
+
+------------------------------------------------------------------------
+WELCHES EIGENE RUFZEICHEN - DIE VORGABEN JE PROTOKOLL (2026-08-20/21)
+------------------------------------------------------------------------
+Der Paar-Umbau hat FlexNet, NET/ROM und IP mit find_ax25(NULL, ...) stehen
+lassen: dieselbe Frage wie vorher, nur sichtbar gemacht. Was fehlte, war
+nicht die Zeile, sondern die Antwort auf "welches unserer Rufzeichen gilt
+hier" - und die ist je Protokoll eine andere. Thomas hat sie vorgegeben,
+FlexNet ist Protokollwissen und nicht ableitbar:
+
+FLEXNET: DIE KLEINSTE SSID DES BEREICHS, nicht das Rufzeichen des Ports.
+Das Protokoll legt fest, dass der Partner aus der AX.25-Verbindung die
+MIN-SSID lernt und von dort bis zur max aus FLEX_INIT ankuendigt. Nimmt
+die ausgehende Verbindung stattdessen das Portrufzeichen, stehen im Netz
+Routen mit unserem Call und UNTERSCHIEDLICHEN Bereichen - je nachdem,
+ueber welchen Port der Link zufaellig ging. Den Bereich kennt der Knoten
+schon, "flex ss" zeigt ihn ("SSIDs of DB0FHN this node answers to: 9-13").
+Also: ausgehend zum FlexNet-Partner ist die Quelle unsere min-SSID aus
+diesem Bereich. Eine Benutzersitzung auf einer anderen SSID darf dafuer
+nie genommen werden, auch wenn sie zufaellig zum selben Partner steht.
+
+IP: DAS RUFZEICHEN DES INTERFACES, und ob verbunden oder als Datagramm
+gesprochen wird, entscheidet die Kapselung des Ports ("ifconfig <if>
+encap ax25i" gegen "ax25ui"). Der UI-Zweig in axui_send() macht es schon
+so (iface->hwaddr); der verbundene Zweig muss dasselbe fragen. Daraus
+folgt unmittelbar: eine Verbindung, die von der Linux-Seite unter einer
+ANDEREN SSID aufgebaut wurde, darf fuer IP nicht benutzt werden - die
+Gegenstelle wuerde ihr ARP umlernen und uns fortan unter der falschen
+Adresse suchen.
+
+NET/ROM: DAS RUFZEICHEN DES INTERFACES, ueber das der Nachbar erreichbar
+ist - also das, was die Route ohnehin waehlt. Die Eigenheit von FlexNet
+gibt es hier nicht: der Nachbar liest die Absenderadresse nicht als
+Anker fuer einen Bereich. Deckt beide Stellen ab, nrpeer_link() und
+send_packet_to_neighbor(). Fuer INP3 gilt dasselbe, soweit wir sehen.
+
+DAS MUSTER FUER ALLE DREI ist damit dasselbe wie in open_ax25(): erst
+den Weg aufloesen, dann suchen - ax25_resolve_path() liefert Interface
+und Quellrufzeichen, und erst damit ist die Frage nach dem Paar
+stellbar. Bei FlexNet kommt die min-SSID an die Stelle des
+Portrufzeichens.
+
+------------------------------------------------------------------------
+DAS ARP-LERNEN SCHUETZT DIE EIGENE ADRESSE NICHT (Befund 2026-08-21)
+------------------------------------------------------------------------
+Auf db0fhn stand in der ARP-Tabelle:
+
+    44.130.60.101      AX.25          2119932   IGATE
+
+Das ist die eigene Adresse des Knotens ("ip addr 44.130.60.101"), und sie
+zeigte auf die Gegenstelle. Ein Neustart heilte es, die Konfiguration war
+also richtig - gelernt wurde es im Betrieb.
+
+learn() in ax25.c (der VJCOMP-Zweig, "MW: learning ARPs'n'Routes") nimmt
+aus JEDEM eingehenden IP-Paket die Quell-IP und traegt sie mit der
+AX.25-Absenderadresse ein:
+
+    ipaddr = get32((*bpp)->data + 12);
+    ap = arp_lookup(ARP_AX25, ipaddr);
+    if (ap == NULL || (ap->state == ARP_VALID && run_timer(&ap->timer)))
+        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+
+Zwei Dinge fehlen: die EIGENEN Adressen sind nicht ausgenommen -
+ismyaddr() (iface.c:872) beantwortet das und wird an anderen Stellen auch
+gefragt (arp.c:122, ip.c:103) - und ein bestehender Eintrag wird
+ueberschrieben, sobald sein Timer laeuft. Der auskommentierte Zweig
+daneben traegt ausgerechnet den Kommentar "Don't ever overwrite ARPs,
+only refresh them".
+
+WAS ES ANRICHTET ist dieselbe Sorte Fehler wie ein Connect auf das eigene
+Rufzeichen, nur eine Schicht hoeher: Pakete an die eigene Adresse gingen
+ueber die Luft statt an uns selbst. Zu klaeren ist noch, WOHER ein Paket
+mit unserer Quelladresse kommt - zurueckgespiegelt, ueber eine Schleife,
+oder von einer Station, die sie fuehrt.
