@@ -191,6 +191,23 @@ int mcast)
 
     ipaddr = get32((*bpp)->data + 12);
 
+    /* NEVER ONE OF OURS.  Nothing stops a datagram carrying our own address
+     * as its source - reflected somewhere, looped, or sent by a station that
+     * holds it - and learning from it puts our own address into the table
+     * pointing at whoever handed us the frame.  On db0fhn that read
+     *
+     *     44.130.60.101      AX.25       2119932   IGATE
+     *
+     * with .101 being the node itself, and traffic for it then went out over
+     * the air instead of to us.  A restart cured it, which is how it was
+     * found: the configuration was right all along.
+     *
+     * The generic learner in ip_route() has asked this all along
+     * (iproute.c:102); this one had not.
+     */
+    if (ismyaddr(ipaddr) != NULL)
+        return;
+
 #if 1
     ap = arp_lookup(ARP_AX25, ipaddr);
     if (ap == NULL || 

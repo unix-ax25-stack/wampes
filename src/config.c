@@ -455,7 +455,17 @@ int mcast
 	   (*bpp)->cnt >= IPLEN &&
 	   (ipaddr = get32((*bpp)->data + 12)) &&
 	   (ip_len = ((*bpp)->data[0] & 0xf) << 2) >= IPLEN &&
-	   !cksum(NULL, *bpp, ip_len)){
+	   !cksum(NULL, *bpp, ip_len) &&
+	   /* NEVER ONE OF OURS.  A datagram can carry our own address as its
+	    * source - reflected, looped, or sent by a station holding it - and
+	    * both things learned below would then be wrong: an ARP entry
+	    * pointing our own address at whoever handed us the frame, and a
+	    * route to ourselves over the air.  Seen on db0fhn as
+	    * "44.130.60.101 AX.25 IGATE", the node's own address.  The generic
+	    * learner in ip_route() has always asked this (iproute.c:102); the
+	    * two special ones had not.
+	    */
+	   ismyaddr(ipaddr) == NULL){
 		iface->flags |= NO_RT_ADD;
 		addrcp(hwaddr, src);
 		if((ap = revarp_lookup(ARP_AX25,hwaddr)) != NULL &&
