@@ -109,15 +109,19 @@ static char Defaultuser[16] = "guest";
 static char Homedir[80] = HOME_DIR "/hams";
 static char Logfiledir[80];
 static char Shell[80];
-static int Auto = 1;
-#ifdef __NeXT__
-/* NeXTstep uses netinfo rather than passwd. Until i've learned how to
- * implement this, i don't want wampes to create accounts automatically
- * by default.  - 980206 dl9sau */
+/* Both off by default.  They were on because in the nineties a node was a
+ * machine that did nothing else, and a caller who got a shell there could do
+ * no harm worth the name.  Today it is a machine with other work on it, so
+ * the decision belongs to the operator: "login auto on" maps a callsign to
+ * an account, and "login create on" makes one that does not exist yet.  A
+ * node that wants the old behaviour says so in net.rc in two lines.
+ *
+ * dl9sau 980206 had already put NeXTstep on Create = 0, for a different
+ * reason: netinfo instead of passwd, so account creation could not work
+ * there at all.  That case needs no exception any more.
+ */
+static int Auto = 0;
 static int Create = 0;
-#else
-static int Create = 1;
-#endif
 static int Gid = 400;
 static int Maxuid = MAXUID;
 static int Minuid = 400;
