@@ -103,7 +103,7 @@ struct cmds Cmds[] = {
 	  "  \"ifconfig <iface> ?\" lists the settings, \"ifconfig <iface>\n"
 	  "  <setting> ?\" explains one." },
 	{ "axsock",       doaxsock,       0, 0,
-	  "axsock [group <name>|mode <octal>]" },
+	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
 	{ "ipfilter",     doipfilter,     0, 0, NULL },
@@ -232,7 +232,6 @@ struct cmds Attab[] = {
 /* "start" and "stop" subcommands */
 static struct cmds Startcmds[] = {
 	{ "ax25",         ax25start,      0, 0, NULL },
-	{ "axtcp",        axtcpstart,     0, 0, "start axtcp [<port>]" },
 	{ "discard",      dis1,           0, 0, NULL },
 	{ "domain",       domain1,        0, 0, NULL },
 	{ "echo",         echo1,          0, 0, NULL },
@@ -249,7 +248,6 @@ static struct cmds Startcmds[] = {
 
 static struct cmds Stopcmds[] = {
 	{ "ax25",         ax250,          0, 0, NULL },
-	{ "axtcp",        axtcp0,         0, 0, "stop axtcp" },
 	{ "discard",      dis0,           0, 0, NULL },
 	{ "domain",       domain0,        0, 0, NULL },
 	{ "echo",         echo0,          0, 0, NULL },

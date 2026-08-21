@@ -113,10 +113,13 @@ static struct listener Axtcp[] = {
 };
 
 static char Axtcp_addr[2][32];
+static int Axtcp_port;                  /* 0 while nothing is listening */
 
 /*---------------------------------------------------------------------------*/
 
 static void command_receive(void *arg);
+static int axtcp_on(int port);
+static void axtcp_off(void);
 
 static char *getarg(char *line, int all)
 {
@@ -1156,6 +1159,10 @@ int doaxsock(int argc, char *argv[], void *p)
     printf("%s  mode 0%03o  uid %lu  gid %lu\n", Axsock_path,
            (unsigned) (st.st_mode & 07777),
            (unsigned long) st.st_uid, (unsigned long) st.st_gid);
+    if (Axtcp_port)
+      printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Axtcp_port);
+    else
+      printf("tcp-listen off\n");
     return 0;
   }
 
@@ -1192,7 +1199,45 @@ int doaxsock(int argc, char *argv[], void *p)
     return 0;
   }
 
-  printf("axsock [group <name>|mode <octal>]\n");
+  /* The Unix sockets are always there - they come up with the node and go
+   * down with it.  Only the TCP door is a decision, so it is a setting on
+   * axsock and not a "start axtcp": nothing gets started here, a listener
+   * that is already running just gains a second way in.
+   */
+  if (!strcmp(argv[1], "tcp-listen")) {
+    int port;
+
+    if (argc < 3) {
+      if (Axtcp_port)
+	printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Axtcp_port);
+      else
+	printf("tcp-listen off\n");
+      return 0;
+    }
+    if (!strcmp(argv[2], "off")) {
+      axtcp_off();
+      return 0;
+    }
+    if (!strcmp(argv[2], "on"))
+      port = AXTCP_PORT_DEFAULT;
+    else {
+      /* "port 8011" and a bare "8011" both, so that the word from the
+       * listing reads back as a command.
+       */
+      char *arg = strcmp(argv[2], "port") ? argv[2] : (argc > 3 ? argv[3] : "");
+
+      port = (int) strtol(arg, &end, 10);
+      if (!*arg || *end || port <= 0 || port > 65535) {
+	printf("axsock tcp-listen <on|off|port <n>>\n");
+	return 1;
+      }
+    }
+    if (Axtcp_port == port) return 0;   /* already where it is wanted */
+    axtcp_off();                        /* a new port replaces the old one */
+    return axtcp_on(port);
+  }
+
+  printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n");
   return 1;
 }
 
@@ -1280,28 +1325,15 @@ static void close_listener(struct listener *l)
 
 /*---------------------------------------------------------------------------*/
 
-/* "start axtcp [<port>]" - the loopback listeners.  Off unless asked for:
+/* The loopback listeners behind "axsock tcp-listen".  Off unless asked for:
  * a TCP port has no owner and no group, so switching it on says that every
  * local account may use the transmitter.
  */
 
-int axtcpstart(int argc, char *argv[], void *p)
+static int axtcp_on(int port)
 {
 
   int i;
-  int port;
-
-  (void) p;
-  port = (argc > 1) ? atoi(argv[1]) : AXTCP_PORT_DEFAULT;
-  if (port <= 0 || port > 65535) {
-    printf("Invalid port \"%s\"\n", argv[1]);
-    return 1;
-  }
-  if (Axtcp[0].fd >= 0 || Axtcp[1].fd >= 0) {
-    printf("axtcp is already running\n");
-    return 1;
-  }
-
 
   sprintf(Axtcp_addr[0], "127.0.0.1:%d", port);
   sprintf(Axtcp_addr[1], "[::1]:%d", port);
@@ -1314,23 +1346,23 @@ int axtcpstart(int argc, char *argv[], void *p)
    * error here, and neither is one without IPv4.
    */
   if (Axtcp[0].fd < 0 && Axtcp[1].fd < 0) {
-    complain("axtcp: neither 127.0.0.1 nor ::1 could be opened on port %d",
-	     port);
+    complain("axsock tcp-listen: neither 127.0.0.1 nor ::1 could be opened "
+	     "on port %d", port);
     return 1;
   }
+  Axtcp_port = port;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-int axtcp0(int argc, char *argv[], void *p)
+static void axtcp_off(void)
 {
   int i;
 
-  (void) argc; (void) argv; (void) p;
   for (i = 0; i < 2; i++)
     close_listener(&Axtcp[i]);
-  return 0;
+  Axtcp_port = 0;
 }
 
 /*---------------------------------------------------------------------------*/

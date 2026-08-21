@@ -38,8 +38,10 @@ data path.
 
 The service socket is `$TCPDIR/sockets/ax25` (mode 0660, group `hams` where
 that group exists), and the same service is reachable over TCP on 127.0.0.1
-and ::1 after `start axtcp [<port>]`, default 8010, which is off unless
-`net.rc` asks for it.
+and ::1 after `axsock tcp-listen on` (or `axsock tcp-listen port <n>`),
+default 8010, which is off unless `net.rc` asks for it.  It is a setting on
+`axsock` and not a `start`, because the Unix sockets are always there: what
+this switches on is a second way in, not the service.
 
 It speaks lines until the link stands and raw bytes afterwards:
 

@@ -211,7 +211,7 @@ main(int argc,char *argv[])
 			       "  command, in that file or typed at the prompt;\n"
 			       "  \"?\" lists them, and \"<command> ?\" explains\n"
 			       "  one.  The service socket over TCP, for\n"
-			       "  instance, is \"start axtcp\".\n",
+			       "  instance, is \"axsock tcp-listen on\".\n",
 			       argv[0]);
 			exit(c == 'h' ? 0 : 1);
 			break;
