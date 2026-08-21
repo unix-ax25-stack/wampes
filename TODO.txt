@@ -4943,3 +4943,54 @@ abgeleitet, und im NET/ROM-Befehlssatz aufgehoben, etwa
     netrom inp3 ip <addr>/<bits>
 
 neben dem anderen, was INP3 ueber uns aussagt.
+
+------------------------------------------------------------------------
+INP3-IP-ROUTING: DIE REIHENFOLGE (beschlossen 2026-08-21)
+------------------------------------------------------------------------
+"Baue ich erst die Henne oder das Ei - Routing-Filter oder volle
+INP3-IP-Unterstuetzung?" Es ist keins von beidem, weil der Filter in
+zwei Teile zerfaellt und nur der kleine davon vor den Import gehoert:
+
+  1. DAS EIGENE ANKUENDIGEN. "netrom inp3 ip <addr>/<bits>", ein Feld
+     setzen, das der Sendepfad schon schreiben kann (inp3_put_rip()
+     traegt es, sobald pd->inp3_ip gesetzt ist). Haengt an nichts,
+     blockiert nichts, ist beim Nachbarn sofort sichtbar.
+
+  2. DIE GEMEINSAME LERNSTELLE - NUR SIE, NICHT DER FILTER. Regel 1
+     aus "DREI REGELN STATT NEUN" weiter oben: eine Funktion, die fuer
+     jede zu lernende Route dieselben drei Fragen stellt (eigene
+     Adresse? geschuetztes Praefix? autoroute am Interface?), und an
+     die die drei vorhandenen Pfade angeschlossen werden.
+
+  3. DER INP3-IMPORT, als vierter Aufrufer dieser Stelle. DAS ist der
+     Grund fuer die Reihenfolge: der Import IST ein Lernpfad. Vor
+     Schritt 2 gebaut, waere er die vierte Sonderlocke - genau das
+     Muster, aus dem die ganze Beobachtung entstanden ist. Nach
+     Schritt 2 ist er ein Aufruf.
+
+  4. DER FILTERAUSBAU (Positivliste, je Interface und Quelle) zuletzt.
+     Bis dahin deckt Schritt 2 das Groebste ab, und getestet wird
+     ohnehin erst mit Nachbarn, die man kennt.
+
+WIE DER IMPORT AUSSIEHT, am Code geprueft - Thomas' "eher trivial"
+stimmt, und zwar genauer als gedacht. Das IPA-Feld traegt eine
+HOSTadresse mit Praefixlaenge; doc/INP3.md zeigt "INP3 ip
+44.130.1.5/28", also "ich bin .5, dahinter liegt das /28". Damit:
+
+    arp_add(44.130.1.5, ARP_NETROM, sein_call, ...)      der Knoten
+    rt_add (44.130.1.0, 28, 44.130.1.5, Nr_iface, ...)   sein Netz
+
+und nr_send() (netrom.c:2283) loest beim Senden genau dieses Gateway
+per arp_lookup(ARP_NETROM, gateway) auf. Die Zuordnung Netz -> Knoten
+ist also die Gateway-Spalte der IP-Tabelle plus der schon vorhandene
+ARP-Typ NETROM - keine dritte Liste noetig. Die Trennung, auf die es
+ankommt, bleibt trotzdem: struct node mit inp3_ip ist und bleibt die
+ANKUENDIGUNGSliste, aus der ein Nachbar B bedient wird, und sie ist
+von der IP-Routingtabelle unabhaengig. Kein Routingtabelleneintrag
+kommt der Ankuendigung in die Quere, und ein fehlender - etwa wegen
+eines Filters - nimmt ihr nichts weg.
+
+AUSTRAGEN: dort, wo INP3 einen Knoten ueber INP3_HORIZON altern laesst
+(das "gone" in inp3_put_rip()), gehoeren rt_drop() und das Loeschen
+des ARP-Eintrags dazu. Der Aufhaenger ist da, er traegt heute nur
+nichts.
