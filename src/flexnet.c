@@ -392,19 +392,40 @@ static void clear_all_via_peer(struct peer *pp, int including_peer)
 
 /*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+
+/* THE LINK TO A FLEXNET PARTNER, under OUR FlexNet callsign - which is the
+ * one at the START of our ssid range, not the callsign of whichever port the
+ * link happens to run over.
+ *
+ * That is not a preference but what the protocol says: the partner learns the
+ * range FROM the connection, from its callsign up to the maximum in
+ * FLEX_INIT, and announces it that way.  A callsign per port would put routes
+ * into the net that carry our call with DIFFERENT ranges, depending on which
+ * port a link came up on - one station seen as several.
+ *
+ * Opening it has always been right (flex_mycall() and ownsource below); it
+ * was the LOOKUP that asked "any link to him", and so could hand FlexNet a
+ * user session that happened to stand to the same station under some other
+ * ssid of ours.
+ */
+
+static struct ax25_cb *flex_link(uint8 *call)
+{
+	uint8 mine[AXALEN];
+
+	/* No range configured: nothing to be right about, ask as before. */
+	if (!flex_mycall(mine))
+		return find_ax25(NULL, call);
+	return find_ax25(mine, call);
+}
+
 static struct ax25_cb *setaxp(struct peer *pp)
 {
 	struct ax25 hdr;
 	struct ax25_opts opts;
 
-	/* NULL IS THE OLD QUESTION AND IT IS STILL THE WRONG ONE HERE: any link
-	 * to that callsign will do, whichever of ours it was opened under, and
-	 * whatever it was opened for.  Left as it was so that this pass changes
-	 * the two paths it is about and nothing else - see TODO.txt, "EINE
-	 * AX.25-VERBINDUNG IST EIN PAAR", where making the local callsign
-	 * explicit is its own step.  All four find_ax25() in this file.
-	 */
-	if (!(pp->axp = find_ax25(NULL, pp->call))) {
+	if (!(pp->axp = flex_link(pp->call))) {
 		memset(&hdr, 0, sizeof(struct ax25));
 		memset(&opts, 0, sizeof(opts));
 		addrcp(hdr.dest, pp->call);
@@ -616,7 +637,7 @@ static void delete_peer(struct peer *peer)
 					}
 				}
 			}
-			if ((pp->axp = find_ax25(NULL, pp->call)))
+			if ((pp->axp = flex_link(pp->call)))
 				disc_ax25(pp->axp);
 			*ppp = pp->next;
 			free(pp);
@@ -649,7 +670,7 @@ static void polltimer_expired(void *unused)
 		 * minutes, which is the last thing a user wants from us.
 		 */
 		if (!pp->permanent) {
-			axp = find_ax25(NULL, pp->call);
+			axp = flex_link(pp->call);
 			if (!axp || axp->state == LAPB_DISCONNECTED)
 				delete_peer(pp);
 			continue;
@@ -838,7 +859,7 @@ static int doflexnetlinklist(int argc, char *argv[], void *p)
 	 */
 	printf("Call         Remote  Local Smooth P T In        Adv Feed State\n");
 	for (pp = Peers; pp; pp = pp->next) {
-		state = (axp = find_ax25(NULL, pp->call)) ? axp->state : LAPB_DISCONNECTED;
+		state = (axp = flex_link(pp->call)) ? axp->state : LAPB_DISCONNECTED;
 		printf("%-12s %6d %6d %6d %c %c %-8s  %-3s %-4s %s\n",
 		       sprintflexcall(buf, pp->call),
 		       pp->remdelay,
