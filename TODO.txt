@@ -4400,6 +4400,43 @@ nur beim NEUAUFBAU. Schwingt IP sich auf einen bestehenden Text-Link
 auf, endet der Link mit der Textsitzung, genau wie es die Regel oben
 verlangt.
 
+ERLEDIGT AM 2026-08-21, UND ZWAR AN DER WURZEL (566183e, 951c6d3): der
+Verwerfer fuer IP ist WEG. Statt einen Dienst anzulegen, der Text
+wegwirft, merkt sich der Kontrollblock jetzt, WOFUER wir den Link
+geoeffnet haben - openpid in struct ax25_cb, gesetzt in open_ax25(),
+bevor das SABM rausgeht. handleit() verwirft einen eingehenden
+Textrahmen, wenn openpid ein anderes Protokoll ist und kein Textdienst
+dranhaengt. Damit gilt die Regel fuer FlexNet, NET/ROM und IP
+gleichermassen, nicht mehr nur fuer den einen von Hand gepatchten Fall.
+
+WAS DAS AN DIESEM ABSCHNITT ERLEDIGT: die drei "services == NULL"-
+Stellen brauchen kein Kennzeichen mehr, weil auf einer IP-Strecke gar
+kein Dienst mehr haengt. Der als "die schlimmste" beschriebene Fall -
+der Partner ruft zurueck, findet den Block, und der Zweig startet keinen
+Dienst, weil services != NULL - kann so nicht mehr entstehen. Die
+"Disconn"-Zeilen aus dieser Ecke ebenso wenig: lapb.c loescht den Block
+beim Abbau, weil services jetzt wirklich NULL ist.
+
+GEMESSEN, gegen das alte Binary, mit "flexnet ssid 5-9" und einem
+Client-Listener auf DL9SAU-5, den kein Programm beansprucht hatte:
+alt "*** DL9SAU-5 is not answering" + DISC, Zustand "Disc pend" - die
+Begruessung des Partners hat den Interlink umgebracht. Neu: Rahmen
+verworfen, FLEX_INIT und Poll gehen raus, "Connected" steht.
+
+WAS DABEI AUFFIEL UND MITKOMMT (951c6d3): ohne den Verwerfer hat eine
+IP-VC-Strecke gar keinen Consumer, und genau daran entschied
+open_ax25(), ob ein Paar belegt ist. Ein "connect" zum selben Paar
+uebernahm den stehenden Link und hoerte nie etwas - er ist ja schon
+CONNECTED, es gibt keinen Zustandswechsel mehr zu melden. Jetzt
+antwortet openpid mit, solange der Link steht: "connect failed", und die
+IP-Strecke bleibt unberuehrt.
+
+WAS OFFEN BLEIBT: der ZWEITE Verwerfer, axserver.c (heute ~2012), den
+ein fehlgeschlagenes login_open() auf einen sonst regulaeren Dienst
+setzt. Der haengt weiter am Link und haelt ihn. Fuer den gilt der
+Absatz unten unveraendert - er gehoert gekennzeichnet, dort ist ohnehin
+nichts mehr zu signalisieren.
+
 DER IDLE-DISC DES PARTNERS, UND WAS ER HINTERLAESST (Thomas, 2026-08-20):
 aus unserer Sicht ist die Textsitzung zu dem xnet nie aufgebaut worden -
 wir haben keinen Listener dafuer, wir verwerfen nur. Baut der xnet nach
@@ -4494,6 +4531,12 @@ nichts liefert, wird die Axlink-Tabelle der knoteneigenen Protokolle
 gefragt und danach verworfen, also (b). Der Weg ist gebaut; was fehlt,
 ist die Erlaubnis fuer den Nicht-Text-Dienst, beim Schliessen den Link
 NICHT mitzunehmen - dieselbe Unterscheidung wie beim Zombie weiter oben.
+
+NACHTRAG 2026-08-21: der hier beschriebene entbehrliche Textconsumer
+entsteht gar nicht mehr - siehe den Nachtrag weiter oben (566183e).
+Wo wir auf Verwerfen eingestellt sind, merken wir uns keinen
+Textconsumer, sondern openpid; die Consumer-Liste bleibt leer, und
+damit haelt auch nichts den Link, was ihn nicht halten soll.
 
 WO DIE ENTSCHEIDUNG SITZT, ist damit auch klar: in der Consumer-Liste
 axp->services. Sie ist es, die den Link am Leben haelt, und ihr letzter
