@@ -4758,3 +4758,20 @@ Benutzer-/32 lernbar, die eigene Adresse nie. Noch offen aus derselben
 Ecke: NETROM-L4-"userconnects" fuer IP - welche Netzbereiche man von
 ihnen annimmt - gehoert nach Regel 3 in den Filter und nicht in die
 Grundregel.
+
+------------------------------------------------------------------------
+FTP-SERVER: DIESELBE FRAGE WIE "start ax25", ABER DEUTLICHER BENANNT
+------------------------------------------------------------------------
+Beim Bau der Login-Ansage (start ax25/netrom/telnet sagen jetzt, dass
+sie /bin/login dieser Maschine oeffnen) fiel FTP mit auf: "start ftp"
+oeffnet ebenfalls einen Zugang mit Unix-Benutzerrechten, geht aber
+nicht durch login_open() und damit nicht durch /bin/login, sondern
+prueft selbst. Thomas' Einschaetzung, und sie stimmt: "start ftp" ist
+weniger missverstaendlich als "start ax25" - bei FTP steht das Wort
+fuer den Dateizugriff, den es auch bedeutet.
+
+Deshalb erstmal ohne Ansage. Was hier wirklich aussteht, ist nicht die
+Meldung, sondern W-35 (FTP-Auth nach axspawn-Vorbild): die eigene
+Passwortpruefung durch ein Gruppen-Gate ersetzen, statt sie zu
+verbessern. Wenn das gebaut ist, ist auch entschieden, was eine
+Meldung ueberhaupt ankuendigen wuerde.
