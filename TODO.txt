@@ -4818,3 +4818,47 @@ Meldung, sondern W-35 (FTP-Auth nach axspawn-Vorbild): die eigene
 Passwortpruefung durch ein Gruppen-Gate ersetzen, statt sie zu
 verbessern. Wenn das gebaut ist, ist auch entschieden, was eine
 Meldung ueberhaupt ankuendigen wuerde.
+
+------------------------------------------------------------------------
+RIP: DIE DEFAULT-ROUTE WIRD EINEN HOP ZU BILLIG ANGEKUENDIGT
+------------------------------------------------------------------------
+In rip.c geht jede Route mit rp->metric+1 raus - der Hop zu uns
+mitgerechnet, wie RFC 1058 es verlangt. Die Route zu uns selbst geht
+mit fester 1 raus, auch richtig. Nur die Default-Route geht mit
+R_default.metric raus, ohne +1:
+
+    if(us)
+            cp = putentry(cp,RIP_IPFAM,iface->addr,1);            /* ok */
+    ...
+            cp = putentry(cp,RIP_IPFAM,0,R_default.metric);       /* hier */
+    ...
+            cp = putentry(cp,RIP_IPFAM,rp->target,rp->metric+1);  /* ok */
+
+ERSTE FOLGE, die harmlose: mit der Standardmetrik 1 kuendigen wir
+unsere Default-Route als "1" an - so guenstig wie eine Strecke, die
+bei uns direkt angeschlossen ist. Wer zwischen mehreren Anbietern
+waehlt, nimmt uns, obwohl wir teurer sind.
+
+ZWEITE FOLGE, die unangenehme: die Metrik STEIGT beim Weiterreichen
+nicht mehr. Lernt A von B eine Default mit 2, traegt A 2 ein und
+kuendigt 2 an; C lernt 2 und kuendigt 2 an. RIPs einziger
+Schleifenschutz ist das Hochzaehlen bis RIP_INFINITY (16) - und das
+findet fuer die Default-Route nicht statt. Split Horizon daempft es
+(der Zweig ist da und kuendigt gegen das lernende Interface
+RIP_INFINITY an), aber es ist nicht dasselbe.
+
+DER FIX WAERE EINZEILIG (R_default.metric+1). Nicht gemacht, weil
+nicht gemessen: was mit RIP-Nachbarn passiert, die die Zahl seit
+dreissig Jahren so hoeren, gehoert vorher angesehen - erst recht,
+wenn das Netz Knoten anderer Bauart enthaelt. Am Code gelesen am
+2026-08-21, aufgefallen bei Thomas' Frage, was die Metrik bei "route"
+ueberhaupt bewirkt.
+
+FUER DIE PRAXIS, dieselbe Frage beantwortet: lokal bewirkt sie NICHTS.
+rt_lookup() waehlt nach der laengsten Maske und sonst nach der
+Default-Route; die Metrik kommt darin nicht vor, und zwei Routen mit
+gleichem Ziel und gleicher Maskenlaenge kann es nicht geben - rt_add()
+ueberschreibt. Sie wirkt ausschliesslich in RIP: was wir ankuendigen,
+und ob eine von einem ANDEREN Gateway gelernte Route die bestehende
+ersetzt (nur bei echt kleinerer Metrik). Von Hand gesetzte Routen
+(ttl 0, kein laufender Timer) fasst RIP ohnehin nie an.
