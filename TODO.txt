@@ -4862,3 +4862,84 @@ ueberschreibt. Sie wirkt ausschliesslich in RIP: was wir ankuendigen,
 und ob eine von einem ANDEREN Gateway gelernte Route die bestehende
 ersetzt (nur bei echt kleinerer Metrik). Von Hand gesetzte Routen
 (ttl 0, kein laufender Timer) fasst RIP ohnehin nie an.
+
+------------------------------------------------------------------------
+IP-ROUTEN: HERKUNFT SICHTBAR MACHEN, UND WARUM DIE METRIK DAFUER DAS
+FALSCHE FELD IST (Thomas, 2026-08-21)
+------------------------------------------------------------------------
+Die Frage kam aus der Praxis der grossen Protokolle: OSPF, eBGP und
+iBGP tragen ihre Routen mit je eigener Distanz ein, und man sieht der
+Tabelle an, woher eine Route stammt. Genau das ist der Wunsch: bei
+"route" erkennen, wer eine Route gesetzt hat - und nebenbei regeln,
+wer wen ueberschreiben darf.
+
+DER ENTWURF, wie Thomas ihn skizziert hat:
+    metric 1  von Hand gepflegt (tun/tap zum Linux-Host, eigene
+              Subnetze mit selbst gepflegtem ARP) - festgeklopft
+    metric 2  Hostrouten, gelernt von AX.25- und NET/ROM-Usern
+    metric 3  Praefixe via INP3 (bei /32 zu ueberlegen: 2 oder 3)
+    metric 4  Default-Route als last resort
+    dazu eine Positivliste von Netzen, aus denen ueberhaupt gelernt
+    wird - keine RFC-1918-Adressen, keine Internet-Adressen.
+
+WAS DIE METRIK KANN UND WAS NICHT: sie entscheidet nur bei GLEICHEM
+Ziel und GLEICHER Maskenlaenge. rt_lookup() geht die Praefixlaengen
+von 31 abwaerts; eine gelernte /32 schlaegt die eigene /24 ueber tap
+IMMER, mit welcher Metrik auch immer. "Festklopfen mit metric 1"
+schuetzt also die Route mit genau diesem Praefix, nicht den
+Adressbereich dahinter. Der Fall, um den es geht - ein AX.25-User
+entfuehrt eine Adresse aus dem tap-Netz -, wird davon NICHT gedeckt.
+Dafuer ist die Praefix-Schutzliste da, und die Positivliste ist
+dieselbe Achse von der anderen Seite: beides gehoert in den Filter,
+siehe den Abschnitt "DREI REGELN STATT NEUN" weiter oben.
+
+EIN SCHUTZ EXISTIERT SCHON UND IST UNBENUTZT: eine von Hand gesetzte
+Route hat ttl 0 und damit keinen laufenden Timer. RIP fragt danach und
+laesst sie in Ruhe (rip.c:622, "Don't touch permanent routes"). Die
+drei Lernpfade fragen nicht. Wenn nur "von Hand schlaegt gelernt"
+gebraucht wird, ist das eine Zeile je Lernpfad statt eines Schemas.
+
+DIE METRIK IST DAS FALSCHE FELD, aus zwei Gruenden. Erstens hat sie
+schon eine Bedeutung - Entfernung -, und RIP kuendigt sie an: eine 4
+fuer die Default-Route heisst nach aussen "vier Hops". Solange RIP aus
+ist, merkt es niemand; sobald es laeuft, tragen sich die Prioritaeten
+ins Netz. Zweitens ist eine Zahl kein Name. Wer die HERKUNFT sehen
+will, will "inp3" lesen und nicht wissen muessen, dass 3 fuer INP3
+steht.
+
+VORSCHLAG: ein zweites Feld in struct route - was andere
+administrative distance nennen - mit einem NAMEN in der Anzeige:
+
+    static | ax25 | netrom | inp3 | rip | icmp
+
+dumproute() (ipcmd.c:272) hat heute Ziel, Bits, Iface, Gateway,
+Metrik, P, Timer, Uses. Eine Spalte mehr, und die Frage "woher kommt
+diese Route" ist beantwortet, ohne die Metrik zu ueberladen. Der
+Vergleich in rt_add() entscheidet dann, wer wen ueberschreiben darf -
+die Rangfolge ist genau Thomas' Liste oben, nur eben in einem Feld,
+das nichts anderes bedeutet.
+
+STAND VON INP3, am Code geprueft, damit die Planung nicht auf
+Vermutungen steht:
+  * Das IPA-Feld (Typ 0x01) traegt GENAU EIN Praefix je Knoten:
+    sieben Byte - Laenge, Typ, vier Byte Adresse, ein Byte Maskenbits
+    (netrom.c:1728ff). Praefix beliebiger Laenge, aber nur eines, und
+    es haengt am Knoteneintrag, nicht an einer Route.
+  * netrom.c enthaelt KEIN rt_add(). Was per INP3 an IP-Praefixen
+    hereinkommt, wird gelesen, gespeichert, in "netrom nodes" gezeigt
+    ("INP3 ip 44.130.60.0/24") und weitergereicht - eine IP-Route wird
+    daraus nicht. "metric 3 fuer INP3" ist also nicht das Umstellen
+    einer Zahl, sondern der Bau des Lernpfads.
+  * inp3_ip wird nur im EMPFANGSPFAD gesetzt (netrom.c:1528). Wir
+    kuendigen keine eigene IP an.
+
+WO DAS ANKUENDIGEN HINGEHOERT: nicht in die Routing-Tabelle. Weil es
+genau ein Praefix ist und am Knoteneintrag haengt, ist es keine
+Redistribution im OSPF-Sinn, sondern eine Aussage ueber uns selbst -
+aus der Tabelle waere sie gar nicht ableitbar, die haette viele
+Kandidaten und keinen Grund, einen zu waehlen. Also gesetzt, nicht
+abgeleitet, und im NET/ROM-Befehlssatz aufgehoben, etwa
+
+    netrom inp3 ip <addr>/<bits>
+
+neben dem anderen, was INP3 ueber uns aussagt.
