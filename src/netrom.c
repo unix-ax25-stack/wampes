@@ -2377,8 +2377,16 @@ void nr3_input(struct iface *iface, struct ax25_cb *axp, const uint8 *src, struc
 
 static void routing_manager_initialize(void)
 {
+  /* THE FIRST ONE AFTER A MINUTE, not after ten seconds and not after the
+   * full interval.  Ten seconds is before the ports are reliably up on a
+   * machine that has just booted, and a node that crashes and restarts in a
+   * loop would beacon at that rate; the full 1800 s the other way leaves a
+   * node invisible for half an hour after every restart.  A minute is late
+   * enough to be quiet under a restart loop and early enough that nobody
+   * waits.
+   */
   broadcast_timer.func = send_broadcast;
-  set_timer(&broadcast_timer, 10 * 1000L);
+  set_timer(&broadcast_timer, 60 * 1000L);
   start_timer(&broadcast_timer);
   /* Not started here: with no partners configured there is nothing to do, and
    * net.rc is read after this.  donrpeer() starts it with the first entry.
