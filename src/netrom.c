@@ -825,8 +825,24 @@ static void nrpeer_send_rtt(struct nrpeer *pp, struct ax25_cb *axp)
    */
   len += sprintf(buf + len, " $N\r");
 
+  /* PADDED TO A FULL PACKET, because that is what the measurement is worth:
+   * a probe that travels as a short frame times a short frame, and the number
+   * is then announced as the cost of the link for everything.  TNN pads the
+   * same way.
+   *
+   * THE HEADER COUNTS.  The mtu bounds the whole frame, and NR3HLEN +
+   * NR4MINHDR + the pid go in front of this text - filling the text to the
+   * mtu put 21 bytes more than that on the air.  Measured against TNN, whose
+   * paclen is 236 and whose maximum is 256:
+   *
+   *     AX25: DB0TNN->DL9SAU-2 FRMR: Invalid control field Illegal I-field
+   *
+   * and the interlink never came up.
+   */
   mtu = axp->iface ? axp->iface->mtu : 256;
+  mtu -= NR3HLEN + NR4MINHDR + 1;
   if (mtu > (int) sizeof(buf)) mtu = sizeof(buf);
+  if (mtu < len) mtu = len;             /* never cut the text itself */
   while (len < mtu) buf[len++] = ' ';
 
   if (!(bp = alloc_mbuf(NR3HLEN + NR4MINHDR + len + 1))) return;
@@ -3820,9 +3836,6 @@ static int donrpeer(int argc, char *argv[], void *p)
 
       printf("%-9s  %-5s  %-10s  %-5s  %-7s  %-7s  %-7s  ", pax25(buf, pp->call),
 	     pp->anyssid ? "any" : "exact",
-	     /* Not "down" when we do not even know whom to call: an SSID-less
-	      * entry with nobody heard of yet is waiting, not failing.
-	      */
 	     axp    ? Ax25states[axp->state] :
 	     target ? "down" : "no call yet",
 	     inp3, sntt, his, last);
