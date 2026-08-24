@@ -145,6 +145,7 @@ static int donconnect(int argc, char *argv[], void *p);
 static int dobroadcast(int argc, char *argv[], void *p);
 static int dofilter(int argc, char *argv[], void *p);
 static int doident(int argc, char *argv[], void *p);
+static int doinp3(int argc, char *argv[], void *p);
 static int donkick(int argc, char *argv[], void *p);
 static int dolinks(int argc, char *argv[], void *p);
 static int donrpeer(int argc, char *argv[], void *p);
@@ -3596,17 +3597,137 @@ static int dofilter(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* WHAT WE SAY ABOUT OURSELVES, AGAIN.  INP3 sends changes, not the world:
+ * inp3_to_say() keeps quiet while the reported time is what it was, and ours
+ * is always 1 - so a changed alias or IP would sit here until the hourly
+ * sweep.  Forgetting what we told each partner about our own entry is the
+ * whole fix: the next tick finds nothing reported and says it.
+ */
+
+static void inp3_resay_self(void)
+{
+  struct nrinp3 *rp;
+  struct nrpeer *pp;
+
+  if (!mynode) return;
+  for (pp = nrpeers; pp; pp = pp->next)
+    if ((rp = inp3_route(mynode, pp, 0)) != NULL)
+      rp->reported = 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "netrom inp3 ip <addr>/<bits>" - the address a partner may reach us at, and
+ * the prefix that lies behind us.  It rides in the RIF as option 0x01 and is
+ * the only thing INP3 says about IP; inp3_put_rip() writes it as soon as it
+ * is here, because our own node goes out in the same loop as every other.
+ *
+ * ONE prefix, not a list, and it is an assertion about US - which is why it
+ * is set rather than derived from the routing table: that table would offer
+ * many candidates and no reason to pick one.  The address is a host address
+ * WITH a prefix length, the way doc/INP3.md shows it: "44.130.1.5/28" means
+ * "I am .5, and the /28 lies behind me".
+ *
+ * Taken back by saying "none".  The protocol has no withdrawal of its own for
+ * this field - a node takes it back by mentioning itself without it.
+ */
+
+static int doinp3ip(int argc, char *argv[], void *p)
+{
+  char *bitp;
+  int bits;
+  int32 addr;
+
+  (void) p;
+  if (!mynode) {
+    printf("netrom has no node entry yet\n");
+    return 1;
+  }
+  if (argc < 2) {
+    if (mynode->inp3_ip)
+      printf("INP3 ip %s/%d\n", inet_ntoa(mynode->inp3_ip),
+	     mynode->inp3_ipbits);
+    else
+      printf("INP3 ip none\n");
+    return 0;
+  }
+  if (!strcmp(argv[1], "none")) {
+    if (mynode->inp3_ip) {
+      mynode->inp3_ip = 0;
+      mynode->inp3_ipbits = 0;
+      inp3_resay_self();
+    }
+    return 0;
+  }
+
+  bits = 32;
+  if ((bitp = strchr(argv[1], '/')) != NULL) {
+    *bitp++ = '\0';
+    bits = atoi(bitp);
+  }
+  if (bits < 1 || bits > 32) {
+    printf("A prefix length from 1 to 32\n");
+    return 1;
+  }
+  if (!(addr = resolve(argv[1]))) {
+    printf(Badhost, argv[1]);
+    return 1;
+  }
+  /* Said, not refused.  The field claims that WE are reachable there, so an
+   * address that is nobody's here is worth a word - but net.rc may well name
+   * it before the interface that carries it exists, and refusing would make
+   * the order of two unrelated lines matter.
+   */
+  if (ismyaddr(addr) == NULL)
+    printf("Note: %s is not an address of this node\n", inet_ntoa(addr));
+
+  if (mynode->inp3_ip != addr || mynode->inp3_ipbits != bits) {
+    mynode->inp3_ip = addr;
+    mynode->inp3_ipbits = bits;
+    inp3_resay_self();
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int doinp3(int argc, char *argv[], void *p)
+{
+  static struct cmds inp3cmds[] = {
+    { "ip",   doinp3ip,   0, 0,
+      "netrom inp3 ip [<addr>/<bits>|none]    the address partners may reach\n"
+      "                                              us at, and what lies behind\n"
+      "  Rides in the RIF as option 0x01, the only thing INP3 says about IP.\n"
+      "  ONE prefix, and an assertion about us - a host address WITH a prefix\n"
+      "  length: \"44.130.1.5/28\" is \"I am .5, the /28 lies behind me\".\n"
+      "  \"none\" takes it back; the protocol has no withdrawal of its own, a\n"
+      "  node takes it back by mentioning itself without the field." },
+    { NULL,   NULL,       0, 0, NULL }
+  };
+
+  if (argc < 2)
+    return doinp3ip(1, argv, p);
+  return subcmd(inp3cmds, argc, argv, p);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int doident(int argc, char *argv[], void *p)
 {
 
   char *cp;
   int i;
 
-  if (argc < 2)
+  if (argc < 2) {
     printf("Ident %-6.6s\n", mynode->ident);
-  else
-    for (cp = argv[1], i = 0; i < IDENTLEN; i++)
-      mynode->ident[i] = *cp ? *cp++ : ' ';
+    return 0;
+  }
+  for (cp = argv[1], i = 0; i < IDENTLEN; i++)
+    mynode->ident[i] = *cp ? *cp++ : ' ';
+  /* The alias rides in the RIF too, and it had the same problem the IP
+   * field has - see inp3_resay_self().
+   */
+  inp3_resay_self();
   return 0;
 }
 
@@ -4118,6 +4239,8 @@ int donetrom(int argc, char *argv[], void *p)
     { "connect",  donconnect, 0, 2, "netrom connect <node> [<user>]" },
     { "filter",   dofilter,   0, 0, Rf_usage_netrom },
     { "ident",    doident,    0, 0, "netrom ident [<alias>]" },
+    { "inp3",     doinp3,     0, 0,
+      "netrom inp3 ip [<addr>/<bits>|none]    what INP3 says about us" },
     { "kick",     donkick,    0, 2, "netrom kick <nrcb>" },
     { "links",    dolinks,    0, 0, "netrom links                           our neighbours" },
     { "nodes",    donodes,    0, 0, "netrom nodes [<node>]                  the routing table" },
