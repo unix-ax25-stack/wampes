@@ -605,7 +605,16 @@ static uint8 *nrpeer_target(struct nrpeer *pp)
   if (!pp->anyssid) return pp->call;
   for (pn = nodes; pn; pn = pn->next)
     if (pn != mynode && nrpeer_match(pp, pn->call)) return pn->call;
-  return NULL;
+  /* HEARD OF HIM OR NOT, HE GETS CALLED.  An entry without an SSID is a
+   * pattern for RECOGNISING him - any SSID will do - but for CALLING one has
+   * to be chosen, and until now the choice was postponed until he turned up
+   * in a broadcast.  That tied INP3 to the broadcast, which it has no
+   * business depending on: it runs connected, and whom to call is exactly
+   * what the entry says.  A partner somebody wrote down wants to be called,
+   * so the plain callsign it is - SSID 0 - and the moment he is heard under
+   * another one, the loop above finds him and this line is not reached.
+   */
+  return pp->call;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -3836,8 +3845,7 @@ static int donrpeer(int argc, char *argv[], void *p)
 
       printf("%-9s  %-5s  %-10s  %-5s  %-7s  %-7s  %-7s  ", pax25(buf, pp->call),
 	     pp->anyssid ? "any" : "exact",
-	     axp    ? Ax25states[axp->state] :
-	     target ? "down" : "no call yet",
+	     axp ? Ax25states[axp->state] : "down",
 	     inp3, sntt, his, last);
       /* What the entry actually catches today.  With "any" it may be more
        * than one, and that is the whole point of writing it that way - so
