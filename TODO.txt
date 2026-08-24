@@ -460,6 +460,18 @@
     aufgefrischt von JEDEM DAMA-markierten Rahmen - nicht nur von Polls.
     Bei Ablauf sendok = 1, also senden statt trennen (l2dama.c).
 
+  GEGENPART STEHT SEIT 2026-08-24: TheNetNode 1.79 baut und laeuft auf
+  dem Mac, ueber AXIP mit WAMPES gekoppelt - siehe
+  ../../tnn-lab/README.md ausserhalb dieses Repos. Damit ist DAMA gegen
+  eine fremde Implementierung messbar. ABER NUR IN EINER RICHTUNG: TNNs
+  DAMA-MASTER ist da (src/l2dama.c), sein SLAVE haengt hinter
+  /*#define DAMASLAVE*/ in include/all.h und ist dort selbst als "noch
+  unvollstaendig" bezeichnet. Fuer unseren Slave also ein echter
+  Gegenpart; fuer einen eigenen Master waere TNNs Slave erst zu pruefen.
+  Der Portschalter steht je Port in tnn179.tnb ("DAMA=0").
+  Und: der Baum kq6up/tnn HAT eine Lizenzangabe (alas.txt plus Header in
+  jeder Datei) - die Einschraenkung unten gilt nicht mehr.
+
   TNN, l2dama.c und l2rx.c. LIZENZLAGE GEAENDERT (2026-08-17): der Baum
   /tmp/foo/TheNetNode-CB hat ein LICENSE - ALAS, "Allgemeine Lizenz fuer
   Amateurfunk Software", NORD><LINK 1994, aus der GPL abgeleitet und mit
