@@ -99,7 +99,12 @@ struct cmds Cmds[] = {
 	{ "ifconfig",     doifconfig,     0, 0,
 	  "ifconfig                              show every interface\n"
 	  "       ifconfig <iface>                      show one\n"
+	  "       ifconfig [<iface>] verbose            with every setting\n"
 	  "       ifconfig <iface> <setting> <value> [<setting> <value>]...\n"
+	  "  The plain listing is an overview: address, mtu, encapsulation and\n"
+	  "  what has gone through.  \"verbose\" adds the settings, and only\n"
+	  "  those a port actually has - a tun interface has no eax25 and no\n"
+	  "  crc.\n"
 	  "  \"ifconfig <iface> ?\" lists the settings, \"ifconfig <iface>\n"
 	  "  <setting> ?\" explains one." },
 	{ "axsock",       doaxsock,       0, 0,

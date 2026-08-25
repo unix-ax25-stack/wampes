@@ -20,7 +20,7 @@
 #include "lapb.h"
 #include "pidfilter.h"
 
-static void showiface(struct iface *ifp);
+static void showiface(struct iface *ifp, int verbose);
 static int mask2width(int32 mask);
 static int ifipaddr(int argc,char *argv[],void *p);
 static int iflinkadr(int argc,char *argv[],void *p);
@@ -143,37 +143,37 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
 	{ "autoroute",            ifautoroute,    0,      2,
-	  "ifconfig <iface> autoroute on|off" },
+	  "ifconfig <iface> autoroute on|off\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "digiarp",              ifdigiarp,      0,      2,
 	  "ifconfig <iface> digiarp list | add|del|addvia|delvia <digi>|-" },
 	{ "broadcast",            ifbroad,        0,      2,
-	  "ifconfig <iface> broadcast <ip address>" },
+	  "ifconfig <iface> broadcast <ip address>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "crc",                  ifcrc,          0,      2,
-	  "ifconfig <iface> crc auto|off|16|rmnc|ccitt" },
+	  "ifconfig <iface> crc auto|off|16|rmnc|ccitt\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "dama",                 ifdama,         0,      2,
-	  "ifconfig <iface> dama off|slave" },
+	  "ifconfig <iface> dama off|slave\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "damatimeout",          ifdamatimeout,  0,      2,
-	  "ifconfig <iface> damatimeout <seconds>   (0 = built-in default)" },
+	  "ifconfig <iface> damatimeout <seconds>   (0 = built-in default)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "eax25",                ifeax25,        0,      2,
-	  "ifconfig <iface> eax25 off|accept|caller|always" },
+	  "ifconfig <iface> eax25 off|accept|caller|always\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "emaxframe",            ifemaxframe,    0,      2,
-	  "ifconfig <iface> emaxframe 0..63   (0 = use the node's)" },
+	  "ifconfig <iface> emaxframe 0..63   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "encapsulation",        ifencap,        0,      2,
-	  "ifconfig <iface> encapsulation <name>" },
+	  "ifconfig <iface> encapsulation <name>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "maxframe",             ifmaxframe,     0,      2,
-	  "ifconfig <iface> maxframe 0..7   (0 = use the node's)" },
+	  "ifconfig <iface> maxframe 0..7   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "paclen",               ifpaclen,       0,      2,
-	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)" },
+	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "forward",              ifforw,         0,      2,
-	  "ifconfig <iface> forward <iface>   (send here, receive there)" },
+	  "ifconfig <iface> forward <iface>   (send here, receive there)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "ipaddress",            ifipaddr,       0,      2,
-	  "ifconfig <iface> ipaddress <ip address>" },
+	  "ifconfig <iface> ipaddress <ip address>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "linkaddress",          iflinkadr,      0,      2,
-	  "ifconfig <iface> linkaddress <call>" },
+	  "ifconfig <iface> linkaddress <call>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "mtu",                  ifmtu,          0,      2,
-	  "ifconfig <iface> mtu <bytes>" },
+	  "ifconfig <iface> mtu <bytes>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "netmask",              ifnetmsk,       0,      2,
-	  "ifconfig <iface> netmask <ip netmask>" },
+	  "ifconfig <iface> netmask <ip netmask>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "pid",                  ifpid,          0,      1,      Pid_usage },
 	{ "tncinit",              iftncinit,      0,      1,
 	  "ifconfig <iface> tncinit tapr|kenwood|kantronics|\"<sequence>\"|none" },
@@ -293,9 +293,20 @@ doifconfig(int argc,char *argv[],void *p)
 	struct iface *ifp;
 	int i;
 
+	/* "verbose" stands where an interface name would - checked before the
+	 * lookup, or it would come back as "Interface verbose unknown".
+	 */
+	if(argc == 2 && !strcmp(argv[1],"verbose")){
+		for(ifp = Ifaces;ifp != NULL;ifp = ifp->next){
+			showiface(ifp,1);
+			if(ifp->show != NULL)
+				(*ifp->show)(ifp);
+		}
+		return 0;
+	}
 	if(argc < 2){
 		for(ifp = Ifaces;ifp != NULL;ifp = ifp->next)
-			showiface(ifp);
+			showiface(ifp,0);
 		return 0;
 	}
 	if((ifp = if_lookup(argv[1])) == NULL){
@@ -303,10 +314,13 @@ doifconfig(int argc,char *argv[],void *p)
 		return 1;
 	}
 	if(argc == 2){
-		showiface(ifp);
-		if(ifp->show != NULL){
+		showiface(ifp,0);
+		return 0;
+	}
+	if(argc == 3 && !strcmp(argv[2],"verbose")){
+		showiface(ifp,1);
+		if(ifp->show != NULL)
 			(*ifp->show)(ifp);
-		}
 		return 0;
 	}
 	if(argc == 3){
@@ -643,9 +657,23 @@ ifforw(int argc,char *argv[],void *p)
 	return 0;
 }
 
-/* Display the parameters for a specified interface */
+/* Display the parameters for a specified interface.
+ *
+ * THE OVERVIEW STAYS AN OVERVIEW.  What every port has - address, mtu,
+ * encapsulation, what has gone through it - and nothing else.  The rest is
+ * "ifconfig verbose" or "ifconfig <iface> verbose", and there each line is
+ * printed only where it MEANS something: a tun interface used to be told it
+ * had "eax25: caller", a crc setting and a count of bad AX.25 headers, none
+ * of which exists on it.  ifp->iftype->type says what a port is.
+ */
+
+static int is_ax25(struct iface *ifp)
+{
+	return ifp->iftype != NULL && ifp->iftype->type == CL_AX25;
+}
+
 static void
-showiface(struct iface *ifp)
+showiface(struct iface *ifp, int verbose)
 {
 	char tmp[25];
 
@@ -656,11 +684,13 @@ showiface(struct iface *ifp)
 		printf("           Link addr %s\n",
 		 (*ifp->iftype->format)(tmp,ifp->hwaddr));
 	}
-	printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
-		ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
+	if(verbose)
+		printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
+		 ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
-	dama_show(ifp);
+	if(verbose && is_ax25(ifp))
+		dama_show(ifp);
 	/* "never" where nothing has gone yet.  The counter starts at zero, so
 	 * the difference to now is the time since 1970 - which came out as
 	 * "20686:12:19:36" on a loopback nobody had used, and reads as though
@@ -678,16 +708,39 @@ showiface(struct iface *ifp)
 	printf("           recv: ip %lu tot %lu idle %s\n",
 	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
 	 ifp->lastrecv ? tformat(secclock() - ifp->lastrecv) : "never");
-	if(ifp->paclen || ifp->maxframe || ifp->emaxframe || ifp->framemax){
-		printf("           paclen %d maxframe %d emaxframe %d",
+	if(!verbose)
+		return;
+
+	/* Says whether a route is learned from what arrives here, and that is
+	 * true of every port that carries IP - so it belongs above the AX.25
+	 * block, not inside it.  It was not shown at all until now, though it
+	 * decides behaviour.
+	 */
+	printf("           autoroute %s\n",
+	 (ifp->flags & NO_RT_ADD) ? "off" : "on");
+
+	/* Frame sizes: shown ALWAYS here, with where the number comes from.
+	 * The old condition hid exactly the normal case - a port that takes
+	 * the node's settings showed no line at all, so one could not tell
+	 * what was in force without reading the source.
+	 */
+	if(is_ax25(ifp) || ifp->framemax){
+		printf("           paclen %d%s maxframe %d%s emaxframe %d%s",
 		 ifp->paclen ? ifp->paclen : Paclen,
+		 ifp->paclen ? "" : " (node)",
 		 ifp->maxframe ? ifp->maxframe : Maxframe,
-		 ifp->emaxframe ? ifp->emaxframe : EMaxframe);
+		 ifp->maxframe ? "" : " (node)",
+		 ifp->emaxframe ? ifp->emaxframe : EMaxframe,
+		 ifp->emaxframe ? "" : " (node)");
 		if(ifp->framemax)
 			printf("  (this port carries at most %d octets)",
 			 ifp->framemax);
 		printf("\n");
 	}
+
+	if(!is_ax25(ifp))
+		return;
+
 	printf("           eax25: %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
 	 ifp->eax25 == EAX25_ALWAYS ? "always" :
