@@ -5043,8 +5043,66 @@ rtt_pp == rxpp, tic10 > prev_tic10, rxpp->rttstart == prev_tic10, und
 (tic10 - prev_tic10) < 10000. Sichtbar zu machen mit TNNs eigenem
 notify() ab Trace-Level 3.
 
-BLOCKIERT NICHTS: INP3 laeuft, wir messen, TNN routet. Und es ist TNNs
-Seite - fuer uns nur die Frage, ob wir etwas liefern, das er nicht lesen
-kann. Wenn das geklaert wird, gehoert das Ergebnis in beide Richtungen
-angesehen: ein 32-Bit-TNN im echten Netz haette das Zeigerproblem, und
-dann waere unser Zaehler (id=2,3,4,5) die Seite, die es richtig macht.
+NACHTRAG NOCH AM SELBEN TAG - GELOEST, UND ES BLOCKIERTE DOCH: der Link
+flappte im 180-Sekunden-Takt, weil TNN nach genau dieser Zeit aufgibt
+(l3rtt_service: "if (tic10 - pp->rttstart >= 18000L) discnbp(pp)").
+Gemessen:
+
+    18:43:24 DISC(P) / 18:43:25 SABM(P)
+    18:46:26 DISC(P) / 18:46:27 SABM(P)
+
+Ohne stabilen Link keine RIFs und kein IP-Announcement - also genau das,
+was zu testen war.
+
+DIE URSACHE, mit einem printf in TNN sichtbar gemacht:
+
+    rtt_pp=0x7fa8de14c030 rxpp=0x7fa8de14c030
+    tic10=6200 prev=6200 rttstart=6200 diff=0
+
+Zeiger, rttstart und Zeitschranke stimmen. Was scheiterte, war
+
+    if (tic10 > prev_tic10)      /* Uhr nicht uebergelaufen */
+
+Unsere Spiegelung kam zurueck, bevor TNNs Uhr einen Tick weiterlief. Auf
+JEDEM Link unter 10 ms ist das der Normalfall - axudp im LAN, axip auf dem
+Loopback. Zwei Zeilen weiter steht schon "rtt = (tic10 - prev_tic10) + 2",
+das +2 faengt die Null ab; die Pruefung davor liess es nur nie so weit
+kommen. ">=" statt ">" behebt es (tnn-Baum, Branch macos, 3cc8169).
+
+PRAKTISCH RELEVANT UEBER DAS LABOR HINAUS: ein WAMPES, das ueber axudp im
+selben LAN an einem TNN haengt, sieht denselben Takt. Das ist ein Fehler
+in TNN, nicht bei uns - unsere Kennung ist ein Zaehler (id=2,3,4,5), und
+ein 32-Bit-TNN im echten Netz haette zusaetzlich das Zeigerproblem oben.
+
+------------------------------------------------------------------------
+INP3 GEGEN TNN: WAS AM 2026-08-25 GEMESSEN WURDE
+------------------------------------------------------------------------
+Aufbau: ../../tnn-lab (ausserhalb dieses Repos), TheNetNode 1.79 und
+WAMPES ueber axip/UDP auf dem Loopback. Bedienung mit cnet
+(/usr/local/wampes/.sockets/netcmd) und testtools/tnncmd.py.
+
+  * INTERLINK: steht. Auf TNNs Seite gehoert ein SYSOP-Eintrag dazu -
+    "LINKS +I 0 WLAB:DL9SAU-2" (I=INP, N=NET/ROM, F=FlexNet). INP3 lernt
+    keine Nachbarn, es ruft die, die man ihm nennt; das gilt auf beiden
+    Seiten und ist keine Inkompatibilitaet, sondern Konfiguration.
+  * MESSUNG: beidseitig, nach dem TNN-Fix oben. TNN: "DL9SAU-2 I 0 1/1
+    30/---- conn.", wir: "INP3 yes, SNTT 0.03s, His 0.03s".
+  * UNSER IP-ANNOUNCEMENT KOMMT AN UND WIRD GEROUTET. Unser RIF traegt
+    das IPA-Feld korrekt (07 01 2c 82 3c 01 18 = 44.130.60.1/24), und
+    TNN macht daraus:
+
+        IP-Routes of TNNLAB:DB0TNN
+        44.130.60.0   24   NET/ROM   44.130.60.1
+
+    Voraussetzung auf TNNs Seite: eine eigene IP ("IPADDR 44.130.60.2/24")
+    - ohne die tut sein Import nichts (l3inp.c: "my_ip_addr != 0L") - und
+    Parameter 12 (AutoIPR), Vorgabe 3.
+  * IP LAEUFT DARUEBER: "ping 44.130.60.2" -> "echo reply id 0 seq 0, 0 ms",
+    ueber "attach netrom" und eine von Hand gesetzte Route plus ARP.
+  * TNN KUENDIGT UNS SEINERSEITS AN: sein RIF traegt 44.130.60.2/24, wir
+    zeigen es unter "netrom nodes DB0TNN" als "INP3 ip 44.130.60.2/24" -
+    und machen NICHTS damit. Genau die zwei Zeilen, die wir von Hand
+    setzen mussten (route add + arp add), sind Schritt 3 des Plans. Damit
+    ist der Testfall dafuer nicht mehr nachgebaut, sondern echt.
+  * KLASSISCHER BROADCAST: unser NODES-Rundspruch traegt jetzt Eintraege
+    ("DB0TNN TNNLAB DL9SAU-2 254"), TNN sendet ebenfalls welche.
