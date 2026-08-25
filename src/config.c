@@ -111,7 +111,23 @@ struct cmds Cmds[] = {
 	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
-	{ "ipfilter",     doipfilter,     0, 0, NULL },
+	{ "ipfilter",     doipfilter,     0, 0,
+	  "ipfilter                              list the rules\n"
+	  "       ipfilter allow|deny <addr>[/<bits>]\n"
+	  "       ipfilter allow|deny <addr>[/<bits>] to <addr>[/<bits>]\n"
+	  "  A block list for ADDRESSES, and no more than that.  Source and\n"
+	  "  destination are held against the same list, each on its own, and\n"
+	  "  either one is enough to drop the datagram - so the only thing it\n"
+	  "  can say is \"I do not talk to this address at all\".  No pairs, no\n"
+	  "  direction, no interface.\n"
+	  "  The second address is the OTHER END OF A RANGE, not a destination -\n"
+	  "  for spans that are not a prefix.  Both may carry /bits, and the\n"
+	  "  result is the smallest range covering both, so their order does not\n"
+	  "  matter.\n"
+	  "  FIRST MATCHING RULE WINS, not the most specific one, and an empty\n"
+	  "  list allows everything.\n"
+	  "  It also gates the LEARNING of routes (rt_add, learned ones only) -\n"
+	  "  refusing to learn an address therefore refuses to speak to it." },
 	{ "listen",       dolisten,       0, 0,      Axlisten_usage },
 	{ "log",          dolog,          0, 0, NULL },
 	{ "login",        dologin,        0, 0, NULL },

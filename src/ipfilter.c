@@ -6,6 +6,25 @@
 #include "netuser.h"
 #include "cmdparse.h"
 
+/* EINE SPERRLISTE FUER ADRESSEN, und zwar nur das.  Kein Paar aus Quelle und
+ * Ziel, keine Richtung, kein Interface: ip_route() haelt QUELLE UND ZIEL
+ * einzeln gegen dieselbe Liste, und eines von beiden genuegt zum Verwerfen.
+ * Die einzige Aussage, die sich damit treffen laesst, ist "mit dieser Adresse
+ * rede ich gar nicht".
+ *
+ * Das zweite Argument ist KEIN Ziel, sondern das andere Ende eines Bereichs -
+ * fuer Spannen, die sich nicht als Praefix schreiben lassen.  Beide Angaben
+ * gehen durch dasselbe parse(), duerfen also beide /bits tragen, und danach
+ * wird VEREINIGT statt "von...bis" gelesen: die kleinste Spanne, die beide
+ * umschliesst.  Die Reihenfolge ist damit gleichgueltig.
+ *
+ * UND SIE WIRKT AN ZWEI STELLEN, was man ihr nicht ansieht: iproute.c:97
+ * gattert die Zustellung, iproute.c:417 in rt_add() das LERNEN von Routen
+ * (nur fuer ttl != 0, also nur gelernte).  Wer eine Adresse nicht lernen
+ * will, sperrt damit zwangslaeufig auch den Verkehr mit ihr.  Siehe TODO.txt,
+ * der geplante eigene Lernfilter trennt das.
+ */
+
 #define USAGE "ipfilter allow|deny <addr>[/<bits>] [to <addr>[/<bits>]]"
 
 struct ipfilter_t {
