@@ -5369,3 +5369,124 @@ Lebensdauer werden (Stunden statt Wochen), und wenn ja, fuer Route und ARP
 gemeinsam? Ein kurzer Wert raeumt auf, kostet aber bei jedem Ablauf einen
 neuen Lernvorgang - was ueber AX.25 nichts kostet (der naechste Rahmen
 lernt ihn wieder), ueber NET/ROM ebenso.
+
+========================================================================
+ENTWURF: DER LERNFILTER FUER IP-ROUTEN UND ARP (geplant 2026-08-26)
+========================================================================
+Schritt 3 der Reihenfolge oben. Hier steht die FORM, kein Code - bei den
+Route-Filtern fuer NET/ROM und FlexNet hat sich das bewaehrt.
+
+AUSGANGSLAGE: ES GIBT SCHON EINEN FILTER, UND ER HAT DASSELBE PROBLEM
+------------------------------------------------------------------------
+"ipfilter" (seit 1999, jetzt endlich mit Hilfetext, 4c69b1d) ist eine
+SPERRLISTE FUER ADRESSEN: kein Paar aus Quelle und Ziel, keine Richtung,
+kein Interface - ip_route() haelt beide Adressen einzeln gegen dieselbe
+Liste. Das zweite Argument nach "to" ist das andere Ende eines BEREICHS,
+kein Ziel. Erste passende Regel gewinnt, leere Liste erlaubt alles.
+
+UND SIE WIRKT ZWEIMAL: iproute.c:97 gattert die Zustellung, iproute.c:417
+in rt_add() das Lernen (nur ttl != 0). Wer eine Adresse nicht lernen will,
+sperrt damit den Verkehr mit ihr. Genau das Muster, das beim
+autoroute-Flag heute aufgeloest wurde (579684f): eine Sache, zwei
+Bedeutungen.
+
+Der Haken fuer das Lernen SITZT ALSO SCHON in rt_add(). Zu tun ist nicht,
+ihn zu schaffen, sondern ihn von der Sperrliste zu trennen und um ARP zu
+erweitern.
+
+DREI ACHSEN
+------------------------------------------------------------------------
+  1. PRAEFIX - worueber wird geredet
+  2. QUELLE  - call=<rufzeichen> oder iface=<port>, und das sind ZWEI
+     verschiedene Dinge, nicht eines. Thomas' Fall zeigt warum: "igate"
+     ist ein Rufzeichen, "xnet" ein Interface, und bei ihm kommt igate
+     UEBER xnet - beide Regeln treffen dasselbe Paket.
+     call= meint ueberall "wer die Adresse fuer sich beansprucht": bei
+     AX.25 die absendende Station, bei INP3 der ANGEKUENDIGTE Knoten
+     (pd->call, nicht der Partner pp->call) - derselbe, den auch der
+     ARP-Eintrag nennt. Bei ipip gibt es kein Rufzeichen, dort ist call=
+     wirkungslos.
+  3. ART - route | arp | beides (Vorgabe: beides)
+
+     "arp ja, route nein" IST DER NORMALFALL, nicht die Ausnahme: wer das
+     Netz ohnehin zum igate routet, braucht je Host nur die Zuordnung
+     IP -> Rufzeichen, damit das Paket adressierbar wird - keine /32.
+     Umgekehrt ergibt "route ja, arp nein" nur bei Routen mit Gateway
+     Sinn, wo allein das Gateway aufzuloesen ist.
+
+WER GEWINNT: ERST DAS PRAEFIX, DANN DIE QUELLE
+------------------------------------------------------------------------
+Die Regel mit dem LAENGSTEN passenden Praefix; bei gleichem Praefix die
+mit der spezifischeren Quelle (call= vor iface= vor gar keiner). Nicht die
+Eingabereihenfolge - eine Liste soll unabhaengig davon lesbar sein, und
+rt_lookup() entscheidet auch nach laengster Maske.
+
+DIE BEGRUENDUNG IST NICHT BEQUEMLICHKEIT: der Schutz eines Praefixes ist
+eine Aussage ueber DIE ADRESSE ("hier hinein lernt niemand"), die
+Quellenangabe eine ueber DEN WEG. Kaeme die Quelle zuerst, koennte ein
+"allow ... call=igate" das eigene LAN-Netz aufreissen.
+
+Folge, die man wissen muss: "deny iface=xnet" greift schwaecher als es
+aussieht - jede Regel mit laengerem Praefix schlaegt es. Ein Mittel, eine
+QUELLE hart zu sperren, waere eine vierte Entscheidung; erst treffen, wenn
+ein Fall sie verlangt.
+
+SCHUTZ HEISST "UND ALLES DARUNTER"
+------------------------------------------------------------------------
+Der wichtigste Befund des Tages, von Thomas: 44.130.60.0/24 zeigt zum tun,
+weil dort die LAN-Dienste stehen. Kuendigt ein Knoten per INP3
+44.130.60.128/25 an, ist das ein BESSERER TREFFER - rt_lookup() nimmt die
+laengste Maske, und die halbe LAN-Haelfte wandert auf die Funkstrecke. Bei
+/32 war das schon Thema, aber INP3 kann jede Laenge.
+
+Ein "deny" muss deshalb das Praefix UND ALLES DARUNTER meinen, nicht nur
+die genaue Laenge. Das ist die Verschachtelung, die eine Metrik nicht
+leisten kann (siehe den Metrik-Abschnitt weiter oben).
+
+BEREICHE STATT NUR PRAEFIXE?
+------------------------------------------------------------------------
+ipfilter speichert lo..hi, deshalb kann es Spannen, die keine Maske sind
+(44.130.1.17 to 44.130.1.42). Wenn der Lernfilter das auch koennen soll,
+ist das Aequivalent zu "laengstes Praefix gewinnt" schlicht "KLEINSTER
+PASSENDER BEREICH GEWINNT" - dieselbe Idee, nur allgemeiner.
+
+THOMAS' TESTFAELLE (db0fhn), an denen der Entwurf zu messen ist
+------------------------------------------------------------------------
+    ip learn deny  0.0.0.0/0                    Grundhaltung
+    ip learn allow 44.130.0.0/16 call=igate     was ueber das igate kommt
+    ip learn deny  iface=xnet                   sonst nichts von xnet
+    ip learn deny  44.130.60.0/24               nie ins tun-Netz, auch
+                                                nicht von igate
+
+Ergebnis mit der Ordnung oben: von igate wird gelernt, obwohl es ueber
+xnet hereinkommt (Praefix /16 schlaegt /0); das tun-Netz bleibt geschuetzt,
+auch gegen igate (/24 schlaegt /16).
+
+Spaeter gewuenscht: Nutzer sollen xnet auf HF ansprechen duerfen - dann
+faellt die xnet-Zeile weg oder wird enger gefasst.
+
+NICHT ENTSCHIEDEN, ABER ZU WISSEN: ZWEI KNOTEN, EIN NETZ
+------------------------------------------------------------------------
+db0aaa und db0bbb kuendigen beide 44.130.90.0/24 an.
+  * Wer gewinnt? Heute nichts geregelt - inp3_ip haengt am KNOTEN, beide
+    haben einen eigenen Eintrag, und beim Import riefen beide rt_add() auf
+    dasselbe Ziel. rt_add() ueberschreibt: es gewinnt, wer zuletzt kam.
+  * Der ARP-Eintrag wird aus demselben Grund ungefragt umgeschrieben.
+  * UND DER GEFAEHRLICHE TEIL: faellt db0aaa aus, wuerden Route und ARP
+    geloescht, OBWOHL db0bbb dasselbe Netz noch anbietet. Der Rueckbau
+    darf also nicht "mein Knoten geht, alles weg" sein, sondern muss
+    fragen, ob ein anderer dasselbe Praefix noch traegt.
+  * "44.130.90.0/24 nur von db0aaa" ist mit der Quellen-Achse sagbar:
+    allow ... call=db0aaa, plus deny fuer dasselbe Praefix ohne Quelle.
+    Kostet nichts extra, wenn die Achse ohnehin kommt.
+
+WO ICH MICH KORRIGIEREN MUSSTE (damit es nicht wiederkommt)
+------------------------------------------------------------------------
+  * "Zwei Achsen reichen, die dritte blaeht nur auf" - falsch. Ohne
+    Quellen-Achse ist "von xnet nichts lernen" nicht sagbar, weil eine
+    IP-Adresse nicht sagt, woher sie kam. Bei NET/ROM-Zielen war das
+    anders, daher der Irrtum.
+  * "from=" als eine Achse - falsch, es sind zwei (call=, iface=), und
+    sie koennen einander ueberlagern.
+  * "Die Knotenadresse, nicht die Netzadresse" beim ARP-Eintrag - zu eng
+    gefasst, siehe oben.
