@@ -397,19 +397,38 @@ iflinkadr(int argc,char *argv[],void *p)
 
 /* Enable/disable the automatic learning of routes through this interface.
  */
+/* ALTLAST, UND SIE WIRD ANGENOMMEN STATT ABGELEHNT.  Ob der allgemeine
+ * Lerner arbeitet, haengt heute an der ART des Ports und nicht an einem
+ * Schalter - siehe if_learns_routes().  Eine Fehlermeldung wuerde jede
+ * bestehende net.rc anhalten, die die Zeile enthaelt, und dafuer gibt es
+ * keinen Grund: was sie einstellen wollte, ist entweder ohnehin so oder war
+ * nie wirksam.
+ *
+ * Der Schalter hatte zuletzt ZWEI Bedeutungen, und das war das eigentliche
+ * Problem: die Einstellung des Sysops, und "hier lernt schon jemand
+ * Genaueres" - config.c setzte ihn selbst, sobald ein IP-Rahmen ueber AX.25
+ * kam.  Wer "autoroute no" auf einem AX.25-Port schrieb, sah trotzdem
+ * gelernte Routen und konnte nicht sehen, warum.
+ *
+ * Was hier wirklich gewuenscht wird - bestimmte Hostrouten zulassen, andere
+ * nicht, und ein "arp add" von Hand, das nichts umlernt - kann dieser
+ * Schalter ohnehin nicht; das gehoert in den Filter (TODO.txt, "DREI REGELN
+ * STATT NEUN").
+ */
+
 static int
 ifautoroute(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
-	int enabled;
 
-	enabled = !(ifp->flags & NO_RT_ADD);
-	setbool(&enabled, "IP automatic route learning", argc, argv);
-	if (enabled) {
-		ifp->flags &= ~NO_RT_ADD;
-	} else {
-		ifp->flags |= NO_RT_ADD;
-	}
+	(void) argc; (void) argv;
+	printf("autoroute is a legacy setting and has no effect.\n");
+	printf("  Route learning follows what a port IS: %s\n",
+	 if_learns_routes(ifp) ? "netrom learns" :
+	 (ifp->iftype != NULL && ifp->iftype->type == CL_AX25) ?
+	 "on AX.25 the IP-over-AX.25 path learns, and it knows the gateway" :
+	 "this port learns nothing");
+	printf("  \"ifconfig %s verbose\" says so too.\n",ifp->name);
 	return 0;
 }
 
@@ -672,6 +691,38 @@ static int is_ax25(struct iface *ifp)
 	return ifp->iftype != NULL && ifp->iftype->type == CL_AX25;
 }
 
+/* DARF DER ALLGEMEINE LERNER IN ip_route() HIER ARBEITEN?
+ *
+ * Er stammt aus KA9Q, wo jedes Datagramm von jedem Port durch ip_route()
+ * kam: "wer mit mir spricht, ist ueber diesen Port erreichbar", eine
+ * Bequemlichkeit aus einer Zeit, in der man Routen ungern von Hand pflegte.
+ * Die Faelle sind ihm seither nacheinander abgenommen worden, und was blieb,
+ * ist genau einer:
+ *
+ *   CL_AX25   NEIN.  Der IP-ueber-AX.25-Pfad in config.c lernt hier selbst,
+ *             und er weiss mehr - er kennt den ARP-Eintrag und traegt ein
+ *             GATEWAY ein, wo die Quelle hinter einem anderen Knoten liegt.
+ *             Der allgemeine wuerde dieselbe /32 ohne Gateway darueber
+ *             schreiben.  Auf db0fhn sind beide Sorten in "route" zu sehen:
+ *             die gelernten tragen "44.130.254.254" als Gateway, die der
+ *             allgemeine haette, traegt keines.
+ *   CL_NETROM JA, und dort ist er die EINZIGE Quelle: netrom.c legt nur den
+ *             ARP-Eintrag an, ohne ihn bliebe der ohne Weg dorthin.
+ *   CL_NONE   NEIN.  loopback fuehrt zu uns selbst (ismyaddr() wirft es
+ *             ohnehin weg), encap hat der Tunnel darunter schon gelernt, und
+ *             wer ueber ein tun hinaus will, legt Routen, wie man es auf
+ *             einem Router tut.
+ *
+ * Am Interface entschieden statt an einem Schalter, weil es keine Einstellung
+ * ist: es haengt daran, WAS ein Port ist, und das aendert sich nicht.
+ */
+
+int if_learns_routes(struct iface *ifp)
+{
+	return ifp != NULL && ifp->iftype != NULL &&
+	 ifp->iftype->type == CL_NETROM;
+}
+
 static void
 showiface(struct iface *ifp, int verbose)
 {
@@ -718,8 +769,10 @@ showiface(struct iface *ifp, int verbose)
 	 * block, not inside it.  It was not shown at all until now, though it
 	 * decides behaviour.
 	 */
-	printf("           autoroute %s\n",
-	 (ifp->flags & NO_RT_ADD) ? "off" : "on");
+	printf("           route learning: %s\n",
+	 if_learns_routes(ifp) ? "yes" :
+	 is_ax25(ifp) ? "no (the IP-over-AX.25 path learns here instead)" :
+	 "no");
 
 	/* Frame sizes: shown ALWAYS here, with where the number comes from.
 	 * The old condition hid exactly the normal case - a port that takes

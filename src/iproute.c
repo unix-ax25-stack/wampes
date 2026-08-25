@@ -99,7 +99,7 @@ int rxbroadcast         /* True if packet had link broadcast address */
 		return -1;
 	}
 
-	if(i_iface != NULL && !(i_iface->flags & NO_RT_ADD) && ismyaddr(ip.source) == NULL)
+	if(if_learns_routes(i_iface) && ismyaddr(ip.source) == NULL)
 		rt_add(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, 0);
 
 	/* Process options, if any. Also compute length of secondary IP

@@ -246,4 +246,6 @@ int net_route(struct iface *ifp,struct mbuf **bpp);
 
 int mtu_ok(const char *who,long mtu);
 
+int if_learns_routes(struct iface *ifp);
+
 #endif  /* _IFACE_H */

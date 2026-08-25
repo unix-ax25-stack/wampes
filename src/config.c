@@ -469,7 +469,12 @@ int mcast
 	    * two special ones had not.
 	    */
 	   ismyaddr(ipaddr) == NULL){
-		iface->flags |= NO_RT_ADD;
+		/* Hier stand "iface->flags |= NO_RT_ADD" - der allgemeine
+		 * Lerner sollte abgeschaltet werden, damit er die Route mit
+		 * Gateway unten nicht durch eine ohne ersetzt.  Er arbeitet
+		 * auf einem AX.25-Port gar nicht mehr (if_learns_routes()),
+		 * und der Schalter hatte damit zwei Bedeutungen zugleich.
+		 */
 		addrcp(hwaddr, src);
 		if((ap = revarp_lookup(ARP_AX25,hwaddr)) != NULL &&
 		   ap->state == ARP_VALID &&
