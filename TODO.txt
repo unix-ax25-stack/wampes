@@ -5123,6 +5123,31 @@ ab. Das Flag hat damit ZWEI Bedeutungen: die Einstellung des Sysops
 Schickt man ihn durch eine gemeinsame Stelle, die autoroute prueft,
 schaltet er sich selbst ab - er hat das Flag ja gerade gesetzt.
 
+WAS DER AUTOR DAMIT WOLLTE, aus dem Code rekonstruiert, und es ist
+stimmig: auf einem AX.25-Port ist eine Hostroute OHNE Rufzeichen
+wertlos. Das Interface allein sagt nicht, an WEN das Paket geht - dazu
+braucht es den ARP-Eintrag IP -> Call, und den kann man auf einem
+Punkt-zu-Punkt-Link nicht einfach per Broadcast erfragen wie auf
+Ethernet. Deshalb lernt der AX.25-Pfad beides zusammen (rt_add PLUS
+arp_add), waehrend der generische nur "kam ueber dieses Interface"
+sieht und eine Route ohne Rufzeichen eintraegt - eine Route ins Leere.
+
+Der zweite, schwerere Fall: die Quelle liegt HINTER einem anderen
+Knoten. Ein Datagramm von X kommt ueber die Verbindung zu Y herein. Der
+spezialisierte Lerner fragt per revarp, ob X ueberhaupt zu diesem
+Rufzeichen gehoert, und traegt sonst ein Gateway ein - "X ist ueber Y
+erreichbar". Der generische wuerde daraus "X haengt direkt an diesem
+Port" machen und die Gateway-Information wegwerfen. Und weil ip_route()
+am Ende derselben Funktion laeuft, kaeme er unmittelbar danach dran.
+
+Die Absicht ist also: "auf diesem Port lernt der spezialisierte, der
+generische hat hier nichts mehr zu suchen." Richtig gedacht - nur ist
+NO_RT_ADD zugleich der Schalter, den "ifconfig <iface> autoroute"
+bedient. Ein Bit traegt zwei Bedeutungen, eine Einstellung des Sysops
+und eine interne Vorfahrtsregel, und die interne ueberschreibt die
+andere stillschweigend beim ersten IP-Rahmen. Genau das war auf xnet zu
+sehen. Was A oben trennen wuerde, ist eben dieses Bit.
+
   A  AUTOROUTE GILT FUER ALLE. config.c setzt das Flag nicht mehr; damit
      der generische die genauere Route nicht ueberschreibt, lernt die
      gemeinsame Stelle eine Regel: eine bestehende Route MIT Gateway wird
