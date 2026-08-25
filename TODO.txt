@@ -5160,5 +5160,30 @@ sehen. Was A oben trennen wuerde, ist eben dieses Bit.
      wird ein sauberer Aufruf - aber die Uneinheitlichkeit bleibt, nur an
      einer Stelle sichtbar statt an dreien.
 
+PRAEZISIERUNG ZU A (Thomas' Frage, 2026-08-25): heute fragt der
+AX.25-Lerner autoroute GAR NICHT - er lernt immer und setzt das Flag nur,
+um den generischen loszuwerden. Erst mit A wuerde die Einstellung dort
+ueberhaupt wirken. Dabei faellt auf, dass Route und ARP am selben if
+haengen:
+
+    } else if (kein gueltiger ARP-Eintrag) {
+        rt_add(ipaddr, 32, 0L, iface, ...);
+        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+    }
+
+Ein "autoroute off" auf einem AX.25-Port wuerde also auch das ARP-Lernen
+abschalten - und damit IP ueber diesen Port ganz abwuergen, denn ohne die
+Zuordnung IP -> Rufzeichen ist kein Paket adressierbar.
+
+ALSO GILT FUER A: autoroute steuert das ROUTEN-Lernen, nicht das
+ARP-Lernen. Der ARP-Eintrag ist Nachbarschaftswissen ("hinter welchem
+Rufzeichen sitzt diese Adresse"), keine Routing-Entscheidung, und er
+kostet nichts.
+
+Thomas' Gegenbeispiel stuetzt die Trennung: auf einem tun zum Host gibt
+es gar kein ARP, nur Routen, und eine Default-Route reicht - dort ist
+"autoroute off" sinnvoll und harmlos. Auf einem AX.25-Port waere
+dieselbe Einstellung mit gekoppeltem ARP verheerend.
+
 Vorschlag war A, weil B den Grund fuer Schritt 2 nicht einloest. Thomas
 denkt darueber nach (2026-08-25).
