@@ -5269,11 +5269,23 @@ UEBERFLUESSIG:
 Dann deckt die Netzroute den Fall schon ab, und weder /32 noch ARP je Host
 werden gebraucht. Gebraucht wird nur, was zur Netzroute gehoert:
 
-    arp_add(<knoten-ip>, ARP_NETROM, <sein call>)   das Gateway aufloesen
-    rt_add(<netz>, <bits>, <knoten-ip>, Nr_iface)   das Netz ueber ihn
+    arp_add(<angekuendigte adresse>, ARP_NETROM, <sein call>)
+    rt_add(<maskiertes netz>, <bits>, <angekuendigte adresse>, Nr_iface)
 
-(Die Knotenadresse, NICHT die Netzadresse - eine .0 ist nie Ziel einer
-ARP-Aufloesung.)
+DIE ANGEKUENDIGTE ADRESSE, ohne zu fragen ob Host- oder Netzadresse
+(Thomas' Korrektur, 2026-08-26): sie kann beides sein. Ein Knoten kann
+44.130.1.5/28 melden - dann ist sie seine eigene -, aber ebenso
+44.130.2.0/24 fuer ein Netz, dessen Adresse er selbst nicht traegt; dann
+kennen wir seine Hostadresse gar nicht. Beides funktioniert, weil das
+Gateway hier NUR EIN SCHLUESSEL IN DIE ARP-TABELLE ist und kein Ziel, das
+jemand ansprechen muss: ein Paket an 44.130.2.55 findet die /24, und
+nr_send() (netrom.c:2290) fragt arp_lookup(ARP_NETROM, 44.130.2.0) und
+bekommt DB0XYZ - das Rufzeichen, das auf die Luft muss. Dass eine .0
+"eigentlich" keine Hostadresse ist, stoert dabei niemanden.
+
+TNN unterscheidet die beiden Faelle ebenfalls nicht (l3inp.c:441): es
+nimmt ip_adr als Gateway und als ARP-Schluessel und maskiert nur fuer die
+Routenadresse.
 
 WARUM DAS MEHR IST ALS SPARSAMKEIT: gelernte /32 haben eine Lebensdauer
 von 0x7fffffff/1000, also rund 24 Tage - auf db0fhn stehen genau solche in
