@@ -5287,6 +5287,21 @@ TNN unterscheidet die beiden Faelle ebenfalls nicht (l3inp.c:441): es
 nimmt ip_adr als Gateway und als ARP-Schluessel und maskiert nur fuer die
 Routenadresse.
 
+DER ARP-EINTRAG ZEIGT AUF DEN ANGEKUENDIGTEN KNOTEN, NICHT AUF DEN
+PARTNER, ueber den die Ankuendigung kam - also DB0XYZ und nicht DB0TNN.
+Thomas hat die Gegenprobe durchgedacht, und sie faellt klar aus:
+nr_send() (netrom.c:2290) benutzt das Ergebnis des ARP-Lookups als
+ZIELKNOTEN IM L3-HEADER, nicht als naechsten Hop. Steht dort DB0XYZ,
+sucht NET/ROM den Weg selbst und DB0TNN reicht das Paket durch, ohne es
+anzusehen - genau das ist gewollt. Stuende dort DB0TNN, endete das Paket
+bei ihm: er muesste auspacken, IP-Routing machen und neu verpacken, also
+als IP-Router arbeiten, wofuer er nicht gedacht ist - und die
+INP3-Zuordnung waere dabei verloren.
+
+Beim Bauen zaehlt das, weil die beiden im Empfangspfad nebeneinander
+stehen: pd->call ist der angekuendigte Knoten, pp->call der Partner. TNN
+nimmt np->id, also den angekuendigten.
+
 WARUM DAS MEHR IST ALS SPARSAMKEIT: gelernte /32 haben eine Lebensdauer
 von 0x7fffffff/1000, also rund 24 Tage - auf db0fhn stehen genau solche in
 "route" (Timer ~2147482). Sie verschwinden praktisch nie, auch wenn der
