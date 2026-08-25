@@ -211,7 +211,17 @@ dumparp(void)
 		for(ap = Arp_tab[i];ap != (struct arp_tab *)NULL;ap = ap->next){
 			printf("%-18.18s ",inet_ntoa(ap->ip_addr));
 			printf("%-15s",smsg(Arptypes,NHWTYPES,ap->hardware));
-			printf("%7ld ",read_timer(&ap->timer)/1000L);
+			/* Eine 0 in der Zeitspalte heisst nicht "laeuft gleich
+			 * ab", sondern das Gegenteil: kein Timer, also von Hand
+			 * gesetzt und dauerhaft.  Genau daran erkennen die drei
+			 * Lernpfade den Eintrag, den sie nicht umlernen duerfen
+			 * (arp.c:117, config.c:474, netrom.c:2097) - das gehoert
+			 * dann auch dahin geschrieben.
+			 */
+			if(dur_timer(&ap->timer) == 0)
+				printf("   perm ");
+			else
+				printf("%7ld ",read_timer(&ap->timer)/1000L);
 			if(ap->state == ARP_PENDING)
 				printf("%-2u",len_q(ap->pending));
 			else

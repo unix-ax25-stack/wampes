@@ -5108,7 +5108,37 @@ WAMPES ueber axip/UDP auf dem Loopback. Bedienung mit cnet
     ("DB0TNN TNNLAB DL9SAU-2 254"), TNN sendet ebenfalls welche.
 
 ------------------------------------------------------------------------
-OFFENE ENTSCHEIDUNG ZU SCHRITT 2 (gemeinsame Lernstelle)
+ERLEDIGT (2026-08-26, 579684f): WEDER A NOCH B - autoroute ist Altlast
+------------------------------------------------------------------------
+Thomas' Weg, und er ist besser als beide Vorschlaege: die Frage IST keine
+Einstellung. Sie haengt daran, WAS ein Port ist, und das aendert sich
+nicht. if_learns_routes() beantwortet sie an einer Stelle:
+
+    CL_AX25    nein - der IP-ueber-AX.25-Pfad lernt selbst und kennt das
+               Gateway; der allgemeine wuerde seine Route ueberschreiben
+    CL_NETROM  ja, und dort die EINZIGE Quelle (netrom.c legt nur ARP an)
+    CL_NONE    nein - loopback fuehrt zu uns selbst, encap hat der Tunnel
+               darunter gelernt, und ueber ein tun legt man Routen
+
+"ifconfig <iface> autoroute on|off" wird ANGENOMMEN und meldet, dass es
+wirkungslos ist. Kein Fehler: bestehende net.rc-Dateien sollen nicht
+anhalten, und was die Zeile wollte, ist entweder ohnehin so oder war nie
+wirksam. config.c und main.c setzen das Flag nicht mehr - die
+Doppelbedeutung ist weg, nicht nur sichtbar gemacht.
+
+Gemessen: TNN pingt uns ueber NET/ROM, Route (allgemein, ohne Gateway) und
+ARP-Eintrag (netrom.c) erscheinen beide; auf axip laeuft weiter der
+spezialisierte Lerner.
+
+FOLGE FUER SCHRITT 2: die gemeinsame Lernstelle wird kleiner. Von den drei
+Fragen bleiben zwei - eigene Adresse, geschuetztes Praefix. Die dritte, an
+der sich die Sonderfaelle festmachten, gibt es nicht mehr.
+
+Der Abschnitt unten ist damit Geschichte und bleibt nur als Herleitung
+stehen.
+
+------------------------------------------------------------------------
+ERLEDIGTE ENTSCHEIDUNG - DIE HERLEITUNG (Schritt 2, gemeinsame Lernstelle)
 ------------------------------------------------------------------------
 Beim Bauen kam eine Falle ans Licht, und sie beruehrt genau Thomas'
 urspruenglichen Befund ("autoroute no auf xnet, trotzdem gelernt").
@@ -5187,3 +5217,37 @@ dieselbe Einstellung mit gekoppeltem ARP verheerend.
 
 Vorschlag war A, weil B den Grund fuer Schritt 2 nicht einloest. Thomas
 denkt darueber nach (2026-08-25).
+
+------------------------------------------------------------------------
+ARP: WAS ES SCHON GIBT, UND WAS FEHLT (Thomas, 2026-08-26)
+------------------------------------------------------------------------
+Gewuenscht waren ein ARP-Nicht-Lern-Filter und ein "arp add permanent",
+das Umlernen verbietet - die Syntax kennt er aus Linux ("arp -s").
+
+DAS PERMANENTE GIBT ES BEREITS, es war nur nicht zu sehen. arpcmd.c:121:
+
+    ap = arp_add(addr,hardware,hwaddr,pub);
+    stop_timer(&ap->timer);                 /* Make entry permanent */
+    set_timer(&ap->timer,0L);
+
+Ein von Hand gesetzter Eintrag hat keinen Timer, und genau daran erkennen
+ihn alle drei Lernpfade: arp.c:117 (dur_timer != 0), config.c:474 und
+netrom.c:2097 (run_timer). Keiner lernt ihn um. Ein Schluesselwort
+"permanent" braucht es also nicht - "arp add" IST es.
+
+SICHTBAR GEMACHT: die Zeitspalte zeigt jetzt "perm" statt einer 0, die man
+deuten musste (eine 0 sah aus wie "laeuft gleich ab" und heisst das
+Gegenteil).
+
+ZWEI LUECKEN BLEIBEN, und beide in derselben Ecke wie die Routen:
+
+  1. arp_add() SELBST SCHUETZT NICHTS. Es ueberschreibt Adresse und Timer
+     bedingungslos; der Schutz liegt bei den Aufrufern und ist dreimal
+     abgeschrieben. Wer einen VIERTEN Lernpfad baut - der INP3-Import ist
+     genau das - muss daran denken, sonst reisst er permanente Eintraege
+     ein. Gehoert in dieselbe gemeinsame Stelle wie das Routenlernen: eine
+     Funktion, die die Frage einmal stellt.
+  2. EIN NICHT-LERN-FILTER FUER ARP FEHLT. "Aus diesem Bereich lerne ich
+     keine ARP-Eintraege" ist heute nicht sagbar, auch nicht indirekt. Das
+     ist die ARP-Haelfte dessen, was fuer Routen unter "DREI REGELN STATT
+     NEUN" steht, und es gehoert dorthin - zwei Achsen, eine Liste.
