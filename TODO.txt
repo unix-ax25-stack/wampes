@@ -5006,3 +5006,45 @@ AUSTRAGEN: dort, wo INP3 einen Knoten ueber INP3_HORIZON altern laesst
 (das "gone" in inp3_put_rip()), gehoeren rt_drop() und das Loeschen
 des ARP-Eintrags dazu. Der Aufhaenger ist da, er traegt heute nur
 nichts.
+
+------------------------------------------------------------------------
+VERTAGT: TNN MISST UNSERE LAUFZEIT NICHT (2026-08-25, im Labor gesehen)
+------------------------------------------------------------------------
+INP3 zwischen WAMPES und TNN 1.79 laeuft - aber die Messung nur in EINER
+Richtung. Wir messen TNN (netrom peer: "INP3 yes, SNTT 0.03s"), TNN meldet
+uns dauerhaft 0, deshalb bleibt bei uns die Spalte "His" leer und in TNNs
+ROUTES steht "L3SRTT ----/----".
+
+Der Austausch selbst ist in Ordnung, mit testtools/l3rttdump.py aus einem
+Trace gelesen:
+
+    -> DL9SAU-2 ttl2 tic=95069657 srtt=3 rtt=2 id=2                (wir)
+    <- DL9SAU-2 ttl1 tic=95069657 srtt=3 rtt=2 id=2                (TNN spiegelt)
+    <- DB0TNN   ttl2 tic=4784800  srtt=0 rtt=0 id=140197867339824  (TNN)
+    -> DB0TNN   ttl1 tic=4784800  srtt=0 rtt=0 id=140197867339824  (wir spiegeln)
+
+Byteweise verglichen: unsere Spiegelung gibt sein Frame unveraendert
+zurueck, nur die TTL dekrementiert - und das tut TNN mit unseren Frames
+genauso.
+
+DREI VERDAECHTIGE SIND AUSGESCHLOSSEN:
+  * NICHT der 64-Bit-Zeiger. TNN schreibt (ULONG)pp als Kennung und liest
+    sie mit "%lu" in (long *)&rtt_pp zurueck; auf LP64 sind long und
+    Zeiger beide 8 Byte, und im Trace kommt der Wert unveraendert zurueck.
+    Auf einem 32-Bit-System waere genau das der Fehler.
+  * NICHT die Uhr. Erster Eindruck taeuschte (der Parser schnitt den
+    Zeitstempel ab): TNNs Proben liegen 182 s auseinander, das passt zu
+    18200 Ticks a 10 ms. os/linux/linux.c rechnet richtig.
+  * NICHT die TTL. TNN liest sie an der Stelle nur, ohne auf 0 zu pruefen;
+    die L3RTT-Auswertung kommt danach.
+
+BLEIBT rx_l3rtt_frame() (tnn/src/l3rtt.c:309) mit seinen vier Bedingungen:
+rtt_pp == rxpp, tic10 > prev_tic10, rxpp->rttstart == prev_tic10, und
+(tic10 - prev_tic10) < 10000. Sichtbar zu machen mit TNNs eigenem
+notify() ab Trace-Level 3.
+
+BLOCKIERT NICHTS: INP3 laeuft, wir messen, TNN routet. Und es ist TNNs
+Seite - fuer uns nur die Frage, ob wir etwas liefern, das er nicht lesen
+kann. Wenn das geklaert wird, gehoert das Ergebnis in beide Richtungen
+angesehen: ein 32-Bit-TNN im echten Netz haette das Zeigerproblem, und
+dann waere unser Zaehler (id=2,3,4,5) die Seite, die es richtig macht.
