@@ -5106,3 +5106,34 @@ WAMPES ueber axip/UDP auf dem Loopback. Bedienung mit cnet
     ist der Testfall dafuer nicht mehr nachgebaut, sondern echt.
   * KLASSISCHER BROADCAST: unser NODES-Rundspruch traegt jetzt Eintraege
     ("DB0TNN TNNLAB DL9SAU-2 254"), TNN sendet ebenfalls welche.
+
+------------------------------------------------------------------------
+OFFENE ENTSCHEIDUNG ZU SCHRITT 2 (gemeinsame Lernstelle)
+------------------------------------------------------------------------
+Beim Bauen kam eine Falle ans Licht, und sie beruehrt genau Thomas'
+urspruenglichen Befund ("autoroute no auf xnet, trotzdem gelernt").
+
+Der AX.25-Lerner (config.c:466ff) ist GENAUER als der generische: er
+kennt den ARP-Eintrag und traegt gegebenenfalls ein Gateway ein. Damit
+der generische ihn nicht gleich danach ueberschreibt - ip_route() laeuft
+in derselben Funktion -, schaltet er ihn mit "iface->flags |= NO_RT_ADD"
+ab. Das Flag hat damit ZWEI Bedeutungen: die Einstellung des Sysops
+(autoroute) und "hier lernt schon jemand Genaueres".
+
+Schickt man ihn durch eine gemeinsame Stelle, die autoroute prueft,
+schaltet er sich selbst ab - er hat das Flag ja gerade gesetzt.
+
+  A  AUTOROUTE GILT FUER ALLE. config.c setzt das Flag nicht mehr; damit
+     der generische die genauere Route nicht ueberschreibt, lernt die
+     gemeinsame Stelle eine Regel: eine bestehende Route MIT Gateway wird
+     nicht durch eine OHNE ersetzt. Loest den alten Befund wirklich -
+     "autoroute no" heisst dann ueberall "nicht lernen" -, ist aber eine
+     Verhaltensaenderung an einer Stelle, die auf db0fhn laeuft.
+
+  B  NUR ZUSAMMENFASSEN. Die gemeinsame Stelle stellt die Fragen, jeder
+     Aufrufer sagt weiter, welche fuer ihn gelten. Risikofrei, der Import
+     wird ein sauberer Aufruf - aber die Uneinheitlichkeit bleibt, nur an
+     einer Stelle sichtbar statt an dreien.
+
+Vorschlag war A, weil B den Grund fuer Schritt 2 nicht einloest. Thomas
+denkt darueber nach (2026-08-25).
