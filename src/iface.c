@@ -724,36 +724,46 @@ showiface(struct iface *ifp, int verbose)
 	 * the node's settings showed no line at all, so one could not tell
 	 * what was in force without reading the source.
 	 */
+	/* "ax25:" in front of every line these settings live on, the way
+	 * "sent:" and "recv:" name theirs.  A value taken from the node rather
+	 * than set on the port is marked with "*" and the footnote says so
+	 * once - three times "(node)" in one line said the same and read like
+	 * part of the number.
+	 */
 	if(is_ax25(ifp) || ifp->framemax){
-		printf("           paclen %d%s maxframe %d%s emaxframe %d%s",
+		int inherited = !ifp->paclen || !ifp->maxframe || !ifp->emaxframe;
+
+		printf("           ax25: paclen %d%s maxframe %d%s emaxframe %d%s",
 		 ifp->paclen ? ifp->paclen : Paclen,
-		 ifp->paclen ? "" : " (node)",
+		 ifp->paclen ? "" : "*",
 		 ifp->maxframe ? ifp->maxframe : Maxframe,
-		 ifp->maxframe ? "" : " (node)",
+		 ifp->maxframe ? "" : "*",
 		 ifp->emaxframe ? ifp->emaxframe : EMaxframe,
-		 ifp->emaxframe ? "" : " (node)");
-		if(ifp->framemax)
-			printf("  (this port carries at most %d octets)",
-			 ifp->framemax);
+		 ifp->emaxframe ? "" : "*");
+		if(inherited)
+			printf("   (* = the node's setting, not this port's)");
 		printf("\n");
+		if(ifp->framemax)
+			printf("           ax25: this port carries at most %d octets\n",
+			 ifp->framemax);
 	}
 
 	if(!is_ax25(ifp))
 		return;
 
-	printf("           eax25: %s\n",
+	printf("           ax25: eax25 %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
 	 ifp->eax25 == EAX25_ALWAYS ? "always" :
 	 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
 	switch (ifp->crccontrol){
-	default:            printf("           crc off");           break;
-	case CRC_TEST_16:   printf("           crc-16 test");       break;
-	case CRC_TEST_RMNC: printf("           crc-rmnc test");     break;
-	case CRC_16:        printf("           crc-16 enabled");    break;
-	case CRC_RMNC:      printf("           crc-rmnc enabled");  break;
-	case CRC_CCITT:     printf("           crc-ccitt enabled"); break;
+	default:            printf("           ax25: crc off");           break;
+	case CRC_TEST_16:   printf("           ax25: crc-16 test");       break;
+	case CRC_TEST_RMNC: printf("           ax25: crc-rmnc test");     break;
+	case CRC_16:        printf("           ax25: crc-16 enabled");    break;
+	case CRC_RMNC:      printf("           ax25: crc-rmnc enabled");  break;
+	case CRC_CCITT:     printf("           ax25: crc-ccitt enabled"); break;
 	}
-	printf(" crc errors %lu bad ax25 headers %lu\n",
+	printf(", crc errors %lu, bad ax25 headers %lu\n",
 	 (unsigned long)ifp->crcerrors,(unsigned long)ifp->ax25errors);
 }
 /* Detach a specified interface */

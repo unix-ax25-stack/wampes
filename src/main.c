@@ -219,6 +219,15 @@ main(int argc,char *argv[])
 	}
 	kinit();
 	ioinit();
+	/* NOTHING TO LEARN ON THESE TWO.  Loopback is by definition the way to
+	 * ourselves - whatever arrives carries one of our own addresses, and
+	 * ismyaddr() throws it out anyway, so the switch stood on "learn" and
+	 * meant nothing.  Encap is the same case one level up: what comes out
+	 * of it has already been learned by the tunnel that delivered it.
+	 * Saying so beats leaving a setting that reads as if it did something.
+	 */
+	Loopback.flags |= NO_RT_ADD;
+	Encap.flags |= NO_RT_ADD;
 	netrom_initialize();
 	remote_net_initialize();
 	Cmdpp = mainproc("cmdintrp");
