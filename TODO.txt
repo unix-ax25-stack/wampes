@@ -5251,3 +5251,41 @@ ZWEI LUECKEN BLEIBEN, und beide in derselben Ecke wie die Routen:
      keine ARP-Eintraege" ist heute nicht sagbar, auch nicht indirekt. Das
      ist die ARP-Haelfte dessen, was fuer Routen unter "DREI REGELN STATT
      NEUN" steht, und es gehoert dorthin - zwei Achsen, eine Liste.
+
+------------------------------------------------------------------------
+INP3-IMPORT: NICHT LERNEN, WAS DIE NETZROUTE SCHON DECKT (Thomas,
+2026-08-26) - im Hinterkopf behalten fuer Schritt 3
+------------------------------------------------------------------------
+Kommt ein IP-Datagramm ueber NET/ROM herein, lernt heute der allgemeine
+Lerner eine /32 auf das netrom-Interface (if_learns_routes(): dort ist er
+die einzige Quelle), und netrom.c legt den ARP-Eintrag IP -> Knotenruf-
+zeichen an. Sobald der INP3-Import steht, ist beides in einem Fall
+UEBERFLUESSIG:
+
+  * der ARP passt zu einem NET/ROM-Knoten, den wir ueber INP3 kennen, UND
+  * die Quelladresse faellt in das Netz, das eben dieser Knoten per INP3
+    angekuendigt hat.
+
+Dann deckt die Netzroute den Fall schon ab, und weder /32 noch ARP je Host
+werden gebraucht. Gebraucht wird nur, was zur Netzroute gehoert:
+
+    arp_add(<knoten-ip>, ARP_NETROM, <sein call>)   das Gateway aufloesen
+    rt_add(<netz>, <bits>, <knoten-ip>, Nr_iface)   das Netz ueber ihn
+
+(Die Knotenadresse, NICHT die Netzadresse - eine .0 ist nie Ziel einer
+ARP-Aufloesung.)
+
+WARUM DAS MEHR IST ALS SPARSAMKEIT: gelernte /32 haben eine Lebensdauer
+von 0x7fffffff/1000, also rund 24 Tage - auf db0fhn stehen genau solche in
+"route" (Timer ~2147482). Sie verschwinden praktisch nie, auch wenn der
+Weg dorthin laengst weg ist. Eine aus INP3 abgeleitete Netzroute dagegen
+endet MIT DEM PARTNER: faellt er aus, zieht INP3 den Eintrag zurueck, und
+mit ihm gehoeren Route und ARP-Eintrag weg. Damit raeumt sich die Tabelle
+selbst auf, statt sich zu fuellen.
+
+WO DAS HINGEHOERT: in dieselbe gemeinsame Lernstelle wie alles andere -
+sie fragt dann vor dem Eintragen, ob eine bestehende Route die Adresse
+ueber DASSELBE Interface schon deckt (und keine Default-Route ist). Der
+Rueckbau gehoert dorthin, wo INP3 einen Knoten aufgibt
+(inp3_route_clear() und der Horizont), analog zu TNNs arp_drop/rt_drop in
+l3inp.c:414.
