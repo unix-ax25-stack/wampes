@@ -530,7 +530,19 @@ int argc,
 char *argv[],
 void *p
 ){
-	return subcmd(Attab,argc,argv,p);
+	struct iface *before = Ifaces;
+	struct iface *ifp;
+	int result;
+
+	result = subcmd(Attab,argc,argv,p);
+	/* Whatever appeared at the head of the list is what this attach made -
+	 * every attach function links its port in there.  Done here rather than
+	 * in each of them, which is a dozen places that would have to agree.
+	 */
+	for(ifp = Ifaces; ifp != NULL && ifp != before; ifp = ifp->next)
+		if(ifp->attached_as == NULL && argc > 1)
+			ifp->attached_as = strdup(argv[1]);
+	return result;
 }
 /* Manipulate I/O device parameters */
 int

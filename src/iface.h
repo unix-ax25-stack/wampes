@@ -154,6 +154,14 @@ struct iface {
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
 	uint flags;             /* Configuration flags */
+	/* WHICH "attach" MADE THIS PORT.  The name is the operator's choice and
+	 * says nothing about the kind - db0fhn calls a tun interface "ax25",
+	 * because seen from Linux that is where the AX.25 world lies, while
+	 * from the node's side it goes to Linux.  "Link encap" does not help
+	 * either: a tun says "None".  Set centrally in doattach(), so no
+	 * attach function has to remember it.
+	 */
+	char *attached_as;
 #define NO_RT_ADD       1       /* Don't call rt_add in ip_route */
 
 	/* May links on this port run modulo-128, and who decides.  Zero is the

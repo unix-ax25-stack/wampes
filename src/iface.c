@@ -684,6 +684,8 @@ showiface(struct iface *ifp, int verbose)
 		printf("           Link addr %s\n",
 		 (*ifp->iftype->format)(tmp,ifp->hwaddr));
 	}
+	if(verbose && ifp->attached_as != NULL)
+		printf("           attached as %s\n",ifp->attached_as);
 	if(verbose)
 		printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
 		 ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
