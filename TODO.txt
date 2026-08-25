@@ -4984,6 +4984,31 @@ zwei Teile zerfaellt und nur der kleine davon vor den Import gehoert:
      Bis dahin deckt Schritt 2 das Groebste ab, und getestet wird
      ohnehin erst mit Nachbarn, die man kennt.
 
+REIHENFOLGE GEAENDERT (Thomas, 2026-08-26): 4 KOMMT VOR 3. Der Import
+geht durch die gemeinsame Stelle, und die soll den Filter fragen - also
+muss er stehen, bevor der Import gebaut wird, sonst baut man den Aufruf
+zweimal. Neu also:
+
+    1. eigenes Ankuendigen                  fertig, 82de57c
+    2. gemeinsame Lernstelle                kleiner geworden, seit
+                                            autoroute weg ist (579684f):
+                                            nur noch zwei Fragen -
+                                            eigene Adresse, geschuetzt?
+    3. POS/NEG-FILTER fuer IP-Routen UND ARP, mit den Haken, die der
+       Import braucht
+    4. INP3-Import als Aufrufer dieser Haken
+
+Was in den Filter gehoert, steht verstreut und ist hier zusammengefasst:
+  * Positivliste: aus welchen Netzen lernen wir ueberhaupt (keine
+    RFC-1918-Adressen, keine Internet-Adressen)
+  * Negativliste/Schutz: aus welchen Praefixen NIE eine Hostroute - der
+    Fall "ein AX.25-Nutzer entfuehrt eine Adresse aus dem tun-Netz", den
+    eine Metrik nicht loesen kann, weil rt_lookup() Longest Prefix ist
+  * dasselbe fuer ARP ("aus diesem Bereich lerne ich keine Eintraege"),
+    heute gar nicht sagbar
+  * der Schutz permanenter Eintraege an EINER Stelle statt dreimal
+    abgeschrieben bei den Aufrufern (arp_add() selbst schuetzt nichts)
+
 WIE DER IMPORT AUSSIEHT, am Code geprueft - Thomas' "eher trivial"
 stimmt, und zwar genauer als gedacht. Das IPA-Feld traegt eine
 HOSTadresse mit Praefixlaenge; doc/INP3.md zeigt "INP3 ip
