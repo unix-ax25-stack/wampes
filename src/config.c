@@ -126,8 +126,9 @@ struct cmds Cmds[] = {
 	  "  matter.\n"
 	  "  FIRST MATCHING RULE WINS, not the most specific one, and an empty\n"
 	  "  list allows everything.\n"
-	  "  It also gates the LEARNING of routes (rt_add, learned ones only) -\n"
-	  "  refusing to learn an address therefore refuses to speak to it." },
+	  "  IT NO LONGER GATES LEARNING.  It used to do both, so refusing to\n"
+	  "  learn an address also refused to speak to it; \"ip learn\" is now the\n"
+	  "  place for that, and it knows about source and interface." },
 	{ "listen",       dolisten,       0, 0,      Axlisten_usage },
 	{ "log",          dolog,          0, 0, NULL },
 	{ "login",        dologin,        0, 0, NULL },
@@ -491,17 +492,20 @@ int mcast
 		 * auf einem AX.25-Port gar nicht mehr (if_learns_routes()),
 		 * und der Schalter hatte damit zwei Bedeutungen zugleich.
 		 */
+		/* Hier IST das Rufzeichen bekannt - dies ist der Pfad, auf dem
+		 * eine Regel mit call= greift.
+		 */
 		addrcp(hwaddr, src);
 		if((ap = revarp_lookup(ARP_AX25,hwaddr)) != NULL &&
 		   ap->state == ARP_VALID &&
 		   !run_timer(&ap->timer) &&
 		   ap->ip_addr != ipaddr){
-			rt_add(ipaddr,32,ap->ip_addr,iface,1L,0x7fffffff/1000,0);
+			rt_learn(ipaddr,32,ap->ip_addr,iface,1L,0x7fffffff/1000,hwaddr);
 		}else if((ap = arp_lookup(ARP_AX25,ipaddr)) == NULL ||
 		   ap->state != ARP_VALID ||
 		   run_timer(&ap->timer)){
-			rt_add(ipaddr,32,0L,iface,1L,0x7fffffff/1000,0);
-			arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+			rt_learn(ipaddr,32,0L,iface,1L,0x7fffffff/1000,hwaddr);
+			arp_learn(ipaddr, ARP_AX25, hwaddr, iface);
 		}
 	}
 	ip_route(iface,bpp,mcast);

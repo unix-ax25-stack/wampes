@@ -187,8 +187,7 @@ struct mbuf **bpp,
 int mcast)
 {
     int32 ipaddr = 0;
-    struct arp_tab *ap;
-    
+
     if (mcast || !bpp || !*bpp)
         return;
 
@@ -212,13 +211,16 @@ int mcast)
         return;
 
 #if 1
-    ap = arp_lookup(ARP_AX25, ipaddr);
-    if (ap == NULL || 
-        (ap != NULL && ap->state == ARP_VALID && run_timer(&ap->timer)))
-    {
-        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
-    }
+    /* Der Test auf einen von Hand gesetzten Eintrag stand hier und steht
+     * jetzt in arp_learn() - und zwar in der Fassung aus config.c und
+     * netrom.c: die hiesige liess einen ARP_PENDING-Eintrag nicht
+     * ueberschreiben, obwohl der gerade auf genau diese Station wartet.
+     */
+    arp_learn(ipaddr, ARP_AX25, hwaddr, ifp);
 #else
+    {
+    struct arp_tab *ap;
+
     /* look for a valid resolution for hwaddr */
     ap = revarp_lookup(ARP_AX25, hwaddr);
     if (ap != NULL && ap->state == ARP_VALID) {
@@ -227,11 +229,11 @@ int mcast)
          * refresh them, but not if the timer isn't running.
          */
         if (ap->ip_addr != ipaddr) {
-            rt_add(ipaddr, 32, ap->ip_addr, ifp, 1L, 0x7fffffff/1000, 0);
+            rt_learn(ipaddr, 32, ap->ip_addr, ifp, 1L, 0x7fffffff/1000, hwaddr);
         } else {
-            rt_drop(ipaddr, 32); 
+            rt_drop(ipaddr, 32);
             if (run_timer(&ap->timer)) {
-                arp_add(ap->ip_addr, ARP_AX25, hwaddr, 0);
+                arp_learn(ap->ip_addr, ARP_AX25, hwaddr, ifp);
             }
         }
     } else {
@@ -247,7 +249,8 @@ int mcast)
          * between them.
          */
         rt_drop(ipaddr, 32);
-        arp_add(ipaddr, ARP_AX25, hwaddr, 0);
+        arp_learn(ipaddr, ARP_AX25, hwaddr, ifp);
+    }
     }
 #endif
 }

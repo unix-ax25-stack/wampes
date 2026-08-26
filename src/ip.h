@@ -202,6 +202,13 @@ int32 locaddr(int32 addr);
 void rt_merge(int trace);
 struct route *rt_add(int32 target,unsigned int bits,int32 gateway,
 	struct iface *iface,int32 metric,int32 ttl,uint8 private);
+/* Dasselbe, aber fuer alles, was aus dem VERKEHR kommt: fragt erst den
+ * Lernfilter (ip learn).  call ist, wer die Adresse beansprucht - bei INP3
+ * der ankuendigende Knoten -, NULL wo es keins gibt.  Wer rt_add() direkt
+ * ruft, sagt damit "ich bin kein Lernpfad" (Hand, net.rc, attach).
+ */
+struct route *rt_learn(int32 target,unsigned int bits,int32 gateway,
+	struct iface *iface,int32 metric,int32 ttl,const uint8 *call);
 int rt_drop(int32 target,unsigned int bits);
 struct route *rt_lookup(int32 target);
 struct route *rt_blookup(int32 target,unsigned int bits);

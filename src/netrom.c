@@ -2124,7 +2124,7 @@ static int nr_ip_deliver(struct mbuf **bpp)
       ap->state != ARP_VALID ||
       run_timer(&ap->timer)) {
     addrcp(hwaddr, (*bpp)->data);
-    arp_add(ipaddr, ARP_NETROM, hwaddr, 0);
+    arp_learn(ipaddr, ARP_NETROM, hwaddr, Nr_iface);
   }
   pullup(bpp, NULL, 20);
   dump(Nr_iface, IF_TRACE_IN, *bpp);

@@ -29,7 +29,7 @@
 #include "cmdparse.h"
 #include "hpux.h"
 
-struct route *rt_add(int32 target, unsigned int bits, int32 gateway, struct iface *iface, int32 metric, int32 ttl, uint8 private);
+struct route *rt_learn(int32 target, unsigned int bits, int32 gateway, struct iface *iface, int32 metric, int32 ttl, const uint8 *call);
 
 #define MAX_FRAME       2048
 
@@ -137,8 +137,12 @@ static void ipip_receive(void *argp)
     uhnp_cleanup(edv);
   }
 
+  /* Kein Rufzeichen: der Partner ist hier eine IP-Adresse, kein Call.  Eine
+   * Regel mit iface= ist das Mittel, einem axip-Partner das Lernen zu
+   * verwehren.
+   */
   if ((ipaddr = get32(bufptr + 12)) && ismyaddr(ipaddr) == NULL)
-    rt_add(ipaddr, 32, (int32) ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, 0);
+    rt_learn(ipaddr, 32, (int32) ntohl(addr.sin_addr.s_addr), ifp, 1L, 0x7fffffff / 1000, NULL);
 
   bp = qdata(bufptr, l);
   net_route(ifp, &bp);

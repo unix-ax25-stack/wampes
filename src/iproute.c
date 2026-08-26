@@ -17,6 +17,7 @@
 #include "rip.h"
 #include "trace.h"
 #include "ipfilter.h"
+#include "iplearn.h"
 
 struct route *Routes[32][HASHMOD];      /* Routing table */
 struct route R_default = {              /* Default route entry */
@@ -99,8 +100,12 @@ int rxbroadcast         /* True if packet had link broadcast address */
 		return -1;
 	}
 
+	/* Der allgemeine Lerner: kein Rufzeichen, denn auf dieser Ebene ist die
+	 * Layer-2-Quelle nicht mehr da - nur der Port.  Regeln mit call= gehen
+	 * hier also ins Leere, Regeln mit iface= greifen.
+	 */
 	if(if_learns_routes(i_iface) && ismyaddr(ip.source) == NULL)
-		rt_add(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, 0);
+		rt_learn(ip.source, 32, 0L, i_iface, 1L, 0x7fffffff / 1000, NULL);
 
 	/* Process options, if any. Also compute length of secondary IP
 	 * header in case fragmentation is needed later
@@ -391,6 +396,50 @@ uint8 tos
 	 */
 	return ip_send(Encap.addr,gateway,IP4_PTCL,tos,0,bpp,0,0,0);
 }
+/* Eine gelernte Route eintragen - fuer alles, was aus dem Verkehr kommt.
+ *
+ * Der Unterschied zu rt_add() ist der Lernfilter, und der braucht zwei
+ * Angaben, die rt_add() nicht hat: WER die Adresse beansprucht (call) und
+ * ueber welchen Port sie hereinkam (steckt schon in iface).  Deshalb zwei
+ * Funktionen statt eines Schalters - die Angaben stehen dort, wo sie
+ * anfallen, und die Aufrufer von Hand muessen nichts mitgeben, was sie gar
+ * nicht wissen.
+ *
+ * private gibt es hier nicht: Gelerntes ist nie privat.
+ */
+struct route *
+rt_learn(
+int32 target,
+unsigned int bits,
+int32 gateway,
+struct iface *iface,
+int32 metric,
+int32 ttl,
+const uint8 *call       /* Wer die Adresse beansprucht, NULL wo unbekannt */
+){
+	if(bits > 32)
+		bits = 32;
+
+	/* ERST MASKIEREN, DANN FRAGEN.  Eine INP3-Ankuendigung nennt eine
+	 * HOSTadresse mit Praefixlaenge - "ich bin .129, dahinter das /25" -,
+	 * und rt_add() traegt daraus 44.130.60.128/25 ein.  Der Filter muss
+	 * ueber dasselbe entscheiden, das nachher in der Tabelle steht, sonst
+	 * beurteilt er eine Adresse, die es dort nie gibt.  Fuers Austragen
+	 * gilt dasselbe: rt_drop() maskiert ebenfalls, es findet den Eintrag
+	 * also auch dann, wenn man ihm wieder die .129 reicht - aber nur mit
+	 * DERSELBEN Praefixlaenge.
+	 */
+	if(bits)
+		target &= ~0U << (32-bits);
+	else
+		target = 0;
+
+	if(!ip_may_learn(target,bits,LEARN_ROUTE,call,iface))
+		return NULL;
+
+	return rt_add(target,bits,gateway,iface,metric,ttl,0);
+}
+
 /* Add an entry to the IP routing table. Returns 0 on success, -1 on failure */
 struct route *
 rt_add(
@@ -414,9 +463,14 @@ uint8 private           /* Inhibit advertising this entry ? */
 	if(bits == 32 && ismyaddr(target))
 		return NULL;    /* Don't accept routes to ourselves */
 
-	if(ttl && !ipfilter(target))
-		return NULL;       /* Don't accept temporary routes to
-					   disallowed targets */
+	/* Hier stand "if(ttl && !ipfilter(target)) return NULL" - eine
+	 * Sperrliste fuer ADRESSEN, die zugleich das LERNEN gatterte, erkannt
+	 * an einer laufenden Lebensdauer.  Beides ist jetzt getrennt: ipfilter
+	 * entscheidet ueber die Zustellung (ip_route()), das Lernen entscheidet
+	 * der Lernfilter in rt_learn().  VERHALTENSAENDERUNG fuer bestehende
+	 * Installationen: wer mit ipfilter Routen fernhalten wollte, braucht
+	 * jetzt eine Regel "ip learn deny <praefix>" dazu.
+	 */
 
 	/* Mask off don't-care bits of target */
 	if(bits)

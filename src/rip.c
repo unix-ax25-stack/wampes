@@ -691,8 +691,10 @@ int32 ttl)
 		/* Add a new entry */
 		// dl9sau: bugfix. rt_add() may return NULL in some conditions.
 		// log this event, but do set trigger = 0 (because rp is NULL).
-		if (!(rp = rt_add(ep->target,(unsigned) bits,gateway,iface,
-		      (int) ep->metric,ttl,0)))
+		// Seit dem Lernfilter ist die haeufigste dieser conditions ein
+		// "ip learn deny" - RIP ist ein Lernpfad, kein Kommando.
+		if (!(rp = rt_learn(ep->target,(unsigned) bits,gateway,iface,
+		      (int) ep->metric,ttl,NULL)))
 			trigger = 0;
 		if(Rip_trace > 0){
 			printf("%s [%s]/%u %s",

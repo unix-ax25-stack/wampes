@@ -114,6 +114,12 @@ extern struct arp_stat Arp_stat;
 /* In arp.c: */
 struct arp_tab *arp_add(int32 ipaddr,enum arp_hwtype hardware,uint8 *hw_addr,
 	int pub);
+/* Dasselbe fuer alles, was aus dem VERKEHR kommt: fragt den Lernfilter und
+ * laesst von Hand gesetzte Eintraege in Ruhe.  Bei ARP_AX25 und ARP_NETROM
+ * IST die Hardware-Adresse das Rufzeichen, nach dem der Filter fragt.
+ */
+struct arp_tab *arp_learn(int32 ipaddr,enum arp_hwtype hardware,
+	uint8 *hw_addr,struct iface *ifp);
 void arp_drop(void *p);
 int arp_init(unsigned int hwtype,int hwalen,int iptype,int arptype,
 	int pendtime,uint8 *bdcst,char *(*format)(char *,uint8 *),

@@ -13,6 +13,7 @@
 #include "ip.h"
 #include "arp.h"
 #include "icmp.h"
+#include "iplearn.h"
 
 /* Ethernet type fields */
 #define REVARP_TYPE     0x8035  /* Type field for reverse ARP */
@@ -111,17 +112,21 @@ struct mbuf **bpp
 		return;
 	}
 	/* If this guy is already in the table, update its entry
-	 * unless it's a manual entry (noted by the lack of a timer)
+	 * unless it's a manual entry (noted by the lack of a timer).
+	 *
+	 * Der Schutz von-Hand-gesetzter Eintraege steht jetzt in arp_learn();
+	 * das lookup hier bleibt, weil ap zugleich das merge_flag der Spec ist
+	 * und arp_learn() bei einem abgelehnten oder geschuetzten Eintrag nicht
+	 * unterscheidbar antwortet.
 	 */
 	ap = NULL;      /* ap plays the role of merge_flag in the spec */
-	if((ap = arp_lookup(arp.hardware,arp.sprotaddr)) != NULL
-	 && dur_timer(&ap->timer) != 0){
-		ap = arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,0);
+	if(arp_lookup(arp.hardware,arp.sprotaddr) != NULL){
+		ap = arp_learn(arp.sprotaddr,arp.hardware,arp.shwaddr,iface);
 	}
 	/* See if we're the address they're looking for */
 	if(ismyaddr(arp.tprotaddr) != NULL){
 		if(ap == NULL)  /* Only if not already in the table */
-			arp_add(arp.sprotaddr,arp.hardware,arp.shwaddr,0);
+			arp_learn(arp.sprotaddr,arp.hardware,arp.shwaddr,iface);
 
 		if(arp.opcode == ARP_REQUEST){
 			/* Swap sender's and target's (us) hardware and protocol
@@ -193,6 +198,43 @@ struct mbuf **bpp
 		}
 	}
 }
+/* Ein Paar eintragen, das aus dem VERKEHR kam.
+ *
+ * Zwei Fragen, die vorher bei den Aufrufern standen - in ax25.c, config.c und
+ * netrom.c dreimal fast gleich, und die ax25.c-Fassung wich ab (sie liess
+ * einen ARP_PENDING-Eintrag nicht ueberschreiben, obwohl der GERADE auf diese
+ * Antwort wartet):
+ *
+ *   1. Darf das gelernt werden?  Fragt den Lernfilter (ip learn).
+ *   2. Steht da ein Eintrag VON HAND?  Solche haben keinen laufenden Timer -
+ *      sie altern nicht und sollen von Funkverkehr nicht ueberschrieben
+ *      werden.  Ein noch gueltiger, aber laufender Eintrag wird aufgefrischt.
+ *
+ * Bei ARP_AX25 und ARP_NETROM ist die Hardware-Adresse das Rufzeichen; nur
+ * dann kann der Filter nach call= fragen.
+ */
+struct arp_tab *
+arp_learn(
+int32 ipaddr,
+enum arp_hwtype hardware,
+uint8 *hw_addr,
+struct iface *ifp)
+{
+	struct arp_tab *ap;
+	const uint8 *call;
+
+	call = (hardware == ARP_AX25 || hardware == ARP_NETROM) ? hw_addr : NULL;
+
+	if(!ip_may_learn(ipaddr,32,LEARN_ARP,call,ifp))
+		return NULL;
+
+	ap = arp_lookup(hardware,ipaddr);
+	if(ap != NULL && ap->state == ARP_VALID && !run_timer(&ap->timer))
+		return ap;      /* Von Hand gesetzt - stehen lassen */
+
+	return arp_add(ipaddr,hardware,hw_addr,0);
+}
+
 /* Add an IP-addr / hardware-addr pair to the ARP table */
 struct arp_tab *
 arp_add(
