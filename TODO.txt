@@ -5769,6 +5769,17 @@ gegen eigene Werkzeuge liefen:
     darauf, und klappt der Wiederaufbau? Das ist der eigentliche
     Pruefpunkt - nicht ob ein einzelner Rahmen ankommt.
 
-Dazu offen aus dem FlexNet-Test: unsere Seite zeigt in "flexnet link"
-0/0/0, waehrend TNN bereits misst (52300 -> 45780 ms). Ob wir zu spaet
-oder zu grob melden, ist bei Gelegenheit nachzusehen.
+Das 0/0/0 aus dem FlexNet-Test IST ERLEDIGT (60a14ce): wir haben TNNs
+Poll-Antwort weggeworfen, weil sie die Zahl nicht mit CR abschliesst -
+"146" gegen unser "1600\r". Weder zu spaet noch zu grob gemeldet,
+sondern gar nicht gelesen. Jetzt Remote 46 / Local 2 / Smooth 41.
+
+OFFEN IST DAFUER EINE NEUE FRAGE, und die passt zu dieser Testreihe:
+TNN meldet uns 46, wir messen 2 - dieselbe Loopback-Strecke, Faktor 20.
+Verdacht: locdelay = TDIFF(...) / 200.0 rechnet in 200-ms-Schritten,
+waehrend der Strukturkommentar "100ms steps" sagt; dann waere eine der
+beiden Zahlen um Faktor 2 daneben, was den Rest aber nicht erklaert.
+Der frueher notierte TNN-Wert (52300 -> 45780 ms) legt nahe, dass TNN
+in seiner Anzeige Millisekunden schreibt und auf der Leitung Einheiten
+sendet. Vor den Verlusttests klaeren: eine Metrik, die um Faktor 20
+danebenliegt, macht jedes Routing-Ergebnis unlesbar.
