@@ -5670,3 +5670,59 @@ umgeschrieben wird, wenn zwei Knoten dasselbe Subnetz ankuendigen. Beides
 setzt den Import aus Schritt 3 voraus - heute entstehen aus
 INP3-Ankuendigungen gar keine Routen. Gehoert an das Ende von Schritt 3,
 zusammen mit dem Rueckbau am Horizont.
+
+========================================================================
+LERNFILTER: DIE FORM STEHT (entschieden 2026-08-26)
+========================================================================
+Ergaenzt den Entwurf weiter oben; hier sind die offenen Punkte
+entschieden. Gebaut ist noch nichts.
+
+BEFEHLE
+    ip learn                    zeigt die Liste, wie "ip learn list"
+                                (und verweist auf "ip learn ?")
+    ip learn list               dasselbe
+    ip learn ?                  die Syntaxhilfe
+    ip learn allow|deny <praefix> [call=<call>] [iface=<port>]
+                                                [route|arp]
+    ip learn drop <n>           Regel n loeschen
+
+NUR PRAEFIXE, keine Bereiche. ipfilter kann "a to b" fuer Spannen, die
+keine Maske sind; hier reicht das Praefix fuer alles, was gebraucht wird,
+und die Auswahlregel bleibt einfach. "to" nachruesten, wenn ein Fall es
+verlangt.
+
+DER MATCH GEHT BIS /32 (Thomas' Punkt, und er ist der Kern): ein Eintrag
+P/n trifft jedes zu lernende Praefix Q/m, das GANZ INNERHALB liegt -
+also m >= n und (Q & mask(n)) == P. "deny 44.130.60.0/24" deckt damit
+/25, /28 und die einzelne /32 gleichermassen ab, und es ist gleich-
+gueltig, wie fein die Gegenseite schneidet.
+
+Die Umkehrung braucht es NICHT: kuendigt jemand ein groesseres Netz an
+(44.130.0.0/16), liegt unsere /24 darin, ist aber spezifischer und
+gewinnt bei rt_lookup() ohnehin. Entfuehren kann nur, wer feiner
+schneidet.
+
+WER GEWINNT bei mehreren Treffern: der spezifischste Eintrag - erst das
+laengste Filter-Praefix, bei Gleichstand die spezifischere Quelle
+(call= vor iface= vor keiner). Nicht die Eingabereihenfolge.
+
+ROUTE UND ARP getrennt ansprechbar, ohne Zusatz gilt beides. "arp ja,
+route nein" ist dabei der Normalfall und nicht die Ausnahme: wer das Netz
+ohnehin zum igate routet, braucht je Host nur die Zuordnung IP ->
+Rufzeichen, keine /32.
+
+IPFILTER WIRD ENTKOPPELT: iproute.c:417 fragt kuenftig den Lernfilter
+statt ipfilter. Damit ist ipfilter wieder das, was sein Name sagt - eine
+Sperrliste fuer Verkehr. Verhaltensaenderung fuer jeden, der die
+Doppelwirkung heute nutzt; auf db0fhn zeigt ein blankes "ipfilter", ob
+dort ueberhaupt etwas steht.
+
+NICHT HIERHER GEHOERT die via/Digi-Frage (eigener Abschnitt weiter
+oben): die betrifft NET/ROM-NACHBARN und den bestehenden Route-Filter
+(in only-him), nicht das Lernen von IP-Routen.
+
+THOMAS' FAELLE, an denen zu messen ist:
+    ip learn deny  0.0.0.0/0                 Grundhaltung
+    ip learn allow 44.130.0.0/16 call=igate  ueber das igate
+    ip learn deny  iface=xnet                sonst nichts von xnet
+    ip learn deny  44.130.60.0/24            nie ins tun-Netz
