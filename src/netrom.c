@@ -1409,6 +1409,18 @@ static struct node *inp3_ip_bearer(const struct node *other, int32 net,
 static void inp3_ip_add(struct node *pd)
 {
   arp_learn(pd->inp3_ip, ARP_NETROM, pd->call, Nr_iface);
+
+  /* SEINE EIGENE ADRESSE ALS /32, und nicht nur der Ordnung halber.  Kuendigen
+   * zwei Knoten dasselbe Netz an, haelt nur EINER die Netzroute - ein Paket an
+   * die Adresse des anderen liefe dann ueber dessen Gateway zu ihm, obwohl wir
+   * den ARP-Eintrag des Gemeinten laengst haben.  Die /32 schlaegt das Netz
+   * (longest prefix) und macht den direkten Weg nutzbar, unabhaengig davon,
+   * wer beim Netz gerade vorn liegt.
+   */
+  if (pd->inp3_ipbits != 32)
+    rt_learn(pd->inp3_ip, 32, pd->inp3_ip,
+	     Nr_iface, 1L, 0x7fffffff / 1000, pd->call);
+
   rt_learn(pd->inp3_ip, (unsigned) pd->inp3_ipbits, pd->inp3_ip,
 	   Nr_iface, 1L, 0x7fffffff / 1000, pd->call);
 }
@@ -1435,9 +1447,14 @@ static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits)
       if ((pn = inp3_ip_bearer(pd, oldnet, oldbits)) != NULL)
 	inp3_ip_add(pn);
     }
-    /* Der ARP-Eintrag dagegen gehoert IHM allein - seine Hostadresse hat kein
-     * zweiter, auch wenn beide dasselbe Netz nennen.
+    /* Seine /32 und sein ARP-Eintrag gehoeren IHM ALLEIN - seine Hostadresse
+     * hat kein zweiter, auch wenn beide dasselbe Netz nennen.  Hier also kein
+     * Vertreter, sondern weg damit.
      */
+    if (oldbits != 32 &&
+	(rp = rt_blookup(oldip, 32)) != NULL &&
+	rp->iface == Nr_iface && rp->gateway == oldip)
+      rt_drop(oldip, 32);
     if ((ap = arp_lookup(ARP_NETROM, oldip)) != NULL &&
 	ap->state == ARP_VALID && addreq(ap->hw_addr, pd->call))
       arp_drop(ap);
