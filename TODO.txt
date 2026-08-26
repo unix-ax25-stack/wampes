@@ -5764,6 +5764,10 @@ gegen eigene Werkzeuge liefen:
     Fund reproduzierbar bleibt). Das gilt fuer den EAX25-Test genauso -
     ein Fenster von 63 ist ohne Verlust wenig aussagekraeftig, mit
     Verlust zeigt sich, ob Resequenzierung und REJ tragen.
+    DIE FRAGE DAHINTER (Thomas): faengt die Verbindung sich wieder? Oder
+    erkennen BEIDE Seiten den Verbindungsverlust, reagieren korrekt
+    darauf, und klappt der Wiederaufbau? Das ist der eigentliche
+    Pruefpunkt - nicht ob ein einzelner Rahmen ankommt.
 
 Dazu offen aus dem FlexNet-Test: unsere Seite zeigt in "flexnet link"
 0/0/0, waehrend TNN bereits misst (52300 -> 45780 ms). Ob wir zu spaet
