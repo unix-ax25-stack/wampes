@@ -100,8 +100,14 @@ static int srcrank(const struct iplearn *p)
 
 /*---------------------------------------------------------------------------*/
 
-int ip_may_learn(int32 target, int bits, int what,
-		 const uint8 *call, struct iface *ifp)
+/* anycall = 1: das Rufzeichen ist noch unbekannt, und gefragt ist der
+ * GUENSTIGSTE Ausgang ueber alle denkbaren Absender.  Dann zaehlen Regeln mit
+ * call= nur, wenn sie erlauben - ein "deny ... call=DB0BBB" sperrt eben nur
+ * DB0BBB und sagt nichts ueber alle anderen.
+ */
+
+static int may_learn(int32 target, int bits, int what,
+		     const uint8 *call, struct iface *ifp, int anycall)
 {
 	struct iplearn *p;
 	struct iplearn *best = NULL;
@@ -111,9 +117,14 @@ int ip_may_learn(int32 target, int bits, int what,
 		if (bits < p->bits) continue;
 		if ((target & maskof(p->bits)) != p->prefix) continue;
 		if (!(p->what & what)) continue;
-		if (p->hascall &&
-		    (call == NULL || !addreq(p->call, (uint8 *) call)))
-			continue;
+		if (p->hascall) {
+			if (anycall) {
+				if (!p->allow) continue;
+			} else if (call == NULL ||
+				   !addreq(p->call, (uint8 *) call)) {
+				continue;
+			}
+		}
 		if (p->ifname != NULL &&
 		    (ifp == NULL || strcmp(ifp->name, p->ifname) != 0))
 			continue;
@@ -122,6 +133,17 @@ int ip_may_learn(int32 target, int bits, int what,
 			best = p;
 	}
 	return best != NULL ? best->allow : 1;
+}
+
+int ip_may_learn(int32 target, int bits, int what,
+		 const uint8 *call, struct iface *ifp)
+{
+	return may_learn(target, bits, what, call, ifp, 0);
+}
+
+int ip_might_learn(int32 target, int what, struct iface *ifp)
+{
+	return may_learn(target, 32, what, NULL, ifp, 1);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -27,6 +27,16 @@
 int ip_may_learn(int32 target, int bits, int what,
                  const uint8 *call, struct iface *ifp);
 
+/* Koennte IRGENDEIN Absender das lernen duerfen?
+ *
+ * Fuer den Augenblick, in dem wir das Rufzeichen noch nicht kennen, weil wir
+ * gerade danach fragen wollen (arp.c, ausgehende Aufloesung).  Mit call=NULL
+ * zu fragen waere falsch: "deny any" plus "allow 44.130.0.0/16 call=IGATE"
+ * wuerde die Anfrage unterdruecken und IGATE damit nie zu Wort kommen
+ * lassen.  Antwortet nur dort mit 0, wo KEIN Rufzeichen etwas aendern kann.
+ */
+int ip_might_learn(int32 target, int what, struct iface *ifp);
+
 int doiplearn(int argc, char *argv[], void *p);
 
 extern char Iplearn_usage[];

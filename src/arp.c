@@ -50,6 +50,22 @@ struct mbuf **bpp               /* IP datagram to be queued if unresolved */
 		ntohip(&ip,bpp);
 		icmp_output(&ip,*bpp,ICMP_QUENCH,0,NULL);
 		free_p(bpp);
+	} else if(!ip_might_learn(target,LEARN_ARP,iface)){
+		/* GAR NICHT ERST FRAGEN.  Duerfen wir die Antwort nicht
+		 * eintragen, dann fuehrt die Anfrage zu nichts: die Gegenseite
+		 * antwortet, arp_learn() lehnt ab, und das Datagramm haengt
+		 * bis zum PENDING-Timer in der Queue.  Gemessen an einer Regel
+		 * "deny ... arp": Route gelernt, ARP-Anfrage hinaus, Eintrag
+		 * blieb "[unknown]" mit Q 1.
+		 *
+		 * Die Antwort auf unsere eigene Frage bekommt dadurch KEINEN
+		 * Vertrauensvorschuss - sie geht durch denselben Filter, nur
+		 * dann mit dem Rufzeichen, das hier noch fehlt.  Deshalb auch
+		 * ip_might_learn() und nicht ip_may_learn(..., NULL, ...).
+		 */
+		ntohip(&ip,bpp);
+		icmp_output(&ip,*bpp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,NULL);
+		free_p(bpp);
 	} else {
 		/* Create an entry and put the datagram on the
 		 * queue pending an answer
