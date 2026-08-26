@@ -1382,10 +1382,44 @@ static void inp3_route_drop(struct node *pd, struct nrpeer *pp)
  * das ist derselbe, den der ARP-Eintrag nennt.
  */
 
+/* Kuendigt noch ein ANDERER Knoten dieses Netz an?
+ *
+ * Wer zuletzt gesprochen hat, bekommt die Route - so reagiert man schnell auf
+ * Aenderungen im Netz.  Die Kehrseite ist dieser Fall: A und B tragen dasselbe
+ * Netz, B hat es zuletzt angekuendigt und faellt aus.  Loeschte man dann
+ * einfach, waere das Netz weg, obwohl A es noch traegt - und A schweigt, weil
+ * INP3 AENDERUNGEN sendet und sich bei A nichts geaendert hat.  Seine
+ * Ankuendigung steht aber noch in unserer Knotenliste, also findet man ihn.
+ */
+
+static struct node *inp3_ip_bearer(const struct node *other, int32 net,
+				   int bits)
+{
+  struct node *pn;
+
+  for (pn = nodes; pn; pn = pn->next)
+    if (pn != other && pn->inp3_ip && pn->inp3_ipbits == bits &&
+	(pn->inp3_ip & (int32) (~0U << (32 - bits))) == net)
+      return pn;
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void inp3_ip_add(struct node *pd)
+{
+  arp_learn(pd->inp3_ip, ARP_NETROM, pd->call, Nr_iface);
+  rt_learn(pd->inp3_ip, (unsigned) pd->inp3_ipbits, pd->inp3_ip,
+	   Nr_iface, 1L, 0x7fffffff / 1000, pd->call);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits)
 {
   struct route *rp;
   struct arp_tab *ap;
+  struct node *pn;
   int32 oldnet;
 
   if (oldip == pd->inp3_ip && oldbits == pd->inp3_ipbits) return;
@@ -1393,8 +1427,17 @@ static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits)
   if (oldip && oldbits) {
     oldnet = oldip & (int32) (~0U << (32 - oldbits));
     if ((rp = rt_blookup(oldnet, (unsigned) oldbits)) != NULL &&
-	rp->iface == Nr_iface && rp->gateway == oldip)
+	rp->iface == Nr_iface && rp->gateway == oldip) {
+      /* Erst weg, dann der Ersatz: traegt der Vertreter den Filter nicht
+       * durch, soll nichts stehenbleiben.
+       */
       rt_drop(oldnet, (unsigned) oldbits);
+      if ((pn = inp3_ip_bearer(pd, oldnet, oldbits)) != NULL)
+	inp3_ip_add(pn);
+    }
+    /* Der ARP-Eintrag dagegen gehoert IHM allein - seine Hostadresse hat kein
+     * zweiter, auch wenn beide dasselbe Netz nennen.
+     */
     if ((ap = arp_lookup(ARP_NETROM, oldip)) != NULL &&
 	ap->state == ARP_VALID && addreq(ap->hw_addr, pd->call))
       arp_drop(ap);
@@ -1404,11 +1447,7 @@ static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits)
    * ein Gateway, das sich nicht aufloesen laesst, waere fuer die Dauer eines
    * Broadcast-Zyklus eine Sackgasse.
    */
-  if (pd->inp3_ip && pd->inp3_ipbits) {
-    arp_learn(pd->inp3_ip, ARP_NETROM, pd->call, Nr_iface);
-    rt_learn(pd->inp3_ip, (unsigned) pd->inp3_ipbits, pd->inp3_ip,
-	     Nr_iface, 1L, 0x7fffffff / 1000, pd->call);
-  }
+  if (pd->inp3_ip && pd->inp3_ipbits) inp3_ip_add(pd);
 }
 
 /*---------------------------------------------------------------------------*/
