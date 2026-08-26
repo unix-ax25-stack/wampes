@@ -5564,3 +5564,51 @@ TECHNISCHE VORAUSSETZUNG: nr3_input() muesste den Pfad ueberhaupt zu sehen
 bekommen. Heute bekommt es iface, axp, src, bpp - und bei einem Rundspruch
 ist axp NULL. Also entweder isrc/ndigis mitgeben oder die Signatur um den
 Header erweitern. Vorher lohnt keine Filterarbeit an dieser Stelle.
+
+------------------------------------------------------------------------
+GEMESSEN: PARAMETER 28 ENTSCHEIDET, WELCHER WEG GENOMMEN WIRD
+------------------------------------------------------------------------
+Aufbau (tnn-lab, 2026-08-26): ein Ziel DB0XYZ, angeboten ueber ZWEI
+Nachbarn zugleich - per INP3 von DB0SIM (Zeit 50,00 s, 3 hops) und per
+klassischem NODES-Rundspruch von DB0BBB (Qualitaet 150). Beide Nachbarn
+als echte Stationen von testtools/inp3peer.py, DB0BBB mit /kein-inp3.
+
+Unsere Anzeige haelt beide Metriken nebeneinander:
+
+    DB0XYZ  XYZNOD  DB0BBB   2   150   all  yes  50.03s
+      INP3 via DB0SIM   route 50.00s  +link 0.03s  3 hops
+
+MIT "netrom parms 28 0" (Graph zuerst) ging das L3-Paket an DB0BBB - im
+Log des Simulanten:
+
+    62.1s DB0BBB-0  L3 DL9SAU-2 -> DB0XYZ-0 len=35
+
+Das ist die Seite, die im Code steht:
+
+    static struct nrinp3 *inp3_preferred(const struct node *pd)
+    {
+      if (!nr_inp3first && pd->neighbor && (int) pd->quality) return NULL;
+      return inp3_best(pd);
+    }
+
+nr_inp3first ist Parameter 28. Steht er auf 0 UND hat der Graph einen
+Nachbarn mit Qualitaet, wird die INP3-Tabelle gar nicht erst gefragt;
+gerufen wird das aus inp3_nexthop() beim Weiterleiten.
+
+DIE GEGENPROBE MIT 28 = 1 STEHT NOCH AUS - der erste Versuch brach ab,
+weil das Testwerkzeug abstuerzte (siehe unten). Erwartet wird das Paket
+bei DB0SIM.
+
+ZWEI FEHLER IM WERKZEUG, dabei gefunden und behoben:
+  * inp3peer.py zaehlte vr ohne Modulo: nach NS=7 wurde vr=8, und das
+    RR-Kontrollfeld (0x01 | vr << 5) passte nicht mehr in ein Byte -
+    ValueError, Prozess weg.
+  * Stationen wurden unter "DB0SIM" gesucht, waehrend unaddr() immer
+    "DB0SIM-0" liefert. Rahmen an die Station fielen still durch, und der
+    Knoten sah nur "Conn pend". Thomas' Regel gilt auch hier: mit und
+    ohne -0 muss dasselbe bedeuten. Jetzt normalisiert.
+
+NEBENBEI GELERNT: "netrom connect" hinterlaesst eine Sitzung, in der die
+folgenden cnet-Verbindungen landen - ein \035 (Ctrl-]) als erstes Zeichen
+holt einen auf die Kommandozeile zurueck. Ohne das laufen die naechsten
+Kommandos ins Leere, was zwei Fehlversuche gekostet hat.
