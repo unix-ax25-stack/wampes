@@ -5623,3 +5623,50 @@ NEBENBEI GELERNT: "netrom connect" hinterlaesst eine Sitzung, in der die
 folgenden cnet-Verbindungen landen - ein \035 (Ctrl-]) als erstes Zeichen
 holt einen auf die Kommandozeile zurueck. Ohne das laufen die naechsten
 Kommandos ins Leere, was zwei Fehlversuche gekostet hat.
+
+------------------------------------------------------------------------
+GEMESSEN: NET/ROM, INP3 UND FLEXNET GLEICHZEITIG GEGEN TNN (2026-08-26)
+------------------------------------------------------------------------
+Punkt 3 der Testliste. Aufbau: TNN 1.79 im Labor, dazu ein INP3- und ein
+FlexNet-Link, waehrend der klassische NODES-Rundspruch weiterlaeuft.
+
+AUF TNNS SEITE BRAUCHT ES ZWEI EINTRAEGE UND ZWEI RUFZEICHEN, weil TNN
+je Nachbar GENAU EINEN Typ fuehrt:
+
+    LINKS +I 0 WLAB:DL9SAU-2        INP3
+    LINKS +F 0 TNNLAB:DL9SAU-5      FlexNet
+
+Bei uns entsprechend "flexnet ssid 5-9", womit FlexNet-Links unter
+DL9SAU-5 laufen, plus "flexnet link add DB0TNN".
+
+ERGEBNIS: beide stehen nebeneinander, und zwar als ZWEI PARALLELE
+AX.25-VERBINDUNGEN ZUM SELBEN KNOTEN -
+
+    DL9SAU-5->DB0TNN  Connected     FlexNet
+    DL9SAU-2->DB0TNN  Connected     INP3
+    DL9SAU-2->DB0SIM  ...           der INP3-Simulant daneben
+
+was ohne den find_ax25()-Paar-Fix vom 2026-08-20 nicht ginge: vorher
+haette die zweite Verbindung "busy" bekommen, weil nur nach dem Ziel
+gesucht wurde. TNN sieht dasselbe:
+
+    DL9SAU-2  I   0   1/1     30/----          0 conn.
+    DL9SAU-5  F   0   1/1  52300/60000    300000 conn.
+
+DIE FLEXNET-ZAHL SCHWINGT SICH EIN (52300 -> 45780 nach einer halben
+Minute). Sie entsteht nach TNNs Formel aus update_peer_quality():
+(my_quality + (his_quality ? his_quality : 6000)) / 2 - also Mittel aus
+eigener und gemeldeter Messung, waehrend NET/ROM und INP dort schlicht
+my_quality nehmen. Unsere Seite zeigt in "flexnet link" noch 0/0/0; ob
+wir zu spaet oder zu grob melden, waere ein eigener Blick wert.
+
+ANSTOSS NOETIG: nach "flexnet link add" passiert zunaechst nichts, der
+Aufbau haengt am Polltimer. "flexnet link delete" + "add" loest ihn
+sofort aus. Beim Aufsetzen also nicht zu frueh aufgeben.
+
+NOCH NICHT PRUEFBAR (Thomas): das VERLERNEN von IP-Subnetzrouten, wenn
+ein INP3-Partner wegfaellt, und die Frage, ob der ARP-Eintrag
+umgeschrieben wird, wenn zwei Knoten dasselbe Subnetz ankuendigen. Beides
+setzt den Import aus Schritt 3 voraus - heute entstehen aus
+INP3-Ankuendigungen gar keine Routen. Gehoert an das Ende von Schritt 3,
+zusammen mit dem Rueckbau am Horizont.
