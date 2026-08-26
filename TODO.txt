@@ -5726,3 +5726,34 @@ THOMAS' FAELLE, an denen zu messen ist:
     ip learn allow 44.130.0.0/16 call=igate  ueber das igate
     ip learn deny  iface=xnet                sonst nichts von xnet
     ip learn deny  44.130.60.0/24            nie ins tun-Netz
+
+------------------------------------------------------------------------
+TESTREIHE GEGEN TNN: ZWEI WEITERE PUNKTE (Thomas, 2026-08-26)
+------------------------------------------------------------------------
+Solange das Labor steht (tnn-lab), lohnen sich zwei Tests, die bisher nur
+gegen eigene Werkzeuge liefen:
+
+  * EAX25 (modulo 128, maxframe bis 63) gegen TNN. TNN hat "#define
+    EAX25" in include/all.h, und je Port zwei Stellschrauben in seiner
+    PORT-Tabelle: EAXMAXFR (PO_EAXMF) und EAXMODE (PO_EAXBH), zu setzen
+    mit "PORT <n> EAXMAXFRAME <n>" bzw. "PORT <n> EAXMODE ...". Bei uns
+    entsprechend "ifconfig <iface> eax25 off|accept|caller|always" und
+    "emaxframe 0..63". Zu messen ist, ob ein Fenster von 63 beidseitig
+    traegt und was bei Verlust passiert.
+
+  * DAMA: unsere Slave-Implementierung gegen TNNS MASTER. Der ist
+    vollstaendig (src/l2dama.c); nur TNNs eigener Slave haengt hinter
+    /*#define DAMASLAVE*/ und ist dort selbst als unvollstaendig
+    bezeichnet - fuer diesen Test also genau die richtige Richtung.
+    Stellschrauben bei TNN: "DAMA=0" je Port in tnn179.tnb bzw.
+    "PORT <n> DAMA on", dazu die Parameter 04 DAMA-Speedf, 05
+    DAMA-MaxPri, 06 DAMA-MaxPol, 07 DAMA-Tout (sichtbar in "PARMS").
+    Bei uns "ifconfig <iface> dama slave" und "damatimeout".
+    ACHTUNG: DAMA ueber axip ist kuenstlich - der Kanal hat keine
+    Sendezeit, die zu verteilen waere. Was sich pruefen laesst, ist das
+    PROTOKOLLVERHALTEN (Poll, Sendequittung, der stumme T1 im Slave -
+    siehe [[dama-slave-gebaut]]), nicht die Kanalnutzung.
+
+Dazu offen aus dem FlexNet-Test: unsere Seite zeigt in "flexnet link"
+0/0/0, waehrend TNN bereits misst (52300 -> 45780 ms). Ob wir zu spaet
+oder zu grob melden, ist bei Gelegenheit nachzusehen.
