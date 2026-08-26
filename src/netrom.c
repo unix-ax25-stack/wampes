@@ -113,6 +113,7 @@ static int link_valid(struct node *pn, struct link *pl);
 static void calculate_hopcnts(struct node *pn);
 static void calculate_qualities(struct node *pn);
 static void calculate_all(void);
+static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits);
 static void broadcast_recv(struct mbuf **bpp, struct node *pn);
 static struct mbuf *alloc_broadcast_packet(void);
 static void send_broadcast(void *arg);
@@ -1225,6 +1226,17 @@ static void calculate_all(void)
      * is swept away here on the next pass, and its ways with it.
      */
     if (pn != mynode && !pn->links && !pn->inp3 && !pn->force_broadcast) {
+      /* Mit ihm geht seine IP-Ankuendigung.  Hier und nicht beim Wegfall
+       * eines einzelnen Weges: die Adresse gehoert dem KNOTEN, und solange
+       * wir ihn ueberhaupt noch erreichen, bleibt die Route richtig.
+       */
+      if (pn->inp3_ip) {
+	int32 oldip = pn->inp3_ip;
+	int oldbits = pn->inp3_ipbits;
+	pn->inp3_ip = 0;
+	pn->inp3_ipbits = 0;
+	inp3_ip_update(pn, oldip, oldbits);
+      }
       if (pn->prev)
 	pn->prev->next = pn->next;
       else
@@ -1346,6 +1358,61 @@ static void inp3_route_drop(struct node *pd, struct nrpeer *pp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Die IP-Ankuendigung eines Knotens in Routen- und ARP-Tabelle nachfuehren.
+ *
+ * Das INP3-Feld nennt eine HOSTadresse mit Praefixlaenge - "ich bin .129,
+ * dahinter liegt das /25".  Daraus werden ZWEI Eintraege mit verschiedenen
+ * Rollen, und die Hostadresse verbindet sie:
+ *
+ *     arp    .129        -> sein Rufzeichen, Typ NETROM
+ *     route  .128/25     ueber Gateway .129
+ *
+ * Eine dritte Liste braucht es dafuer nicht.  nr_send() loest das Gateway per
+ * arp_lookup(ARP_NETROM, ...) auf, die Zuordnung Netz -> Knoten IST also die
+ * Gateway-Spalte plus der ARP-Typ.  rt_add() maskiert selbst, aus der .129
+ * wird das .128/25 von allein.
+ *
+ * NUR WEGNEHMEN, WAS VON UNS IST.  Vor jedem Loeschen wird geprueft, ob der
+ * Eintrag wirklich der ist, den diese Ankuendigung erzeugt hat - sonst nimmt
+ * der Rueckzug eines Knotens eine Route mit, die von Hand gesetzt war oder
+ * einem ZWEITEN Knoten gehoert, der dasselbe Netz ankuendigt.  Weil zwei
+ * Ankuendiger verschiedene Hostadressen haben, unterscheidet das Gateway sie.
+ *
+ * Der Filter entscheidet mit: call= meint hier den ANGEKUENDIGTEN Knoten, und
+ * das ist derselbe, den der ARP-Eintrag nennt.
+ */
+
+static void inp3_ip_update(struct node *pd, int32 oldip, int oldbits)
+{
+  struct route *rp;
+  struct arp_tab *ap;
+  int32 oldnet;
+
+  if (oldip == pd->inp3_ip && oldbits == pd->inp3_ipbits) return;
+
+  if (oldip && oldbits) {
+    oldnet = oldip & (int32) (~0U << (32 - oldbits));
+    if ((rp = rt_blookup(oldnet, (unsigned) oldbits)) != NULL &&
+	rp->iface == Nr_iface && rp->gateway == oldip)
+      rt_drop(oldnet, (unsigned) oldbits);
+    if ((ap = arp_lookup(ARP_NETROM, oldip)) != NULL &&
+	ap->state == ARP_VALID && addreq(ap->hw_addr, pd->call))
+      arp_drop(ap);
+  }
+
+  /* Erst das Paar, dann die Route: die Route zeigt auf die Hostadresse, und
+   * ein Gateway, das sich nicht aufloesen laesst, waere fuer die Dauer eines
+   * Broadcast-Zyklus eine Sackgasse.
+   */
+  if (pd->inp3_ip && pd->inp3_ipbits) {
+    arp_learn(pd->inp3_ip, ARP_NETROM, pd->call, Nr_iface);
+    rt_learn(pd->inp3_ip, (unsigned) pd->inp3_ipbits, pd->inp3_ip,
+	     Nr_iface, 1L, 0x7fffffff / 1000, pd->call);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* He has no way to this destination any more.  That is not the same as having
  * nothing to do with it: if we have told him about it, the cell has to stay
  * until we have taken that back, because what is remembered there is OUR
@@ -1428,9 +1495,11 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
     int hops;
     int haveip = 0;
     int ipbits = 0;
+    int oldbits;
     int optlen = 0;
     int time;
     int32 ip = 0;
+    int32 oldip;
     int valid = 1;
     struct node *pd;
     struct nrinp3 *rp;
@@ -1551,8 +1620,11 @@ static void inp3_recv(struct mbuf **bpp, struct node *pn)
      * the field as it passes a route on: partners who report the same
      * destination report the same address with it.
      */
+    oldip = pd->inp3_ip;
+    oldbits = pd->inp3_ipbits;
     pd->inp3_ip = haveip ? ip : 0;
     pd->inp3_ipbits = haveip ? ipbits : 0;
+    inp3_ip_update(pd, oldip, oldbits);
     /* Replaced rather than merged, and for the same reason: these belong to
      * the entry he just sent, and an option he has stopped sending is one
      * that no longer applies.
