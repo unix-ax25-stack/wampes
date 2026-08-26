@@ -571,6 +571,10 @@ void *p)
 #else
     { "add",  dorouteadd,  0, 3, "ax25 route add [permanent] <interface> default|<path>" },
 #endif
+    /* KEINE Usage-Zeile: der Parser faengt "?" ab, sobald eine da ist, und
+     * dann kommt doroutelist() gar nicht mehr zum Zug - "?" soll aber die
+     * Legende zeigen, nicht eine Zeile ueber sich selbst.
+     */
     { "list", doroutelist, 0, 0, NULL },
     { "stat", doroutestat, 0, 0, NULL },
 
@@ -729,6 +733,28 @@ struct ax_route *rp)
 	       buf);
 }
 
+/* Was die Buchstaben ueber der Liste bedeuten.  "ax25 route list ?" sagte
+ * bisher "*** Not in table *** ?" - richtig, aber niemand fragt einen Knoten
+ * nach einer Station namens Fragezeichen.
+ */
+
+static void
+doroutelegend(void)
+{
+  puts("");
+  puts("Header description:");
+  puts("  P  permanent - entered by hand, and not replaced by what we hear");
+  puts("  J  jumpstart - the service behind the call starts as soon as the link");
+  puts("     stands, rather than when the caller first types something.  A");
+  puts("     mailbox wants to greet, and cannot if it is not running yet.");
+  puts("  E  modulo 128 (EAX25) worked with him");
+  puts("  e  he refused it, and we do not ask again until the route ages out or");
+  puts("     he calls us with a SABME himself.  Neither letter: never tried.");
+#ifdef	AX25_VJCOMP
+  puts("  C  VJ TCP header compression is on for this route");
+#endif
+}
+
 static int
 doroutelist(
 int argc,
@@ -753,7 +779,9 @@ void *p)
   argc--;
   argv++;
   for (; argc > 0; argc--, argv++)
-    if(setcall(call, *argv) || !(rp = ax_routeptr(call, 0)))
+    if(!strcmp(*argv, "?"))
+      doroutelegend();
+    else if(setcall(call, *argv) || !(rp = ax_routeptr(call, 0)))
       printf("*** Not in table *** %s\n", *argv);
     else
       doroutelistentry(rp);
