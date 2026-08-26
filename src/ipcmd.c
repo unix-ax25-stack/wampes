@@ -13,6 +13,7 @@
 #include "ip.h"
 #include "cmdparse.h"
 #include "commands.h"
+#include "iplearn.h"
 #include "rip.h"
 
 int32 Ip_addr;
@@ -30,6 +31,7 @@ static int dumproute(struct route *rp);
 
 static struct cmds Ipcmds[] = {
 	{ "address",      doipaddr,       0,      0, NULL },
+	{ "learn",        doiplearn,      0,      0, Iplearn_usage },
 	{ "rtimer",       dortimer,       0,      0, NULL },
 	{ "status",       doipstat,       0,      0, NULL },
 	{ "trace",        doiptrace,      0,      0, NULL },

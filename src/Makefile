@@ -37,6 +37,7 @@ HDRS          = arp.h \
 		internet.h \
 		ip.h \
 		ipfilter.h \
+		iplearn.h \
 		kiss.h \
 		lapb.h \
 		login.h \
@@ -116,6 +117,7 @@ OBJS          = adjtime.o \
 		ipdump.o \
 		ipfile.o \
 		ipfilter.o \
+		iplearn.o \
 		iphdr.o \
 		ipip.o \
 		iproute.o \
@@ -232,6 +234,7 @@ SRCS          = adjtime.c \
 		ipdump.c \
 		ipfile.c \
 		ipfilter.c \
+		iplearn.c \
 		iphdr.c \
 		ipip.c \
 		iproute.c \
