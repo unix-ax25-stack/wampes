@@ -5783,3 +5783,25 @@ Der frueher notierte TNN-Wert (52300 -> 45780 ms) legt nahe, dass TNN
 in seiner Anzeige Millisekunden schreibt und auf der Leitung Einheiten
 sendet. Vor den Verlusttests klaeren: eine Metrik, die um Faktor 20
 danebenliegt, macht jedes Routing-Ergebnis unlesbar.
+
+IFCONFIG VERBOSE PASST NICHT IN 80 SPALTEN (Thomas, 2026-08-26)
+---------------------------------------------------------------
+
+Sein Terminal ist oft 80x25, und genau EINE Zeile laeuft ueber - die
+mit den AX.25-Paketparametern, 98 Zeichen:
+
+    ax25: paclen 256* maxframe 7* emaxframe 32*   (* = the node's setting, not this port's)
+
+Alle uebrigen Zeilen der verbose-Ausgabe bleiben unter 74 Zeichen,
+auch "trace ... netmask ... broadcast ..." (73). Es geht also nicht um
+einen Umbau, sondern um diese eine Zeile.
+
+Schuld ist die Klammer, nicht die Werte: die Werte allein sind 54
+Zeichen. Die Erklaerung des Sterns gehoert also nicht hinter JEDE
+solche Zeile, sondern einmal dorthin, wo sie gebraucht wird - eine
+eigene Zeile darunter, und nur dann, wenn ueberhaupt ein Stern in der
+Ausgabe steht. Steht kein Stern (der Port hat eigene Werte), erklaert
+man auch nichts.
+
+Beim Aendern gleich pruefen, ob andere verbose-Bloecke (netrom, flexnet,
+dama) dieselbe Falle haben - der Stern-Hinweis wurde kopiert.
