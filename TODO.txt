@@ -5595,9 +5595,20 @@ nr_inp3first ist Parameter 28. Steht er auf 0 UND hat der Graph einen
 Nachbarn mit Qualitaet, wird die INP3-Tabelle gar nicht erst gefragt;
 gerufen wird das aus inp3_nexthop() beim Weiterleiten.
 
-DIE GEGENPROBE MIT 28 = 1 STEHT NOCH AUS - der erste Versuch brach ab,
-weil das Testwerkzeug abstuerzte (siehe unten). Erwartet wird das Paket
-bei DB0SIM.
+DIE GEGENPROBE MIT 28 = 1 BESTAETIGT ES. Dasselbe Ziel, derselbe
+Aufbau, nur der Parameter anders:
+
+    28 = 0     62.1s  DB0BBB  L3 DL9SAU-2 -> DB0XYZ-0 len=35
+    28 = 1    111.6s  DB0SIM  L3 DL9SAU-2 -> DB0XYZ-0 len=35
+
+Damit ist die Frage beantwortet, was bei gleichzeitigem Broadcast und
+INP3 passiert: BEIDE METRIKEN BLEIBEN NEBENEINANDER STEHEN, und
+Parameter 28 waehlt. TNN kennt diese Frage nicht - dort hat jeder Nachbar
+GENAU EINEN Typ (N, I oder F, set_peer_typ() schaltet auf I um, sobald $N
+erkannt wird), und pp->quality ist bei allen dasselbe: eine ZEIT. TNN
+normalisiert am Eingang und vergleicht dann zwei Zeiten; nur FlexNet
+rechnet anders (Mittel aus eigener und gemeldeter Messung, 6000 als
+Ersatzwert). Wir behalten beide Metriken und rechnen am Ausgang um.
 
 ZWEI FEHLER IM WERKZEUG, dabei gefunden und behoben:
   * inp3peer.py zaehlte vr ohne Modulo: nach NS=7 wurde vr=8, und das
