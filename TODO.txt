@@ -5490,3 +5490,50 @@ WO ICH MICH KORRIGIEREN MUSSTE (damit es nicht wiederkommt)
     sie koennen einander ueberlagern.
   * "Die Knotenadresse, nicht die Netzadresse" beim ARP-Eintrag - zu eng
     gefasst, siehe oben.
+
+------------------------------------------------------------------------
+NACHBARN, DIE UEBER EINEN DIGIPEATER GELERNT WURDEN (Thomas, 2026-08-26)
+------------------------------------------------------------------------
+Frage: wird ein NODES-Rundspruch / INP3-Connect / FlexNet-Connect ueber
+Digipeater geblockt oder ignoriert? Via-Wege koennen Routen verderben,
+weil ein Nachbar ploetzlich direkt scheint.
+
+RECHERCHEERGEBNIS: nur NET/ROM ist betroffen, und dort deutlich.
+
+  * NET/ROM-RUNDSPRUCH: nicht geblockt, nicht markiert. ax25.c:702 reicht
+    hdr.source weiter - den URHEBER, nicht isrc, den letzten Digipeater,
+    den ax25.c zwanzig Zeilen vorher sauber ermittelt (ax25.c:594). Die
+    Digi-Liste geht gar nicht mit, und bei einem UI ist axp NULL, der Pfad
+    ist also auch nachtraeglich nicht zu rekonstruieren.
+    Der so gelernte Nachbar bekommt nr_hfqual (192) - "a constant every
+    direct neighbour is given". Zwei Digis dazwischen aendern daran
+    nichts.
+  * INP3 und FLEXNET: bauen ueber axroute() auf, das Digipeater einsetzt,
+    und sehen sich den Pfad ebenfalls nie an - weder netrom.c noch
+    flexnet.c erwaehnen ndigis oder digis an irgendeiner Stelle. ABER
+    BEIDE MESSEN: INP3 die L3RTT-Umlaufzeit, FlexNet die Poll-Laufzeit.
+    Ein Weg ueber Digis ist messbar langsamer und bekommt automatisch die
+    schlechtere Zahl. Der Irrtum "scheint direkt" entsteht dort nicht.
+
+DAS IST DER UNTERSCHIED: nr_hfqual ist eine ANNAHME ueber alle Nachbarn
+gleichermassen, INP3 und FlexNet MESSEN den konkreten Weg.
+
+WAS DARAUS FOLGT, festgehalten:
+  * "in only-him" trifft es genauer als eine neue Filteroption. Ein
+    Nachbar, den wir nur ueber einen Digi hoeren, ist als ZIEL in Ordnung -
+    erreichbar ist er -, aber als DURCHGANGSWEG fragwuerdig, weil seine
+    gemeldeten Ziele mit einer Qualitaet ankommen, die den Digi-Pfad nicht
+    enthaelt. Genau das sagt only-him. Die Achse existiert bereits
+    ("netrom filter ... in all|only-him|none"), eine Option "all-via"
+    braucht es nicht.
+  * ES BETRIFFT NUR AUTO-GELERNTES (Thomas). Was mit "netrom peer add",
+    "flexnet link add" oder TNNs "LINKS +I" eingetragen ist, ist
+    administrativ gesetzt - dort hat der Filter nicht zu greifen. Da INP3
+    und FlexNet ihre Partner AUSSCHLIESSLICH so bekommen, greift die Regel
+    von selbst nur bei den aus Rundspruechen gelernten NET/ROM-Nachbarn,
+    also genau dort, wo die Qualitaet geraten ist.
+
+TECHNISCHE VORAUSSETZUNG: nr3_input() muesste den Pfad ueberhaupt zu sehen
+bekommen. Heute bekommt es iface, axp, src, bpp - und bei einem Rundspruch
+ist axp NULL. Also entweder isrc/ndigis mitgeben oder die Signatur um den
+Header erweitern. Vorher lohnt keine Filterarbeit an dieser Stelle.
