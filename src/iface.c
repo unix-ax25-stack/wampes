@@ -795,9 +795,13 @@ showiface(struct iface *ifp, int verbose)
 		 ifp->maxframe ? "" : "*",
 		 ifp->emaxframe ? ifp->emaxframe : EMaxframe,
 		 ifp->emaxframe ? "" : "*");
-		if(inherited)
-			printf("   (* = the node's setting, not this port's)");
 		printf("\n");
+		/* Eigene Zeile, eingerueckt bis unter das erste Wort: mit der
+		 * Fussnote dahinter wurde die Zeile 98 Zeichen lang, und ein
+		 * Terminal ist oft 80 breit (Thomas).  Die Werte allein sind 54.
+		 */
+		if(inherited)
+			printf("                 (* = the node's setting, not this port's)\n");
 		if(ifp->framemax)
 			printf("           ax25: this port carries at most %d octets\n",
 			 ifp->framemax);
