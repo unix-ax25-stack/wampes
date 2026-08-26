@@ -5533,18 +5533,32 @@ WAS DARAUS FOLGT, festgehalten:
     von selbst nur bei den aus Rundspruechen gelernten NET/ROM-Nachbarn,
     also genau dort, wo die Qualitaet geraten ist.
 
-UND DAMIT BRAUCHT ES GAR KEINE SYNTAX (Thomas): das administrative
-"link"/"peer add" spart auch die Bedingung "in only-him if via". Die Regel
-ist dann ein VERHALTEN, keine Option:
+EIN AUTOMATISMUS WAERE FALSCH, und das ist eine Korrektur an mir selbst.
+Der Gedanke war: administrativ eingetragen = volles Vertrauen, aus
+Rundspruch und ueber Digis = only-him, dann braucht es keine Syntax. Er
+setzt aber zwei verschiedene Fragen gleich, und der Code sagt selbst,
+dass sie es nicht sind (netrom.c, ueber struct nrpeer):
 
-    administrativ eingetragen        -> volles Vertrauen
-    aus Rundspruch UND ueber Digis   -> only-him
+    "It is deliberately NOT the route filter: that decides what flows
+     once somebody speaks to us, this decides whom we speak to."
 
-Wer es anders will, traegt den Nachbarn ein - die Konfiguration ist selbst
-der Filter. Dieselbe Denkweise wie beim permanenten ARP-Eintrag (kein
-Timer = unantastbar) und bei autoroute (Verhalten aus der Art des Ports
-statt aus einem Schalter). Und wie dort faellt eine Option weg, die man
-sonst dokumentieren, erklaeren und in der Anzeige unterbringen muesste.
+"netrom peer" und "flexnet link" sagen, WEN WIR RUFEN - noetig, weil
+INP3 und FlexNet verbunden laufen. Sie sagen nichts darueber, wem wir
+glauben. Und nr3_input() "makes a neighbour of whoever sends an L3
+frame": JEDER wird Nachbar, auch der User-Connect, den Thomas bewusst
+nicht eintraegt und trotzdem bedienen will - L4 nutzen lassen, nach
+aussen unsichtbar halten, Nodes-Liste geben oder nicht. Genau dafuer ist
+die in/advert/feed-Tabelle da.
+
+Ein Automatismus haette all diesen Stationen only-him verpasst, sobald
+sie ueber einen Digi kommen, OBWOHL DER PORT AUF DEFAULT STEHT und der
+Sysop nie etwas anderes gesagt hat. Die Konfiguration waere von einer
+Regel ueberstimmt worden, die es fuer diesen Fall gibt.
+
+ALSO: die Via-Information wird ein KRITERIUM IM FILTER, kein Verhalten.
+Wie es sich schreibt, ist offen - "in only-him if via" war der erste
+Vorschlag; denkbar ist auch ein eigener Eintrag, der nur fuer
+via-gelernte Stationen gilt. Zu entscheiden, wenn der Filter drankommt.
 
 TECHNISCHE VORAUSSETZUNG: nr3_input() muesste den Pfad ueberhaupt zu sehen
 bekommen. Heute bekommt es iface, axp, src, bpp - und bei einem Rundspruch
