@@ -5533,6 +5533,19 @@ WAS DARAUS FOLGT, festgehalten:
     von selbst nur bei den aus Rundspruechen gelernten NET/ROM-Nachbarn,
     also genau dort, wo die Qualitaet geraten ist.
 
+UND DAMIT BRAUCHT ES GAR KEINE SYNTAX (Thomas): das administrative
+"link"/"peer add" spart auch die Bedingung "in only-him if via". Die Regel
+ist dann ein VERHALTEN, keine Option:
+
+    administrativ eingetragen        -> volles Vertrauen
+    aus Rundspruch UND ueber Digis   -> only-him
+
+Wer es anders will, traegt den Nachbarn ein - die Konfiguration ist selbst
+der Filter. Dieselbe Denkweise wie beim permanenten ARP-Eintrag (kein
+Timer = unantastbar) und bei autoroute (Verhalten aus der Art des Ports
+statt aus einem Schalter). Und wie dort faellt eine Option weg, die man
+sonst dokumentieren, erklaeren und in der Anzeige unterbringen muesste.
+
 TECHNISCHE VORAUSSETZUNG: nr3_input() muesste den Pfad ueberhaupt zu sehen
 bekommen. Heute bekommt es iface, axp, src, bpp - und bei einem Rundspruch
 ist axp NULL. Also entweder isrc/ndigis mitgeben oder die Signatur um den
