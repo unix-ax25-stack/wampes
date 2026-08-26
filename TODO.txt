@@ -5753,6 +5753,17 @@ gegen eigene Werkzeuge liefen:
     Sendezeit, die zu verteilen waere. Was sich pruefen laesst, ist das
     PROTOKOLLVERHALTEN (Poll, Sendequittung, der stumme T1 im Slave -
     siehe [[dama-slave-gebaut]]), nicht die Kanalnutzung.
+    ABER DAS VERHALTEN BEI PAKETVERLUST IST PRUEFBAR (Thomas), und es ist
+    der wichtigere Teil: beim Bau des Slaves haben genau die Verlusttests
+    drei Fehler freigelegt, die vorher niemand sah. testtools/damachan.py
+    kann das schon - "--loss <rx%>,<tx%>" und "--seed <n>" fuer
+    Wiederholbarkeit -, allerdings als eigener Kanal. Fuer die Laeufe
+    GEGEN TNN fehlt ein Verlustglied ZWISCHEN den beiden echten Knoten:
+    ein UDP-Weiterreicher auf einem dritten Port, der mit gegebener
+    Wahrscheinlichkeit verwirft (und dessen Seed man festhaelt, damit ein
+    Fund reproduzierbar bleibt). Das gilt fuer den EAX25-Test genauso -
+    ein Fenster von 63 ist ohne Verlust wenig aussagekraeftig, mit
+    Verlust zeigt sich, ob Resequenzierung und REJ tragen.
 
 Dazu offen aus dem FlexNet-Test: unsere Seite zeigt in "flexnet link"
 0/0/0, waehrend TNN bereits misst (52300 -> 45780 ms). Ob wir zu spaet
