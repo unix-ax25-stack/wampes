@@ -1401,6 +1401,45 @@ static int pullnumber(struct mbuf **bpp, int *val)
 	}
 }
 
+/* Wie pullnumber(), aber DAS PUFFERENDE BEENDET DIE ZAHL EBENSO GUELTIG wie
+ * ein Trennzeichen.  Gibt 0 zurueck, wenn ueberhaupt eine Ziffer kam, sonst -1.
+ *
+ * Gebraucht fuer die Poll-Antwort, und der Unterschied ist auf der Leitung
+ * gemessen: wir senden "1600\r", TNN sendet "146" - dieselbe Aussage, nur ohne
+ * Abschlusszeichen.  Mit pullnumber() lieferte das -1, recv_rprt() verwarf die
+ * Antwort, und "flexnet link" zeigte auf Dauer 0/0/0, waehrend die Gegenseite
+ * uns munter mass.  Die Zahl ist vollstaendig, wenn der Rahmen zu Ende ist -
+ * ein CR zu verlangen, das die Gegenseite nicht schickt, misst gar nichts.
+ *
+ * WIE ES DAZU KOMMEN KONNTE, und das ist der eigentliche Merksatz an dieser
+ * Stelle: FlexNet lag nie offen.  Was hier steht, ist nicht aus einer
+ * Spezifikation abgelesen, sondern jemandem abgeschaut - allem Anschein nach
+ * dem RMNC, denn dessen Rahmen konnte man mitschneiden.  Wer so vorgeht,
+ * schreibt das Format der EINEN Gegenstelle fest, die er vor sich hatte, und
+ * haelt ihre Schreibweise fuer die Regel; ein CR am Ende gehoerte fuer den
+ * Absender vermutlich dazu.  Dass der RMNC beim EMPFANGEN toleranter war und
+ * es deshalb nie auffiel, passt ins Bild.  TNN schreibt dieselbe Zahl anders,
+ * und damit war es ein Kompatibilitaetsfehler auf UNSERER Seite - keiner, den
+ * ein Blick in den eigenen Code je gezeigt haette.  Beim Empfangen also so
+ * wenig verlangen wie moeglich.
+ */
+
+static int pullnumber_or_eof(struct mbuf **bpp, int *val)
+{
+	int chr;
+	int digits = 0;
+
+	*val = 0;
+	for (;;) {
+		chr = PULLCHAR(bpp);
+		if (chr < '0' || chr > '9')
+			break;
+		*val = *val * 10 + chr - '0';
+		digits++;
+	}
+	return digits ? 0 : -1;
+}
+
 /*---------------------------------------------------------------------------*/
 
 static int pullflexcall(struct mbuf **bpp, int chr, uint8 *call)
@@ -1461,7 +1500,7 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 	struct dest *pd;
 	struct quality *pq;
 
-	if (pullnumber(bpp, &delay) == -1)
+	if (pullnumber_or_eof(bpp, &delay) == -1)
 		return;
 	free_p(bpp);
 	olddelay = iround(pp->delay);
@@ -1728,7 +1767,7 @@ void flexnet_dump(FILE *fp, struct mbuf **bpp)
 
 	case FLEX_RPRT:
 		fprintf(fp, " Poll response");
-		if (pullnumber(bpp, &i) == -1)
+		if (pullnumber_or_eof(bpp, &i) == -1)
 			goto too_short;
 		fprintf(fp, " - Delay: %d", i);
 		break;
