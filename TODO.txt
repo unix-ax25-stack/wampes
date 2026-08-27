@@ -5783,3 +5783,32 @@ Der frueher notierte TNN-Wert (52300 -> 45780 ms) legt nahe, dass TNN
 in seiner Anzeige Millisekunden schreibt und auf der Leitung Einheiten
 sendet. Vor den Verlusttests klaeren: eine Metrik, die um Faktor 20
 danebenliegt, macht jedes Routing-Ergebnis unlesbar.
+
+GELERNTE /32, DIE DIE TABELLE SCHON BEANTWORTET (Thomas, 2026-08-27)
+---------------------------------------------------------------------
+
+An db0fhn gelernt, obwohl die Zeile darunter dasselbe sagt:
+
+    44.130.19.142  32  xnet  44.130.254.254  1  2147480  155   <- gelernt
+    44.130.0.0     16  xnet  44.130.254.254  1        0  620   <- steht fest
+
+Der Lernfilter hat richtig entschieden - Regel 3 ("allow 44.130.0.0/16
+call=IGATE") trifft zu, und die Adresse liegt darin.  Die Frage ist eine
+andere: WOZU der Eintrag, wenn rt_lookup() ohne ihn ueber dieselbe
+Schnittstelle zum selben Gateway fuehrt?  Er kostet Platz und Timer und
+aendert am Weg nichts.
+
+Zu bauen waere eine Pruefung vor dem Eintragen: liefert rt_lookup(target)
+bereits dasselbe iface UND dasselbe gateway, dann nicht lernen.  Gehoert in
+rt_learn(), damit sie alle vier Lernpfade zugleich betrifft.
+
+VORHER ZU KLAEREN, sonst baut man sich ein Loch:
+
+  * Was, wenn die tragende Route SPAETER verschwindet?  Heute haelt die /32
+    den Weg noch, wenn die /16 zurueckgezogen wird - kein grosser Verlust,
+    aber ein Unterschied.
+  * Gilt dasselbe fuer ARP?  Dort gibt es kein "die Tabelle sagt schon
+    dasselbe" - ein ARP-Eintrag ist die Zuordnung selbst, nicht ein Weg.
+  * Fuer die INP3-/32 aus inp3_ip_add() gilt es NICHT: die ist genau dafuer
+    da, den angekuendigten Knoten direkt erreichbar zu machen, auch wenn ein
+    anderer das Netz haelt.

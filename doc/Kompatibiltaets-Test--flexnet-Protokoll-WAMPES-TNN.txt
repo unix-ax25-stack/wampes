@@ -1,0 +1,250 @@
+FlexNet zwischen WAMPES und TheNetNode: was auf der Leitung steht
+=================================================================
+
+Stand 2026-08-27.  Anlass war, dass "flexnet link" fuer den Partner DB0TNN
+dauerhaft 0/0/0 zeigte, waehrend die Gegenseite uns munter mass.  Was dabei
+herauskam, betrifft mehr als den einen Fehler, deshalb dieses Blatt.
+
+FLEXNET LAG NIE OFFEN.  Was in flexnet.c steht, ist nicht aus einer
+Spezifikation abgelesen, sondern jemandem abgeschaut - allem Anschein nach
+dem RMNC, denn dessen Rahmen konnte man mitschneiden.  Wer so vorgeht,
+schreibt das Format der EINEN Gegenstelle fest, die er vor sich hatte, und
+haelt ihre Schreibweise fuer die Regel.  Genau daran ist der erste Fehler
+hier entstanden.  Fuer alles Folgende gilt dasselbe: es ist die beste
+Auslegung aus Lesen und Messen, nicht mehr.
+
+
+1. Der Rahmen selbst: ein fehlendes CR   [BEHOBEN, 60a14ce]
+-----------------------------------------------------------
+
+Die Poll-Antwort, mit "trace axip 1211" im Hex mitgeschnitten:
+
+    wir   31 36 30 30 0d   "1600\r"   Delay 600, mit Abschlusszeichen
+    TNN   31 34 36         "146"      Delay 46, ohne
+
+recv_rprt() las die Zahl mit pullnumber(), und das gibt am PUFFERENDE -1
+zurueck - nicht zu unterscheiden von "da stand gar keine Zahl".  Jede Antwort
+von TNN fiel damit in die erste Zeile der Funktion, noch bevor irgendetwas
+gemessen war.  Auch der Trace-Dekoder meldete "packet too short" und meinte
+einen Rahmen, der vollstaendig ist.
+
+Wer recht hat, entscheidet hier die Leitung: TNN nimmt UNSER CR klaglos hin
+und misst uns die ganze Zeit korrekt.  Umgekehrt muessen wir das Rahmenende
+als Ende der Zahl gelten lassen.  pullnumber_or_eof() tut das; pullnumber()
+blieb unveraendert, weil die anderen Aufrufer Zahlen MITTEN aus laengeren
+Rahmen lesen, wo ein fehlendes Trennzeichen sehr wohl ein Fehler ist.
+
+Merksatz, der ueber diese Stelle hinaus gilt: beim EMPFANGEN so wenig
+verlangen wie moeglich.
+
+
+2. Was der Wert bedeutet, und wie gross ein Fehler wiegt
+--------------------------------------------------------
+
+Der Delay eines Partners ist ein ADDITIVER SOCKEL unter jedem Ziel hinter
+ihm (flexnet.c, recv_rout):
+
+    ourdelay = iround(pp->delay);
+    update_delay(call, pp, iround(1.125 * delay) + ourdelay);
+
+Der Faktor 1.125 ist FlexNets Aufschlag pro Zwischenschritt, der Sockel kommt
+unveraendert obendrauf.  Aendert sich der Sockel, zieht recv_rprt() alle
+Ziele nach (pq->delay - olddelay + delay).  Da die Wegwahl den KLEINSTEN
+Delay nimmt, entscheidet ein falscher Sockel bei jedem Ziel, zu dem es einen
+zweiten Weg gibt - und zwar fuer alle Ziele hinter dem Partner gleichzeitig.
+
+Ein Sockel von 41 statt 4 macht also jedes Ziel hinter TNN um rund 3,7 s
+teurer, als es ist.
+
+
+3. Die Einheit: 100 ms, und es ist die Hin-und-Rueck-Zeit
+----------------------------------------------------------
+
+Beide Seiten rechnen in 100-ms-Schritten, das ist KEIN Streitpunkt:
+
+    WAMPES  #define DEFAULTDELAY 600   /* Default delay (1 minute) */
+    TNN     sendet SRTT/10, und SRTT ist in 10-ms-Einheiten gefuehrt
+            (l3rtt.c zeigt sie als "lp->SRTT * 10L" in ms an)
+
+Dass es die HIN-UND-RUECK-Zeit ist und nicht die halbe, sagt TNN im Klartext
+ueber flex_tx_rtt_reply():
+
+    "es enthaelt unsere eigene Laufzeit*2
+     (Flexnet uebertraegt Hin-und-Rueck-Laufzeiten)"
+
+BELEGT WIRD BEIDES DURCH ZAHLEN AUS DEM ECHTEN NETZ (Thomas, an einem XNET
+abgefragt).  Die Pfade und ihre Summen:
+
+    d db0blo-4   T=1   IGATEB DB0BLO-4
+    d db0avh-4   T=2   IGATEB DB0BLO-4 DB0AVH-4
+    d db0avh     T=7   IGATEB DB0BLO-4 DB0AVH-4 DB0AVH
+    d db0blo     T=2   IGATEB DB0BLO-4 DB0BLO
+
+Die Strecken dahinter: IGATEB->DB0BLO-4 laeuft ueber das Internet,
+DB0BLO-4->DB0AVH-4 ueber einen 10-MBit-HAMNET-Funklink, beide Enden XNET.
+DB0AVH und DB0BLO ohne SSID sind RMNCs, seriell an ihrem XNET.
+
+Damit kostet der serielle Schritt zum RMNC:
+
+    DB0BLO   +1     seriell mit 115200 Bd
+    DB0AVH   +5     seriell, gleiche Konfiguration (Thomas)
+
+Die Portliste des RMNC DB0BLO bestaetigt die Geschwindigkeit:
+
+    po id td qso usr tifr rifr tkby rkby qty   mode       links  ssids
+     1  0 16   0   0    0    0    0    0 100   9600ut#    USER
+     3 -- 11   1   0    0    0    0    0   0   9600dtrz#  DB0AVH  0-15
+     8 --  0   2   1  117  102   22    1 100 115200#      DB0BLO  4-15
+
+Port 8 ist die serielle Strecke zum eigenen XNET (115200), Port 3 der
+9600er Funklink zum RMNC DB0AVH - ueber den die hier betrachtete Route
+allerdings NICHT laeuft, die geht ueber die beiden XNETs.
+
+DASS DB0AVH TROTZ GLEICHER KONFIGURATION +5 KOSTET UND DB0BLO NUR +1, ist
+nicht erklaert.  Am RMNC DB0AVH schwankt die Messung zu DB0AVH-4 zwischen
+4/2 und 6/2 (Thomas), sie ist also echt und nicht festgenagelt.  Eine
+Vermutung waere Wartezeit statt Kanalzeit - Auslastung, Timer-Granularitaet
+oder TXDelay -, aber das ist eine Vermutung.  Fuer die EINHEIT ist es
+unerheblich: die vier Summen oben bleiben in 100-ms-Schritten stimmig, und
+in 10-ms-Schritten muesste beim 9600er-Schritt eine 42 stehen.
+
+Und das rechnet sich auf, wenn man den 201-Byte-Poll ansetzt, den FlexNet
+zum Messen benutzt - er ist ja gerade so lang, damit die Kanalzeit sichtbar
+wird:
+
+    9600 Bd    201 Byte * 10 Bit / 9600    = 209 ms je Richtung
+                                    hin+zurueck ~ 420 ms  ->  4..5
+    115200 Bd  201 Byte * 10 Bit / 115200  = 17 ms je Richtung
+                                    hin+zurueck ~ 35 ms   ->  1 (Untergrenze)
+
+Beobachtet sind +5 und +1.  In 100-ms-Schritten und als Hin-und-Rueck-Zeit
+gerechnet passt das; halbierte man es, kaeme fuer den 9600er 2 statt 5
+heraus, und in 10-ms-Schritten muesste dort 42 stehen.
+
+DARAUS FOLGT FUER UNS EIN FAKTOR 2, und zwar auf unserer Seite:
+
+    pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
+
+Das ist die HALBE Umlaufzeit in 100-ms-Schritten.  Richtig waere /100.0.
+
+Dieser Schluss stuetzt sich AUF DIE NETZZAHLEN OBEN, nicht auf das Labor:
+ueber Loopback melden beide Seiten inzwischen 1, und aus zwei Einsen laesst
+sich kein Faktor ablesen.  NOCH NICHT GEAENDERT - erst gegen XNET und RMNC
+gegentracen (siehe 5.).
+
+
+4. Warum TNN im Labor erst 46 meldete, und kurz darauf 1
+---------------------------------------------------------
+
+VORSICHT MIT MOMENTAUFNAHMEN - dieser Abschnitt stand hier zuerst falsch.
+Gemessen wurde:
+
+    kurz nach dem Linkaufbau    Remote 46   Local 2   Smooth 41
+    eine Weile spaeter          Remote  1   Local 1   Smooth  1
+
+Es gibt also KEINE bleibende Diskrepanz.  Die 46 war ein Einschwingwert.
+Warum er so lange steht, steht unten - und das ist der eigentliche Befund,
+denn im Betrieb sieht man ueberwiegend diesen Zustand.
+
+TNN misst auf einem reinen FlexNet-Link naemlich nicht die Poll-Umlaufzeit,
+sondern faellt auf die AX.25-SRTT des Links zurueck:
+
+    sendfbp(getfbp(L2CFLEXNET, pp->nbrl2l, "1" "%lu",
+            pp->my_quality ? pp->my_quality/10L
+                           : (ULONG)(pp->nbrl2l->SRTT/10L)));
+
+my_quality ist die L3RTT-Messung, also die von NET/ROM bzw. INP3.  Ueber
+einen FlexNet-Link laeuft die nicht, my_quality bleibt 0 - und dann greift
+der Ersatz.  Und die AX.25-SRTT taugt dafuer schlecht, aus drei Gruenden
+zusammen:
+
+  * SIE STARTET AUF EINEM KONFIGURATIONSWERT (l2misc.c):
+
+        lnkpoi->SRTT = portpar[lnkpoi->liport].IRTT;
+
+    Am Laborport ist IRTT = 530, abgeleitet aus den 1200 Bd, mit denen der
+    Port konfiguriert ist ("PORT *" zeigt die Autoparameter).  Gesendet wird
+    SRTT/10, der Startwert erscheint bei uns also als 53.
+
+  * SIE FAELLT NUR SEHR LANGSAM (l2timer.c, nach KA9Q):
+
+        if (rtt > srtt) srtt = (L2_ALPHA1 * srtt + rtt) / (L2_ALPHA1 + 1);
+        else            srtt = (L2_ALPHA2 * srtt + rtt) / (L2_ALPHA2 + 1);
+
+    L2_ALPHA1 = 7 fuer steigende, L2_ALPHA2 = 15 fuer FALLENDE Werte - eine
+    Messung schiebt den Wert also nur um ein Sechzehntel der Differenz nach
+    unten.  Bewusst so, damit ein einzelner schneller Umlauf den Timer nicht
+    zu scharf stellt.
+
+  * ES GIBT KAUM MESSGELEGENHEITEN.  Ueber einen reinen FlexNet-Link laeuft
+    ausser dem Poll alle fuenf Minuten fast nichts.  Ein Sechzehntel pro
+    fuenf Minuten bedeutet: von 530 auf den wahren Wert vergehen Stunden.
+
+Genau das haben wir gesehen - 46 unterwegs, spaeter 1.  Dazu kommt eine
+harte Schranke nach unten:
+
+    if (srtt < irtt / 10)  srtt = irtt / 10;      /* l2timer.c */
+
+TNN kann also nie weniger als IRTT/10 melden, hier 53 (5,3 s)... und meldet
+trotzdem 1.  Das passt nur, wenn IRTT beim Messen nicht mehr der Wert aus
+der Tabelle ist - NOCH NICHT AUFGEKLAERT, siehe 5.
+
+Dass TNN es besser wuesste, sieht man an seiner eigenen Anzeige: "ROUTES"
+zeigt fuer denselben Link L3SRTT 160/100 ms - eine plausible Zahl, die es
+uns nicht schickt.
+
+Zur Einordnung (Thomas): TNN wurde hierzulande selten fuer FlexNet
+eingesetzt, meist als grosse NET/ROM-Insel im Norden und nicht im Dual-Mode,
+womit ab dort auch kein Via-Digipeating mehr moeglich war - das, was FlexNet
+ja gerade vermittelt.  Es ist also gut moeglich, dass diese Ecke von TNN
+schlicht wenig benutzt wurde.
+
+WAS DARAUS FOLGT: Ueber einen schnellen Link bekommen wir von TNN einen
+Konfigurationswert seines Ports geliefert, keine Laufzeit - und tragen ihn
+als Sockel unter jedes Ziel dahinter.  Auf einer echten 1200-Bd-Funkstrecke
+faellt das nicht auf, weil die wirkliche Laufzeit dann in derselben
+Groessenordnung liegt.  Bei axip ueber Loopback ist die Abweichung maximal.
+
+
+5. Offen, und wie es zu entscheiden waere
+------------------------------------------
+
+* GEGENPROBE MIT XNET UND RMNC (Thomas macht den Trace).  Erst wenn feststeht,
+  was diese beiden auf die Leitung legen, wird an unserer Berechnung etwas
+  geaendert.  Die Zahlen aus 3. sind ein starkes Indiz, aber sie sind aus der
+  Anzeige gelesen und nicht aus dem Rahmen.
+
+* Der Faktor 2 in locdelay ist danach zu entscheiden - eine Zeile.
+
+* WIDERSPRUCH, NEU UND UNGEKLAERT: nach l2timer.c kann TNNs SRTT nicht unter
+  IRTT/10 fallen, bei IRTT=530 also nicht unter 53 - gemeldet wird aber 1.
+  Entweder ist IRTT beim Rechnen ein anderer Wert als der in "PORT *"
+  angezeigte, oder die Schranke greift auf einem anderen Pfad nicht.  Das
+  ist zu lesen, bevor man aus TNNs Zahlen ueberhaupt etwas schliesst.
+
+* Gegenprobe bei TNN waere: IRTT am Laborport aendern und sehen, ob der
+  gemeldete Wert mitgeht.  IRTT ist aber ein AUTOPAR - nicht ueber die
+  Kommandozeile setzbar, sondern aus der Portkonfiguration abgeleitet.  Es
+  ginge nur ueber die Portgeschwindigkeit in tnn179.tnb und einen Neustart.
+
+* Ob wir einen Wert, den ein Partner als DEFAULTDELAY (600) schickt, ueberhaupt
+  als Sockel nehmen sollten, ist eine eigene Frage.  recv_rprt() verwirft ihn
+  fuer remdelay bereits ("delay != DEFAULTDELAY"), aber pp->delay bekommt ihn
+  ueber setaxp() als Startwert.
+
+
+Werkzeuge
+---------
+
+    trace <iface> <hexflags>    1011 Kopfzeilen, 1211 mit Hex-Dump
+                                (iface.h: OUT 0x01, IN 0x10, ASCII 0x100,
+                                 HEX 0x200, NOBC 0x1000)
+
+Die Trace-Ausgabe geht an die cnet-Sitzung, die ihn EINSCHALTET - also
+einschalten und in derselben Pipe warten, nicht in einer zweiten.  Einen
+Poll erzwingt man mit "flexnet link delete <call>" und "flexnet link add
+<call>"; von allein kommt er nur alle fuenf Minuten (POLLINTERVAL), und nur
+zu Partnern aus "flexnet link add".
+
+TNN fragt man mit testtools/tnncmd.py --sysop "PORT" "PARMS" "LINKS"
+"ROUTES".
