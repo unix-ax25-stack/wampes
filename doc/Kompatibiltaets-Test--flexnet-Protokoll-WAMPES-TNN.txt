@@ -332,9 +332,62 @@ ZWEI DINGE STEHEN DARIN:
         halbe Umlaufzeit,  100-ms-Schritte  ->   50
         volle,              10-ms-Schritte  -> 1000
 
-DAMIT WAERE locdelay = TDIFF/200 um den Faktor 2 falsch.  NOCH NICHT
-GEAENDERT: das ist aus der ANZEIGE gelesen, und was XNET wirklich auf die
-Leitung legt, steht im tcpdump, der zu dem Versuch noch laeuft.  Erst danach.
+DER MITSCHNITT DAZU (tcpdump ueber denselben Versuch, ausgewertet mit einem
+Skript, das Polls und Antworten paart):
+
+    Poll gesendet   Ri    Antwort nach   gemeldete Zahl
+    75382.037       In      0.002 s        600
+    75393.844       Out     0.032 s          0
+    75564.259       In      9.512 s          0   <- wir hingen
+    75694.807       Out     0.032 s          6   <- er hat die 9,5 s gemessen
+    75928.690       In      8.192 s          0
+    76057.915       Out     0.031 s         12
+    76110.910       In      2.031 s          0
+
+Jede Seite meldet IHRE EIGENE Messung.  Das angehaltene XNET meldet konstant
+0 - seine Strecke ist ja schnell; die Verzoegerung erlebt nur die Gegenseite,
+und deren Zahl steigt 0 -> 6 -> 12.
+
+DIE GEMELDETEN ZAHLEN SIND GEGLAETTET, und daran ist eine Rechnung zunaechst
+gescheitert: mit UNSEREM Faktor 7/8 kaeme aus 9,512 s ((7*0 + 95)/8 = 12) die
+halbe Lesart heraus, nicht die volle.  Aufgeloest hat es Thomas' Hinweis, dass
+DB0VOX erst WAEHREND der Anhaltephase hochkam - dessen erste Messung ist also
+ungeglaettet, und die Anzeige sprang von 600/600 (Default) direkt auf 100/14.
+Bei zehn Sekunden Pause passt nur die volle Umlaufzeit; halbiert stuenden dort
+50, und fuer 100 braeuchte es 20 s, die im Mitschnitt nirgends vorkommen (die
+laengste Verzoegerung ist 9,512 s).
+
+Mit 15/16 statt 7/8 geht dann auch die geglaettete Reihe auf:
+
+    9,512 s -> roh 95   (15*0 + 95)/16 = 5,9  -> 6    gemeldet 6
+    8,192 s -> roh 82   (15*6 + 82)/16 = 10,8 -> 11   gemeldet 12
+
+XNET GLAETTET ALSO TRAEGER ALS WIR - nach einem Ausreisser braucht es dort
+viermal so lange, bis der Wert wieder stimmt.  Beobachtet ueber zwanzig
+Minuten: 100 -> 93 -> 88.
+
+    T ist dabei der Mittelwert beider Richtungen, kaufmaennisch gerundet:
+    (6+9)/2 = 7,5 -> 8, und (88+19)/2 = 53,5 -> 54.  Auch das wie bei uns.
+
+DAMIT WAERE locdelay = TDIFF/200 um den Faktor 2 falsch - ABER DIE ZEILE IST
+NICHT GEAENDERT, und dafuer gibt es einen guten Grund (Thomas):
+
+    Die Variable heisst locdelay und nicht rtt, und das ist kein Zufall.  Eine
+    Routing-Metrik soll sagen, wie lange ein Paket ZUM ZIEL braucht, nicht hin
+    und zurueck; ueber eine Kette summiert ergibt die Einweg-Zeit eine
+    sinnvolle Groesse, die Summe von Umlaufzeiten nur etwas dazu
+    Proportionales.  Die Halbierung ist also eine bewusste Auslegung und
+    sachlich die bessere.
+
+Nur machen XNET (gemessen) und TNN (im Kommentar zu flex_tx_rtt_reply) es
+beide anders.  Es ist damit keine Frage von richtig oder falsch, sondern von
+ANSCHLUSS: die Zahl geht ins Netz und wird dort mit den Zahlen anderer Knoten
+verrechnet - bei "1.125 * delay + ourdelay" addieren sich unsere halbierten
+Werte zu den vollen der anderen, und wir sehen guenstiger aus, als wir sind.
+
+Zu entscheiden ist deshalb nicht die Semantik, sondern ob wir uns anschliessen
+- und ob das ein Schalter wird.  Offen ist auch, welcher Wert dann die Vorgabe
+waere.
 
 
 7. Offen, und wie es zu entscheiden waere
