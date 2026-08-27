@@ -83,11 +83,37 @@ struct ax_route {
 	 * AXROUTE_HOLDTIME, so a "cannot" does not outlive its station.
 	 */
 	int eax25;
+	/* ZUFALL VON EIGENSCHAFT TRENNEN, und dafuer taugt keine Frist.
+	 *
+	 * Ein Rueckfall auf SABM sagt fuer sich genommen nichts: er kann
+	 * heissen "er kann kein Modulo 128", oder es ging ein SABME verloren -
+	 * oder, schlimmer, SEIN UA darauf, denn dann steht er auf 128 und wir
+	 * auf 8.  Eine Vergesszeit hilft nicht (Thomas): bricht ein Link und
+	 * baut nach 30 s neu auf, liegt das innerhalb jeder sinnvollen Frist.
+	 *
+	 * Was die beiden trennt, ist WIEDERHOLUNG.  Verlust ist sporadisch,
+	 * fehlendes Modulo 128 ist konstant:
+	 *
+	 *   eax25_fails  Rueckfaelle IN FOLGE.  Ein Erfolg setzt ihn zurueck;
+	 *                erst bei EAX25_MAXFAILS gilt "kann nicht".  Bei 20 %
+	 *                Verlust scheitert ein Aufbau mit rund 5 %, drei in
+	 *                Folge also mit etwa 1:10000.
+	 *   eax25_skips  Verbindungen seit dem Aufgeben.  Nach EAX25_RETRY
+	 *                wird wieder gefragt - auf einer Strecke, die oft neu
+	 *                aufbaut, also frueher, und dort war die Fehldiagnose
+	 *                auch wahrscheinlicher.
+	 */
+	int eax25_fails;
+	int eax25_skips;
 };
 
 #define AXR_EAX25_UNKNOWN        0
 #define AXR_EAX25_YES            1
 #define AXR_EAX25_NO           (-1)
+
+/* Siehe eax25_fails / eax25_skips oben. */
+#define EAX25_MAXFAILS           3      /* Rueckfaelle in Folge bis "kann nicht" */
+#define EAX25_RETRY             15      /* Verbindungen bis zum naechsten Versuch */
 
 #define AXROUTESIZE     499
 extern struct ax_route *Ax_routes[];

@@ -303,14 +303,16 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				eax25_remember(axp->hdr.dest,AXR_EAX25_YES);
 			else if(axp->eax25_tried){
 				/* He ignored the SABMEs and answered the SABM.
-				 * THAT is what tells the two cases apart:
-				 * silence alone would have been just as
-				 * consistent with a station that is away, and
-				 * marking an absent neighbour as incapable
-				 * would stick to him for as long as his route
-				 * lives.
+				 * Once that read like proof; it is not.  The
+				 * same picture arises when HIS UA to a SABME
+				 * was lost and reaches us after we have
+				 * fallen back - and then he is on modulo 128
+				 * while we are on 8.  Measured against TNN at
+				 * 20 % loss: the very station whose other
+				 * link was running modulo 128 got marked as
+				 * incapable.  So it is counted, not believed.
 				 */
-				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
+				eax25_failed(axp->hdr.dest);
 				axp->eax25_tried = 0;
 			}
 			/* Note: xmit queue not cleared */
@@ -749,8 +751,40 @@ void eax25_remember(uint8 *call, int verdict)
 {
 	struct ax_route *rp;
 
-	if((rp = ax_routeptr(call,1)) != NULL)
-		rp->eax25 = verdict;
+	if((rp = ax_routeptr(call,1)) == NULL)
+		return;
+	rp->eax25 = verdict;
+	/* Ein Erfolg loescht die Fehlschlaege - sie waren dann Zufall, und der
+	 * Zaehler soll nur zaehlen, was IN FOLGE misslingt.
+	 */
+	if(verdict == AXR_EAX25_YES)
+		rp->eax25_fails = 0;
+	if(verdict == AXR_EAX25_NO)
+		rp->eax25_skips = 0;
+}
+
+/* Ein Rueckfall auf SABM, und der sagt fuer sich genommen NICHTS: er kann
+ * heissen, dass die Station kein Modulo 128 kann - oder dass ein SABME
+ * verlorenging, oder ihr UA darauf.  Deshalb wird er gezaehlt und nicht
+ * geglaubt; erst EAX25_MAXFAILS Rueckfaelle in Folge sind eine Aussage.
+ *
+ * Ein FRMR geht weiter direkt an eax25_remember(): dort HAT sie das SABME
+ * angenommen und konnte dann nicht folgen, das ist der eine Beweis, den
+ * kein verlorener Rahmen vortaeuschen kann.
+ */
+
+void eax25_failed(uint8 *call)
+{
+	struct ax_route *rp;
+
+	if((rp = ax_routeptr(call,1)) == NULL)
+		return;
+	if(rp->eax25 == AXR_EAX25_NO)
+		return;
+	if(++rp->eax25_fails >= EAX25_MAXFAILS){
+		rp->eax25 = AXR_EAX25_NO;
+		rp->eax25_skips = 0;
+	}
 }
 
 /* The first modulo-128 call heard on a port that does not ask for it - once
@@ -801,8 +835,19 @@ static int eax25_wanted(struct iface *ifp, uint8 *dest, struct ax25_cb *from)
 	/* No port yet, or a port that only answers: do not ask. */
 	if(ifp == NULL || ifp->eax25 == EAX25_OFF || ifp->eax25 == EAX25_ACCEPT)
 		return MMASK;
-	if((rp = ax_routeptr(dest,0)) != NULL && rp->eax25 == AXR_EAX25_NO)
-		return MMASK;
+	/* "Kann nicht" gilt nicht fuer immer.  Nach EAX25_RETRY einfachen
+	 * Verbindungen wird wieder gefragt, denn der Vermerk kann aus
+	 * verlorenen Rahmen stammen (siehe eax25_failed).  Auf einer Strecke,
+	 * die oft neu aufbaut, kommt der naechste Versuch damit frueher - und
+	 * genau dort war die Fehldiagnose auch wahrscheinlicher.
+	 */
+	if((rp = ax_routeptr(dest,0)) != NULL && rp->eax25 == AXR_EAX25_NO){
+		if(++rp->eax25_skips < EAX25_RETRY)
+			return MMASK;
+		rp->eax25 = AXR_EAX25_UNKNOWN;
+		rp->eax25_fails = 0;
+		rp->eax25_skips = 0;
+	}
 	if(ifp->eax25 == EAX25_ALWAYS)
 		return EMMASK;
 	if(from != NULL)

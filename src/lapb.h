@@ -358,6 +358,7 @@ int lapb_output(struct ax25_cb *axp);
 struct mbuf *segmenter(struct mbuf **bp,uint ssize);
 int sendctl(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int cmd);
 void eax25_remember(uint8 *call,int verdict);
+void eax25_failed(uint8 *call);
 int ax25_maxframe(struct ax25_cb *axp);
 void ax25_apply_iface_limits(struct ax25_cb *axp);
 void eax25_fallback(struct ax25_cb *axp);
