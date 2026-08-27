@@ -5812,3 +5812,57 @@ VORHER ZU KLAEREN, sonst baut man sich ein Loch:
   * Fuer die INP3-/32 aus inp3_ip_add() gilt es NICHT: die ist genau dafuer
     da, den angekuendigten Knoten direkt erreichbar zu machen, auch wenn ein
     anderer das Netz haelt.
+
+EAX25: EIN VERLORENES UA WIRD ALS "KANN KEIN MODULO 128" GEMERKT
+------------------------------------------------------------------
+
+Gefunden beim Verlusttest gegen TNN (20 %, lossrelay.py, seed 1).  Gleiche
+Strecke, gleiche Gegenstelle, zwei Links:
+
+    DL9SAU-2 -> DB0TNN  (NET/ROM)   Mod 128
+    DL9SAU-5 -> DB0TNN  (FlexNet)   Mod 8, und "ax25 route list" zeigt "e"
+
+TNN kann es also nachweislich - der eine Link beweist es, waehrend der andere
+es fuer dieselbe Station abgeschrieben hat.  Einmal "e", nie wieder gefragt,
+bis die Route altert oder er UNS mit SABME anruft (lapb.c:804 unterdrueckt
+das SABME dann bei jedem weiteren Aufbau).
+
+DER ENTSCHEIDENDE ABLAUF IST THOMAS' - und er ist schlimmer als blosses
+Schweigen, weil dabei beide Seiten VERSCHIEDENER MEINUNG werden:
+
+    wir -> SABME   kommt an   -> er setzt mmask = EMMASK, sendet UA
+           UA      verloren
+    wir -> SABME              -> UA      verloren
+    wir -> SABME              -> UA      verloren
+    nach drei Proben Rueckfall auf SABM (lapbtime.c:91, mmask = MMASK)
+    ein verspaetetes UA trifft ein
+    -> lapb.c:302 sieht mmask != EMMASK und eax25_tried -> "kann nicht"
+
+Er steht dann auf Mod 128, wir auf Mod 8.  EIN UA VERRAET NICHT, AUF WELCHES
+KOMMANDO ES ANTWORTET - die Heuristik "er hat die SABMEs ignoriert und den
+SABM beantwortet" ist also nicht nur bei Schweigen unsicher, sondern immer
+dann, wenn eine ANTWORT verlorengeht.  Der Zustand selbst loest sich, sobald
+unser SABM ankommt (lapb.c:130 setzt ihn dann auch auf MMASK); was bleibt,
+ist der falsche Vermerk.
+
+VORSCHLAG, nach Beweiskraft gestaffelt:
+
+    FRMR                 er nahm SABME an und konnte nicht folgen
+                         -> volle Route-Lebensdauer, wie heute
+    UA nach 3 SABMEs     mehrdeutig, kann ein verlorenes UA sein
+                         -> kurz halten, etwa eine Stunde
+
+Dann kostet eine wirklich schweigende Altstation einmal pro Stunde drei
+Proben (~19 s), und eine verlustbehaftete Strecke sperrt sich nicht selbst
+fuer die ganze Routenlebensdauer aus.
+
+NICHT ALS INDIKATOR TAUGT DM (Thomas): wurde eine Session gerade mit DISC
+abgebaut und geht das UA oder DM darauf verloren, baut die Gegenseite neu
+auf - und auf unser unbestaetigtes DISC hin antworten WIR mit DM auf ihr
+SABME.  Der Code wertet DM auch nicht; das ist die Falle, in die man beim
+Aufraeumen tappen wuerde.
+
+Was gemessen ausserdem gilt: die Verbindung FAENGT SICH bei 20 % Verlust von
+allein wieder (Recovery -> Connected), und TNN kappt EAXMAXFR bei 32 - ein
+beidseitiges Fenster von 63 ist gegen ihn nicht herstellbar.  Unser eigener
+Vorgabewert ist ebenfalls 32 (ax25subr.c:32, einstellbar 1..63).
