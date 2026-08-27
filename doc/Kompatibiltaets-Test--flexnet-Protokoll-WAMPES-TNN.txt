@@ -262,7 +262,82 @@ faellt das nicht auf, weil die wirkliche Laufzeit dann in derselben
 Groessenordnung liegt.  Bei axip ueber Loopback ist die Abweichung maximal.
 
 
-5. Offen, und wie es zu entscheiden waere
+5. XNET auf der Leitung, mitgeschnitten
+----------------------------------------
+
+Thomas hat zwei XNETs ueber axudp mitgeschnitten (tcpdump, UDP 9393).  Was
+dort steht, wiegt schwerer als alles Hergeleitete - es ist die dritte
+Implementierung, und keine von uns.
+
+DAS CR IST RICHTIG.  XNET antwortet mit Abschlusszeichen, genau wie wir:
+
+    20:04:24.244369  In   259 Byte   ...ce 3220 2020...   Poll ('2' + Fuell)
+    20:04:24.246725  Out   23 Byte   ...ce 3136 3030 0d   "1600\r"
+
+Damit ist TNN der Ausreisser, nicht wir, und der Fix aus 1. ist bestaetigt.
+Nebenbei: 600 ist auch bei XNET das "noch nichts gemessen", solange ein Link
+frisch ist - derselbe Wert, den wir als DEFAULTDELAY fuehren.
+
+DIE EINHEIT IST 100 ms.  Ein Poll und seine Antwort im selben Mitschnitt:
+
+    20:04:41.012156  Out  259 Byte   unser Poll
+    20:04:41.044360  In    21 Byte   "10\r"  ->  Delay 0
+                                     Umlaufzeit 32,2 ms
+
+32 ms werden als 0 gemeldet.  In 10-ms-Schritten muesste dort 3 stehen.
+
+FLEX_INIT SIEHT ANDERS AUS ALS UNSERES, und beide XNETs senden dasselbe:
+
+    XNET   ce  30 3f 25 21 0d          5 Oktette
+    wir    ce  30 3f 20 20 21 0d       6 Oktette
+               '0' stop  ?  ?  !  CR
+
+Die 3f ist '0'+15, also die stop-SSID - so weit stimmt unsere Lesart.  Aber
+wo wir ZWEI Leerzeichen senden, steht bei XNET EIN Byte 0x25 (' '+5).  Unser
+Rahmen ist ein Oktett laenger, und ein Feld, das dort einen Wert traegt,
+fuellen wir mit Leerzeichen.  Dass die Verbindung trotzdem steht, heisst nur,
+dass gegenseitig tolerant gelesen wird.  doc/FLEXNET-SSID.md beschreibt die
+sechs Oktette als gesichert - das ist nach diesem Mitschnitt nicht haltbar.
+
+ZUR EINORDNUNG (Thomas): "echt" ist XNET so wenig wie wir, es ist ebenfalls
+ein Nachbau.  Wer wie guten Kontakt zum Autor hatte, laesst sich nicht mehr
+sagen; erinnerlich ist aber eine Zeit der Inkompatibilitaeten, und es ging
+dabei um die LAUFZEIT.  Die Frage unten ist also womoeglich kein Wissensloch,
+sondern ein alter Dissens zwischen Implementierungen.
+
+
+6. Volle Umlaufzeit oder halbe - der Versuch mit angehaltenem XNET
+-------------------------------------------------------------------
+
+Ein Mitschnitt allein entscheidet es nicht: bei 32 ms ergeben beide Lesarten
+0.  Es braucht eine BEKANNTE, GROSSE Laufzeit.  Thomas hat sie erzeugt, indem
+er ein XNET wiederholt anhielt (SIGSTOP wirkt dort nicht - der Prozess
+reagiert nicht darauf; ein angehaengtes strace, das man selbst suspendiert,
+haelt ihn aber an).  Seine Anzeige danach:
+
+    Link to     dst  Q/T    rtt
+    3:DB0VOX    178 F  57  100/14
+    6:IGATE       1 F   3    0/6
+    7:IGATEB      1 F   1    0/0
+
+ZWEI DINGE STEHEN DARIN:
+
+  * T IST DER MITTELWERT der beiden Richtungen: (100+14)/2 = 57, (0+6)/2 = 3.
+    Die rtt-Spalte zeigt "meine/seine".  Bei 0/0 steht trotzdem T=1 - ein
+    Boden, keine Messung.  Das erklaert die Pfadsummen aus 3. rueckwirkend:
+    die T=1 zum IGATEB war nie eine Laufzeit.
+  * DIE 100 IST DIE UNTERBRECHUNG.  Angehalten wurde 10 Sekunden:
+
+        volle Umlaufzeit, 100-ms-Schritte   ->  100    beobachtet: 100
+        halbe Umlaufzeit,  100-ms-Schritte  ->   50
+        volle,              10-ms-Schritte  -> 1000
+
+DAMIT WAERE locdelay = TDIFF/200 um den Faktor 2 falsch.  NOCH NICHT
+GEAENDERT: das ist aus der ANZEIGE gelesen, und was XNET wirklich auf die
+Leitung legt, steht im tcpdump, der zu dem Versuch noch laeuft.  Erst danach.
+
+
+7. Offen, und wie es zu entscheiden waere
 ------------------------------------------
 
 * GEGENPROBE MIT XNET UND RMNC (Thomas macht den Trace).  Erst wenn feststeht,
