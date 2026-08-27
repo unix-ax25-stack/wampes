@@ -299,6 +299,7 @@ int ethertap_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname;
+  char *label;
   char devname[1024];
   uint8 hwaddr[6];
   int fd;
@@ -314,9 +315,20 @@ int ethertap_attach(int argc, char *argv[], void *p)
   int ifp_mtu = 0;
   int skfd;
 
+  /* ZWEI NAMEN FUER ZWEI SEITEN, wie bei "attach tun" und "attach kernel":
+   * argv[1] ist der Name, den der Linux-Host sieht, das optionale Label der
+   * unsere.  Das Label steht hinter der MTU und nicht davor, weil die MTU
+   * schon optional ist - zwei aufeinanderfolgende Kann-Argumente waeren
+   * nicht zu unterscheiden.  Wer also ein Label will, gibt die MTU mit an.
+   *
+   * ifname zeigt weiter unten auf devname und traegt dann den Namen, den der
+   * Kernel wirklich vergeben hat; deshalb wird das Label hier getrennt
+   * gehalten und nicht in ifname geschrieben.
+   */
   ifname = argv[1];
-  if (if_lookup(ifname)) {
-    printf("Interface %s already exists\n", ifname);
+  label = (argc > 3) ? argv[3] : NULL;
+  if (if_lookup(label ? label : ifname)) {
+    printf("Interface %s already exists\n", label ? label : ifname);
     return -1;
   }
 
@@ -438,7 +450,11 @@ behind_dummy_hwaddr:
   close(skfd);
 
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
-  ifp->name = strdup(ifname);
+  /* Ohne Label bleibt es beim bisherigen Verhalten: ifname zeigt hier auf
+   * den Namen, den der Kernel WIRKLICH vergeben hat, nicht auf den Wunsch
+   * aus argv[1].
+   */
+  ifp->name = strdup(label ? label : ifname);
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffUL;
   ifp->netmask = 0xffffffffUL;

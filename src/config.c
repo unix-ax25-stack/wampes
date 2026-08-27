@@ -233,7 +233,11 @@ struct cmds Attab[] = {
 
 #if defined __FreeBSD__ || defined __MACOSX__ || defined linux
 	{ "tun", tun_attach, 0, 3,
-	"attach tun <label> <mtu>\n"
+	"attach tun <linux-name> <mtu> [label]\n"
+	"  <linux-name> is what the host sees in \"ip link\"; [label] is what we\n"
+	"  call it here.  Two names because the two ends mean opposite things:\n"
+	"  a device named \"ax25\" on the host says \"through here to AX.25\" -\n"
+	"  from in here the same name would be wrong, as we ARE that side.\n"
 	"  IP with no ethernet header, which is what a point to point link\n"
 	"  wants.  For AX.25 over ethernet - BPQether to the kernel's own\n"
 	"  AX.25 - there is \"attach ethertap\", which asks the same Linux\n"
@@ -242,11 +246,17 @@ struct cmds Attab[] = {
 
 #ifdef	linux
 	{ "kernel", krnlif_attach, 0, 2,
-	"attach kernel <iface> [label] [nopromisc]" },
+	"attach kernel <linux-name> [label] [nopromisc]\n"
+	"  [label] is our own name for the port - the kernel keeps its own.\n"
+	"  Useful where the kernel side is called something generic because it\n"
+	"  exists only to be used from here." },
 #endif
 
 	{ "ethertap", ethertap_attach, 0, 2,
-	"attach ethertap <label> [mtu]" },
+	"attach ethertap <linux-name> [mtu] [label]\n"
+	"  [label] is our own name for it, see \"attach tun\".  It comes after\n"
+	"  the mtu, which has to be given along with it - two optional words in\n"
+	"  a row could not be told apart." },
 
 	{ NULL }
 };

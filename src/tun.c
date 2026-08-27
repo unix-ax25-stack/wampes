@@ -377,6 +377,16 @@ int tun_attach(int argc, char *argv[], void *p)
   char devname[14];             /* sufficient room for "/dev/tun65535" */
   char ifname[IFNAMSIZ];
   char *ifnamew;
+  /* ZWEI NAMEN FUER ZWEI SEITEN.  argv[1] ist der, um den wir den Kernel
+   * bitten - er steht danach in "ip link" und sagt dem Linux-Host, wohin es
+   * geht.  Das optionale Label ist unser eigener, und der sagt das
+   * Gegenteil: von hier aus geht es zum Host.  Auf db0fhn heisst das Geraet
+   * linuxseitig "ax25", weil dahinter die AX.25-Welt liegt - bei uns waere
+   * derselbe Name irrefuehrend, denn wir SIND diese Welt.
+   *
+   * "attach kernel" trennt die beiden seit jeher (krnlif.c), hier fehlte es.
+   */
+  char *label;
   int arg;
   int fd;
   int sock_fd;
@@ -396,9 +406,10 @@ int tun_attach(int argc, char *argv[], void *p)
 
   ifnamew = argv[1];
   ifmtu = atoi(argv[2]);
+  label = (argc > 3) ? argv[3] : ifnamew;
 
-  if (if_lookup(ifnamew) != NULL) {
-    printf("Interface %s already exists\n", ifnamew);
+  if (if_lookup(label) != NULL) {
+    printf("Interface %s already exists\n", label);
     return -1;
   }
 
@@ -518,7 +529,7 @@ int tun_attach(int argc, char *argv[], void *p)
   close(s);
 
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
-  ifp->name = strdup(ifnamew);
+  ifp->name = strdup(label);
   ifp->addr = Ip_addr;
   ifp->broadcast = 0xffffffffUL;
   ifp->netmask = 0xffffffffUL;
