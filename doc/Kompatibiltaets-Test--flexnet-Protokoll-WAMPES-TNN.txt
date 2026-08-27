@@ -166,6 +166,28 @@ NICHTS GEAENDERT.  Was hier fehlt, ist eine Strecke mit BEKANNTER Umlaufzeit
 und ein Mitschnitt daneben - dann steht die Antwort im Rahmen statt in einer
 Herleitung.
 
+WAS DIE KETTE STATTDESSEN HERGIBT (Thomas' Gedanke: wenn jeder Knoten mit
+rtt/2 rechnete und sich das entlang der Kette addiert, muesste man es an der
+Summe sehen - und die hohe Latenz bei DB0AVH macht es sichtbar).  Rueckwaerts
+gerechnet, mit 1.125 je Hop:
+
+    IGATEB -> DB0BLO-4                T=1
+    IGATEB -> ... -> DB0AVH-4         T=2   1.125*Y + 1 = 2   Y ~ 0.9 -> 1
+    IGATEB -> ... -> DB0AVH           T=7   1.125*Z + 1 = 7   Z ~ 5.3
+    und Z entsteht schon bei DB0BLO-4:      1.125*W + 1 = 5.3 W ~ 3.9 -> 4
+
+W ~ 4 ist genau die hoehere der beiden Zahlen aus dem DB0AVH-Paar (4/2 bzw.
+2/4).  Gegenprobe an DB0BLO, dessen RMNC-Port 1/1 zeigt: 1.125*1 + 1 = 2.1,
+und T(DB0BLO) ist 2.  ZWEI UNABHAENGIGE STELLEN, DERSELBE FAKTOR - 1.125
+stimmt also, und XNET wendet ihn genauso an.
+
+Der erhoffte Rueckschluss scheitert trotzdem, und zwar an der Asymmetrie:
+waeren 2 und 4 die beiden HAELFTEN derselben Umlaufzeit, muessten sie gleich
+sein - es ist dieselbe Strecke.  Sie sind es nicht, weil jede Seite ihre
+eigene Bearbeitungszeit mitmisst.  Eingespeist wird eine Einzelmessung, und
+ob die intern schon halbiert war, sieht man von aussen nicht: eine halbierte
+8 und eine volle 4 stehen als dieselbe 4 auf der Leitung.
+
 
 4. Warum TNN im Labor erst 46 meldete, und kurz darauf 1
 ---------------------------------------------------------
