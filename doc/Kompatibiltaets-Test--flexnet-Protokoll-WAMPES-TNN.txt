@@ -57,8 +57,14 @@ Ein Sockel von 41 statt 4 macht also jedes Ziel hinter TNN um rund 3,7 s
 teurer, als es ist.
 
 
-3. Die Einheit: 100 ms, und es ist die Hin-und-Rueck-Zeit
-----------------------------------------------------------
+3. Die Einheit: OFFEN - und warum der naheliegende Beleg nicht traegt
+----------------------------------------------------------------------
+
+ACHTUNG, DIESER ABSCHNITT STAND HIER ZUERST ALS ERGEBNIS.  Er ist es nicht.
+Der Rechenweg unten ist richtig, seine VORAUSSETZUNG war falsch, und das
+Ergebnis faellt damit weg.  Beides bleibt stehen, weil der Irrweg lehrreich
+ist: aus Pfadsummen laesst sich eine Einheit nur ableiten, wenn man die
+zugrundeliegende Laufzeit KENNT - und das tut man hier nicht.
 
 Beide Seiten rechnen in 100-ms-Schritten, das ist KEIN Streitpunkt:
 
@@ -87,7 +93,7 @@ DB0AVH und DB0BLO ohne SSID sind RMNCs, seriell an ihrem XNET.
 Damit kostet der serielle Schritt zum RMNC:
 
     DB0BLO   +1     seriell mit 115200 Bd
-    DB0AVH   +5     seriell, gleiche Konfiguration (Thomas)
+    DB0AVH   +5     seriell mit 115200 Bd - DIESELBE Geschwindigkeit
 
 Die Portliste des RMNC DB0BLO bestaetigt die Geschwindigkeit:
 
@@ -100,13 +106,33 @@ Port 8 ist die serielle Strecke zum eigenen XNET (115200), Port 3 der
 9600er Funklink zum RMNC DB0AVH - ueber den die hier betrachtete Route
 allerdings NICHT laeuft, die geht ueber die beiden XNETs.
 
-DASS DB0AVH TROTZ GLEICHER KONFIGURATION +5 KOSTET UND DB0BLO NUR +1, ist
-nicht erklaert.  Am RMNC DB0AVH schwankt die Messung zu DB0AVH-4 zwischen
-4/2 und 6/2 (Thomas), sie ist also echt und nicht festgenagelt.  Eine
-Vermutung waere Wartezeit statt Kanalzeit - Auslastung, Timer-Granularitaet
-oder TXDelay -, aber das ist eine Vermutung.  Fuer die EINHEIT ist es
-unerheblich: die vier Summen oben bleiben in 100-ms-Schritten stimmig, und
-in 10-ms-Schritten muesste beim 9600er-Schritt eine 42 stehen.
+UND GENAU HIER FAELLT DIE RECHNUNG.  Der Schluss oben setzte voraus, dass
+DB0AVHs serieller Schritt langsam ist (RMNC-ueblich 9600); daraus kamen die
+420 ms.  Er ist es nicht.  Beide Enden melden 115200:
+
+    DB0AVH   (RMNC) ueber seine Schnittstelle zu DB0AVH-4:  115200cd!  4/2
+    DB0AVH-4 (XNET) ueber seine Schnittstelle zu DB0AVH:    115200c    2/4
+
+Gleiche Leitung, gleiche Geschwindigkeit wie bei DB0BLO - und trotzdem +5
+statt +1.  DIE KANALZEIT IST ALSO NICHT DER BESTIMMENDE ANTEIL, und damit
+laesst sich aus den Pfadsummen keine Einheit ableiten.
+
+Was die beiden Zeilen dafuer zeigen:
+
+  * Die Anzeige ist SPIEGELBILDLICH - 4/2 auf der einen, 2/4 auf der anderen
+    Seite.  Es sind zwei Sichten auf dasselbe Paar, "meine Messung / seine".
+  * Auf derselben Strecke misst der RMNC 4 und das XNET 2.  Physikalisch
+    sind 201 Byte bei 115200 Bd 17 ms je Richtung; gemessen werden 400 bzw.
+    200 ms.  Es ist also fast ausschliesslich BEARBEITUNGSZEIT, und sie ist
+    richtungsabhaengig.
+  * Ein USB-Seriell-Wandler als Erklaerung scheidet aus (Thomas): zur
+    Entstehungszeit dieser Kopplungen gab es USB noch nicht, das ist ein
+    echtes serielles Kabel.  Die Zeit entsteht IN DEN KNOTEN.
+  * Am RMNC DB0AVH schwankt der Wert zwischen 4/2 und 6/2, ist also eine
+    laufende Messung und nichts Festgenageltes.
+
+Damit erklaert sich zwanglos, warum DB0AVH +5 kostet und DB0BLO +1: es ist
+die Reaktionszeit der beiden RMNCs, nicht ihre Anbindung.
 
 Und das rechnet sich auf, wenn man den 201-Byte-Poll ansetzt, den FlexNet
 zum Messen benutzt - er ist ja gerade so lang, damit die Kanalzeit sichtbar
@@ -121,16 +147,24 @@ Beobachtet sind +5 und +1.  In 100-ms-Schritten und als Hin-und-Rueck-Zeit
 gerechnet passt das; halbierte man es, kaeme fuer den 9600er 2 statt 5
 heraus, und in 10-ms-Schritten muesste dort 42 stehen.
 
-DARAUS FOLGT FUER UNS EIN FAKTOR 2, und zwar auf unserer Seite:
+OFFEN BLEIBT DAMIT DIESE ZEILE:
 
     pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
 
-Das ist die HALBE Umlaufzeit in 100-ms-Schritten.  Richtig waere /100.0.
+Das ist die HALBE Umlaufzeit in 100-ms-Schritten.  Waere die Einheit die
+volle Umlaufzeit, muesste dort /100.0 stehen, und wir meldeten dem ganzen
+Netz die Haelfte unserer Laufzeit - als Sockel unter jedem Ziel hinter uns,
+was uns systematisch attraktiver aussehen liesse, als wir sind.
 
-Dieser Schluss stuetzt sich AUF DIE NETZZAHLEN OBEN, nicht auf das Labor:
+DASS ES SO IST, IST ABER NICHT BELEGT.  Dafuer gibt es nur den TNN-Kommentar
+("Flexnet uebertraegt Hin-und-Rueck-Laufzeiten"), und der wiegt wenig,
+solange TNN selbst die offene Frage aus 5. hat.  Das Labor gibt nichts her:
 ueber Loopback melden beide Seiten inzwischen 1, und aus zwei Einsen laesst
-sich kein Faktor ablesen.  NOCH NICHT GEAENDERT - erst gegen XNET und RMNC
-gegentracen (siehe 5.).
+sich kein Faktor ablesen.
+
+NICHTS GEAENDERT.  Was hier fehlt, ist eine Strecke mit BEKANNTER Umlaufzeit
+und ein Mitschnitt daneben - dann steht die Antwort im Rahmen statt in einer
+Herleitung.
 
 
 4. Warum TNN im Labor erst 46 meldete, und kurz darauf 1
