@@ -1,0 +1,32 @@
+
+LISTEN AX25 -> LIBAX25: EIN USER FLIEGT, WENN SICH EINER ANMELDET
+-------------------------------------------------------------------
+
+Im Livebetrieb an db0fhn beobachtet (Thomas), Weg: "listen ax25" ->
+libax25 -> ax25d -> axspawn.  MANCHMAL, nicht immer, und ein Testszenario
+liess sich auf die Schnelle nicht bauen.  Ob es an uns liegt, an der
+Kommunikation zur libax25 oder an libax25 selbst, ist offen.
+
+AUSGESCHLOSSEN IST EINE VERWECHSLUNG DER SITZUNGEN: jede Verbindung bekommt
+ihr eigenes socketpair, dessen eine Haelfte per SCM_RIGHTS an den Client
+uebergeht (axserver.c, axpipe-Uebergabe).  Gemeinsam ist nur der
+KONTROLLKANAL lp->clientfd, nicht der Datenweg.
+
+VERDACHT, gelesen und nicht gemessen - axserver.c:
+
+    if (remote_net_send_frame(lp->clientfd, line, *bpp))
+      remote_net_drop_client(lp->clientfd);
+
+Ein Sendefehler auf dem Kontrollkanal laesst den GANZEN Client fallen, und
+mit ihm alles, was er haelt - auch bestehende Logins.  Der Uebergabepfad
+sendet mit MSG_DONTWAIT (bewusst: ein Client, der nicht accept() ruft, darf
+den Knoten nicht anhalten).  Laeuft der Kanal beim Anmelden eines zweiten
+Users kurz voll, passt das Bild: manchmal, naemlich nur bei Ueberlappung,
+und es trifft den Falschen.
+
+ERSTER SCHRITT IST NICHT DER FIX, SONDERN DIE SPUR: remote_net_drop_client()
+soll sagen, WARUM es gerufen wurde - Sendefehler mit errno, Client hat
+geschlossen, Konflikt.  Dann zeigt der naechste Vorfall im Log seine Ursache
+von selbst, ohne dass jemand das Szenario nachbauen muss.  Erst danach
+entscheiden, ob ein voller Puffer wirklich den ganzen Client kosten darf oder
+nur die eine Uebergabe.
