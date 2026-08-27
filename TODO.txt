@@ -5866,3 +5866,45 @@ Was gemessen ausserdem gilt: die Verbindung FAENGT SICH bei 20 % Verlust von
 allein wieder (Recovery -> Connected), und TNN kappt EAXMAXFR bei 32 - ein
 beidseitiges Fenster von 63 ist gegen ihn nicht herstellbar.  Unser eigener
 Vorgabewert ist ebenfalls 32 (ax25subr.c:32, einstellbar 1..63).
+
+OHNE TERMINAL VERSCHWINDEN ALLE STARTMELDUNGEN (Thomas, systemd)
+-------------------------------------------------------------------
+
+Beim Schreiben einer systemd-Unit fuer db0fhn: der Knoten lief, war mit cnet
+erreichbar - aber ohne Konfiguration, und nichts sagte warum.  Ursache der
+Blindheit ist hpux.c:
+
+    if ((local_kbd = (isatty(0) && isatty(1)))) {
+      ... Konsole
+    } else {
+      close(0); close(1); close(2);
+      for (i = 3; i < FD_SETSIZE; i++) close(i);
+      setsid();
+      fopen("/dev/null", "r+");   /* dreimal */
+    }
+
+WAMPES DAEMONISIERT DABEI NICHT WIRKLICH - es gibt kein fork(), nur setsid()
+und geschlossene Deskriptoren.  Deshalb ist "Type=simple" richtig, und ein
+"-n"-Schalter waere ueberfluessig.  Was aber verlorengeht, ist jede Meldung,
+auch "Can't read config file ...".  Unter systemd ist das genau verkehrt: das
+Journal hat stdout und stderr bereitgestellt und bekommt nichts.
+
+ZU BAUEN: stdin loslassen wie bisher, stdout und stderr aber nur wegwerfen,
+wenn sie ein TERMINAL sind.  Eine Pipe oder ein Socket gehoert jemandem, der
+mitliest.
+
+NICHT GEKLAERT ist Thomas' urspruengliches Problem - warum die Konfiguration
+gar nicht gelesen wurde.  Hier laesst es sich NICHT reproduzieren: "net net.rc
+< /dev/null" ohne -g liest sie anstandslos.  Sein Lauf war als root unter
+systemd; dort greifen check_permissions() und nice(-39), die hier nicht
+greifen.  Naechster Schritt ist deshalb nicht Raten, sondern der obige Fix -
+danach sagt der naechste Fehlversuch selbst, was ihm fehlt.
+
+Seine Unit, die laeuft:
+
+    [Service]
+    Type=simple
+    ExecStart=/tcp/net /tcp/net.rc
+    Restart=on-failure
+    RestartSec=5
+    WorkingDirectory=/tcp
