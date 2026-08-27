@@ -3805,11 +3805,15 @@ static int doinp3ip(int argc, char *argv[], void *p)
     return 1;
   }
   if (argc < 2) {
+    /* Sagen, WOZU die Zahl da ist: sie geht hinaus, sie kommt nicht herein.
+     * "INP3 ip 44.130.60.1/24" liess offen, ob das unsere Ankuendigung ist
+     * oder etwas Gelerntes.
+     */
     if (mynode->inp3_ip)
-      printf("INP3 ip %s/%d\n", inet_ntoa(mynode->inp3_ip),
-	     mynode->inp3_ipbits);
+      printf("IP range we advertise via INP3: %s/%d\n",
+	     inet_ntoa(mynode->inp3_ip), mynode->inp3_ipbits);
     else
-      printf("INP3 ip none\n");
+      printf("IP range we advertise via INP3: none\n");
     return 0;
   }
   if (!strcmp(argv[1], "none")) {
@@ -3936,10 +3940,16 @@ static int donrpeer(int argc, char *argv[], void *p)
   if (argc < 2) {
     struct node *pn;
 
+    /* SAGEN, WOVON DIE LISTE HANDELT.  Sie stand ohne Ueberschrift da, und
+     * dass es um INP3 geht, erfuhr man erst aus "netrom peer ?".  Ein Wort
+     * ueber "configured" braucht es dagegen nicht: nur "netrom peer add"
+     * traegt hier etwas ein, ein Benutzer landet nie in dieser Liste.
+     */
     if (!nrpeers) {
-      printf("No interlink partners - \"netrom peer add <call>\"\n");
+      printf("INP3 interlink partners: none.  \"netrom peer ?\" explains.\n");
       return 0;
     }
+    printf("INP3 interlink partners:\n");
     printf("Call       SSID   Interlink   INP3   SNTT     His      Last     "
 	   "Known as\n");
     for (pp = nrpeers; pp; pp = pp->next) {
@@ -4397,13 +4407,13 @@ int donetrom(int argc, char *argv[], void *p)
     { "filter",   dofilter,   0, 0, Rf_usage_netrom },
     { "ident",    doident,    0, 0, "netrom ident [<alias>]" },
     { "inp3",     doinp3,     0, 0,
-      "netrom inp3 ip [<addr>/<bits>|none]    what INP3 says about us" },
+      "netrom inp3 ip [<addr>/<bits>|none]    the IP range we advertise" },
     { "kick",     donkick,    0, 2, "netrom kick <nrcb>" },
     { "links",    dolinks,    0, 0, "netrom links                           our neighbours" },
     { "nodes",    donodes,    0, 0, "netrom nodes [<node>]                  the routing table" },
     { "parms",    doparms,    0, 0, "netrom parms [<n> <value>]...          list or set the parameters" },
     { "peer",     donrpeer,   0, 0,
-      "netrom peer                            the interlink partners\n"
+      "netrom peer                            our INP3 interlink partners\n"
       "       netrom peer add|del <call>\n"
       "  Whom we run an INP3 interlink with.  NET/ROM needs no such list -\n"
       "  it broadcasts, and a neighbour is whoever answers - but INP3 runs\n"
