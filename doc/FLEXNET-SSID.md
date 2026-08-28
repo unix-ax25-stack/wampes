@@ -123,4 +123,20 @@ fields and a protocol version.  It does not affect the range, since a
 callsign could not fit there in any case, but it means we always claim
 version 1 and would not notice if that ever changed.
 
+**XNET sends a shorter one, and RMNC does not.**  Measured, three
+implementations on the wire:
+
+    RMNC   30 39 20 20 21 0d      six octets, two spaces
+    we     30 3f 20 20 21 0d      six octets, two spaces
+    XNET   30 3f 25 21 0d         five, one 0x25 where the spaces are
+
+So our form is RMNC's, byte for byte - which is where `flexnet.c` was copied
+from, and the differing `39`/`3f` is only stop-SSID 9 against 15.  XNET's own
+decoder even names the two spaces when it receives the RMNC frame:
+`FlexLink:Init fm DB0AAT/9 (20 20)`.  Reading none of those octets is
+therefore not laziness but the only thing that works against both shapes;
+writing them the RMNC way is right.  Whether XNET's `0x25` is `' '+5` in one
+field or two fields run together is still unknown, and nothing depends on it
+so far.
+
 `TODO.txt` carries the traces this was built from, and what they settled.
