@@ -1,0 +1,61 @@
+ax25 mycall db0fhn-10
+ip addr 44.130.60.101
+
+atta tun ax25 1500 linux
+! ifconfig ax25 44.130.60.100 netmask 255.255.255.255 up
+! ip route add 44.130.60.101 dev ax25
+! ip route add 44.130.254.0/24 via 44.130.60.101
+route add 45.130.60.100 linux
+
+atta axip xnet udp 930:9393 bind=127.0.0.1
+ifc xnet encap ax25i mtu 1500
+#ifc xnet eax25 caller
+axip rou add db0fhn 127.0.0.1
+
+ax25 rou add permanent vj xnet db0fhn
+ax25 rou add permanent vj xnet igate db0fhn
+ax25 rou add permanent vj xnet igateb db0fhn
+
+
+atta axip dl9sau-test udp 9494
+ifc dl9sau-test encap ax25i mtu 1500
+ifc dl9sau-test eax25 caller
+
+ax25 rou add vj dl9sau-test dl9sau-1
+
+#flex li add db0fhn
+#netrom peer add db0fhn
+
+arp add 44.130.254.254 ax25 igate
+rou add 44.130.254.254 xnet 
+
+rou add 44.130.254.0/24 xnet 44.130.254.254
+#rou add 44.130.0.0/16 xnet 44.130.254.254
+rou add 44.130.0.0/16 linux 44.130.254.254
+rou add 44.224.0.0/15 linux 44.130.60.100
+rou add 44.128.0.0/10 linux 44.130.60.100
+rou add 44.0.0.0/9 linux 44.130.60.100
+rou add default linux
+
+# secure our IPs/Network
+ip learn deny 44.130.60.100
+# igate comes with call igate and has IP 44.130.254.254
+ip learn allow 44.130.254.254 call=igate # igate himself
+# deny for net: don't learn /32. use routing table
+ip learn deny 44.130.254.0/24 call=igate # PR users via inet, igate. pool getip
+ip learn deny 44.130.0.0/16 iface=xnet # PR users via inet, igate. pool getip
+ip learn deny 44.224.0.0/15 iface=linux # hamnet RF-DL via host
+ip learn deny 44.128.0.0/10 iface=linux # hamnet RF via host
+ip learn deny 44.0.0.0/9 iface=linux # amprnet inet via host
+ip learn deny 0.0.0.0/0 # the rest of the universe
+
+#listen ax25 add db0fhn-11 tcp:127.0.0.1:3600
+#listen ax25 add db0fhn-12 tcp:127.0.0.1:3610
+#listen ax25 add db0fhn-13 tcp:127.0.0.1:6810
+
+listen ax25 add --silent db0fhn-9 client # ax25d to axspawn login
+listen ax25 add --silent db0fhn-11 client # conversd
+listen ax25 add --silent db0fhn-12 client # wconversd
+listen ax25 add --silent db0fhn-13 client # lconversd
+
+esc 

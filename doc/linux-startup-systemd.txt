@@ -1,0 +1,16 @@
+Example /etc/systemd/system/wampes.service:
+
+[Unit]
+Description=WAMPES net
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/tcp/net /tcp/net.rc
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/tcp
+
+[Install]
+WantedBy=multi-user.target
+
