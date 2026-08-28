@@ -432,3 +432,66 @@ zu Partnern aus "flexnet link add".
 
 TNN fragt man mit testtools/tnncmd.py --sysop "PORT" "PARMS" "LINKS"
 "ROUTES".
+
+
+================================================================
+NACHTRAG 2026-08-29: EIN RMNC IM MITSCHNITT - DIE DRITTE
+IMPLEMENTIERUNG, UND SIE ENTLASTET UNS
+================================================================
+
+Thomas hat einen Mitschnitt zugespielt bekommen (/tmp/trace.txt, 21:55 bis
+22:25): DB0AAT ist ein RMNC, DB0AAT-10 ein XNET, und die beiden bauen auf
+Port 1 eine FlexNet-Verbindung auf.  Kein Hexdump, aber die Rahmenlaengen
+stehen dabei, und das genuegt fuer vier Dinge.
+
+DER FLEX_INIT-ABSCHNITT OBEN IST DAMIT ZU BERICHTIGEN.  Der Satz, sechs
+Oktette seien "nicht haltbar", war voreilig - er stuetzte sich auf zwei
+XNETs, also auf EINE Implementierung, zweimal befragt:
+
+    RMNC   [6]  "09  !" CR         30 39 20 20 21 0d
+    wir    [6]  "0?  !" CR         30 3f 20 20 21 0d
+    XNET   [5]  "0?%!"  CR         30 3f 25 21 0d
+
+RMNC sendet SECHS Oktette mit ZWEI Leerzeichen - Byte fuer Byte unsere Form.
+Dass 39 statt 3f dasteht, ist nur seine stop-SSID 9 statt 15, und XNETs
+eigener Decoder bestaetigt sie: "FlexLink:Init fm DB0AAT/9 (20 20)" - er
+nennt die beiden Leerzeichen sogar ausdruecklich.  ABWEICHER IST ALSO XNET,
+nicht wir.  Das passt zur Herkunft: flexnet.c ist vom RMNC abgeschaut, und
+genau dessen Format steht bei uns.  doc/FLEXNET-SSID.md bleibt richtig; die
+Ergaenzung, die es braucht, ist die kurze XNET-Form daneben.
+
+DAS CR SENDET AUCH RMNC.  "1600" kommt als [5], also mit Wagenruecklauf.
+Damit ist TNN in drei gemessenen Implementierungen der einzige, der ihn
+weglaesst, und der Fix 60a14ce war richtig.
+
+DER POLL IST BEI RMNC 201 OKTETTE - wieder unsere Zahl.  XNET sendet 241.
+
+RMNC GLAETTET NICHT, ES MITTELT UEBER ALLES.  Der interessanteste Fund.  Auf
+derselben Strecke, zur selben Zeit, meldet XNET 0 und kurz darauf 1, waehrend
+RMNC der Reihe nach meldet:
+
+    600  301  201  151  121   87  77  68  56
+
+Das ist kein exponentielles Glaetten.  Es ist der ARITHMETISCHE MITTELWERT
+ueber alle Messungen seit dem Verbindungsaufbau, mit DEFAULTDELAY 600 als
+erstem Wert:
+
+    n        1     2     3     4     5     7     8     9    11
+    600/n+1  601   301   201   151   121  86,7  76,0  67,7  55,5
+    gemeldet 600   301   201   151   121    87    77    68    56
+
+Die ersten fuenf sitzen exakt; danach faellt der Zaehler schneller als die
+Meldungen im Mitschnitt, es fehlen also einzelne (der Knoten hatte in dem
+Zeitraum laufend LINK FAILURE mit DB0WAI-13).  Das erklaert die Traegheit,
+die uns bei TNN und XNET schon aufgefallen war, hier aber in Reinform: ein
+Mittelwert ueber die ganze Geschichte vergisst den Startwert NIE ganz, er
+verduennt ihn nur mit 1/n.  Nach elf Polls - bei POLLINTERVAL 5 Minuten also
+knapp einer Stunde - steht immer noch 56 statt 1.
+
+WAS DER MITSCHNITT NICHT ENTSCHEIDET: die rtt/2-Frage.  Beide Enden sitzen am
+selben Standort, die Strecke ist schnell (XNET meldet 0, dann 1), und bei
+100 ms Aufloesung ist zwischen "ganze Umlaufzeit" und "halbe" nichts zu
+unterscheiden.  Der Anhalte-Versuch gegen einen RMNC, der oben verabredet
+ist, bleibt also noetig.  Was der Mitschnitt zeigt, ist etwas anderes und
+auch nuetzlich: XNET und RMNC kommen auf DERSELBEN Strecke auf denselben
+Wert - sie sind untereinander einig, und wir sind die, die halbieren.
