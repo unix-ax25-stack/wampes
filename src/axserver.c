@@ -2245,8 +2245,18 @@ void axserv_connected(struct ax25_cb *axp)
   partner = nr_is_neighbour(axp->hdr.dest) || nr_is_peer(axp->hdr.dest) ||
 	    flexnet_is_peer(axp->hdr.dest);
 
+  /* Connections only.  A UI entry describes what to do with a frame that
+   * arrives without one, which is axlisten_ui_deliver()'s business, and a
+   * link coming up is none of its own.  Without the test a callsign that has
+   * both an I and a UI entry - the same pid, as it must be - matches twice
+   * here, and both rounds resolve to the same connected entry, because
+   * axserv_start() looks it up with axlisten_find(..., pid, 0).  The session
+   * is then opened twice on one link: the caller sees the service greet him
+   * twice and one of the two carries on.  Observed on db0fhn with
+   * "listen ax25 add ui db0fhn-13 client" beside the connected entry.
+   */
   for (lp = Axlisten; lp; lp = lp->next)
-    if (!lp->netrom && !lp->wait && !partner
+    if (!lp->netrom && !lp->ui && !lp->wait && !partner
 	&& addreq(lp->call, axp->hdr.source))
       (void) axserv_start(axp, lp->pid);
 }
