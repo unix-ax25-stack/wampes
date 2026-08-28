@@ -6154,3 +6154,86 @@ er verdaechtig, und das gehoert in den Bericht.
 Der Verlustrelais-Aufbau aus dem Slave-Test traegt hier genauso
 (testtools/lossrelay.py), und testtools/damachan.py hat die Gegenseite
 schon einmal gespielt.
+
+WER DARF WELCHES RUFZEICHEN - SO_PEERCRED AM DIENSTSOCKET (Thomas,
+2026-08-29)
+----------------------------------------------------------
+
+WOHER DIE FRAGE KOMMT.  Die Portweiterleitung ist bei uns administrativ:
+"listen ax25 add ... client" schreibt der Sysop.  Beim Formulieren der Doku
+sollte dastehen, dass auch ein CLIENT-REGISTRIERUNGSPROTOKOLL moeglich waere
+- und genau da faengt die Rechtefrage an, denn dann duerfte ja jeder Nutzer
+jedes beliebige Rufzeichen fuer listen() nehmen.
+
+ERST DER BEFUND, DER DAS GANZE EINORDNET: WIR SIND HEUTE SCHON STRENGER ALS
+DER KERNEL.  Ein Client kann nur ein Rufzeichen beanspruchen, das der Sysop
+vorher eingetragen hat (axlisten_client_claim).  Beim Linux-Kernel ist die
+Vorgabe das Gegenteil - ax25_uid_policy ist 0, und dann bindet jeder lokale
+Nutzer jedes Rufzeichen, das er will.  Das ist kein Nebenaspekt fuer die
+Doku, sondern ein Argument FUER das administrative Modell.
+
+WAS DER KERNEL HAT, GENAU (net/ax25/, Thomas' "setassoc"-Geschichte):
+
+    ax25_bind():
+        user = ax25_findbyuid(current_euid());
+        if (user) call = user->call;         /* ERSETZT, was er angab */
+        else if (ax25_uid_policy && !capable(CAP_NET_ADMIN))
+                return -EACCES;
+        else call = addr->fsa_ax25.sax25_call;
+
+Also: EIN uid auf GENAU EIN Rufzeichen, kein SSID-Bereich, keine Gruppen,
+kein Unterschied zwischen rausconnecten und listen.  Der Schalter ist global
+(axparms --assoc policy default|deny, AX25_NOUID_DEFAULT 0 /
+AX25_NOUID_BLOCK 1), Eintragen braucht CAP_NET_ADMIN.  ax25_uid.c sagt im
+Kopf selbst, wofuer es da ist: "Callsign/UID mapper.  This is in kernel space
+for security on multi-amateur machines."  Und es ERSETZT still, statt zu
+verweigern - wer meint, er sende als DL9SAU-7, wird ohne Fehlermeldung zu
+etwas anderem gemacht.  Das waere bei uns nicht nachzumachen.
+
+WAS WIR BEKOMMEN KOENNTEN, GEMESSEN:
+
+    macOS   LOCAL_PEERCRED -> struct xucred: uid UND die GANZE Gruppenliste.
+            Nachgemessen: cr_ngroups 16, deckungsgleich mit os.getgroups().
+            Deckel ist NGROUPS (16) - wer in mehr Gruppen steht, wird
+            abgeschnitten.
+    Linux   SO_PEERCRED -> struct ucred: pid, uid, und NUR die primaere gid.
+            getpeereid() ist BSD; glibc hat es nicht.  Zwei Pfade also
+            ohnehin.
+
+DARAUS FOLGT EINE ENTSCHEIDUNG: die Gruppenfrage ("ist er in hams?") kann
+nicht vom Socket kommen, jedenfalls nicht portabel.  Sie muss aus der
+Kontendatenbank kommen - getpwuid() und getgrouplist().  Das ist auch die
+BESSERE Frage: sie lautet dann "darf er in dieser Gruppe sein", nicht "hat
+sein Prozess die Gruppe zufaellig behalten".  Ein Prozess, der Gruppen
+abgelegt hat, soll dadurch keine Rechte GEWINNEN, und umgekehrt soll er sie
+sich nicht erhalten koennen, nachdem der Admin sie ihm genommen hat.
+
+DIE STAFFELUNG, DIE THOMAS AUFGESCHRIEBEN HAT:
+
+    ---------------------+-------------------------+---------------------
+                         | rausconnecten           | listen()
+    ---------------------+-------------------------+---------------------
+    uid daemon (conversd)| ja                      | ja, sein Rufzeichen
+    group hams           | nur eigenes Call +- SSID| ggf. nein
+    group hamsoft        | beliebig                | beliebig
+    sonst                | nein                    | nein
+    ---------------------+-------------------------+---------------------
+
+WAS VORHER ZU ENTSCHEIDEN IST:
+
+  * VERWEIGERN, NICHT ERSETZEN.  Anders als der Kernel.  Ein Client, der
+    glaubt, unter einem Rufzeichen zu senden, und stillschweigend umgebogen
+    wird, ist schlimmer als eine Fehlermeldung.
+  * DIE TCP-TUER HAT KEINE AUSWEISE.  Auf 127.0.0.1:8010 gibt es weder
+    SO_PEERCRED noch xucred.  Unter so einer Staffelung waere sie die
+    anonyme Stufe - und damit erst brauchbar: heute ist sie ganz oder gar
+    nicht, weshalb sie aus ist.
+  * SSID-BEREICH: die Grammatik dafuer gibt es schon, "flexnet ssid 5-9".
+  * WO DIE TABELLE STEHT: in net.rc wie alles andere, etwa
+    "axuser <user|group> [connect <muster>] [listen <muster>]".
+  * DIE VORGABE MUSS SEIN WIE HEUTE, sonst bricht jede bestehende
+    Installation beim naechsten Update.
+  * UND: das ersetzt das Verzeichnis NICHT.  Wer nicht an den Socket kommt,
+    braucht keine Ausweise; wer herankommt, wird damit feiner unterschieden.
+    Zwei Tore, nicht eines statt des anderen.  Siehe doc/PERMISSIONS.md,
+    Abschnitt "What that admission is worth".
