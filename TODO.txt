@@ -5908,3 +5908,67 @@ Seine Unit, die laeuft:
     Restart=on-failure
     RestartSec=5
     WorkingDirectory=/tcp
+
+BPQETHER AUF ECHTEM ETHERNET, MIT VLAN (Thomas, 2026-08-28)
+--------------------------------------------------------------
+
+WOFUER.  Wir machen viel mit HAMNET, also IP.  User und Linkpartner liessen
+sich zwar ueber axip/axudp zufuehren, aber BPQether hat zwei Vorteile, und der
+zweite ist der grosse:
+
+  * Ein User landet auf DEM Interface, das fuer ihn bestimmt ist - mit den
+    passenden Routen, dem passenden Protokollfilter, der passenden
+    "ip learn"-Regel.  Alle drei haben ein iface=, das ueber axip heute nur
+    grob trennen kann.
+  * Fuehrt man die Linkpartner ueber IHRE VLANs zu, laesst sich ein
+    FlexNet-, NET/ROM- oder INP3-vermitteltes Netz zwischen JEDER
+    Collision-Domain aufbauen.  Thomas: "ein echtes Revival fuer unser
+    AX.25-Netz".
+
+WAS SCHON DA IST: die Kapselung.  ethertap.c:149 (ethertap_send_bpq) baut den
+vollstaendigen BPQether-Rahmen - EtherType 0x08ff und den 2-Byte-Laengenkopf
+(l+5).  Nur der Weg nach draussen fehlt: heute geht das ueber ein tap-Geraet
+zum Kernel-Treiber, mit dessen 2- bzw. 4-Byte-Vorspann.
+
+WAS FEHLT: ein "attach bpqether", das auf einem ECHTEN Ethernet hoert.
+
+    Linux    AF_PACKET/SOCK_RAW mit ETH_P_BPQ, PACKET_ADD_MEMBERSHIP
+    macOS    /dev/bpfN, BIOCPROMISC, BIOCSETF mit Filter auf 0x08ff
+
+"attach kernel" hilft dabei nicht - das haengt an AF_AX25 und setzt ein
+AX.25-Interface voraus; auf einem Ethernet antwortet es "protocol 1 not
+supported".
+
+SYNTAX (Thomas), und das VLAN gehoert AUS BEQUEMLICHKEIT hinein:
+
+    attach bpqether eth0 vlan 70 meinLabel 1500
+    attach bpqether eth2 linkPartner1 1500
+
+Man KOENNTE das VLAN dem Betriebssystem ueberlassen (eth0.100 unter Linux,
+"vlan0 create vlan 100 vlandev en0" auf macOS) und einfach dieses Interface
+attachen - dann braucht es hier keine Zeile Code.  Dagegen spricht die
+Praxis: ein ungeuebter Sysop muss dann ZWEI Seiten anfassen, das
+Betriebssystem und die net.rc, und die Fehler passieren zwischen den beiden.
+Der Tag ist ohnehin nur vier Byte im Kopf, und raw Ethernet haben wir dann
+sowieso in der Hand.  (WLAN kann keine VLANs - dort entfaellt der Parameter.)
+
+DIE ZIEL-MAC WIRD GELERNT, wie ARP.  Broadcast ist der einfache Weg und fuer
+den Useraccess richtig; direkt adressiert ist besser, sobald man sie kennt,
+denn dann lernt der Switch selbst und traegt den Rahmen nur noch auf den einen
+Port - das ist der Mechanismus, der Ethernet ueberhaupt skalieren laesst.
+
+  * GELERNT WIRD ZU isrc, NICHT ZU hdr.source.  Die Rechnung dafuer steht
+    schon in ax25.c:597: bei einem digipeateten Rahmen ist die MAC die des
+    letzten Digis, nicht die der Ursprungsstation.  Dieselbe Frage wie bei
+    "ax mh", dieselbe Antwort.
+  * ORT: struct ax_route.  Dort steht bereits, WIE eine Station erreicht wird
+    (Interface, Digi-Kette) und was wir ueber sie gelernt haben (eax25,
+    vjcomp); der Sendepfad schlaegt dort ohnehin nach.  Die mheard-Liste
+    waere der falsche Platz - sie ist Statistik und wird von den SENDEpfaden
+    mitgefuehrt.
+  * EIGENER ZEITSTEMPEL, etwa eine Stunde.  Verfall heisst nicht "Station
+    weg", sondern nur "wieder Broadcast".
+  * UMLERNBAR AUCH VOR ABLAUF (Thomas) - eine Station kann die Karte
+    wechseln oder hinter einem anderen Digi auftauchen.
+  * UND FESTNAGELBAR, wie Linux es fuer IP/MAC kennt.  Braucht man selten,
+    aber wenn, dann richtig.
