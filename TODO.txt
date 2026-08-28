@@ -5973,8 +5973,14 @@ Port - das ist der Mechanismus, der Ethernet ueberhaupt skalieren laesst.
   * UND FESTNAGELBAR, wie Linux es fuer IP/MAC kennt.  Braucht man selten,
     aber wenn, dann richtig.
 
-ROSE DURCHREICHEN, NICHT NACHBAUEN (Thomas, 2026-08-28)
+ROSE - ERLEDIGT, ES IST NICHTS ZU TUN (Thomas, 2026-08-28)
 ----------------------------------------------------------
+
+ABGESCHLOSSEN AM SELBEN TAG.  Der Kernel macht ROSE vollstaendig selbst,
+und "attach ethertap" / "attach kernel" fuehren ihn schon heran - siehe
+den Nachtrag am Ende dieses Abschnitts.  Bei uns ist nichts zu bauen und
+nichts offen zu halten.  Thomas: "nicht meine Baustelle".  Der Rest steht
+hier, damit die Frage nicht ein zweites Mal von vorn anfaengt.
 
 Die Frage wird kommen, auch wenn sie niemanden hier draengt: ROSE ist ein
 X.25-Protokoll auf AX.25, der Linux-Kernel unterstuetzt es, und es gibt
@@ -5987,7 +5993,8 @@ eigenes (AX25_P_ROSE).  Ein Rahmen mit einem PID, das wir nicht selbst
 bedienen, ist genau der Fall, fuer den die Client-Listener da sind - er kann
 per SCM_RIGHTS an einen Prozess gehen, der ihn versteht.
 
-ZU PRUEFEN, BEVOR MAN ETWAS BAUT:
+ZU PRUEFEN, BEVOR MAN ETWAS BAUT - GILT WEITER, ABER FUER FREMDE PIDs IM
+ALLGEMEINEN, NICHT FUER ROSE:
 
   * Kommt ein Rahmen mit unbekanntem PID ueberhaupt bis zum Listener, oder
     verwirft ihn vorher jemand?  pid_is_local() liest die Axlink-Tabelle;
