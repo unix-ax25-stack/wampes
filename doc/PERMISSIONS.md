@@ -57,8 +57,9 @@ owner, group and mode are the sysop's decision rather than a security
 question.  `0660` group `hams` is the usual choice.  A sysop who does not
 want the `hams` group transmitting can make it `0660` group `staff`
 instead, or `0606` group `hams`, and either is a considered decision, not
-a mistake.  The node sets `0660` group `hams` on every start where that
-group exists, and says so when it does not.
+a mistake.  The node itself no longer decides any of it - see *The door is
+the directory* below for the two attempts that were made and why both were
+wrong.
 
 The socket that *would* matter is the command channel.  It lives in
 `.sockets`, and it carries 0600 of its own since 2026-08-15 - until then
@@ -73,11 +74,25 @@ startup - that one is still checked.
 
 ### The door is the directory
 
-`sockets/` is created **0750** and the socket inside it **0777**.  That
+`sockets/` is created **0750** and the socket inside it **0666**.  That
 looks backwards until you see which one is the gate: who may reach the
 service is decided by the group on the directory, and the sysop moves the
 whole service from one group to another with a single `chgrp`, without
 having to think about socket modes at all.
+
+**0666 and not 0777**, because `connect()` to a unix socket asks for
+**write** and never for execute.  Linux says so outright - `af_unix.c`,
+`unix_find_bsd()`: `path_permission(&path, MAY_WRITE)`.  Measured on
+macOS, a fresh socket for each mode:
+
+    0666, 0600, 0200   connect OK   w set, x clear
+    0111               EACCES       x set, w clear
+    0466, 0000         EACCES
+
+So the x bit was never read by anything.  It stood there until
+2026-08-29 only because 0777 was the plainest way to write "the directory
+decides", and nobody had checked which bits get consulted.  For a socket,
+wide open is 0666.
 
     chgrp hams   $TCPDIR/sockets     the hams group may use the node
     chgrp sysops $TCPDIR/sockets     that group instead
@@ -131,7 +146,7 @@ so these win:
 
 The one that the directory alone cannot express:
 
-    axsock mode 0707          everybody EXCEPT the group on the socket -
+    axsock mode 0606          everybody EXCEPT the group on the socket -
                               they may be connected to, and may not
                               connect out
 
@@ -140,6 +155,69 @@ work as soon as two parties have a legitimate claim, and traversal is not
 what protects anything here.  What does need to be tighter than 755 is
 any file holding credentials - a property of the file, not of the
 directory, and it has to say so itself: 640 or 600, owned by root.
+
+## What that admission is worth
+
+Everything above decides **who gets in**.  This is the other half, and a
+sysop should read it before being generous with the group: what a client
+on `sockets/ax25` may then do.  It was asked (Thomas, 2026-08-28) as three
+questions - can another local user inject, read along, or take over an
+inbound session - and the three answers are different.
+
+### Sending: any callsign, and that is deliberate
+
+    connect DB0FHN --mycall DL9SAU-7      ax25subr.c, opts->ownsource
+    connect DB0FHN < DL9SAU-7             the same thing, written short
+    datagram                              the TNC2 header comes out of the
+                                          DATA, not out of the command
+
+There is no check that the callsign is yours, on either path, and there
+cannot usefully be one - the node has no idea which local account belongs
+to which amateur.  So:
+
+**Reaching the service socket is permission to transmit under any
+callsign.**
+
+That is the sentence to weigh when picking the group.  It is not an
+oversight - `axsock mode`/`axsock group` exist precisely so the decision
+can be made - but it is the consequence, and callsign misuse is not a
+small matter on the air.  `axsock tcp-listen` on 127.0.0.1 hands the same
+permission to **every** local account; it is off unless net.rc says
+otherwise, and that is why.
+
+### Taking over an inbound session: no
+
+`axlisten_client_claim()` has three gates:
+
+    a port callsign                 refused - "belongs to a port"
+    no "... client" entry in net.rc  refused - "is not open for clients"
+    already claimed by someone       refused - "is already taken"
+
+The configured entry is the **sysop's permission** and the claim is only
+the client stepping into it, so nobody can listen for a callsign the
+sysop did not open.  A second client is told no rather than quietly
+shadowing the first.
+
+Two things this does *not* do, and both are worth knowing:
+
+* **It is first come, first served, with no identity check.**  Whoever
+  claims first holds it.  Two users who may reach the socket race for the
+  same callsign at startup.
+* **A claim falls free when its holder goes.**  That is right - a crashed
+  client must not leave a dead entry behind - but it means anyone else may
+  then take it.  Which is why every way a client can die now names itself
+  in the log; see the entry in `TODO.txt` about a user being thrown off
+  when somebody else signs on.
+
+### Reading along: no
+
+* UI frames go to a client only when the destination equals the callsign
+  it claimed (`axlisten_ui_deliver()`).  There is no promiscuous feed.
+* Every connection is handed over as its own `socketpair`, one half passed
+  by `SCM_RIGHTS`.  Clients share the control channel, never the data.
+* The monitor is not on this socket at all.  `console` and `command` live
+  only on the command channel in `.sockets`, which is 0700 on the
+  directory and 0600 on the socket.
 
 ## What the node does about it
 

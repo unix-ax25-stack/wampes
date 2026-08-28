@@ -1181,13 +1181,27 @@ static void complain(const char *fmt, ...)
  * on the lot.  Both are worse than saying plainly: the door is the directory.
  *
  * net.rc can still say otherwise with "axsock mode" and "axsock group", and
- * those run after the bind.  0707 to admit everyone except one group, for
+ * those run after the bind.  0606 to admit everyone except one group, for
  * instance.
+ *
+ * 0666 AND NOT 0777, because connect() to a unix socket asks for WRITE and
+ * never for execute.  Linux says it in af_unix.c, unix_find_bsd():
+ * path_permission(&path, MAY_WRITE).  Measured on macOS, a fresh socket per
+ * mode, connect() and accept():
+ *
+ *     0666, 0600, 0200   OK        w set, x clear
+ *     0111               EACCES    x set, w clear
+ *     0466, 0000         EACCES
+ *
+ * Nothing ever consulted the x bit; it only made the mode look more alarming
+ * than the decision behind it.  For a socket, "wide open" is 0666.  It was
+ * 0777 because that was the plainest way to write "the directory decides",
+ * without anybody checking which bits get read (Thomas' question).
  */
 
 static void set_service_rights(const char *path)
 {
-  chmod(path, 0777);
+  chmod(path, 0666);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1196,7 +1210,7 @@ static void set_service_rights(const char *path)
  *
  * The defaults above are a starting point, not a policy.  0660 group hams is
  * the usual answer, but it is not the only sensible one: 0660 group staff
- * keeps the hams group from transmitting, and 0707 group hams lets everybody
+ * keeps the hams group from transmitting, and 0606 group hams lets everybody
  * in EXCEPT the logged-in amateurs, which is somebody's considered decision
  * about who may open outgoing links.  Forcing 0660 on every start made all of
  * that impossible.
