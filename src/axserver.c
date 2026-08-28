@@ -2085,6 +2085,7 @@ static int axserv_handover(struct axlisten *lp, const char *line, int *fdp)
 {
   char buf[256];
   int sv[2];
+  ssize_t n;
   struct cmsghdr *cm;
   struct iovec iov;
   struct msghdr msg;
@@ -2120,8 +2121,22 @@ static int axserv_handover(struct axlisten *lp, const char *line, int *fdp)
   /* Never wait on the client: the scheduler is cooperative, and a client
    * that is not calling accept() must not be able to stop the node.  A full
    * buffer is refused like any other failure to hand the call on.
+   *
+   * A SHORT SEND IS ALSO A FAILURE, and that one is not obvious.  This is a
+   * stream socket, so sendmsg() may write fewer bytes than asked - and with
+   * MSG_DONTWAIT on a buffer that is nearly full, which is precisely the case
+   * above, it is not a remote possibility.  The descriptor travels with the
+   * FIRST byte, so the client would end up holding a live session together
+   * with half a name line, and wampes_accept() reads two callsigns out of
+   * that line.  The rest cannot be sent afterwards either: ancillary data
+   * does not repeat, and a second write would look like the next handover.
+   * So it is refused like any other, and our end of the pair is closed - the
+   * client's copy then reports end of file at once instead of waiting on a
+   * session nobody is serving.
    */
-  if (sendmsg(lp->clientfd, &msg, MSG_DONTWAIT) < 0) {
+  n = sendmsg(lp->clientfd, &msg, MSG_DONTWAIT);
+  if (n < 0 || (size_t) n != iov.iov_len) {
+    if (n >= 0) errno = EIO;            /* the caller logs strerror(errno) */
     close(sv[0]);
     close(sv[1]);
     return -1;
