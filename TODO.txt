@@ -5972,3 +5972,29 @@ Port - das ist der Mechanismus, der Ethernet ueberhaupt skalieren laesst.
     wechseln oder hinter einem anderen Digi auftauchen.
   * UND FESTNAGELBAR, wie Linux es fuer IP/MAC kennt.  Braucht man selten,
     aber wenn, dann richtig.
+
+ROSE DURCHREICHEN, NICHT NACHBAUEN (Thomas, 2026-08-28)
+----------------------------------------------------------
+
+Die Frage wird kommen, auch wenn sie niemanden hier draengt: ROSE ist ein
+X.25-Protokoll auf AX.25, der Linux-Kernel unterstuetzt es, und es gibt
+rose-Apps in den ax25-tools.  NATIV WOLLEN WIR ES NICHT - jedenfalls heute
+nicht.  Was zaehlt, ist, dass die Schnittstellen es nicht verbauen.
+
+UND DIE STEHEN VERMUTLICH SCHON.  "listen ax25 add [pid=<n>] ... <call>
+<target>" nimmt ein BELIEBIGES PID entgegen, und ROSE hat auf AX.25 sein
+eigenes (AX25_P_ROSE).  Ein Rahmen mit einem PID, das wir nicht selbst
+bedienen, ist genau der Fall, fuer den die Client-Listener da sind - er kann
+per SCM_RIGHTS an einen Prozess gehen, der ihn versteht.
+
+ZU PRUEFEN, BEVOR MAN ETWAS BAUT:
+
+  * Kommt ein Rahmen mit unbekanntem PID ueberhaupt bis zum Listener, oder
+    verwirft ihn vorher jemand?  pid_is_local() liest die Axlink-Tabelle;
+    was nicht darin steht, sollte an einen Client gehen duerfen.
+  * Laesst der pidfilter ihn durch?  Der ist per Vorgabe erlaubend, aber es
+    gehoert geprueft.
+  * Reicht die libax25-Bruecke ihn in BEIDE Richtungen weiter?
+
+Erst wenn eine dieser drei Stellen im Weg steht, ist ueberhaupt etwas zu
+bauen - und dann eine Zeile, kein Protokoll.
