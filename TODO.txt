@@ -6052,7 +6052,7 @@ sie gelten fuer JEDES fremde PID, und das naechste heisst anders.
 DAMA-MASTER (Thomas, 2026-08-28)
 ----------------------------------------------------------
 
-Der Slave steht und ist gegen TNNs Master gemessen (doc/DAMA.md).  Was
+Der Slave steht und ist gegen TNNs Master gemessen (doc/DAMA-SLAVE.md).  Was
 fehlt, ist die andere Rolle.
 
 THOMAS' PRUEFMASSSTAB: unser Master muss mit unserem eigenen Slave UND mit
