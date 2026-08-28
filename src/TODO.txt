@@ -30,3 +30,25 @@ geschlossen, Konflikt.  Dann zeigt der naechste Vorfall im Log seine Ursache
 von selbst, ohne dass jemand das Szenario nachbauen muss.  Erst danach
 entscheiden, ob ein voller Puffer wirklich den ganzen Client kosten darf oder
 nur die eine Uebergabe.
+
+DIE SPUR STEHT (2026-08-28).  Jeder Weg, auf dem ein Client stirbt, nennt
+sich jetzt im syslog - "client fd 7 for DB0FHN closed: <grund>", und der
+Sendefehler mit strerror(errno).  Auf der Konsole erscheint nur, was WIR
+entschieden haben (remote_net_drop_client), damit ein Skript auf cnet nicht
+mitten im Parsen eine fremde Zeile bekommt.  Also: journalctl -u wampes -f,
+und der naechste Vorfall sagt selbst, was er war.
+
+DABEI FIEL DER VERDACHT OBEN ZUM TEIL: die Client-fds sind BLOCKIEREND.
+O_NONBLOCK steht nur in axserver.c am axpipe-fd, nicht an lp->clientfd, und
+remote_net.c setzt es weder am accept() noch sonstwo.  Ein volllaufender
+Kontrollkanal kann also gar kein EAGAIN liefern - er wuerde den Knoten
+ANHALTEN, nicht den Client wegwerfen.  Das MSG_DONTWAIT gilt nur fuer die
+SCM_RIGHTS-Uebergabe, nicht fuer den Monitorstrom.  Bleibt EPIPE oder
+ECONNRESET, also ein Client, der wirklich schon weg war - und genau deshalb
+ist der errno in der Zeile das Interessante.
+
+    EPIPE/ECONNRESET   der Client war weg; dann ist die Frage, WARUM er
+                       ging, und die Antwort steht eine Zeile hoeher
+    irgendetwas sonst  hier weitersuchen
+    gar keine Zeile    dann liegt es nicht bei uns, sondern in libax25
+                       oder ax25d - und auch das ist ein Ergebnis

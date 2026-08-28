@@ -12,7 +12,11 @@ void remote_net_initialize(void);
  */
 int remote_net_send_frame(int fd,const char *hdr,struct mbuf *bp);
 
-void remote_net_drop_client(int fd);
+/* <reason> is logged, not sent - the client is being closed, and on a binary
+ * stream there is nothing left to say it in.  It has to be given: a client
+ * takes every listen entry it holds with it, so "one went" is never enough.
+ */
+void remote_net_drop_client(int fd, const char *reason);
 
 
 /* "axsock [group <name>|mode <octal>]": the sysop's say over the mode and

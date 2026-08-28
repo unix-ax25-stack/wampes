@@ -1058,7 +1058,9 @@ void axlisten_drop_local(const uint8 *call)
 	   "callsign and the node serves that protocol itself\n",
 	   pax25(buf, lp->call), pid_name(lp->pid, pidbuf, sizeof(pidbuf)));
     if (lp->clientfd >= 0) {
-      remote_net_drop_client(lp->clientfd);
+      remote_net_drop_client(lp->clientfd,
+			     "listen switched off: the port answers to that "
+			     "callsign and we serve the protocol ourselves");
       lp->clientfd = -1;
     }
     lp->disabled = 1;
@@ -1146,8 +1148,19 @@ int axlisten_ui_deliver(struct iface *ifp, struct ax25 *hdr, int pid,
 			   i < hdr->nextdigi ? "*" : "");
   if (n >= sizeof(line)) return 0;      /* absurd path: leave it alone */
 
-  if (remote_net_send_frame(lp->clientfd, line, *bpp))
-    remote_net_drop_client(lp->clientfd);
+  /* THIS IS THE ONE TO WATCH.  A monitor frame that cannot be written costs
+   * the client everything it holds, logins included - see the TODO on a user
+   * being thrown off when somebody else signs on.  The errno decides which
+   * story it is: EPIPE or ECONNRESET means the client really is gone, and
+   * anything else wants explaining.
+   */
+  if (remote_net_send_frame(lp->clientfd, line, *bpp)) {
+    char reason[128];
+
+    snprintf(reason, sizeof(reason), "monitor frame not written: %s",
+	     strerror(errno));
+    remote_net_drop_client(lp->clientfd, reason);
+  }
   free_p(bpp);
   return 1;
 }

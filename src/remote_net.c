@@ -120,6 +120,7 @@ static int Axtcp_port;                  /* 0 while nothing is listening */
 static void command_receive(void *arg);
 static int axtcp_on(int port);
 static void axtcp_off(void);
+static void complain(const char *fmt, ...);
 
 static char *getarg(char *line, int all)
 {
@@ -161,8 +162,36 @@ static int command_switcher(struct controlblock *cp, const char *name, const str
 
 /*---------------------------------------------------------------------------*/
 
-static void delete_controlblock(struct controlblock *cp)
+/* SAY WHY, EVERY TIME.  A client that goes takes with it everything it holds
+ * - every "listen" entry, and through those the logins that were running
+ * fine - so "a client is gone" is the one thing that is never enough to
+ * know.  This is the trail for the report that a user is thrown off when
+ * somebody else signs on (TODO): the next occurrence names its own cause
+ * instead of leaving us to read the code and guess.
+ *
+ * SYSLOG ALWAYS, CONSOLE ONLY WHEN WE DID IT.  A node under systemd has no
+ * console at all - printf lands on the /dev/null that hpux.c put there - so
+ * syslog is the channel that is always there and journalctl is where one
+ * looks.  The console is different: whoever sits on cnet is usually a
+ * SCRIPT, and a line that appears in its output because some other client
+ * closed lands in the middle of what it is parsing.  Ordinary closes
+ * therefore stay in the log; only <loud>, which is remote_net_drop_client()
+ * and so a decision of ours, also goes to the console, where it belongs -
+ * that one is rare, and the sysop wants to see it happen.
+ */
+
+static void delete_controlblock(struct controlblock *cp, int loud,
+				const char *reason)
 {
+  char line[256];
+
+  snprintf(line, sizeof(line), "client fd %d%s%s closed: %s", cp->fd,
+	   *cp->target ? " for " : "", cp->target,
+	   reason ? reason : "no reason given");
+  if (loud)
+    complain("%s", line);
+  else
+    syslog(LOG_NOTICE, "%s", line);
   /* Whatever this client was listening for falls free with it. */
   axlisten_client_release(cp->fd);
   off_read(cp->fd);
@@ -207,6 +236,25 @@ static void delete_controlblock(struct controlblock *cp)
  * datagrams do.
  */
 
+/* All of it or a failure that names itself.  A short write is not an error
+ * to write(2) and leaves errno untouched - here it is one, because it ends
+ * the frame half sent.
+ */
+
+static int write_all(int fd, const void *buf, unsigned len)
+{
+  int n = write(fd, buf, len);
+
+  if (n < 0) return -1;
+  if ((unsigned) n != len) {
+    errno = EIO;
+    return -1;
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 int remote_net_send_frame(int fd, const char *hdr, struct mbuf *bp)
 {
   char line[128];
@@ -216,7 +264,15 @@ int remote_net_send_frame(int fd, const char *hdr, struct mbuf *bp)
   struct controlblock *cp;
   struct mbuf *p;
 
-  if (fd < 0) return -1;
+  /* EVERY WAY OUT OF HERE LEAVES A TRUTHFUL errno, because the caller puts
+   * it in the line that says why the client was dropped.  write() sets it
+   * on a real failure; the other two exits have to set it themselves, or
+   * the log would name whatever errno happened to be holding from before.
+   */
+  if (fd < 0) {
+    errno = EBADF;
+    return -1;
+  }
   /* Answer in the terminator this client uses - it said so with its first
    * line.  Only the header carries one; behind the payload there is nothing.
    */
@@ -225,23 +281,26 @@ int remote_net_send_frame(int fd, const char *hdr, struct mbuf *bp)
   len = (int) len_p(bp);
   (void) crlf;                          /* nothing is terminated here */
   n = snprintf(line, sizeof(line), "[%d]%s:", len, hdr);
-  if (n <= 0 || n >= (int) sizeof(line)) return -1;
+  if (n <= 0 || n >= (int) sizeof(line)) {
+    errno = EMSGSIZE;
+    return -1;
+  }
 
-  if (write(fd, line, (unsigned) n) != n) return -1;
+  if (write_all(fd, line, (unsigned) n)) return -1;
   for (p = bp; p; p = p->next)
-    if (p->cnt && write(fd, p->data, p->cnt) != (int) p->cnt) return -1;
+    if (p->cnt && write_all(fd, p->data, p->cnt)) return -1;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-void remote_net_drop_client(int fd)
+void remote_net_drop_client(int fd, const char *reason)
 {
   struct controlblock *cp;
 
   if (fd < 0 || !(cp = (struct controlblock *) on_read_arg(fd))) return;
   if (cp->fd != fd) return;             /* not a client control block */
-  delete_controlblock(cp);
+  delete_controlblock(cp, 1, reason);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -413,7 +472,7 @@ static void transport_state_upcall(struct transport_cb *tp)
     say(cp, "*** connected to %s", cp->target);
     return;
   }
-  delete_controlblock(cp);
+  delete_controlblock(cp, 0, why());       /* busy, noconn, closing, ... */
   transport_del(tp);
 }
 
@@ -947,9 +1006,14 @@ static void command_receive(void *arg)
   };
 
   char c;
+  int n;
 
-  if (read(cp->fd, &c, 1) <= 0) {
-    delete_controlblock(cp);
+  /* The ordinary way a client goes: it closed.  Kept apart from a read
+   * error, because only one of the two is somebody else's doing.
+   */
+  if ((n = read(cp->fd, &c, 1)) <= 0) {
+    delete_controlblock(cp, 0, n == 0 ? "end of file - the client closed"
+				   : strerror(errno));
     return;
   }
   /* Take a line ending however it comes: LF, CRLF or a bare CR.  A telnet
@@ -970,7 +1034,7 @@ static void command_receive(void *arg)
       cp->dgram_paylen = 0;
       cp->bufcnt = 0;
     } else if (cp->bufcnt >= (int) sizeof(cp->buffer) - 1)
-      delete_controlblock(cp);
+      delete_controlblock(cp, 0, "counted frame longer than the buffer");
     return;
   }
 
@@ -1002,7 +1066,8 @@ static void command_receive(void *arg)
   if (c != '\r' && c != '\n') {
     cp->lastcr = 0;
     cp->buffer[cp->bufcnt++] = c;
-    if (cp->bufcnt >= sizeof(cp->buffer)) delete_controlblock(cp);
+    if (cp->bufcnt >= sizeof(cp->buffer))
+      delete_controlblock(cp, 0, "line longer than the buffer");
     return;
   }
   if (c == '\n' && cp->lastcr) {       /* the LF of a CRLF, already acted on */
@@ -1025,7 +1090,8 @@ static void command_receive(void *arg)
   }
   if (command_switcher(cp, getarg(cp->buffer, 0),
 		       cp->restricted ? service_table : full_table))
-    delete_controlblock(cp);
+    delete_controlblock(cp, 0,
+			"unknown command, or the command ended the session");
 }
 
 /*---------------------------------------------------------------------------*/
