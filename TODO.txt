@@ -6049,6 +6049,29 @@ DIE SYSCALLS SELBST WAEREN LEICHT - die Liste ist kurz und geschlossen:
 Abbilden koennten wir das wie AF_AX25.  Nur muesste dahinter jemand
 antworten, und das ist der Punkt: die Schnittstelle ist die kleine Haelfte.
 
+NUR I-RAHMEN, KEIN UI - UND DAS IST DAS EIGENTLICH GUTE DARAN.  Die
+registrierte Protokollfunktion wird an genau EINER Stelle gerufen,
+ax25_in.c:136, und die liegt in ax25_rx_iframe() - dem I-Rahmen-Weg einer
+stehenden Verbindung.  Der UI-Weg daneben (ax25_in.c:229) hat seine eigene
+Fallunterscheidung mit ganzen drei Faellen - AX25_P_IP, AX25_P_ARP,
+AX25_P_TEXT an einen SOCK_DGRAM - und "default: kfree_skb".  Registrierte
+Protokolle werden dort NIE gefragt; nur ax25_send_to_raw() bekommt vorher
+eine Kopie, also das Mithoeren.  Beim Senden dasselbe Bild: rose_link.c
+schreibt AX25_P_ROSE an vier Stellen, alle ueber ax25_send_frame() bzw.
+eine mit ax25_find_cb() gefundene bestehende Verbindung.
+
+ROSE VERLANGT VOM AX.25-STACK ALSO NICHTS AUSSER EINER GANZ NORMALEN
+VERBINDUNG MIT PID 0xCF.  Wer ROSE unbedingt will, portiert das grosse
+Rahmenwerk in den userspace, und der Rest ist schon da - bei uns wie bei
+jedem anderen Stack.  Das ist Thomas' Fazit, und es stimmt.
+
+ZUM VERGLEICH, WEIL ES DEN UNTERSCHIED ZEIGT: bei NET/ROM macht der Kernel
+NICHT alles.  Die Verbindungsschicht ja (nr_route_frame am selben Haken),
+aber der NODES-BROADCAST ist UI und faellt damit durch dieselbe Luecke -
+deshalb liegt er auf Linux im userspace, in ax25-tools/netrom/netromd.c
+mit netromr.c und netromt.c.  Genau die Aufteilung, die es fuer ROSE nicht
+gibt.
+
 UND DESHALB IST DIE ANTWORT SCHON GEBAUT.  Auf Linux gibt es "attach
 ethertap" - BPQether (ETH_P_BPQ, 0x08ff, ethertap.c) zum AX.25 DES KERNELS -
 und "attach kernel <linux-name>".  Damit macht der Kernel ROSE nativ und wir
