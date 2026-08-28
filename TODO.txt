@@ -5998,3 +5998,74 @@ ZU PRUEFEN, BEVOR MAN ETWAS BAUT:
 
 Erst wenn eine dieser drei Stellen im Weg steht, ist ueberhaupt etwas zu
 bauen - und dann eine Zeile, kein Protokoll.
+
+NACHGESEHEN IM KERNEL (2026-08-28): ROSE MACHT ER SELBST, GANZ
+
+net/rose/, rund 4800 Zeilen, und nichts davon liegt im userspace:
+
+  rose_in.c, rose_out.c, rose_timer.c, rose_subr.c   die PLP-Zustandsmaschine
+  rose_route.c                                       Nachbarn und Routen
+  rose_link.c                                        der Weg nach AX.25
+  rose_dev.c                                         rose0, fuer IP darueber
+  af_rose.c                                          die Sockets nach oben
+
+DIE ENTSCHEIDENDE ZEILE steht in af_rose.c: ROSE meldet sich mit
+
+    .pid = AX25_P_ROSE, .func = rose_route_frame
+
+als AX.25-Protokoll AN, und sendet mit ax25_send_frame().  Das ist ein
+KERNELINTERNER FUNKTIONSAUFRUF, kein Systemaufruf.  Zwischen ROSE und AX.25
+ist also nichts, was ein preload sehen koennte - unsere Bruecke bekommt nur
+den AF_ROSE-Socket der ANWENDUNG zu Gesicht und darunter gar nichts.
+Kconfig sagt dazu "depends on AX25", und af_ax25.c:859 verweigert einem
+Programm sogar den PID 0xCF (ESOCKTNOSUPPORT), solange ROSE geladen ist:
+pro Rechner genau ein Eigentuemer.
+
+WAS DAS FUER DEN SCM_RIGHTS-WEG OBEN HEISST: er traegt die Rahmen zu einem
+Prozess, aber ES GIBT KEINEN, DER SIE VERSTEHT.  Alles, was in ax25-tools
+nach ROSE aussieht - rsattach, rsparms, rsuplnk, rsdwnlnk, rose_call, und in
+ax25d/axspawn/call die AF_ROSE-Zweige - sind KUNDEN von AF_ROSE, keine
+Implementierung.  Wer den Rahmen entgegennimmt, muesste PLP koennen: Call
+Request/Accept/Clear mit cause und diagnostic, Q-Bit, M-Bit-Fragmentierung,
+RR/RNR/REJ auf Schicht 3, Restart, Routentabelle.  Also nachbauen.
+
+DIE SYSCALLS SELBST WAEREN LEICHT - die Liste ist kurz und geschlossen:
+
+    socket(AF_ROSE, SOCK_SEQPACKET, 0), bind/connect/listen/accept
+    mit struct sockaddr_rose (10 Ziffern Adresse, Rufzeichen, Digis)
+    setsockopt  ROSE_DEFER T1 T2 T3 HOLDBACK IDLE QBITINCL
+    ioctl       SIOCADDRT SIOCDELRT SIOCRSCLRRT      Routen
+                SIOCRSGCAUSE SIOCRSSCAUSE            Abbruchgrund
+                SIOCRSSL2CALL SIOCRSGL2CALL          das L2-Rufzeichen
+                SIOCRSACCEPT SIOCRSGFACILITIES
+
+Abbilden koennten wir das wie AF_AX25.  Nur muesste dahinter jemand
+antworten, und das ist der Punkt: die Schnittstelle ist die kleine Haelfte.
+
+UND DESHALB IST DIE ANTWORT SCHON GEBAUT.  Auf Linux gibt es "attach
+ethertap" - BPQether (ETH_P_BPQ, 0x08ff, ethertap.c) zum AX.25 DES KERNELS -
+und "attach kernel <linux-name>".  Damit macht der Kernel ROSE nativ und wir
+sind der Funk.  Kein Protokoll bei uns, keine Bruecke, kein PID-Sonderfall.
+Die drei Pruefungen oben bleiben trotzdem richtig, aber nicht wegen ROSE:
+sie gelten fuer JEDES fremde PID, und das naechste heisst anders.
+
+DAMA-MASTER (Thomas, 2026-08-28)
+----------------------------------------------------------
+
+Der Slave steht und ist gegen TNNs Master gemessen (doc/DAMA.md).  Was
+fehlt, ist die andere Rolle.
+
+THOMAS' PRUEFMASSSTAB: unser Master muss mit unserem eigenen Slave UND mit
+TNNs Slave sprechen.  Beides zusammen waere "relativ gut getestet".
+
+MIT EINER EINSCHRAENKUNG, DIE MAN KENNEN MUSS: TNNs Slave ist NICHT das,
+was TNNs Master war.  Er liegt hinter /*#define DAMASLAVE*/ in
+include/all.h, also nicht einmal uebersetzt, und die Autoren nennen ihn
+selbst unvollstaendig.  Als Zeuge ist er damit schwaecher als TNNs Master
+es fuer unseren Slave war - er belegt, dass wir einen FREMDEN Slave
+bedienen, nicht dass wir ihn richtig bedienen.  Wo er schweigt, ist zuerst
+er verdaechtig, und das gehoert in den Bericht.
+
+Der Verlustrelais-Aufbau aus dem Slave-Test traegt hier genauso
+(testtools/lossrelay.py), und testtools/damachan.py hat die Gegenseite
+schon einmal gespielt.
