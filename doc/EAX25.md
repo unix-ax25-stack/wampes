@@ -202,20 +202,51 @@ What counts as evidence:
 
 * UA to our SABME, or a SABME **from** him - he can.  The second needs no
   probe at all and is what undoes a "cannot" the moment his end is fixed.
-* DM or FRMR on a modulo-128 attempt - he cannot.
-* Silence, **and then a UA to the plain SABM** - he cannot.  Silence alone
-  is not enough: it is equally consistent with a station that is simply
-  away, and marking an absent neighbour as incapable would stick to him
-  for as long as his route lives.
+* FRMR on a modulo-128 attempt - he cannot, and this one is taken at once:
+  he *accepted* the SABME and then could not follow, and no lost frame can
+  counterfeit that.
+* Silence, or a DM, **and then a UA to the plain SABM** - counted, not
+  believed.  Silence alone is not enough: it is equally consistent with a
+  station that is simply away, and marking an absent neighbour as
+  incapable would stick to him for as long as his route lives.  One
+  fallback is not enough either, and that is the next section.
 
-It is deliberately **not** written to `axroute_data`.  A restart is
-exactly when asking again is right, because the far end may have grown new
-hardware meanwhile, and one probe is all it costs.  In memory it ages with
-the route: `axroute_savefile()` frees entries untouched for
+### Three in a row, then fifteen off
+
+A single fallback says nothing.  It can mean he does not speak
+modulo-128 - or that a SABME was lost, or, worse, that **his UA** to it
+was: then he is on 128 and we are on 8, and the station we would mark as
+incapable is the one that just did it right.  That is not a thought
+experiment.  Measured against TNN at 20 % loss, the very TNN whose other
+link was running modulo-128 got the mark - and because the mark hangs on
+the ROUTE, every new link to him lost modulo-128 afterwards.
+
+A forgetting time does not help: a link that breaks and rebuilds 30 s
+later is inside any sensible one.  What separates accident from property
+is **repetition** - loss is sporadic, a missing modulo-128 is constant:
+
+    eax25_fails   fallbacks IN A ROW; any success clears it.  At
+                  EAX25_MAXFAILS (3) the verdict becomes "cannot".
+    eax25_skips   connects since giving up.  After EAX25_RETRY (15) the
+                  verdict goes back to "not tried" and we probe again.
+
+The arithmetic: at 20 % loss a setup falls back with about 5 % (three
+SABMEs, 0.8 each way), three in a row with about 1:10000 - in practice
+never wrong.  At two it would still be 1:450.  The fifteen pauses cost a
+genuine old TNC three probes (~19 s) once in every fifteen connects, while
+a path that rebuilds **often** gets its next attempt sooner - which is
+where the misdiagnosis was likelier to begin with.
+
+The verdict is deliberately **not** written to `axroute_data`.  A restart
+is exactly when asking again is right, because the far end may have grown
+new hardware meanwhile, and one probe is all it costs.  In memory it ages
+with the route: `axroute_savefile()` frees entries untouched for
 `AXROUTE_HOLDTIME`, which is 24.8 days, and it runs every ten minutes.
 
 `ax25 route list` shows it as `E` (can) or `e` (cannot) next to `P` and
-`J`.
+`J`; blank is "not tried", which is also what the column shows again in
+the window where `EAX25_RETRY` has just expired and the probes are running
+once more.  `ax25 route list ?` prints the legend.
 
 ## Measured
 
@@ -230,11 +261,32 @@ calling us with SABME or SABM, and answering ours with UA, DM or silence.
 | peer answers DM | SABME → DM → SABM → UA, no delay at all |
 | peer stays silent | SABMEs at 2.5 / 6.8 / 13.1 s, SABM at 20.9 s |
 | the same via one digi (T1 15 s) | SABMEs at 2.5 / 16.8 / 35.6 s, SABM at 59.0 s |
-| second connect after a "cannot" | straight to SABM, no probe |
+| first and second silent setup | mark unchanged - one fallback proves nothing |
+| the third | `ax25 route list` turns to `e` |
+| the fourteen after that | straight to SABM, no probe at all |
+| the fifteenth | probes again, mark blank while it does |
+| 24 setups logged end to end | period **17 = 3 + 14**, twice through |
 | `eax25 off`, outgoing | SABM at once, never a probe |
 | `eax25 off`, incoming SABME | answered with DM |
 | plain AX.25, 20 % loss | unchanged - 13 893 bytes in 55 frames |
 | `-fsanitize=undefined` over all of it | no findings |
+
+How the cycle was run, because the first two attempts measured the wrong
+thing: `eaxpeer.py --modus still` on one side, a NET/ROM peer on the other
+so that the node rebuilds the link by itself, and every other link over
+that port taken down first - axip remembers the UDP source port **per
+host**, so on 127.0.0.1 a second station's frames end up at the first
+one's socket and its UA lands in the wrong setup.  Then read the peer's
+log, not a sampler: NET/ROM retries every ten seconds of its own accord,
+so a script that resets the link and counts its own passes counts fewer
+setups than the node makes, and the mark seems to move at random.  Each
+line "calls with SABM" in that log is one completed setup; whether SABMEs
+preceded it says whether the probe was still being made.
+
+The starting point has to be made, too - a verdict cannot be cleared,
+`ax25 route` has only `add` and `list`.  Letting the peer answer one SABME
+sets `E` and with it `eax25_fails = 0`, which is the defined zero the
+count needs.
 
 The sanitizer matters here more than usual: modulo-128 pushes sequence
 numbers to 127 and wraps them, which is the arithmetic that had just been
