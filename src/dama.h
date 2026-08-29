@@ -15,11 +15,10 @@
 #include "lapb.h"
 #endif
 
-/* Roles.  Only OFF and SLAVE are built; the master needs what a KISS line
- * does not give it, see TODO.txt.
- */
+/* Roles. */
 #define DAMA_OFF        0
 #define DAMA_SLAVE      1
+#define DAMA_MASTER     2
 
 void dama_heard_frame(struct iface *ifp,const uint8 *src);
 int  dama_holds(struct ax25_cb *axp);
@@ -33,6 +32,15 @@ int  dama_defer_ui(struct iface *ifp,struct mbuf **bpp);
 void dama_ui_flush(struct iface *ifp);
 void dama_mark(struct ax25_cb *axp);
 void dama_wait(struct ax25_cb *axp);
+/* Der Master: eine Runde reihum, eine Station je Zug.  dama_master_input()
+ * wird fuer JEDEN Rahmen gerufen, der auf einem Master-Port hereinkommt und
+ * bei uns endet - dort endet der Zug, und dort werden Verstoesse gezaehlt.
+ */
+void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
+	const struct ax25 *hdr, int isu, int ispoll, int isfinal);
+void dama_master_stop(struct iface *ifp);
+void dama_master_kick(struct iface *ifp);
+
 int  ifdama(int argc, char *argv[], void *p);
 void dama_show(struct iface *ifp);
 

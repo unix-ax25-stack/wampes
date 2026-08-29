@@ -204,6 +204,11 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		axp->dama_link = 1;
 	}
 	dama_poll_begin(iface,poll,hdr->source);
+	/* Und die andere Rolle: auf einem Master-Port endet hier der Zug des
+	 * Gepollten (F-Bit), und hier wird gezaehlt, wer selbst pollt.
+	 */
+	dama_master_input(iface,axp,hdr,class == U,poll,
+			  (cmdrsp == LAPB_RESPONSE) && (control & PF));
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */
 	switch(axp->state){
@@ -1127,6 +1132,11 @@ enum lapb_state s
 
 	oldstate = axp->state;
 	axp->state = s;
+	/* Auf einem Master-Port ist eine neue Verbindung der Anlass, die Runde
+	 * anzustossen: vorher gibt es niemanden zu pollen, und sie ruht.
+	 */
+	if(s == LAPB_CONNECTED && oldstate != LAPB_CONNECTED)
+		dama_master_kick(axp->iface);
 	if(s == LAPB_DISCONNECTED){
 		/* The link is over, so what was agreed for it is over too.  A
 		 * control block can be reused for the next connection to the

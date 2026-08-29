@@ -8,8 +8,9 @@
  * needs no new frame types - which is why it can be added to a working AX.25
  * without touching what is on the air for everybody else.
  *
- * THIS FILE IS THE SLAVE HALF.  The master is the larger piece and is not
- * built; see TODO.txt for what it needs that a KISS line does not give.
+ * BEIDE HAELFTEN STEHEN HIER.  Der Slave ist der obere Teil der Datei, der
+ * Master der untere; sie teilen sich das Bit, die Rollen und den Zaehler,
+ * und das ist der Grund, warum sie beieinander stehen.
  *
  * TWO BITS MAKE A POLL, and mistaking one for both is the trap here:
  *
@@ -479,7 +480,12 @@ void dama_mark(struct ax25_cb *axp)
 {
 	if (axp == NULL || axp->iface == NULL)
 		return;
-	if (axp->iface->dama == DAMA_SLAVE)
+	/* Beide Rollen markieren, und aus demselben Grund: das Bit sagt "diese
+	 * Station spricht DAMA".  Beim Master ist es sogar das, WORAN ein
+	 * Slave den Kanal erkennt - ohne es wuerde ihn niemand als Master
+	 * annehmen.
+	 */
+	if (axp->iface->dama != DAMA_OFF)
 		axp->hdr.ext |= SSID_DAMA;
 	else
 		axp->hdr.ext &= ~SSID_DAMA;
@@ -491,6 +497,267 @@ void dama_wait(struct ax25_cb *axp)
 {
 	if (axp != NULL && !run_timer(&axp->t1))
 		start_timer(&axp->t1);
+}
+
+/*---------------------------------------------------------------------------*/
+/*                          DER MASTER
+ *---------------------------------------------------------------------------*/
+
+/* Reihum, EINE STATION je Zug - und Station heisst hier nicht Verbindung.
+ *
+ * Wer auf unserem Kanal wirklich sendet, ist der letzte Digipeater, der noch
+ * aussteht, sonst die Gegenstelle selbst.  TNN fuehrt dafuer eigens einen
+ * Zeiger, mit Kommentar (l2misc.c): "das Rufzeichen, das in Wirklichkeit der
+ * Ansprechpartner dieses Linkes ist ... das Erste Rufzeichen im via-Feld ohne
+ * H-Bit oder das Ziel-Rufzeichen selbst", und multiconn() gruppiert danach.
+ * Mehrere Verbindungen einer Station sind so EINE Station im Umlauf, und
+ * mehrere Benutzer hinter einem Digi ebenfalls - was auch das einzig
+ * Sinnvolle ist: gepollt wird, wer sendet.
+ */
+
+static const uint8 *dama_station(const struct ax25_cb *axp)
+{
+	if (axp->hdr.ndigis > 0 && axp->hdr.nextdigi < axp->hdr.ndigis)
+		return axp->hdr.digis[axp->hdr.nextdigi];
+	return axp->hdr.dest;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* WIE LANGE EINE STATION DEN KANAL HAT, wenn sie nicht von selbst fertig
+ * wird.  TNN nimmt dafuer den Traeger (dama_dcd(), "DAMA nur weiter, wenn
+ * letztes Frame gesendet wurde"), und den haben wir nicht: auf axip, auf
+ * bpqether und auf den meisten KISS-Leitungen weiss niemand, ob gerade
+ * jemand sendet.  Was wir haben, ist die Antwort selbst - der Gepollte
+ * schliesst seinen Zug mit einem Rahmen, der das F-Bit traegt.  Bleibt der
+ * aus, weil die Station weg ist oder der Rahmen verloren ging, muss die
+ * Runde trotzdem weiterlaufen, und dafuer ist diese Frist da.
+ *
+ * Fuenf Sekunden: auf 1k2 ist ein volles Fenster von sieben Rahmen zu 256
+ * Byte gut fuenfzehn Sekunden, ein einzelner RR ein Zwanzigstel davon.  Die
+ * Frist soll den Zug nicht abschneiden, sondern eine STUMME Station
+ * ueberspringen - deshalb naeher am Rahmen als am Fenster.
+ */
+#define DAMA_SLOT_DEFAULT       5000L   /* ms */
+
+struct dama_m {
+	struct dama_m *next;
+	struct iface *ifp;
+	uint8 turn[AXALEN];             /* wer gerade dran ist */
+	int busy;                       /* 0: zwischen zwei Zuegen */
+	struct timer t;
+};
+
+static struct dama_m *Dama_m;
+
+static void dama_master_next(void *arg);
+
+static struct dama_m *dama_m_port(struct iface *ifp, int create)
+{
+	struct dama_m *mp;
+
+	for (mp = Dama_m; mp; mp = mp->next)
+		if (mp->ifp == ifp)
+			return mp;
+	if (!create)
+		return NULL;
+	mp = (struct dama_m *) callocw(1, sizeof(struct dama_m));
+	mp->ifp = ifp;
+	mp->t.func = dama_master_next;
+	mp->t.arg = mp;
+	mp->next = Dama_m;
+	Dama_m = mp;
+	return mp;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Die naechste Station nach <after> auf diesem Port, reihum.
+ *
+ * Gesucht wird ueber die Verbindungen, nicht ueber eine eigene Liste: eine
+ * zweite Buchhaltung waere eine zweite Gelegenheit, mit der ersten
+ * auseinanderzulaufen, und die Verbindungen sind ohnehin das, was der Master
+ * bedient.  <after> leer heisst "fang vorne an".
+ */
+
+static int dama_next_station(struct iface *ifp, const uint8 *after, uint8 *out)
+{
+	const uint8 *first = NULL;
+	const uint8 *next = NULL;
+	int seen_after = 0;
+	struct ax25_cb *axp;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
+		const uint8 *st;
+
+		if (axp->iface != ifp || axp->peer != NULL)
+			continue;
+		if (axp->state != LAPB_CONNECTED && axp->state != LAPB_RECOVERY)
+			continue;
+		st = dama_station(axp);
+		if (first == NULL)
+			first = st;
+		if (after == NULL || after[0] == '\0') {
+			next = st;
+			break;
+		}
+		if (seen_after && !addreq(st, after)) {
+			next = st;
+			break;
+		}
+		if (addreq(st, after))
+			seen_after = 1;
+	}
+	if (next == NULL)
+		next = first;           /* einmal herum, oder nur einer */
+	if (next == NULL)
+		return 0;               /* niemand da */
+	addrcp(out, next);
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Der Zug: alles ausgeben, was fuer diese Station wartet, und ihn mit einem
+ * KOMMANDO MIT P-BIT schliessen - das ist es, was den Kanal uebergibt.
+ *
+ * Das P kommt als eigenes RR und nicht auf dem letzten I-Rahmen, obwohl das
+ * einen Rahmen sparen wuerde: lapb_output() sendet I-Rahmen ohne PF und
+ * weiss nicht, welcher der letzte des Zuges ist.  Erst wenn der Master
+ * laeuft, lohnt es, das dort hineinzureichen - vorher waere es eine Aenderung
+ * am Sendeweg fuer eine Ersparnis, die noch niemand gemessen hat.
+ */
+
+static void dama_master_turn(struct dama_m *mp)
+{
+	struct ax25_cb *axp;
+	struct ax25_cb *last = NULL;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
+		if (axp->iface != mp->ifp || axp->peer != NULL)
+			continue;
+		if (axp->state != LAPB_CONNECTED && axp->state != LAPB_RECOVERY)
+			continue;
+		if (!addreq(dama_station(axp), mp->turn))
+			continue;
+		lapb_output(axp);
+		last = axp;
+	}
+	if (last == NULL) {             /* zwischendurch weggegangen */
+		mp->busy = 0;
+		return;
+	}
+	sendctl(last, LAPB_COMMAND, RR | PF);
+	mp->ifp->dama_polls++;
+	mp->busy = 1;
+	set_timer(&mp->t, DAMA_SLOT_DEFAULT);
+	start_timer(&mp->t);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Weiter zur naechsten Station.  Gerufen, wenn ein Zug zu Ende ist - durch
+ * das F-Bit des Gepollten oder durch die Frist.
+ */
+
+static void dama_master_next(void *arg)
+{
+	struct dama_m *mp = (struct dama_m *) arg;
+	uint8 who[AXALEN];
+
+	stop_timer(&mp->t);
+	mp->busy = 0;
+	if (mp->ifp->dama != DAMA_MASTER)
+		return;
+	if (!dama_next_station(mp->ifp, mp->turn, who)) {
+		memset(mp->turn, 0, AXALEN);  /* niemand verbunden: Runde ruht */
+		return;
+	}
+	addrcp(mp->turn, who);
+	dama_master_turn(mp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Jeder Rahmen, der auf einem Master-Port bei uns endet.
+ *
+ * Zwei Dinge geschehen hier.  Erstens endet der Zug, wenn der Gepollte mit
+ * gesetztem F antwortet - dann ist er fertig, und die Runde muss nicht die
+ * Frist abwarten.  Zweitens wird gezaehlt, was ein Slave nicht tun darf: ein
+ * KOMMANDO MIT P.  Auf einem DAMA-Kanal entscheidet genau eine Station, wer
+ * sendet; wer selbst pollt, hat das Verfahren nicht verstanden oder faehrt
+ * es nicht.  TNN zaehlt dasselbe (polDAMA), warnt und trennt irgendwann.
+ * Wir zaehlen und sagen es - trennen tun wir nicht, aus demselben Grund, aus
+ * dem unser Slave bei einem verstummten Master nicht auflegt: das kostet den
+ * Benutzer alles oberhalb von AX.25, und ein Kanal, der auch CSMA vertraegt,
+ * ist die kleinere Strafe.
+ */
+
+void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
+		       const struct ax25 *hdr, int isu, int ispoll, int isfinal)
+{
+	struct dama_m *mp;
+
+	if (ifp == NULL || ifp->dama != DAMA_MASTER || axp == NULL)
+		return;
+	/* EIN VERBINDUNGSAUFBAU IST KEIN VERSTOSS, und das war der erste
+	 * Messfehler: ein SABM ist ein Kommando mit P, also sah es aus wie ein
+	 * Poll.  Die Spezifikation legt den Aufbau aber ausdruecklich in CSMA
+	 * (doc/DAMA-SLAVE.md) - eine Station ohne Link wird nie gepollt und
+	 * koennte sonst nie hereinkommen.  Gezaehlt wird deshalb nur, was auf
+	 * einer STEHENDEN Verbindung pollt, und keine U-Rahmen: SABM, DISC und
+	 * ihresgleichen tragen das P aus anderen Gruenden.
+	 */
+	if (ispoll && !isu &&
+	    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY)) {
+		ifp->dama_violations++;
+		if (ifp->dama_violations == 1 ||
+		    !(ifp->dama_violations % 10)) {
+			char buf[AXBUF];
+
+			printf("%s: %s polled us - on a DAMA channel the "
+			       "master decides who\n  transmits (%ld so far)\n",
+			       ifp->name, pax25(buf, hdr->source),
+			       (long) ifp->dama_violations);
+		}
+	}
+	if ((mp = dama_m_port(ifp, 0)) == NULL || !mp->busy)
+		return;
+	if (!addreq(dama_station(axp), mp->turn))
+		return;
+	if (isfinal)
+		dama_master_next(mp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Die Runde anstossen, wenn sie ruht.  Gerufen, sobald eine Verbindung auf
+ * dem Port steht - vorher gibt es niemanden zu pollen.
+ */
+
+void dama_master_kick(struct iface *ifp)
+{
+	struct dama_m *mp;
+
+	if (ifp == NULL || ifp->dama != DAMA_MASTER)
+		return;
+	mp = dama_m_port(ifp, 1);
+	if (mp->busy || run_timer(&mp->t))
+		return;
+	dama_master_next(mp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void dama_master_stop(struct iface *ifp)
+{
+	struct dama_m *mp;
+
+	if ((mp = dama_m_port(ifp, 0)) == NULL)
+		return;
+	stop_timer(&mp->t);
+	mp->busy = 0;
+	memset(mp->turn, 0, AXALEN);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -534,6 +801,7 @@ int ifdama(int argc, char *argv[], void *p)
 	if (!strcmp(argv[1], "off")) {
 		ifp->dama = DAMA_OFF;
 		ifp->dama_heard = 0;
+		dama_master_stop(ifp);
 		/* Das Fragen nach ARP kommt zurueck, WENN wir es waren, die es
 		 * abgeschaltet haben (Thomas' Frage).  Der Grund war DAMA;
 		 * faellt der Grund weg, faellt die Folge weg.  Hat der Sysop
@@ -547,9 +815,11 @@ int ifdama(int argc, char *argv[], void *p)
 		}
 		return 0;
 	}
-	if (!strcmp(argv[1], "master") || !strcmp(argv[1], "master-enforce")) {
-		printf("Only the slave side is built - see TODO.txt\n");
-		return 1;
+	if (!strcmp(argv[1], "master")) {
+		ifp->dama = DAMA_MASTER;
+		ifp->dama_heard = 0;
+		dama_master_kick(ifp);
+		return 0;
 	}
 	if (strcmp(argv[1], "slave")) {
 		printf("ifconfig %s dama off | slave [timeout <seconds>]\n",
@@ -619,6 +889,20 @@ int ifdama(int argc, char *argv[], void *p)
 
 void dama_show(struct iface *ifp)
 {
+	if (ifp->dama == DAMA_MASTER) {
+		char buf[AXBUF];
+		struct dama_m *mp = dama_m_port(ifp, 0);
+
+		printf("           dama master, slot %lds, ",
+		       DAMA_SLOT_DEFAULT / 1000L);
+		if (mp != NULL && mp->busy)
+			printf("turn %s", pax25(buf, mp->turn));
+		else
+			printf("idle");
+		printf(", polls %ld, non-dama polls heard %ld\n",
+		       (long) ifp->dama_polls, (long) ifp->dama_violations);
+		return;
+	}
 	if (ifp->dama != DAMA_SLAVE)
 		return;
 	printf("           dama slave, timeout %ds, master ",

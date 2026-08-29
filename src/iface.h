@@ -163,7 +163,10 @@ struct iface {
 				 * 0 = not following anybody */
 	int32 dama_entered;     /* Times a master was found */
 	int32 dama_lost;        /* Times one went away again */
-	int32 dama_polls;       /* Polls answered */
+	int32 dama_polls;       /* Polls answered - als Slave; als Master die
+				 * ausgegebenen */
+	int32 dama_violations;  /* Master: Kommandos mit P von einem Slave,
+				 * der selbst gepollt hat */
 	int dama_window;        /* Set only while lapb_input() handles a poll
 				 * on this port - the whole of a slave's
 				 * permission to transmit, and it belongs to
