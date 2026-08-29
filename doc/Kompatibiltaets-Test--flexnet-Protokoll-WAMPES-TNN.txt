@@ -544,8 +544,16 @@ es entschieden.
 WAS AUF db0blo ZU TUN IST:
 
   1. xnet anhalten (es haelt /dev/ttyS0, lsof zeigt fd 5).
-  2. slowpty.py --dev /dev/ttyS0 --bps 1200 --link /dev/xnetpty
-       --dump /tmp/flex.txt --stats 60
+  2. slowpty.py --dev /dev/ttyS0 --devbps 115200 --bps 1200
+       --link /dev/xnetpty --dump /tmp/flex.txt --stats 60
+
+     ZWEI VERSCHIEDENE ZAHLEN, und sie nicht zu verwechseln ist die
+     Voraussetzung dafuer, dass ueberhaupt etwas laeuft (Thomas):
+     --devbps ist die BAUDRATE DER LEITUNG zum RMNC, --bps die Drossel.
+     tty.setraw() allein setzt nur den Modus; die Schnittstelle behielte,
+     was der vorige Benutzer hinterlassen hat.  Nachgemessen: ein frisch
+     geoeffnetes Terminal steht auf 9600 - der RMNC bliebe stumm, und man
+     suchte den Fehler beim Protokoll.
   3. xnet auf /dev/xnetpty statt /dev/ttyS0 umstellen und starten.
   4. Einen Poll abwarten (POLLINTERVAL 5 Minuten) oder erzwingen, dann an
      BEIDEN Enden "=>l" ablesen und mit /tmp/flex.txt vergleichen.
