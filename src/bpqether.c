@@ -55,6 +55,30 @@
 #include <net/ethernet.h>
 #include <linux/filter.h>
 #include <sys/ioctl.h>
+
+/* PACKET_AUXDATA and what comes back through it.  Deliberately NOT taken
+ * from <linux/if_packet.h>: glibc's <netpacket/packet.h> declares
+ * sockaddr_ll and packet_mreq itself, and on anything but a recent pair the
+ * two headers collide over them.  The layout below is UAPI and has not moved
+ * since it was introduced; the fields behind tp_vlan_tci are not read here
+ * and are only present so that the size is right.
+ */
+#ifndef	PACKET_AUXDATA
+#define	PACKET_AUXDATA	8
+#endif
+#ifndef	TP_STATUS_VLAN_VALID
+#define	TP_STATUS_VLAN_VALID	(1 << 4)
+#endif
+
+struct bpq_auxdata {
+  uint32 tp_status;
+  uint32 tp_len;
+  uint32 tp_snaplen;
+  unsigned short tp_mac;
+  unsigned short tp_net;
+  unsigned short tp_vlan_tci;
+  unsigned short tp_vlan_tpid;
+};
 #endif
 
 #if defined __MACOSX__ || defined __FreeBSD__
@@ -334,7 +358,7 @@ static void bpqether_recv(void *argp)
   struct sockaddr_ll from;
   uint8 buf[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_MTU_MAX];
   union {
-    char buf[CMSG_SPACE(sizeof(struct tpacket_auxdata))];
+    char buf[CMSG_SPACE(sizeof(struct bpq_auxdata))];
     struct cmsghdr align;
   } control;
   unsigned len;
@@ -362,8 +386,9 @@ static void bpqether_recv(void *argp)
 
   for (cm = CMSG_FIRSTHDR(&msg); cm; cm = CMSG_NXTHDR(&msg, cm))
     if (cm->cmsg_level == SOL_PACKET && cm->cmsg_type == PACKET_AUXDATA) {
-      struct tpacket_auxdata aux_d;
+      struct bpq_auxdata aux_d;
 
+      if (cm->cmsg_len < CMSG_LEN(sizeof(aux_d))) continue;
       memcpy(&aux_d, CMSG_DATA(cm), sizeof(aux_d));
       if (aux_d.tp_status & TP_STATUS_VLAN_VALID)
 	aux = aux_d.tp_vlan_tci & 0x0fff;
