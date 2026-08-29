@@ -804,10 +804,21 @@ int perm)
 	for (i = ncalls - 1; i >= 0; i--) {
 		rp = ax_routeptr(calls[i], 1);
 		if (perm || !rp->perm) {
+			/* A learned ethernet address is good for ONE port and
+			 * one segment.  The moment the path changes it says
+			 * nothing any more - and on the next segment the same
+			 * six octets may belong to somebody else entirely.
+			 * Dropping it costs a broadcast; keeping it costs the
+			 * connection, without a word.
+			 */
 			if (lastnode) {
+				if (rp->ifp)
+					rp->mac_valid = 0;
 				rp->digi = lastnode;
 				rp->ifp = 0;
 			} else {
+				if (rp->ifp != iface)
+					rp->mac_valid = 0;
 				rp->digi = 0;
 				rp->ifp = iface;
 			}
@@ -817,6 +828,62 @@ int perm)
 		lastnode = rp;
 	}
 	axroute_savefile(NULL);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* What we know about a station's ethernet card, and it is learned from
+ * traffic only - the same rule as everything else in this table.  Relearning
+ * is deliberate and unconditional (Thomas): a station may swap its card or
+ * turn up on another switch port, and a node that has to be restarted before
+ * it notices is a node nobody can explain.
+ *
+ * No log line when it moves.  A flip-flopping neighbour would fill the log
+ * with exactly the message that says the least, and the current answer is
+ * visible on demand anyway - "ax25 route list <call>" shows it.
+ */
+
+void
+axroute_mac_learn(
+struct iface *iface,
+const uint8 *call,
+const uint8 *mac)
+{
+	struct ax_route *rp;
+
+	if (!iface || !valid_remote_call(call))
+		return;
+	if (!(rp = ax_routeptr(call, 1)))
+		return;
+	/* Only for the port it came in on.  A route that says the station is
+	 * somewhere else is the one thing we must not overrule from here -
+	 * that decision belongs to axroute_add(), which sees the whole path.
+	 */
+	if (rp->ifp && rp->ifp != iface)
+		return;
+	memcpy(rp->mac, mac, 6);
+	rp->mac_valid = 1;
+	rp->mactime = secclock();
+}
+
+/*---------------------------------------------------------------------------*/
+
+const uint8 *
+axroute_mac_get(
+struct iface *iface,
+const uint8 *call)
+{
+	struct ax_route *rp;
+
+	if (!(rp = ax_routeptr(call, 0)) || !rp->mac_valid)
+		return NULL;
+	if (rp->ifp != iface)
+		return NULL;
+	if (secclock() - rp->mactime > AXROUTE_MACHOLD) {
+		rp->mac_valid = 0;
+		return NULL;
+	}
+	return rp->mac;
 }
 
 void

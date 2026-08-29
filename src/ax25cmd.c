@@ -684,6 +684,7 @@ struct ax_route *rp)
 	int n;
 	int perm;
 	int eax25;
+	const uint8 *mac;
 #ifdef	AX25_VJCOMP
 	int vjcomp;
 #endif
@@ -696,6 +697,7 @@ struct ax_route *rp)
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;
 	eax25 = rp->eax25;
+	mac = rp->mac_valid ? rp->mac : NULL;
 #ifdef	AX25_VJCOMP
 	vjcomp = rp->vjcomp;
 #endif
@@ -731,6 +733,14 @@ struct ax_route *rp)
                vjcomp ? 'C' : ' ',
 #endif
 	       buf);
+	/* The ethernet card we learned for him on a BPQether port.  BEHIND
+	 * the path and only when there is one: the columns in front are read
+	 * by position - the flags sit at 27 to 30 - and most routes have no
+	 * card to show, so a column of its own would be empty nearly always.
+	 */
+	if (mac)
+		printf("%*s(%02x:%02x:%02x:%02x:%02x:%02x)\n", 31, "",
+		       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
 /* Was die Buchstaben ueber der Liste bedeuten.  "ax25 route list ?" sagte

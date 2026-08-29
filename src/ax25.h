@@ -105,7 +105,36 @@ struct ax_route {
 	 */
 	int eax25_fails;
 	int eax25_skips;
+	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
+	 * one.  Learned from what arrives, so that we can answer to the one
+	 * machine instead of shouting at the whole segment.
+	 *
+	 * It belongs to the ROUTE and not to a table of its own because the
+	 * question is the same one the route answers - by which path do we
+	 * reach him - and because the two then age and change together.
+	 *
+	 * IT IS ONLY VALID FOR rp->ifp, the interface it was heard on.  When
+	 * the route moves - to another port, to another BPQether segment, or
+	 * behind a digipeater - the address is dropped rather than carried
+	 * along: a MAC is unique on ONE segment, and on the next one it may
+	 * well belong to somebody else (Thomas).  Falling back to the
+	 * broadcast costs a little traffic; a stale unicast costs the
+	 * connection, and silently.
+	 *
+	 * mactime is its own clock and not the route's.  Expiry here does not
+	 * mean "station gone", only "ask the whole segment again", so it is
+	 * short where AXROUTE_HOLDTIME is 24.8 days.
+	 */
+	uint8 mac[6];
+	int mac_valid;
+	long mactime;
 };
+
+/* An hour (Thomas).  Long enough that a quiet neighbour is not shouted at
+ * every few minutes, short enough that a station which moved is found again
+ * the same afternoon.
+ */
+#define AXROUTE_MACHOLD  3600L
 
 #define AXR_EAX25_UNKNOWN        0
 #define AXR_EAX25_YES            1
@@ -177,6 +206,18 @@ int axsend(struct iface *iface,uint8 *dest,uint8 *source,
 int valid_remote_call(const uint8 *call);
 struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
+
+/* The ethernet address of a station on a BPQether port.  <call> is the one
+ * that put the frame on the wire - the last repeater that has already
+ * repeated it, or the source when there is none - because that is the
+ * machine whose card we are looking at.
+ */
+void axroute_mac_learn(struct iface *iface, const uint8 *call,
+	const uint8 *mac);
+/* NULL when nothing is known, when it has aged out, or when the route has
+ * since moved somewhere else.  The caller then uses the broadcast.
+ */
+const uint8 *axroute_mac_get(struct iface *iface, const uint8 *call);
 
 /* One answer to "is that address one we answer to on this interface" - the
  * interface's own callsign, one of its links', or one we listen for.

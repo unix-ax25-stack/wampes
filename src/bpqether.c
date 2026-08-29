@@ -96,6 +96,9 @@ struct bpq_edv {
   char *buf;				/* bsd: a whole read at a time */
 };
 
+static void bpqether_learn(struct iface *ifp, const uint8 *ether_src,
+			   const uint8 *ax, int len);
+
 /*---------------------------------------------------------------------------*/
 
 /* One filter program for both systems.  Classic BPF, and struct sock_filter
@@ -280,6 +283,8 @@ static void bpqether_recv(void *argp)
   if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
       (unsigned) (l - BPQ_HDRLEN - BPQ_LENLEN)) goto Fail;
 
+  bpqether_learn(ifp, buf + 6, buf + BPQ_HDRLEN + BPQ_LENLEN,
+		 (int) (len - BPQ_EXTRA));
   bp = qdata(buf + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
   net_route(ifp, &bp);
   return;
@@ -413,6 +418,8 @@ static void bpqether_recv(void *argp)
       ifp->crcerrors++;
       goto next;
     }
+    bpqether_learn(ifp, frame + 6, frame + BPQ_HDRLEN + BPQ_LENLEN,
+		   (int) (len - BPQ_EXTRA));
     bp = qdata(frame + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
     net_route(ifp, &bp);
 next:
@@ -460,16 +467,87 @@ static int bpqether_write(struct bpq_edv *edv, const uint8 *frame, int len)
 
 /*---------------------------------------------------------------------------*/
 
-/* Where a frame goes on the wire.  For now: everywhere.  A broadcast reaches
- * the right station in every case, which is what the kernel driver does too
- * (bpq_new_device sets dest_addr to the broadcast address).  Learning the one
- * MAC that would do instead is the next step.
+/* WHOSE CARD PUT THIS FRAME ON THE WIRE.  Not the source callsign as such:
+ * if the frame came through digipeaters, the machine we are looking at is the
+ * LAST one that has already repeated it.  Anything in front of that is
+ * somebody else's problem and somebody else's card.
+ *
+ * Returns NULL when the header does not parse, which is the caller's cue to
+ * learn nothing rather than to guess.
  */
 
-static const uint8 *bpqether_target(struct iface *ifp, struct mbuf *bp)
+static const uint8 *bpqether_sender(const uint8 *ax, int len)
 {
-  (void) ifp;
-  (void) bp;
+  const uint8 *last = 0;
+  int n;
+  int off;
+
+  /* Walked by hand rather than with ntohax25(), which takes an mbuf and eats
+   * the header as it goes.  Here the frame has to stay whole - it is on its
+   * way upstairs.
+   */
+  for (n = 0, off = 0; off + AXALEN <= len; n++, off += AXALEN) {
+    if (n >= 2 && (ax[off + ALEN] & REPEATED)) last = ax + off;
+    if (ax[off + ALEN] & E) {
+      n++;
+      break;
+    }
+  }
+  if (n < 2) return 0;                  /* not even a destination and source */
+  return last ? last : ax + AXALEN;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Learn where a station sits, from a frame that arrived.
+ *
+ * WHAT WE LEARN FROM: everything.  Frames to us, obviously - we want to
+ * answer to the one card.  But broadcasts as well, and that is the point:
+ * NODES and QST are how a neighbour announces himself before anybody has
+ * spoken to him, so without them the first connect always goes to the whole
+ * segment.  It is the same reason the IP side learns from an ARP it did not
+ * ask for.
+ *
+ * The frame is not consumed here, and nothing depends on the result - a
+ * header we cannot read simply teaches us nothing.
+ */
+
+static void bpqether_learn(struct iface *ifp, const uint8 *ether_src,
+			   const uint8 *ax, int len)
+{
+  const uint8 *call;
+
+  if ((call = bpqether_sender(ax, len)) != 0)
+    axroute_mac_learn(ifp, call, ether_src);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Where a frame goes on the wire.
+ *
+ * AN AX.25 BROADCAST IS AN ETHERNET BROADCAST.  QST and NODES are addressed
+ * to everybody by definition - that is what Ax25multi[] holds, and the IP
+ * side already sends its ARP requests to QST for the same reason.  A station
+ * that would only hear such a frame if it were addressed to its card has
+ * misunderstood what a broadcast is.
+ *
+ * Otherwise: the card we learned for that station, or the broadcast when we
+ * have none.  The broadcast always works; it merely asks the whole segment to
+ * look at something meant for one machine.
+ *
+ * The DESTINATION decides, not the next digipeater - on a BPQether segment
+ * everybody hears everybody, so there is no such thing as a hop towards him.
+ */
+
+static const uint8 *bpqether_target(struct iface *ifp, const uint8 *ax, int len)
+{
+  const uint8 *mac;
+  uint8 (*mpp)[AXALEN];
+
+  if (len < AXALEN) return Ether_bcast;
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
+    if (addreq(ax, *mpp)) return Ether_bcast;
+  if ((mac = axroute_mac_get(ifp, ax)) != 0) return mac;
   return Ether_bcast;
 }
 
@@ -489,13 +567,16 @@ static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
   ifp->lastsent = secclock();
   if (ifp->trace & IF_TRACE_RAW) raw_dump(ifp, -1, *bpp);
 
-  dest = bpqether_target(ifp, *bpp);
-
+  /* Laid out flat first, then asked where it goes: the destination sits in
+   * the first seven octets, and in an mbuf CHAIN those need not all be in the
+   * first buffer.
+   */
   l = pullup(bpp, frame + BPQ_HDRLEN + BPQ_LENLEN, BPQ_MTU_MAX);
   if (l <= 0 || *bpp) {                 /* longer than we may carry */
     free_p(bpp);
     return -1;
   }
+  dest = bpqether_target(ifp, frame + BPQ_HDRLEN + BPQ_LENLEN, l);
   memcpy(frame, dest, 6);
   memcpy(frame + 6, edv->hwaddr, 6);
   frame[12] = (ETH_P_BPQ >> 8) & 0xff;
