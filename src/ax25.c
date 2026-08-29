@@ -542,17 +542,32 @@ const uint8 *addr
  * an IP-over-AX.25 exchange digipeated through us teaches a path that has
  * just been proven to work.
  */
+/* The rule itself, asked with the two octets that decide it.  Split out
+ * because a second caller asks the same question from a frame that is still
+ * flat - bpqether, before it hands one upstairs - and a rule that lives in
+ * two places is a rule that will differ in two places.
+ */
+int
+axroute_learnable(int ctl, int pid)
+{
+	if ((ctl & ~PF) != UI)
+		return 1;               /* connected mode */
+	return pid != PID_NO_L3;
+}
+
 static int
 learn_from(
 struct mbuf *bp
 ){
+	int ctl;
 	int i;
 	int n = 0;
 	int pid = -1;
 
 	if (bp == NULL)
 		return 0;
-	if ((*bp->data & ~PF) != UI)
+	ctl = *bp->data;
+	if ((ctl & ~PF) != UI)
 		return 1;               /* connected mode */
 
 	/* The PID follows the control field, and the frame may be split
@@ -564,7 +579,7 @@ struct mbuf *bp
 				pid = bp->data[i];
 				break;
 			}
-	return pid != PID_NO_L3;
+	return axroute_learnable(ctl, pid);
 }
 
 /* Process incoming AX.25 packets.
@@ -804,21 +819,10 @@ int perm)
 	for (i = ncalls - 1; i >= 0; i--) {
 		rp = ax_routeptr(calls[i], 1);
 		if (perm || !rp->perm) {
-			/* A learned ethernet address is good for ONE port and
-			 * one segment.  The moment the path changes it says
-			 * nothing any more - and on the next segment the same
-			 * six octets may belong to somebody else entirely.
-			 * Dropping it costs a broadcast; keeping it costs the
-			 * connection, without a word.
-			 */
 			if (lastnode) {
-				if (rp->ifp)
-					rp->mac_valid = 0;
 				rp->digi = lastnode;
 				rp->ifp = 0;
 			} else {
-				if (rp->ifp != iface)
-					rp->mac_valid = 0;
 				rp->digi = 0;
 				rp->ifp = iface;
 			}
@@ -847,22 +851,35 @@ void
 axroute_mac_learn(
 struct iface *iface,
 const uint8 *call,
-const uint8 *mac)
+const uint8 *mac,
+int may_create)
 {
 	struct ax_route *rp;
 
 	if (!iface || !valid_remote_call(call))
 		return;
-	if (!(rp = ax_routeptr(call, 1)))
-		return;
-	/* Only for the port it came in on.  A route that says the station is
-	 * somewhere else is the one thing we must not overrule from here -
-	 * that decision belongs to axroute_add(), which sees the whole path.
+	/* A KNOWN station always teaches us its card, whatever the frame was.
+	 * A NEW one only when the frame was allowed to teach a route at all -
+	 * see learn_from(): a plain-text broadcast is APRS and its like, and
+	 * an entry per beacon heard would fill the table within hours.  The
+	 * card is not the reason to make an entry; it is what we hang on one.
 	 */
-	if (rp->ifp && rp->ifp != iface)
-		return;
+	if (!(rp = ax_routeptr(call, 0))) {
+		if (!may_create || !(rp = ax_routeptr(call, 1)))
+			return;
+		rp->ifp = iface;
+		rp->time = secclock();
+	}
+	/* Stored as heard, with the port it was heard on, and NOT weighed
+	 * against where the route currently points.  That comparison was
+	 * tried and is unusable: net_route() enqueues, so when we get here
+	 * axroute_add() has not run yet and the route still names the port
+	 * the station has just LEFT.  What arrived is a fact about this
+	 * segment either way; whether it may be used is decided on sending,
+	 * by axroute_mac_get(), and there the port has to match.
+	 */
 	memcpy(rp->mac, mac, 6);
-	rp->mac_valid = 1;
+	rp->mac_ifp = iface;
 	rp->mactime = secclock();
 }
 
@@ -875,12 +892,10 @@ const uint8 *call)
 {
 	struct ax_route *rp;
 
-	if (!(rp = ax_routeptr(call, 0)) || !rp->mac_valid)
-		return NULL;
-	if (rp->ifp != iface)
+	if (!(rp = ax_routeptr(call, 0)) || rp->mac_ifp != iface)
 		return NULL;
 	if (secclock() - rp->mactime > AXROUTE_MACHOLD) {
-		rp->mac_valid = 0;
+		rp->mac_ifp = 0;
 		return NULL;
 	}
 	return rp->mac;

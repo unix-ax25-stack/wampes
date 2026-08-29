@@ -113,20 +113,25 @@ struct ax_route {
 	 * question is the same one the route answers - by which path do we
 	 * reach him - and because the two then age and change together.
 	 *
-	 * IT IS ONLY VALID FOR rp->ifp, the interface it was heard on.  When
-	 * the route moves - to another port, to another BPQether segment, or
-	 * behind a digipeater - the address is dropped rather than carried
-	 * along: a MAC is unique on ONE segment, and on the next one it may
-	 * well belong to somebody else (Thomas).  Falling back to the
-	 * broadcast costs a little traffic; a stale unicast costs the
-	 * connection, and silently.
+	 * IT CARRIES THE INTERFACE IT WAS HEARD ON, and that is what makes it
+	 * valid or not.  A MAC is unique on ONE segment; on the next one the
+	 * same six octets may belong to somebody else entirely (Thomas), so
+	 * an address learned on bpq0 must never be used on bpq1.
+	 *
+	 * The interface is kept HERE rather than compared against rp->ifp,
+	 * and that was learned the hard way: net_route() only ENQUEUES a
+	 * frame (iface.c, onto Hopper), so at the moment a driver has one in
+	 * its hands, ax_recv() and with it axroute_add() have not run yet.
+	 * The route still says where the station was BEFORE.  Tying the
+	 * address to its own interface makes the question independent of that
+	 * order - and of whether the route moves at all.
 	 *
 	 * mactime is its own clock and not the route's.  Expiry here does not
 	 * mean "station gone", only "ask the whole segment again", so it is
 	 * short where AXROUTE_HOLDTIME is 24.8 days.
 	 */
 	uint8 mac[6];
-	int mac_valid;
+	struct iface *mac_ifp;          /* 0: nothing known */
 	long mactime;
 };
 
@@ -213,7 +218,12 @@ void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
  * machine whose card we are looking at.
  */
 void axroute_mac_learn(struct iface *iface, const uint8 *call,
-	const uint8 *mac);
+	const uint8 *mac, int may_create);
+
+/* May a frame with this control field and PID teach us a route at all?  A
+ * plain-text broadcast may not - see learn_from() in ax25.c.
+ */
+int axroute_learnable(int ctl, int pid);
 /* NULL when nothing is known, when it has aged out, or when the route has
  * since moved somewhere else.  The caller then uses the broadcast.
  */

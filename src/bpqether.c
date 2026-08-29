@@ -283,10 +283,11 @@ static void bpqether_recv(void *argp)
   if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
       (unsigned) (l - BPQ_HDRLEN - BPQ_LENLEN)) goto Fail;
 
-  bpqether_learn(ifp, buf + 6, buf + BPQ_HDRLEN + BPQ_LENLEN,
-		 (int) (len - BPQ_EXTRA));
   bp = qdata(buf + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
   net_route(ifp, &bp);
+  /* AFTER, not before - see bpqether_learn(). */
+  bpqether_learn(ifp, buf + 6, buf + BPQ_HDRLEN + BPQ_LENLEN,
+		 (int) (len - BPQ_EXTRA));
   return;
 
 Fail:
@@ -418,10 +419,11 @@ static void bpqether_recv(void *argp)
       ifp->crcerrors++;
       goto next;
     }
-    bpqether_learn(ifp, frame + 6, frame + BPQ_HDRLEN + BPQ_LENLEN,
-		   (int) (len - BPQ_EXTRA));
     bp = qdata(frame + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
     net_route(ifp, &bp);
+    /* AFTER, not before - see bpqether_learn(). */
+    bpqether_learn(ifp, frame + 6, frame + BPQ_HDRLEN + BPQ_LENLEN,
+		   (int) (len - BPQ_EXTRA));
 next:
     p += BPF_WORDALIGN(hdr->bh_hdrlen + hdr->bh_caplen);
   }
@@ -508,17 +510,40 @@ static const uint8 *bpqether_sender(const uint8 *ax, int len)
  * segment.  It is the same reason the IP side learns from an ARP it did not
  * ask for.
  *
- * The frame is not consumed here, and nothing depends on the result - a
- * header we cannot read simply teaches us nothing.
+ * CALLED AFTER THE FRAME HAS GONE UPSTAIRS, and the order is not a detail.
+ * axroute_add() runs up there, and it is what MOVES a route onto this port.
+ * Asking beforehand meant asking a route that still said "he is on axip" -
+ * so on the first frame after a station moved back to the ethernet we
+ * learned nothing and answered him by broadcast.  Measured: the route
+ * followed him, the card did not.  The frame itself is still flat in the
+ * caller's buffer at that point; net_route() got a copy.
+ *
+ * Nothing depends on the result - a header we cannot read simply teaches us
+ * nothing.
  */
 
 static void bpqether_learn(struct iface *ifp, const uint8 *ether_src,
 			   const uint8 *ax, int len)
 {
   const uint8 *call;
+  int off;
 
-  if ((call = bpqether_sender(ax, len)) != 0)
-    axroute_mac_learn(ifp, call, ether_src);
+  if (!(call = bpqether_sender(ax, len))) return;
+
+  /* Where the address field ends the control octet begins, and the PID
+   * behind it.  Both are needed for the one question a new entry has to
+   * answer - see axroute_learnable().
+   */
+  for (off = 0; off + AXALEN <= len; off += AXALEN)
+    if (ax[off + ALEN] & E) {
+      off += AXALEN;
+      break;
+    }
+  if (off >= len) return;
+
+  axroute_mac_learn(ifp, call, ether_src,
+		    axroute_learnable(ax[off],
+				      off + 1 < len ? ax[off + 1] : -1));
 }
 
 /*---------------------------------------------------------------------------*/

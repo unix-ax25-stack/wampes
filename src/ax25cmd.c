@@ -697,7 +697,7 @@ struct ax_route *rp)
 	perm = rp->perm;
 	jumpstart = rp->jumpstart;
 	eax25 = rp->eax25;
-	mac = rp->mac_valid ? rp->mac : NULL;
+	mac = rp->mac_ifp ? rp->mac : NULL;
 #ifdef	AX25_VJCOMP
 	vjcomp = rp->vjcomp;
 #endif
