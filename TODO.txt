@@ -6297,35 +6297,26 @@ dama_serve_others() vergleicht axp->hdr.source, "the callsign we were called
 under" - bei einer Relaishaelfte das des Benutzers -, bedient auf seinen Poll
 also genau seine Verbindungen und keine fremden.
 
-DIE ZWEI ECHTEN LUECKEN LIEGEN WOANDERS: ax25.c kennt DAMA UEBERHAUPT NICHT
-(kein einziges Vorkommen).  Also geht
+UND UI IST KEINE LUECKE, sondern eine getroffene Entscheidung.  Ich hatte
+hier stehen, ax25.c kenne DAMA gar nicht und ein UI-Rahmen gehe deshalb
+unaufgefordert hinaus - richtig beobachtet, falsch bewertet.  Thomas hat es
+erinnert und doc/DAMA-SLAVE.md sagt es unter "UI frames are outside all of
+this", mit der Spezifikation im Zitat:
 
-  * ein UI-RAHMEN - Bake, NET/ROM-Rundspruch, ARP, IP ueber UI - in dem
-    Augenblick auf die Luft, in dem er entsteht;
-  * ein DIGIPEATETER Rahmen ebenso, direkt ueber (*ifp->raw)().  Das betrifft
-    UI immer und verbundene Rahmen bei "digipeat 1".
+    "In CSMA as well as in a DAMA environment, the UI frames are treated in
+     a special way ... UI-frames originated by the node are no problem since
+     all stations receive these frames."
 
-Beides sind unaufgeforderte Sendungen auf einem DAMA-Kanal, also genau das,
-was DAMA verhindern soll.  TNN zaehlt es nicht an (polDAMA() meckert nur
-POLLS eines Slaves an), aber kollidieren kann es.
+DAMA regelt verbundene Verbindungen.  Es verbietet nicht-DAMA nicht, es
+empfiehlt DAMA.  Die Tore sitzen deshalb alle in lapb.c und lapbtime.c -
+dama_holds()/dama_wait() an vier Stellen -, und UI geht ueber
+ax_output/axui_send daran vorbei.  Baken, APRS, NET/ROM-Rundspruch und IP
+ueber UI laufen weiter wie bisher.  Eine Warteschlange a la TNNs damarl
+waere hier also nicht die Behebung eines Fehlers, sondern eine Aenderung
+gegen eine begruendete Entscheidung.
 
-WIE TNN ES LOEST, und der Mechanismus ist klein: damarl[port], die
-"DAMA-Random-Liste".  Was nicht an einem Link haengt, kommt dorthin
-(sdl2fr(fbp, TRUE) - DM, UA, FRMR, UI).  Der MASTER leert sie in seiner
-eigenen Runde vor dem Pollen; der SLAVE leert sie, wenn er gepollt wurde
-(xmit_damarl(port, NULL) unter portpar[port].sendok).  Und laeuft der
-Slave-Timeout ab, wird sendok gesetzt und der Rest geht trotzdem raus -
-sonst haengt die Warteschlange fuer immer, wenn der Master verschwindet.
-
-ZU ENTSCHEIDEN, BEVOR MAN DAS BAUT:
-
-  * Wo die Warteschlange haengt - je Port, wie bei TNN.
-  * Wer hineinlegt: nur UI und Digipeat, oder alles, was nicht durch lapb
-    kommt?  DM/UA/FRMR gehen bei uns durch lapb und sind schon im Fenster.
-  * Was bei geschlossenem Fenster mit einer VOLLEN Warteschlange geschieht.
-  * Der Notausgang, wenn kein Master mehr da ist (dama_heard/Watchdog).
-  * Und ob es das ueberhaupt wert ist: auf einem Benutzerzugang ist ein
-    Knoten selten der, der Baken wirft.
+Damit bleibt aus diesem Abschnitt nur der Digipeat-Modus offen, und auch der
+ist entschieden - siehe oben.
 
 WER DARF WELCHES RUFZEICHEN - SO_PEERCRED AM DIENSTSOCKET (Thomas,
 2026-08-29)
