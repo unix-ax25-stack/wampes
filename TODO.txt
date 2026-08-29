@@ -6205,6 +6205,26 @@ ohne sie zu trennen.  Gemessen gegen einen ZWEITEN WAMPES-Knoten als Slave
 
 WAS NOCH FEHLT:
 
+  * EIN LINK JE ZUG, nicht alle einer Station - und das haengt mit dem
+    P-Bit unten zusammen.  TNNs Master gibt den Zug dem Link mit
+    "zael == indx" und bricht dann ab ("DAMA User gefunden, abbrechen",
+    timDAMA); die Links einer Station rotieren ueber die Zuege.  So haelt er
+    ein, was sein Handbuch verspricht: "USER mit Multiconnect kommen
+    gegenueber USERN mit nur einer Verbindung zum Knoten nicht oefters an
+    die Reihe."  Wir leeren dagegen ALLE Links der Station in einem Zug -
+    ein Multiconnect-Benutzer bekommt damit je Zug mehr Airtime als einer
+    mit einer Verbindung.
+
+    (Beim SLAVE ist das Gegenteil richtig und so gebaut: einmal gepollt,
+    alles hinaus.  Die Fairness ist Sache des Masters; ein Slave, der sich
+    selbst noch rationiert, rationiert eine bereits rationierte
+    Zeitscheibe.)
+
+    UND ES MACHT DAS P-BIT ERST MOEGLICH: mit allen Links ist "der letzte
+    I-Rahmen" nicht definiert - welcher von dreien soll ihn tragen?  Genau
+    deshalb war das eigene RR der bequeme Weg.  Ein Link je Zug macht die
+    Frage eindeutig.  Die beiden gehoeren also in EINEN Umbau.
+
   * DAS PRIORITAETSSCHEMA (TNNs damapm/damapc/incDAMA): wer nichts sendet,
     kommt seltener dran.  Eine Ergaenzung auf derselben Runde, kein anderer
     Entwurf - und gegen einen einzelnen Slave nicht messbar, deshalb
