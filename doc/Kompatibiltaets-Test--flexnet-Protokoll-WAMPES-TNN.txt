@@ -789,3 +789,73 @@ Kontrollversuch, dann die Messung:
   1. dann 100, 200, 300 ms wie oben.
 
 Erst dieser Schritt 0 haette die zwei Prozesse sofort gezeigt.
+
+
+ERSTE SAUBERE MESSUNG: DIE ZAHL IST DIE GANZE UMLAUFZEIT
+========================================================
+
+Mit --delay statt Drossel und nur noch einem Prozess an der Leitung stand
+die Verbindung.  Thomas' "=>l" auf db0blo-4, nach 1m 29s Standzeit:
+
+  Link to       dst  Q/T    rtt    tx connect   tx   rx   txq/rxq  rr+%  bit/s
+   1:DB0BLO       1 F 155   6/303   0  1m 29s  297  215    88/100 158.3     46
+
+DIE 303 IST UNSERE EIGENE ZAHL.  slowpty gemessen, ueber zwei
+Pseudoterminals, bei --delay 300:
+
+    241 B: erstes Byte nach  303.2 ms, alle nach  303.2 ms
+
+Das ist der Zuschlag EINER Richtung.  Die 6 sind 600 ms, also BEIDE
+Richtungen zusammen.  Damit:
+
+    Die gemeldete Zahl ist die GANZE Umlaufzeit in Einheiten von 100 ms.
+    Waere sie die halbe, staende dort 3.
+
+xnet zeigt beides nebeneinander - links die Zahl, die auf die Luft geht,
+rechts die halbe Zeit in Millisekunden.  Daher "6/303".
+
+(Annahme dabei: der Lauf fuhr mit --delay 300 in beide Richtungen.  Die 303
+gegen unsere 303,2 laesst wenig anderes zu, aber gesagt sei es.)
+
+NOCH NICHT ABGESCHLOSSEN.  Eine einzelne Zahl kann zufaellig passen, und an
+diesem Tag habe ich zweimal zu frueh geschlossen - einmal bei der Drossel,
+einmal bei den 217 bps.  Die Reihe entscheidet:
+
+    --delay 100   erwartet ganz  2/101      halb  1
+    --delay 200   erwartet ganz  4/202      halb  2
+    --delay 300   erwartet ganz  6/303      gemessen: 6/303
+
+Stehen 2/101 und 4/202 da, ist die Rechenvorschrift dreifach belegt und
+nicht nur dieser eine Wert.
+
+
+MITSCHNITT MIT ZEIT: testtools/tsstamp.py
+=========================================
+
+"script" allein schreibt mit, WAS ueber den Schirm ging, nicht WANN - und
+das Wann ist hier die ganze Frage.  util-linux kann eine Zeitspur:
+
+    script --flush --log-out /tmp/net.ts --log-timing /tmp/net.tm
+    (aeltere Fassung:  script -f -t 2>/tmp/net.tm /tmp/net.ts)
+
+tsstamp.py legt beides uebereinander und stellt jeder Zeile die Zeit voran,
+zu der ihr LETZTES Zeichen kam - ein Rahmen ist erst da, wenn sein letztes
+Byte da ist:
+
+        0.000  1:fm DB0BLO to DB0BLO-4 ctl I33^ pid CE [201]
+       +0.303  1:fm DB0BLO-4 to DB0BLO ctl RR3+
+
+Vorgabe ist der Abstand zur vorigen Zeile, "--seit-anfang" zaehlt ab Beginn,
+"--abs HH:MM:SS" stempelt Uhrzeit.  Beide Zeitspur-Formate von script werden
+gelesen, das klassische und das "advanced" mit O/I/H/S.
+
+GRENZE DES WERKZEUGS: der Parser ist gegen eine von Hand gebaute Zeitspur
+geprueft, nicht gegen einen echten util-linux-Lauf - auf dem Mac gibt es
+"script -t" nicht.  Sehen die Stempel auf db0blo unsinnig aus, liegt der
+Verdacht zuerst hier.
+
+BESSER WAERE OHNEHIN, wenn xnet selbst stempeln kann.  Thomas kennt "mon +1"
+fuer den Kanal und liest die uebrigen Monitor-Optionen im Handbuch nach; ist
+ein Zeitstempel darunter, stempelt der Knoten an der Quelle und die Zeitspur
+entfaellt samt ihrer Fehlerquelle.  Die Kanalwahl lohnt sich in jedem Fall -
+im ersten Mitschnitt lief Verkehr von DB0FUZ und DB0FHN mit durch.
