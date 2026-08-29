@@ -869,14 +869,27 @@ showiface(struct iface *ifp, int verbose)
 	 * angekuendigte NETZ (netrom.c, rt_learn mit inp3_ipbits).  Auf einem
 	 * AX.25-Port lernt der IP-ueber-AX.25-Pfad, und der kennt das Gateway.
 	 */
-	printf("           ip routes learned here: %s\n",
-	 if_learns_routes(ifp) ?
-	  "host routes from traffic, and with INP3 announced nets too" :
-	 is_ax25(ifp) ? "host routes, from the IP-over-AX.25 path" :
-	 "none - this kind of port learns no routes");
-	if(if_learns_routes(ifp) || is_ax25(ifp))
-		printf("                 (\"ip learn\" defines what may be "
-		 "entered)\n");
+	/* NUR WO WIRKLICH GELERNT WIRD.  "none - this kind of port learns no
+	 * routes" stand auf loopback, tun, ipip und encap, und dort ist es
+	 * Laerm (Thomas): aus einem loopback kommt nie etwas anderes heraus
+	 * als eine Antwort von 127.0.0.1, es GIBT dort keinen Vorgang, ueber
+	 * den die Zeile berichten koennte.  Dieselbe Regel wie beim ARP eine
+	 * Zeile weiter unten: das Bemerkenswerte steht da, der Normalfall
+	 * schweigt.
+	 */
+	if(if_learns_routes(ifp) || is_ax25(ifp)){
+		printf("           ip routes learned here: %s\n",
+		 if_learns_routes(ifp) ?
+		  "host routes from traffic, and with INP3 announced nets too" :
+		  "host routes, from the IP-over-AX.25 path");
+		/* Was "ip learn" ist, in einem halben Satz: eine Regelliste
+		 * darueber, was aus dem Verkehr in die Routen- und ARP-Tabelle
+		 * uebernommen werden DARF.  "defines what may be entered" las
+		 * sich, als lerne es selbst etwas (Thomas).
+		 */
+		printf("                 (the \"ip learn\" rules decide which "
+		 "of them are accepted)\n");
+	}
 
 	/* Frame sizes: shown ALWAYS here, with where the number comes from.
 	 * The old condition hid exactly the normal case - a port that takes
