@@ -399,8 +399,16 @@ static void bpqether_recv(void *argp)
 
   if (bpqether_vlan_of(buf, l, aux, &off) != edv->vlan) return;
 
+  /* The length field DECIDES, it is not compared against what arrived.
+   * Ethernet pads anything below 60 octets, and a BPQ frame carrying a SABM
+   * is 31 - so on real hardware nearly every frame comes with padding behind
+   * it.  Demanding equality worked on a veth pair, where nothing pads, and
+   * would have thrown away almost everything on a card.  The kernel driver
+   * says the same in two lines: skb_trim(skb, len).  Only "does not fit" is
+   * an error; anything past the end is padding and is ignored.
+   */
   len = buf[BPQ_HDRLEN + off] + buf[BPQ_HDRLEN + off + 1] * 256;
-  if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
+  if (len < BPQ_EXTRA || len - BPQ_EXTRA >
       (unsigned) (l - BPQ_HDRLEN - off - BPQ_LENLEN)) goto Fail;
 
   bp = qdata(buf + BPQ_HDRLEN + off + BPQ_LENLEN, len - BPQ_EXTRA);
@@ -545,9 +553,10 @@ static void bpqether_recv(void *argp)
 	!= edv->vlan)
       goto next;
 
+    /* Padding is not an error - see the note in the linux half. */
     len = frame[BPQ_HDRLEN + off] + frame[BPQ_HDRLEN + off + 1] * 256;
     if (len < BPQ_EXTRA ||
-	len - BPQ_EXTRA != hdr->bh_caplen - BPQ_HDRLEN - off - BPQ_LENLEN) {
+	len - BPQ_EXTRA > hdr->bh_caplen - BPQ_HDRLEN - off - BPQ_LENLEN) {
       ifp->crcerrors++;
       goto next;
     }
