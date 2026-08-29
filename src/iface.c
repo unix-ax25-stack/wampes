@@ -860,10 +860,23 @@ showiface(struct iface *ifp, int verbose)
 	 * lernt, was dessen Regeln zulassen.  Ob ueberhaupt jemand hier lernt,
 	 * haengt am Typ des Ports und ist keine Einstellung.
 	 */
+	/* DREI VERSCHIEDENE DINGE, und "from NET/ROM" warf sie zusammen
+	 * (Thomas).  Auf einem NET/ROM-Port lernt der allgemeine Lerner in
+	 * ip_route() Host-Routen aus dem Verkehr - dort ist er die einzige
+	 * Quelle, weil netrom.c nur den ARP-Eintrag anlegt.  INP3 kommt
+	 * daneben und bringt mehr: inp3_ip_add() legt den ARP-Eintrag des
+	 * ankuendigenden Knotens an, seine eigene Adresse als /32 UND das
+	 * angekuendigte NETZ (netrom.c, rt_learn mit inp3_ipbits).  Auf einem
+	 * AX.25-Port lernt der IP-ueber-AX.25-Pfad, und der kennt das Gateway.
+	 */
 	printf("           ip routes learned here: %s\n",
-	 if_learns_routes(ifp) ? "yes, from NET/ROM (\"ip learn\" defines which)" :
-	 is_ax25(ifp) ? "yes, from IP over AX.25 (\"ip learn\" defines which)" :
-	 "no, this kind of port learns none");
+	 if_learns_routes(ifp) ?
+	  "host routes from traffic, and with INP3 announced nets too" :
+	 is_ax25(ifp) ? "host routes, from the IP-over-AX.25 path" :
+	 "none - this kind of port learns no routes");
+	if(if_learns_routes(ifp) || is_ax25(ifp))
+		printf("                 (\"ip learn\" defines what may be "
+		 "entered)\n");
 
 	/* Frame sizes: shown ALWAYS here, with where the number comes from.
 	 * The old condition hid exactly the normal case - a port that takes
