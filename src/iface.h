@@ -137,6 +137,12 @@ struct iface {
 	 * gesendet wuerde, und hilft der Gegenseite.
 	 */
 	int noarp;
+	/* Und wer es abgeschaltet hat.  1: "dama slave" war es, dann nimmt
+	 * "dama off" es auch wieder zurueck - der Grund war DAMA, faellt der
+	 * Grund weg, faellt die Folge weg.  0: der Sysop hat es gesagt, und
+	 * dann bleibt es, bis er etwas anderes sagt.
+	 */
+	int noarp_auto;
 
 	int crccontrol;         /* CRC send control */
 	int crcfixed;           /* Set by "ifconfig <if> crc": stop autodetecting */

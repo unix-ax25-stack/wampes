@@ -507,13 +507,44 @@ void dama_wait(struct ax25_cb *axp)
  * refusal says what is missing instead of "unknown".
  */
 
+/* "ifconfig <iface> dama off | slave [timeout <sec>]"
+ *
+ * Die Frist gehoert syntaktisch zur Rolle (Thomas), und das ist mehr als
+ * Kosmetik: sie MEINT etwas, das nur ein Slave hat - wie lange ein Master
+ * schweigen darf, bevor wir ihm nicht mehr folgen.  Ein Master hat andere
+ * Zeiten (Rundenabstand, Wartezeit auf den Gepollten), und die eine hier
+ * fuer die andere zu recyceln waere derselbe Name fuer zwei Sachverhalte.
+ * Als eigener Befehl "damatimeout" stand sie vorher daneben und sagte
+ * nicht, wozu sie gehoert.
+ *
+ * VORGABE 120 SEKUNDEN, und dafuer gibt es jetzt zwei Gruende.  TNN nimmt
+ * dieselben zwei Minuten (damaok = 12000 Hundertstel, l2rx.c), und die
+ * Spezifikation nennt gar keine Zahl.  Der bessere Grund ist aber der
+ * Kanal selbst: ein Master pollt seine Stationen reihum, und bei sechzehn
+ * Stationen zu je zwei bis fuenf Sekunden ist eine Runde eine Minute lang
+ * (Thomas).  Eine kuerzere Frist erklaerte einen Master fuer verloren, der
+ * bloss seine Liste abarbeitet.
+ */
+
 int ifdama(int argc, char *argv[], void *p)
 {
 	struct iface *ifp = (struct iface *) p;
+	int i;
 
 	if (!strcmp(argv[1], "off")) {
 		ifp->dama = DAMA_OFF;
 		ifp->dama_heard = 0;
+		/* Das Fragen nach ARP kommt zurueck, WENN wir es waren, die es
+		 * abgeschaltet haben (Thomas' Frage).  Der Grund war DAMA;
+		 * faellt der Grund weg, faellt die Folge weg.  Hat der Sysop
+		 * "arp off" selbst gesagt, bleibt es - eine Ansage von ihm
+		 * nehmen wir ihm nicht wieder aus der Hand.
+		 */
+		if (ifp->noarp && ifp->noarp_auto) {
+			ifp->noarp = 0;
+			ifp->noarp_auto = 0;
+			printf("%s: arp requests switched back on\n", ifp->name);
+		}
 		return 0;
 	}
 	if (!strcmp(argv[1], "master") || !strcmp(argv[1], "master-enforce")) {
@@ -521,9 +552,34 @@ int ifdama(int argc, char *argv[], void *p)
 		return 1;
 	}
 	if (strcmp(argv[1], "slave")) {
-		printf("Dama must be off or slave\n");
+		printf("ifconfig %s dama off | slave [timeout <seconds>]\n",
+		       ifp->name);
 		return 1;
 	}
+
+	for (i = 2; i < argc; i++) {
+		if (!strcmp(argv[i], "timeout")) {
+			long n;
+
+			if (++i >= argc) {
+				printf("\"timeout\" wants a number of seconds\n");
+				return 1;
+			}
+			n = atol(argv[i]);
+			if (n < 0 || n > 86400L) {
+				printf("timeout %s is outside 0..86400 "
+				       "(0 = the built-in %d)\n",
+				       argv[i], DAMA_WATCHDOG_DEFAULT);
+				return 1;
+			}
+			ifp->dama_watchdog = (int) n;
+			continue;
+		}
+		printf("ifconfig %s dama off | slave [timeout <seconds>]\n",
+		       ifp->name);
+		return 1;
+	}
+
 	ifp->dama = DAMA_SLAVE;
 	/* Not "heard" yet: being told to follow a master is not the same as
 	 * having found one, and until one is found nothing may hold back what
@@ -532,14 +588,14 @@ int ifdama(int argc, char *argv[], void *p)
 	ifp->dama_heard = 0;
 	/* UND DAS FRAGEN NACH ARP GEHT AUS (Thomas).  Eine ARP-Anfrage ist ein
 	 * Rundspruch an QST; auf einem DAMA-Kanal kostet das den Kanal, und
-	 * wer dort IP im Datagramm-Modus faehrt, hat seinen Partner ohnehin
-	 * eingetragen - dann entsteht sie erst gar nicht.  Gesagt wird es,
-	 * weil eine Nebenwirkung, die niemand sieht, die schlechtere Art ist,
-	 * Voreinstellungen zu treffen; und zurueckgenommen ist sie mit einer
-	 * Zeile.  Antworten tun wir weiter.
+	 * wer dort IP im Datagramm-Modus faehrt, traegt seine Partner ein -
+	 * dann entsteht sie erst gar nicht.  Gesagt wird es, weil eine
+	 * Nebenwirkung, die niemand sieht, die schlechtere Art ist,
+	 * Voreinstellungen zu treffen.  Antworten tun wir weiter.
 	 */
 	if (!ifp->noarp) {
 		ifp->noarp = 1;
+		ifp->noarp_auto = 1;
 		printf("%s: arp requests switched off - on a DAMA channel a "
 		       "request is a broadcast\n"
 		       "  to QST and costs the channel.  Enter the partners "
@@ -552,21 +608,7 @@ int ifdama(int argc, char *argv[], void *p)
 	}
 	return 0;
 }
-
 /*---------------------------------------------------------------------------*/
-
-int ifdamatimeout(int argc, char *argv[], void *p)
-{
-	struct iface *ifp = (struct iface *) p;
-	int n = atoi(argv[1]);
-
-	if (n < 1 || n > 3600) {
-		printf("Dama timeout must be 1..3600 seconds\n");
-		return 1;
-	}
-	ifp->dama_watchdog = n;
-	return 0;
-}
 
 /*---------------------------------------------------------------------------*/
 
@@ -579,8 +621,8 @@ void dama_show(struct iface *ifp)
 {
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, arp %s, master ",
-	       dama_watchdog(ifp), ifp->noarp ? "off" : "on");
+	printf("           dama slave, timeout %ds, master ",
+	       dama_watchdog(ifp));
 	if (dama_in_force(ifp)) {
 		char buf[AXBUF];
 		printf("%s", pax25(buf, ifp->dama_master));

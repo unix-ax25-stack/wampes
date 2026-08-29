@@ -14,12 +14,38 @@ stations that do not speak it.
 **This is the slave half.**  The master is the larger piece and is not built;
 `TODO.txt` says what it needs that a KISS line does not give it.
 
-    ifconfig <if> dama off | slave
-    ifconfig <if> damatimeout <seconds>          default 120
+    ifconfig <if> dama off | slave [timeout <seconds>]      default 120
+    ifconfig <if> arp on | off                             see below
 
-Two keys rather than one with an optional second word, because `ifconfig`
-reads its line as key/value **pairs** - `for(i=2;i<argc-1;i+=2)` in `iface.c`
-- and a third word silently becomes the next key.
+The timeout belongs to the role and not beside it (Thomas), and it took a
+second look to make that possible: `ifconfig` reads its line as key/value
+**pairs** - `for(i=2;i<argc-1;i+=2)` in `iface.c` - so a third word silently
+became the next key, which is why this was two commands at first.  There is
+already a mechanism for a setting that reads more than one value, and `pid`
+uses it: `if_wants_rest()`.  `dama` now uses it too, with the one consequence
+that comes with it - **it has to be the last setting on the line**, because
+everything after it is its own.
+
+The timeout means what only a slave has: how long a master may be silent
+before we stop following him.  A master's own timers - the round, the wait
+for the polled station - are different quantities and will get their own
+words rather than borrow this one.
+
+**120 seconds, for two reasons.**  TNN uses the same two minutes (`damaok =
+12000` in hundredths, `l2rx.c`), and the specification names no figure at
+all.  The better reason is the channel: a master polls its stations in turn,
+and sixteen stations at two to five seconds each make a round a minute long
+(Thomas).  A shorter watchdog would declare a master lost who is merely
+working through his list.
+
+**`dama slave` switches ARP requests off on that port**, and says so.  A
+request is a broadcast to QST and costs the channel; the answer is to enter
+the partners with `arp add <ip> ax25 <call>`, and then none is needed.  Only
+the *asking* is affected - an incoming request is still answered.  `dama off`
+puts it back **if we were the ones who switched it off**; an `arp off` the
+sysop gave himself is left alone.  `ifconfig <if> verbose` shows the state in
+the AX.25 block, where it belongs: it is a property of the port, and on one
+that runs no DAMA it would otherwise be invisible.
 
 There is no channel or group setting, and that is not an omission.  Grouping
 ports into one DAMA channel is a **master** concern: only the master has a
@@ -344,7 +370,9 @@ script run twice.  What the slave says, and when:
 The held acknowledgement is not lost - it is carried by the answer to the next
 poll, which is what the `N(R)` in those replies shows.
 
-And the fallback, with `damatimeout 5`, the master falling silent after one I
+And the fallback, with `dama slave timeout 5` (it was `damatimeout 5` when
+this was measured, before the two were folded together), the master falling
+silent after one I
 frame at 1.6 s:
 
     3.6s   nothing

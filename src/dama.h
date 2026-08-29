@@ -34,7 +34,6 @@ void dama_ui_flush(struct iface *ifp);
 void dama_mark(struct ax25_cb *axp);
 void dama_wait(struct ax25_cb *axp);
 int  ifdama(int argc, char *argv[], void *p);
-int  ifdamatimeout(int argc, char *argv[], void *p);
 void dama_show(struct iface *ifp);
 
 #endif /* _DAMA_H */

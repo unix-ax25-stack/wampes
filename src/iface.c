@@ -27,7 +27,6 @@ static int iflinkadr(int argc,char *argv[],void *p);
 static int ifbroad(int argc,char *argv[],void *p);
 static int ifcrc(int argc,char *argv[],void *p);
 int ifdama(int argc,char *argv[],void *p);
-int ifdamatimeout(int argc,char *argv[],void *p);
 static int ifnetmsk(int argc,char *argv[],void *p);
 static int ifrxbuf(int argc,char *argv[],void *p);
 static int ifmtu(int argc,char *argv[],void *p);
@@ -157,9 +156,10 @@ struct cmds Ifcmds[] = {
 	{ "crc",                  ifcrc,          0,      2,
 	  "ifconfig <iface> crc auto|off|16|rmnc|ccitt\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "dama",                 ifdama,         0,      2,
-	  "ifconfig <iface> dama off|slave\n  The current value is in \"ifconfig <iface> verbose\"." },
-	{ "damatimeout",          ifdamatimeout,  0,      2,
-	  "ifconfig <iface> damatimeout <seconds>   (0 = built-in default)\n  The current value is in \"ifconfig <iface> verbose\"." },
+	  "ifconfig <iface> dama off | slave [timeout <seconds>]\n"
+	  "  timeout: how long a master may be silent before we stop\n"
+	  "  following him.  Default 120, and 0 means that default.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "eax25",                ifeax25,        0,      2,
 	  "ifconfig <iface> eax25 off|accept|caller|always\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "emaxframe",            ifemaxframe,    0,      2,
@@ -352,9 +352,14 @@ doifconfig(int argc,char *argv[],void *p)
 	return 0;
 }
 
-/* Does this subcommand read a list rather than one value?  The same prefix
- * match subcmd() will make, so that an abbreviation is answered the same way
- * the full word is.
+/* Does this subcommand read more than one value?  The same prefix match
+ * subcmd() will make, so that an abbreviation is answered the same way the
+ * full word is.
+ *
+ * "pid" reads a list.  "dama" reads a role and, for the slave, an optional
+ * "timeout <sec>" behind it - the frist belongs to the role and not beside
+ * it, so it has to arrive in the same call.  Both must therefore be the LAST
+ * setting on an ifconfig line; everything after them is theirs.
  */
 static int
 if_wants_rest(const char *word)
@@ -363,7 +368,7 @@ if_wants_rest(const char *word)
 
 	for(cmdp = Ifcmds;cmdp->name != NULL;cmdp++)
 		if(strncmp(word,cmdp->name,strlen(word)) == 0)
-			return cmdp->func == ifpid;
+			return cmdp->func == ifpid || cmdp->func == ifdama;
 	return 0;
 }
 
@@ -427,10 +432,13 @@ ifarp(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
-	if(!strcmp(argv[1],"on") || !strcmp(argv[1],"yes"))
+	if(!strcmp(argv[1],"on") || !strcmp(argv[1],"yes")){
 		ifp->noarp = 0;
-	else if(!strcmp(argv[1],"off") || !strcmp(argv[1],"no"))
+		ifp->noarp_auto = 0;
+	} else if(!strcmp(argv[1],"off") || !strcmp(argv[1],"no")){
 		ifp->noarp = 1;
+		ifp->noarp_auto = 0;    /* gesagt ist gesagt */
+	}
 	else {
 		printf("ifconfig %s arp on|off\n",ifp->name);
 		return 1;
@@ -832,6 +840,13 @@ showiface(struct iface *ifp, int verbose)
 	if(!is_ax25(ifp))
 		return;
 
+	/* Ob wir auf diesem Port ueberhaupt nach ARP fragen.  Im AX.25-Block
+	 * und nicht bei DAMA, obwohl "dama slave" es abschaltet: es ist eine
+	 * Eigenschaft des PORTS, und auf einem, der kein DAMA faehrt, waere
+	 * sie sonst unsichtbar - eine Einstellung, die wirkt und die man nicht
+	 * sehen kann, ist die schlechtere von beiden.
+	 */
+	printf("           ax25: arp requests %s\n", ifp->noarp ? "off" : "on");
 	printf("           ax25: eax25 %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
 	 ifp->eax25 == EAX25_ALWAYS ? "always" :
