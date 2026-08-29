@@ -91,13 +91,66 @@ struct bpq_edv {
   int fd;
   char ifname[IFNAMSIZ];		/* the host's name for the port */
   uint8 hwaddr[6];			/* our own MAC on it */
+  int vlan;				/* -1: untagged */
   int index;				/* linux: the ifindex to send from */
   unsigned buflen;			/* bsd: what BIOCGBLEN asked for */
   char *buf;				/* bsd: a whole read at a time */
 };
 
+/* THE VLAN, AND WHY IT IS A WORD HERE RATHER THAN A SECOND INTERFACE.
+ *
+ * One could leave it to the system - "eth0.70" on linux, "vlan0 create vlan
+ * 70 vlandev en0" on macOS - and attach that.  Then this file would need no
+ * line at all.  Against it stands practice (Thomas): a sysop who is not deep
+ * in it has to touch TWO places, the system's network configuration and
+ * net.rc, and get them to agree.  "attach bpqether eth0 vlan 70" says the
+ * whole thing in one line, at the place where the rest of the port is
+ * described.  Both ways keep working - naming eth0.70 is still allowed and
+ * then simply carries no "vlan" word.
+ *
+ * A TAG ARRIVES IN TWO SHAPES, and that is the whole difficulty:
+ *
+ *   in the frame   dst src 81 00 <tci> 08 ff <len> ...   four octets more,
+ *                  and everything behind them moves along
+ *   pulled out     dst src 08 ff <len> ...               the kernel has put
+ *                  the tag in a field of its own, and the frame LOOKS
+ *                  untagged.  Only PACKET_AUXDATA still says which VLAN it
+ *                  was (linux; on BSD there is no equivalent)
+ *
+ * So the untagged shape is not proof of an untagged frame.  A port that
+ * carries no "vlan" word therefore also has to ask, or it would answer for
+ * every VLAN on the wire - and with linkpartners separated by VLAN, which is
+ * the point of the exercise, that is precisely the wrong thing.
+ */
+
+#define BPQ_VLAN_NONE	(-1)
+#define BPQ_TAGLEN	4		/* 81 00 and the two TCI octets */
+
 static void bpqether_learn(struct iface *ifp, const uint8 *ether_src,
 			   const uint8 *ax, int len);
+
+/*---------------------------------------------------------------------------*/
+
+/* Which VLAN a received frame belongs to, and where the BPQ part starts.
+ *
+ * <aux> is what the system told us out of band, or BPQ_VLAN_NONE when it told
+ * us nothing.  A tag inside the frame wins over it: it is the frame itself
+ * speaking, while the out of band value only describes what the kernel took
+ * out - and the two cannot both be there.
+ *
+ * Returns the VLAN, or BPQ_VLAN_NONE for an untagged frame, and sets *offp to
+ * the number of octets the tag added (0 or 4).
+ */
+
+static int bpqether_vlan_of(const uint8 *buf, int len, int aux, int *offp)
+{
+  *offp = 0;
+  if (len >= 16 && buf[12] == 0x81 && buf[13] == 0x00) {
+    *offp = BPQ_TAGLEN;
+    return ((buf[14] & 0x0f) << 8) | buf[15];
+  }
+  return aux;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -240,6 +293,17 @@ static int bpqether_open(struct bpq_edv *edv, int promisc)
     return -1;
   }
 
+  /* Ask for the tag the kernel took out of the frame.  Without it a tagged
+   * frame that arrived through hardware offload looks untagged, and a port
+   * could not tell VLAN 70 from VLAN 80 - see the note beside bpq_edv.
+   */
+  {
+    int on = 1;
+
+    if (setsockopt(fd, SOL_PACKET, PACKET_AUXDATA, &on, sizeof(on)) < 0)
+      perror("bpqether: PACKET_AUXDATA");
+  }
+
   if (promisc) {
     struct packet_mreq mr;
 
@@ -258,20 +322,37 @@ static int bpqether_open(struct bpq_edv *edv, int promisc)
 static void bpqether_recv(void *argp)
 {
 
+  int aux = BPQ_VLAN_NONE;
   int l;
+  int off;
   struct bpq_edv *edv;
+  struct cmsghdr *cm;
   struct iface *ifp;
+  struct iovec iov;
   struct mbuf *bp;
+  struct msghdr msg;
   struct sockaddr_ll from;
-  socklen_t fromlen = sizeof(from);
-  uint8 buf[BPQ_HDRLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  uint8 buf[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  union {
+    char buf[CMSG_SPACE(sizeof(struct tpacket_auxdata))];
+    struct cmsghdr align;
+  } control;
   unsigned len;
 
   ifp = (struct iface *) argp;
   edv = (struct bpq_edv *) ifp->edv;
 
-  l = recvfrom(edv->fd, buf, sizeof(buf), 0, (struct sockaddr *) &from,
-	       &fromlen);
+  memset(&msg, 0, sizeof(msg));
+  iov.iov_base = buf;
+  iov.iov_len = sizeof(buf);
+  msg.msg_name = &from;
+  msg.msg_namelen = sizeof(from);
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = control.buf;
+  msg.msg_controllen = sizeof(control.buf);
+
+  l = recvmsg(edv->fd, &msg, 0);
   if (l <= BPQ_HDRLEN + BPQ_LENLEN) goto Fail;
 
   /* Our own frames come back here.  Without this the node answers itself,
@@ -279,14 +360,25 @@ static void bpqether_recv(void *argp)
    */
   if (from.sll_pkttype == PACKET_OUTGOING) return;
 
-  len = buf[BPQ_HDRLEN] + buf[BPQ_HDRLEN + 1] * 256;
-  if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
-      (unsigned) (l - BPQ_HDRLEN - BPQ_LENLEN)) goto Fail;
+  for (cm = CMSG_FIRSTHDR(&msg); cm; cm = CMSG_NXTHDR(&msg, cm))
+    if (cm->cmsg_level == SOL_PACKET && cm->cmsg_type == PACKET_AUXDATA) {
+      struct tpacket_auxdata aux_d;
 
-  bp = qdata(buf + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
+      memcpy(&aux_d, CMSG_DATA(cm), sizeof(aux_d));
+      if (aux_d.tp_status & TP_STATUS_VLAN_VALID)
+	aux = aux_d.tp_vlan_tci & 0x0fff;
+    }
+
+  if (bpqether_vlan_of(buf, l, aux, &off) != edv->vlan) return;
+
+  len = buf[BPQ_HDRLEN + off] + buf[BPQ_HDRLEN + off + 1] * 256;
+  if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
+      (unsigned) (l - BPQ_HDRLEN - off - BPQ_LENLEN)) goto Fail;
+
+  bp = qdata(buf + BPQ_HDRLEN + off + BPQ_LENLEN, len - BPQ_EXTRA);
   net_route(ifp, &bp);
   /* AFTER, not before - see bpqether_learn(). */
-  bpqether_learn(ifp, buf + 6, buf + BPQ_HDRLEN + BPQ_LENLEN,
+  bpqether_learn(ifp, buf + 6, buf + BPQ_HDRLEN + off + BPQ_LENLEN,
 		 (int) (len - BPQ_EXTRA));
   return;
 
@@ -390,6 +482,7 @@ static void bpqether_recv(void *argp)
 {
 
   int l;
+  int off;
   char *p, *end;
   struct bpq_edv *edv;
   struct iface *ifp;
@@ -413,16 +506,27 @@ static void bpqether_recv(void *argp)
     if (hdr->bh_caplen < BPQ_HDRLEN + BPQ_LENLEN ||
 	hdr->bh_caplen != hdr->bh_datalen)
       goto next;                        /* truncated: not ours to guess at */
-    len = frame[BPQ_HDRLEN] + frame[BPQ_HDRLEN + 1] * 256;
+
+    /* No PACKET_AUXDATA here: bpf hands over what is on the wire and says
+     * nothing beside it.  A tag the driver has already stripped is therefore
+     * invisible, and such a frame reads as untagged.  Where that matters, the
+     * system's own vlan device is the way - "vlan0 create vlan 70 vlandev
+     * en0" - and this port is then attached to THAT, without a "vlan" word.
+     */
+    if (bpqether_vlan_of(frame, (int) hdr->bh_caplen, BPQ_VLAN_NONE, &off)
+	!= edv->vlan)
+      goto next;
+
+    len = frame[BPQ_HDRLEN + off] + frame[BPQ_HDRLEN + off + 1] * 256;
     if (len < BPQ_EXTRA ||
-	len - BPQ_EXTRA != hdr->bh_caplen - BPQ_HDRLEN - BPQ_LENLEN) {
+	len - BPQ_EXTRA != hdr->bh_caplen - BPQ_HDRLEN - off - BPQ_LENLEN) {
       ifp->crcerrors++;
       goto next;
     }
-    bp = qdata(frame + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
+    bp = qdata(frame + BPQ_HDRLEN + off + BPQ_LENLEN, len - BPQ_EXTRA);
     net_route(ifp, &bp);
     /* AFTER, not before - see bpqether_learn(). */
-    bpqether_learn(ifp, frame + 6, frame + BPQ_HDRLEN + BPQ_LENLEN,
+    bpqether_learn(ifp, frame + 6, frame + BPQ_HDRLEN + off + BPQ_LENLEN,
 		   (int) (len - BPQ_EXTRA));
 next:
     p += BPF_WORDALIGN(hdr->bh_hdrlen + hdr->bh_caplen);
@@ -582,8 +686,9 @@ static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
 {
 
   int l;
+  int off;
   struct bpq_edv *edv;
-  uint8 frame[BPQ_HDRLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  uint8 frame[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_MTU_MAX];
   const uint8 *dest;
 
   edv = (struct bpq_edv *) ifp->edv;
@@ -596,20 +701,31 @@ static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
    * the first seven octets, and in an mbuf CHAIN those need not all be in the
    * first buffer.
    */
-  l = pullup(bpp, frame + BPQ_HDRLEN + BPQ_LENLEN, BPQ_MTU_MAX);
+  off = edv->vlan == BPQ_VLAN_NONE ? 0 : BPQ_TAGLEN;
+
+  l = pullup(bpp, frame + BPQ_HDRLEN + off + BPQ_LENLEN, BPQ_MTU_MAX);
   if (l <= 0 || *bpp) {                 /* longer than we may carry */
     free_p(bpp);
     return -1;
   }
-  dest = bpqether_target(ifp, frame + BPQ_HDRLEN + BPQ_LENLEN, l);
+  dest = bpqether_target(ifp, frame + BPQ_HDRLEN + off + BPQ_LENLEN, l);
   memcpy(frame, dest, 6);
   memcpy(frame + 6, edv->hwaddr, 6);
-  frame[12] = (ETH_P_BPQ >> 8) & 0xff;
-  frame[13] = ETH_P_BPQ & 0xff;
-  frame[BPQ_HDRLEN]     = (l + BPQ_EXTRA) % 256;
-  frame[BPQ_HDRLEN + 1] = (l + BPQ_EXTRA) / 256;
+  if (off) {
+    /* 802.1Q, written out rather than left to the system: priority 0, no
+     * drop eligible, and the VLAN in the low twelve bits.
+     */
+    frame[12] = 0x81;
+    frame[13] = 0x00;
+    frame[14] = (edv->vlan >> 8) & 0x0f;
+    frame[15] = edv->vlan & 0xff;
+  }
+  frame[12 + off] = (ETH_P_BPQ >> 8) & 0xff;
+  frame[13 + off] = ETH_P_BPQ & 0xff;
+  frame[BPQ_HDRLEN + off]     = (l + BPQ_EXTRA) % 256;
+  frame[BPQ_HDRLEN + off + 1] = (l + BPQ_EXTRA) / 256;
 
-  return bpqether_write(edv, frame, BPQ_HDRLEN + BPQ_LENLEN + l);
+  return bpqether_write(edv, frame, BPQ_HDRLEN + off + BPQ_LENLEN + l);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -619,9 +735,12 @@ static void bpqether_show(struct iface *ifp)
 
   struct bpq_edv *edv = (struct bpq_edv *) ifp->edv;
 
-  printf("           bpqether on %s, our mac %02x:%02x:%02x:%02x:%02x:%02x\n",
+  printf("           bpqether on %s, our mac %02x:%02x:%02x:%02x:%02x:%02x",
 	 edv->ifname, edv->hwaddr[0], edv->hwaddr[1], edv->hwaddr[2],
 	 edv->hwaddr[3], edv->hwaddr[4], edv->hwaddr[5]);
+  if (edv->vlan != BPQ_VLAN_NONE)
+    printf(", vlan %d", edv->vlan);
+  printf("\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -631,6 +750,7 @@ int bpqether_attach(int argc, char *argv[], void *p)
 
   int mtu = BPQ_MTU;
   int promisc = 1;
+  int vlan = BPQ_VLAN_NONE;
   int i;
   char *label = 0;
   struct bpq_edv *edv;
@@ -651,6 +771,22 @@ int bpqether_attach(int argc, char *argv[], void *p)
    */
   for (i = 2; i < argc; i++) {
     if (!strcmp(argv[i], "nopromisc")) { promisc = 0; continue; }
+    if (!strcmp(argv[i], "vlan")) {
+      /* The number belongs to the word before it and must not be mistaken
+       * for the mtu, so it is taken here rather than left to the loop.
+       */
+      if (++i >= argc) {
+	printf("attach bpqether: \"vlan\" wants a number\n");
+	return -1;
+      }
+      vlan = atoi(argv[i]);
+      if (vlan < 1 || vlan > 4094) {
+	printf("attach bpqether: vlan %s is outside 1..4094 (0 and 4095 are "
+	       "reserved)\n", argv[i]);
+	return -1;
+      }
+      continue;
+    }
     if (argv[i][0] >= '0' && argv[i][0] <= '9') { mtu = atoi(argv[i]); continue; }
     if (!label) { label = argv[i]; continue; }
     printf("attach bpqether: unexpected \"%s\"\n", argv[i]);
@@ -667,6 +803,7 @@ int bpqether_attach(int argc, char *argv[], void *p)
 
   edv = (struct bpq_edv *) callocw(1, sizeof(struct bpq_edv));
   strncpy(edv->ifname, argv[1], sizeof(edv->ifname) - 1);
+  edv->vlan = vlan;
 
   /* Ask the port for its own address before opening anything: a name that no
    * interface answers to is worth saying plainly, and it is the commonest

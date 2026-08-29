@@ -5967,6 +5967,37 @@ ist der errno in der Zeile das Interessante.
 BPQETHER AUF ECHTEM ETHERNET, MIT VLAN (Thomas, 2026-08-28)
 --------------------------------------------------------------
 
+GEBAUT AM 2026-08-29, in drei Schritten und gegen ein feth-Paar gemessen.
+Der Rest dieses Abschnitts ist die Vorueberlegung und bleibt stehen; was
+davon anders kam, steht hier:
+
+  * Nicht ETH_P_BPQ binden, sondern ETH_P_ALL mit Kernelfilter.  Ein Socket
+    auf ETH_P_BPQ sieht an einem BRIDGE-PORT gar nichts - der rx_handler der
+    Bridge schluckt den Rahmen zwei Schritte frueher (net/core/dev.c).
+  * Die gelernte MAC traegt ihr Interface selbst, statt gegen rp->ifp
+    geprueft zu werden: net_route() stellt nur in die Queue, axroute_add()
+    laeuft spaeter, und die Route nennt in dem Moment noch den alten Port.
+  * "attach kernel hilft nicht" - gilt weiter, steht oben.
+
+WAS OFFEN BLEIBT:
+
+  * AUF LINUX NUR UEBERSETZT, nicht gelaufen.  Der ganze AF_PACKET-Zweig
+    (SO_ATTACH_FILTER, PACKET_AUXDATA, PACKET_MR_PROMISC, sockaddr_ll) ist
+    ungetestet; gemessen wurde der BSD-Zweig auf dem Mac.
+  * EIN GESTRIPPTES TAG SIEHT BSD NICHT.  bpf reicht durch, was auf der
+    Leitung lag, und sagt nichts daneben - wo der Treiber das Tag schon
+    herausgezogen hat, liest der Rahmen sich als ungetaggt.  Auf Linux faengt
+    PACKET_AUXDATA das ab; auf macOS bleibt der Weg ueber ein vlan-Geraet des
+    Systems, das man dann ohne "vlan"-Wort attacht.
+  * HINTER EINEM DIGI wird an den Broadcast gesendet.  bpqether_target()
+    schlaegt das ZIELrufzeichen nach; steht dort eine Digi-Kette, hat das
+    Ziel keine MAC (die gehoert dem Digi) und es geht an alle.  Richtig, aber
+    nicht optimal - man koennte die Kette entlanggehen.  Auf einem Segment
+    sind Digis unueblich, deshalb nicht gebaut.
+  * FESTNAGELN (call auf mac) ist nicht gebaut - siehe unten, es wollte
+    niemand.
+
+
 WOFUER.  Wir machen viel mit HAMNET, also IP.  User und Linkpartner liessen
 sich zwar ueber axip/axudp zufuehren, aber BPQether hat zwei Vorteile, und der
 zweite ist der grosse:

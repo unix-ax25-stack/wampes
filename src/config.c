@@ -253,18 +253,27 @@ struct cmds Attab[] = {
 #endif
 
 	{ "bpqether", bpqether_attach, 0, 2,
-	"attach bpqether <iface> [<label>] [<mtu>] [nopromisc]\n"
+	"attach bpqether <iface> [vlan <n>] [<label>] [<mtu>] [nopromisc]\n"
 	"  AX.25 inside ethernet frames, protocol 0x08ff - the same shape the\n"
 	"  Linux bpqether driver speaks, but towards a REAL segment instead of\n"
 	"  a tap device.  Everything on that segment can be a neighbour, and a\n"
 	"  switch does the work of a channel.\n"
 	"\n"
 	"  <iface>   the name the SYSTEM uses (eth0, en0, eth0.70)\n"
+	"  vlan <n>  1..4094.  Tag what we send and hear only that VLAN - one\n"
+	"            line instead of a vlan device in the system plus a second\n"
+	"            line here.  Left out, the port carries and hears UNTAGGED\n"
+	"            frames only, which is a statement of its own: a partner\n"
+	"            on a VLAN is then not ours.\n"
 	"  <label>   our own name for the port, default the same\n"
 	"  <mtu>     default 256, at most 1498\n"
 	"  nopromisc hear only what is addressed to us or broadcast.  The\n"
 	"            default is promiscuous, because that is what a radio\n"
-	"            channel is: everything on the segment is \"on the air\"." },
+	"            channel is: everything on the segment is \"on the air\".\n"
+	"\n"
+	"  One partner per VLAN and a port for each is the point of the\n"
+	"  exercise: every link then has its own collision domain, and the\n"
+	"  switch keeps them apart the way a radio channel does." },
 
 	{ "ethertap", ethertap_attach, 0, 2,
 	"attach ethertap <linux-name> [mtu] [label]\n"
