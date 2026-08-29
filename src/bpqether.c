@@ -49,6 +49,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <net/if.h>
+#include <netinet/in.h>			/* htons() */
 
 #ifdef	linux
 #include <netpacket/packet.h>
@@ -71,9 +72,11 @@
 #endif
 
 struct bpq_auxdata {
-  uint32 tp_status;
-  uint32 tp_len;
-  uint32 tp_snaplen;
+  unsigned int tp_status;               /* plain C types on purpose: this
+					 * block stands ABOVE global.h, so
+					 * uint32 does not exist yet here */
+  unsigned int tp_len;
+  unsigned int tp_snaplen;
   unsigned short tp_mac;
   unsigned short tp_net;
   unsigned short tp_vlan_tci;
