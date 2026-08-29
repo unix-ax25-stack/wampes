@@ -6240,12 +6240,67 @@ WAS DER MASTER DAZU SAGT, ist die Frage, und sie hat zwei Haelften:
     Wiederholer waere richtig, denn der hat gesendet.  Aber tut ein echter
     Master das auch?
 
-WORAN ES ZU PRUEFEN IST: TNNs src/l2dama.c haben wir im Baum (tnn-lab), und
-dort steht der Master.  Die Frage ist konkret genug, um sie am Quelltext zu
-beantworten, statt sie zu messen - und danach am Verlustrelais gegenzuprobe
-n.  Erst dann waere klar, ob unser Slave an dieser Stelle schon richtig
-liegt oder es nur noch nie aufgefallen ist, weil im Labor niemand ueber uns
-digipeatet hat.
+NACHGESEHEN AM 2026-08-29, und die Frage loest sich fuer unsere Vorgabe auf.
+
+TNN POLLT LINKS, NIE GEHOERTES.  timDAMA() und polDAMA() laufen ueber
+lnktbl/l2actl[], also ueber bestehende Level-2-Links, und adressieren
+lnkpoi->dstid.  Der Linkblock traegt dazu viaidl, die Digipeaterstrecke -
+und, mit Kommentar, l2misc.c:565:
+
+    /* In den Linkblock wird ein Zeiger auf das Rufzeichen abgelegt, das in
+       Wirklichkeit der Ansprechpartner dieses Linkes ist. Es ist das Erste
+       Rufzeichen im via-Feld ohne H-Bit oder das Ziel-Rufzeichen selbst.  */
+    lp->realid = *p ? p : lp->dstid;
+
+Der Fall ist dort also bedacht: gepollt wird dstid VIA dem Digi, gezaehlt
+wird fuer die Zeitscheibe aber realid - der Digi.  multiconn() (l2dama.c:658)
+vergleicht realid, also sind mehrere Benutzer hinter EINEM Digipeater fuer
+den Master EINE Station im Multiconnect.
+
+BEI UNS STELLT SICH DIE FRAGE SO GAR NICHT.  Digipeat ist per Vorgabe 2, und
+dann wird ein VERBUNDENER Rahmen nicht wiederholt: ax25.c gibt ihn an
+lapb_input(), das ihn terminiert und eine zweite Haelfte oeffnet (axp->peer).
+Diese spricht unter dem Rufzeichen DES ANRUFERS - find_ax25() sagt es:
+"their hdr.source carries the CALLER's address, which we speak in but do not
+answer to".
+
+Auf dem DAMA-Kanal sieht der Master also einen Link zum BENUTZER, ohne via.
+realid == dstid, der Benutzer ist eine Station fuer sich, wird direkt
+gepollt, und wir antworten - dama_poll_begin() wird erreicht, weil der Rahmen
+bei uns endet.  dama_serve_others() vergleicht axp->hdr.source, "the callsign
+we were called under", und das ist bei einer Relaishaelfte das des Benutzers.
+Damit bedienen wir auf seinen Poll genau seine Verbindungen und keine
+fremden.  DAS IST SCHON RICHTIG.
+
+DIE ZWEI ECHTEN LUECKEN LIEGEN WOANDERS: ax25.c kennt DAMA UEBERHAUPT NICHT
+(kein einziges Vorkommen).  Also geht
+
+  * ein UI-RAHMEN - Bake, NET/ROM-Rundspruch, ARP, IP ueber UI - in dem
+    Augenblick auf die Luft, in dem er entsteht;
+  * ein DIGIPEATETER Rahmen ebenso, direkt ueber (*ifp->raw)().  Das betrifft
+    UI immer und verbundene Rahmen bei "digipeat 1".
+
+Beides sind unaufgeforderte Sendungen auf einem DAMA-Kanal, also genau das,
+was DAMA verhindern soll.  TNN zaehlt es nicht an (polDAMA() meckert nur
+POLLS eines Slaves an), aber kollidieren kann es.
+
+WIE TNN ES LOEST, und der Mechanismus ist klein: damarl[port], die
+"DAMA-Random-Liste".  Was nicht an einem Link haengt, kommt dorthin
+(sdl2fr(fbp, TRUE) - DM, UA, FRMR, UI).  Der MASTER leert sie in seiner
+eigenen Runde vor dem Pollen; der SLAVE leert sie, wenn er gepollt wurde
+(xmit_damarl(port, NULL) unter portpar[port].sendok).  Und laeuft der
+Slave-Timeout ab, wird sendok gesetzt und der Rest geht trotzdem raus -
+sonst haengt die Warteschlange fuer immer, wenn der Master verschwindet.
+
+ZU ENTSCHEIDEN, BEVOR MAN DAS BAUT:
+
+  * Wo die Warteschlange haengt - je Port, wie bei TNN.
+  * Wer hineinlegt: nur UI und Digipeat, oder alles, was nicht durch lapb
+    kommt?  DM/UA/FRMR gehen bei uns durch lapb und sind schon im Fenster.
+  * Was bei geschlossenem Fenster mit einer VOLLEN Warteschlange geschieht.
+  * Der Notausgang, wenn kein Master mehr da ist (dama_heard/Watchdog).
+  * Und ob es das ueberhaupt wert ist: auf einem Benutzerzugang ist ein
+    Knoten selten der, der Baken wirft.
 
 WER DARF WELCHES RUFZEICHEN - SO_PEERCRED AM DIENSTSOCKET (Thomas,
 2026-08-29)
