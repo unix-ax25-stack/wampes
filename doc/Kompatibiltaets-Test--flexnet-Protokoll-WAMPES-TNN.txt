@@ -554,6 +554,26 @@ WAS AUF db0blo ZU TUN IST:
      was der vorige Benutzer hinterlassen hat.  Nachgemessen: ein frisch
      geoeffnetes Terminal steht auf 9600 - der RMNC bliebe stumm, und man
      suchte den Fehler beim Protokoll.
+
+     WAS XNET DORT EINGESTELLT HAT (Thomas, "stty < /dev/ttyS0"):
+
+         speed 115200 baud; min = 16; time = 2;
+         ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon ...
+
+     Die 115200 bestaetigen die Vorgabe.  IGNBRK haben wir uebernommen:
+     ohne es und ohne BRKINT wird eine Break-Bedingung als NUL gelesen, und
+     das waere ein Byte im Strom, das niemand gesendet hat.
+
+     BEI min UND time WEICHEN WIR ABSICHTLICH AB.  xnet nimmt 16 und 2,
+     also "warte auf 16 Byte oder 0,2 s" - fuer einen Knoten vernuenftig,
+     weniger Aufwachen je Rahmen.  Fuer ein MESSENDES Relais waere es
+     toedlich: bis zu 200 ms Verzug je Schub, und genau diese
+     Groessenordnung wollen wir ablesen.  slowpty nimmt jedes Byte sofort
+     (VMIN 1, VTIME 0).  Haetten wir xnets Einstellung abgeschrieben, weil
+     sie ja "die richtige fuer diese Schnittstelle" ist, waere die Messung
+     um bis zu zwei Einheiten daneben gewesen - bei einem Unterschied von
+     17 gegen 9 haette das noch getragen, bei 600 bps und 34 gegen 17 auch,
+     aber gewusst haetten wir es nicht.
   3. xnet auf /dev/xnetpty statt /dev/ttyS0 umstellen und starten.
   4. Einen Poll abwarten (POLLINTERVAL 5 Minuten) oder erzwingen, dann an
      BEIDEN Enden "=>l" ablesen und mit /tmp/flex.txt vergleichen.
