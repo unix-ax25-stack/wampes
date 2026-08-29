@@ -6220,10 +6220,24 @@ WAS NOCH FEHLT:
     selbst noch rationiert, rationiert eine bereits rationierte
     Zeitscheibe.)
 
-    UND ES MACHT DAS P-BIT ERST MOEGLICH: mit allen Links ist "der letzte
-    I-Rahmen" nicht definiert - welcher von dreien soll ihn tragen?  Genau
-    deshalb war das eigene RR der bequeme Weg.  Ein Link je Zug macht die
-    Frage eindeutig.  Die beiden gehoeren also in EINEN Umbau.
+    ZUM P-BIT, UND HIER HATTE ICH ZU DICK AUFGETRAGEN (Thomas' Einwand):
+    INNERHALB eines Links ist der letzte Rahmen sehr wohl bekannt - die
+    Schleife in lapb_output() hoert auf, wenn die Queue leer ist oder das
+    Fenster voll, und das IST TNNs Bedingung.  Da koennte das P also heute
+    schon hin.
+
+    Undefiniert ist es nur UEBER MEHRERE LINKS: leeren drei Sitzungen
+    derselben Station in einem Zug, truege jede ihr eigenes "letztes" P und
+    die Station bekaeme drei Kanaluebergaben statt einer.  Das war der
+    Hinderungsgrund, nicht die Unkenntnis innerhalb des Links.
+
+    Die beiden sind damit UNABHAENGIG, und das kleinere traegt schon allein:
+      - P auf dem letzten Rahmen eines Links: die Bedingung steht in der
+        Schleife, es fehlt nur "bin ich Master und ist das der Zug dieser
+        Station".
+      - Ein Link je Zug: braucht neue Zustandsfuehrung, der Master muss sich
+        merken, welcher Link einer Station als naechster dran ist
+        (TNNs zael/indx).  Das ist der groessere Teil.
 
   * DAS PRIORITAETSSCHEMA (TNNs damapm/damapc/incDAMA): wer nichts sendet,
     kommt seltener dran.  Eine Ergaenzung auf derselben Runde, kein anderer
