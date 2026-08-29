@@ -139,13 +139,13 @@ says nothing about who may *start* one.
 `bind_socket()` (`lib/rundir.c`) makes that sharper rather than softer.  A
 socket left behind by a node that died is still in the way - `bind()` says
 EADDRINUSE - so it looks at what is there, refuses to touch anything that is
-not a socket, checks that nobody is listening on it, and only then removes it
-and binds again.  **Both** the removing and the binding need write permission
-on the directory.
+not a socket, checks that nobody is listening on it, and only then removes
+it and binds again.  **Both** the removing and the binding need write
+permission on the directory.
 
-**The answer is `chown`, not `chmod`.**  A node running as root needs nothing
-at all - root writes whatever the bits say, and `root:hams 0750` is the
-ordinary case.  A node under a normal account wants the directory to BELONG
+**The answer is `chown`, not `chmod`.**  A node running as root needs
+nothing at all - root writes whatever the bits say, and `root:hams 0750` is
+the ordinary case.  A node under a normal account wants the directory to BELONG
 to that account, with the mode unchanged:
 
     drwxr-x---  thomas:hams  /tcp/sockets
@@ -161,8 +161,9 @@ client will connect to them with correct permissions and nothing to notice.
 Where that really is wanted, several daemons publishing their own sockets in
 one place, it is 1770 and the sticky bit is not optional.
 
-Running `make install` as root takes the ownership back (`chown -R root`, and
-deliberately so: a root node reads net.rc, where `!` runs a shell command).
+Running `make install` as root takes the ownership back (`chown -R root`,
+and deliberately so: a root node reads net.rc, where `!` runs a shell
+command).
 The running node keeps the sockets it already has, so nothing breaks until
 the next restart, and then `cnet` cannot reach it.  What it says at that
 point is
