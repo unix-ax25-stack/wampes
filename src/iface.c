@@ -36,6 +36,7 @@ static int iftxqlen(int argc,char *argv[],void *p);
 int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifarp(int argc,char *argv[],void *p);
+static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
@@ -142,11 +143,7 @@ struct iface Encap = {
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
-	{ "arp",                  ifarp,          0,      2,
-	  "ifconfig <iface> arp on|off\n"
-	  "  Whether we ASK on this port.  An incoming request is answered\n"
-	  "  either way.  \"dama slave\" switches it off - see there.\n"
-	  "  The current value is in \"ifconfig <iface> verbose\"." },
+	{ "arp",                  ifarp,          0,      1, NULL },
 	{ "autoroute",            ifautoroute,    0,      2,
 	  "ifconfig <iface> autoroute on|off\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "digiarp",              ifdigiarp,      0,      2,
@@ -427,20 +424,61 @@ iflinkadr(int argc,char *argv[],void *p)
  * STATT NEUN").
  */
 
+/* WER HIER LIEST, WEISS NOCH NICHT, WOVON DIE REDE IST (Thomas).  Der Text
+ * sagte "whether we ASK on this port" - ja was denn?  Also zuerst der Bezug:
+ * ARP gehoert zu IP.  Dann der Stand, gleich hier und nicht erst nach einem
+ * "verbose" und dem Suchen der Zeile.  Und der Satz ueber DAMA nennt den
+ * BEFEHL, denn nicht "dama slave" schaltet etwas ab, sondern das Eingeben
+ * dieses Befehls - und er sagt selbst, was man dagegen tun kann, statt auf
+ * eine Stelle zu verweisen, an der nichts darueber steht.
+ */
+
+static void ifarp_usage(struct iface *ifp)
+{
+	printf("Usage: ifconfig %s arp on|off\n", ifp->name);
+	printf("  arp is %s\n", ifp->noarp ? "off" : "on");
+	printf("  ARP belongs to IP: before an IP datagram can go out we have\n"
+	       "  to know which AX.25 callsign holds that address, and a\n"
+	       "  request asks the channel for it.  Entering the partners with\n"
+	       "  \"arp add <ip> ax25 <call>\" answers the same question and\n"
+	       "  asks nobody.\n");
+	printf("  Incoming requests are answered always; this is only about\n"
+	       "  whether WE ask.\n");
+	printf("  If you enable \"dama slave\" on this interface, arp is\n"
+	       "  switched off automatically - a request is a broadcast and\n"
+	       "  costs the channel.  You may turn it on again.\n");
+}
+
 static int
 ifarp(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
+	/* EIN PORT, DER GAR NICHT FRAGT, hat hier nichts zu schalten, und das
+	 * zu verschweigen ist die schlechtere Antwort: bisher nahm ein tun-
+	 * oder loopback-Gerät "arp on" widerspruchslos an, obwohl dort nie
+	 * eine Anfrage entsteht (Thomas).  res_arp() wird auf genau einem Weg
+	 * gerufen, dem von IP ueber AX.25 - alles andere ist Punkt zu Punkt
+	 * oder gekapselt und kennt die Frage nicht.
+	 */
+	if(!is_ax25(ifp)){
+		printf("%s does not ask for arp at all - it is not an AX.25 "
+		       "port.\n  An address here is either configured or "
+		       "implied by the link.\n", ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		ifarp_usage(ifp);
+		return 0;
+	}
 	if(!strcmp(argv[1],"on") || !strcmp(argv[1],"yes")){
 		ifp->noarp = 0;
 		ifp->noarp_auto = 0;
 	} else if(!strcmp(argv[1],"off") || !strcmp(argv[1],"no")){
 		ifp->noarp = 1;
 		ifp->noarp_auto = 0;    /* gesagt ist gesagt */
-	}
-	else {
-		printf("ifconfig %s arp on|off\n",ifp->name);
+	} else {
+		ifarp_usage(ifp);
 		return 1;
 	}
 	return 0;
@@ -794,15 +832,18 @@ showiface(struct iface *ifp, int verbose)
 	if(!verbose)
 		return;
 
-	/* Says whether a route is learned from what arrives here, and that is
-	 * true of every port that carries IP - so it belongs above the AX.25
-	 * block, not inside it.  It was not shown at all until now, though it
-	 * decides behaviour.
+	/* WELCHE Route, und wo der Schalter dafuer sitzt (Thomas).  "route
+	 * learning: no (the IP-over-AX.25 path learns here instead)" sagte
+	 * beides zugleich - nein und doch -, nannte nicht, dass IP gemeint
+	 * ist, und liess offen, wo man es aendert.  Es sind IP-Routen, gelernt
+	 * aus dem, was hereinkommt, und der Schalter ist "ip learn": ein Port
+	 * lernt, was dessen Regeln zulassen.  Ob ueberhaupt jemand hier lernt,
+	 * haengt am Typ des Ports und ist keine Einstellung.
 	 */
-	printf("           route learning: %s\n",
-	 if_learns_routes(ifp) ? "yes" :
-	 is_ax25(ifp) ? "no (the IP-over-AX.25 path learns here instead)" :
-	 "no");
+	printf("           ip routes learned here: %s\n",
+	 if_learns_routes(ifp) ? "yes, from NET/ROM (\"ip learn\" says which)" :
+	 is_ax25(ifp) ? "yes, from IP over AX.25 (\"ip learn\" says which)" :
+	 "no, this kind of port learns none");
 
 	/* Frame sizes: shown ALWAYS here, with where the number comes from.
 	 * The old condition hid exactly the normal case - a port that takes
@@ -840,24 +881,34 @@ showiface(struct iface *ifp, int verbose)
 	if(!is_ax25(ifp))
 		return;
 
-	/* Ob wir auf diesem Port ueberhaupt nach ARP fragen.  Im AX.25-Block
-	 * und nicht bei DAMA, obwohl "dama slave" es abschaltet: es ist eine
-	 * Eigenschaft des PORTS, und auf einem, der kein DAMA faehrt, waere
-	 * sie sonst unsichtbar - eine Einstellung, die wirkt und die man nicht
-	 * sehen kann, ist die schlechtere von beiden.
+	/* NUR WENN ES AUS IST, so wie Linux es haelt: dort steht NOARP in den
+	 * Flags und sonst nichts (Thomas).  ARP ist eine Eigenschaft des
+	 * Ports - er kann es oder er kann es nicht -, und der Normalfall
+	 * braucht keine Zeile.  Wer den Stand wissen will, fragt "ifconfig
+	 * <iface> arp", und dort steht er samt Erklaerung.
 	 */
-	printf("           ax25: arp requests %s\n", ifp->noarp ? "off" : "on");
+	if(ifp->noarp)
+		printf("           noarp (\"ifconfig %s arp\" says more)\n",
+		 ifp->name);
 	printf("           ax25: eax25 %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
 	 ifp->eax25 == EAX25_ALWAYS ? "always" :
 	 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
+	/* "link:" und nicht "ax25:" (Thomas).  Die Pruefsumme gehoert der
+	 * RAHMUNG, nicht AX.25 - KISS handelt sie aus, axudp haengt sie
+	 * unbedingt an (axip.c: append_crc_ccitt beim Senden,
+	 * check_crc_ccitt beim Empfangen).  Sie neben paclen und maxframe zu
+	 * stellen behauptete, sie sei ein AX.25-Parameter wie jene.  Die
+	 * Zahlen dahinter sind Zaehler des Ports und stehen deshalb in
+	 * derselben Zeile.
+	 */
 	switch (ifp->crccontrol){
-	default:            printf("           ax25: crc off");           break;
-	case CRC_TEST_16:   printf("           ax25: crc-16 test");       break;
-	case CRC_TEST_RMNC: printf("           ax25: crc-rmnc test");     break;
-	case CRC_16:        printf("           ax25: crc-16 enabled");    break;
-	case CRC_RMNC:      printf("           ax25: crc-rmnc enabled");  break;
-	case CRC_CCITT:     printf("           ax25: crc-ccitt enabled"); break;
+	default:            printf("           link: crc off");           break;
+	case CRC_TEST_16:   printf("           link: crc-16 test");       break;
+	case CRC_TEST_RMNC: printf("           link: crc-rmnc test");     break;
+	case CRC_16:        printf("           link: crc-16 enabled");    break;
+	case CRC_RMNC:      printf("           link: crc-rmnc enabled");  break;
+	case CRC_CCITT:     printf("           link: crc-ccitt enabled"); break;
 	}
 	printf(", crc errors %lu, bad ax25 headers %lu\n",
 	 (unsigned long)ifp->crcerrors,(unsigned long)ifp->ax25errors);
