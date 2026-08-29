@@ -957,13 +957,30 @@ DIE VERLAUFSZEILEN ENTSCHEIDEN ES - UND RAEUMEN ZWEI IRRTUEMER AB
 die Rohmessung, ungeglaettet, und damit der Beleg, den alles Vorige nur
 umkreist hat:
 
-    DB0BLO,   seriell, von uns auf 606 ms Umlauf verzoegert:
+AN JEDER ZEILE HAENGEN ZWEI KNOTEN, und das auseinanderzuhalten ist noetig
+(Thomas' Rueckfrage): der eine zeigt an, der andere hat gemeldet.
+
+    Angezeigt auf DB0BLO (RMNC).  Die Zeile gilt dem Nachbarn DB0BLO-4
+    (xnet, SSID 4-15) ueber die serielle Strecke, die wir auf 606 ms Umlauf
+    verzoegert haben:
+
         DB0BLO  4-15    91/6     23m, 4s P 8
                          600 6 6 6 6 6 6.
 
-    DB0AVH-4, AXIP im HAMNET, per ping 2,6..11,6 ms gemessen:
+    Angezeigt auf DB0AVH-4.  Die Zeile gilt DEMSELBEN Nachbarn DB0BLO-4,
+    ueber AXIP im HAMNET, per ping mit 2,6..11,6 ms gemessen:
+
         DB0BLO  4-15   101/101   23m,55s P 0
                          600 1 1 1 1 1 .
+
+GEMELDET HAT ALSO BEIDE MALE xnet, und geglaettet hat jeweils der EMPFAENGER
+- der RMNC auf 91, DB0AVH-4 auf 101.  Die zwei Tage Einschwingzeit treffen
+damit die beiden Empfaenger, nicht xnet.
+
+DAS MACHT DEN VERGLEICH BESSER, nicht schlechter: es sind nicht zwei
+Implementierungen, die je eine Zahl melden, sondern EIN UND DERSELBE KNOTEN
+misst zwei Strecken, die um den Faktor 150 auseinanderliegen, und meldet 6
+und 1.  Einheit und Untergrenze stammen aus einer einzigen Quelle.
 
 Beide beginnen auf dem Sentinel 600 - DEFAULTDELAY, wie dokumentiert - und
 melden dann stabil ihren Wert.
