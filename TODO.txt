@@ -6257,20 +6257,45 @@ wird fuer die Zeitscheibe aber realid - der Digi.  multiconn() (l2dama.c:658)
 vergleicht realid, also sind mehrere Benutzer hinter EINEM Digipeater fuer
 den Master EINE Station im Multiconnect.
 
-BEI UNS STELLT SICH DIE FRAGE SO GAR NICHT.  Digipeat ist per Vorgabe 2, und
-dann wird ein VERBUNDENER Rahmen nicht wiederholt: ax25.c gibt ihn an
-lapb_input(), das ihn terminiert und eine zweite Haelfte oeffnet (axp->peer).
-Diese spricht unter dem Rufzeichen DES ANRUFERS - find_ax25() sagt es:
-"their hdr.source carries the CALLER's address, which we speak in but do not
-answer to".
+BEI UNS HAENGT ES AM DIGIPEAT-MODUS, und das ist Thomas' Punkt.
 
-Auf dem DAMA-Kanal sieht der Master also einen Link zum BENUTZER, ohne via.
-realid == dstid, der Benutzer ist eine Station fuer sich, wird direkt
-gepollt, und wir antworten - dama_poll_begin() wird erreicht, weil der Rahmen
-bei uns endet.  dama_serve_others() vergleicht axp->hdr.source, "the callsign
-we were called under", und das ist bei einer Relaishaelfte das des Benutzers.
-Damit bedienen wir auf seinen Poll genau seine Verbindungen und keine
-fremden.  DAS IST SCHON RICHTIG.
+Erst eine Korrektur meiner eigenen ersten Fassung: ich hatte hier stehen, mit
+"digipeat 2" sehe der Master einen Link zum Benutzer OHNE via, wir wuerden
+also gewissermassen uebersetzen.  Das ist falsch, aus dem
+find_ax25()-Kommentar geschlossen statt am Code geprueft.  build_path() mit
+reverse=0 kopiert den GANZEN Kopf:
+
+    ax25_resolve_path(hdr,&chosen,opts);
+    axp->iface = chosen;
+    axp->hdr = *hdr;        /* Quelle, Ziel UND die Digiliste */
+
+Der Digipfad bleibt vollstaendig erhalten (Thomas: "Es ist kein NAT, der
+Digi-Pfad bleibt immer erhalten").  Der Master sieht BENUTZER via UNS.
+
+WORAUF ES ANKOMMT (Thomas):
+
+  * KLASSISCH ("digipeat 1") weiss der Benutzer nichts von DAMA.  Er hat nie
+    einen Poll gesehen und sendet, wann er will; wir wiederholen sofort.  Auf
+    einem DAMA-Kanal ist das unaufgefordertes Senden - und nicht gelegentlich,
+    sondern bei jedem seiner Rahmen.
+  * HOP-TO-HOP ("digipeat 2", die Vorgabe) halten WIR die Zustandsmaschine
+    der DAMA-seitigen Haelfte.  Damit koennen wir den Poll des Masters IM
+    AUFTRAG DES BENUTZERS in dessen Fenster beantworten und auf der anderen
+    Haelfte unser eigenes Polling zu ihm fahren.  Erst so traegt die
+    Konstruktion.
+
+DARAUS FOLGT EIN BEFUND: "int Digipeat = 2" (ax25.c:40) ist GLOBAL, und
+"ax25 digipeat" nimmt keinen Port.  Wer irgendwo aus gutem Grund auf 1
+stellt, bricht DAMA auf JEDEM DAMA-Port zugleich, ohne dass etwas es sagt.
+Die Einstellung ist global, die Anforderung ist portweise.  Zu ueberlegen:
+den Modus je Port fuehren, oder auf einem DAMA-Slave-Port implizit
+hop-to-hop erzwingen und es beim Einschalten sagen.
+
+WAS DAMIT SCHON RICHTIG IST: kommt der Rahmen hop-to-hop, endet er bei uns,
+also wird dama_poll_begin() erreicht und das Fenster geht auf.
+dama_serve_others() vergleicht axp->hdr.source, "the callsign we were called
+under" - bei einer Relaishaelfte das des Benutzers -, bedient auf seinen Poll
+also genau seine Verbindungen und keine fremden.
 
 DIE ZWEI ECHTEN LUECKEN LIEGEN WOANDERS: ax25.c kennt DAMA UEBERHAUPT NICHT
 (kein einziges Vorkommen).  Also geht
