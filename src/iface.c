@@ -462,9 +462,15 @@ ifarp(int argc,char *argv[],void *p)
 	 * oder gekapselt und kennt die Frage nicht.
 	 */
 	if(!is_ax25(ifp)){
-		printf("%s does not ask for arp at all - it is not an AX.25 "
-		       "port.\n  An address here is either configured or "
-		       "implied by the link.\n", ifp->name);
+		/* Ohne den Porttyp zu nennen (Thomas): sonst muesste dort
+		 * stehen, dass er auch kein Ethernet ist, und die Aufzaehlung
+		 * hoerte nie auf.  Der Grund ist allgemein und gilt fuer alle,
+		 * die es nicht koennen.
+		 */
+		printf("%s does not ask for arp.  A request asks a SHARED "
+		       "channel who holds\n  an address; here there is nobody "
+		       "to ask - the address is configured,\n  or the link has "
+		       "only one other end.\n", ifp->name);
 		return 1;
 	}
 	if(argc < 2){
@@ -841,8 +847,8 @@ showiface(struct iface *ifp, int verbose)
 	 * haengt am Typ des Ports und ist keine Einstellung.
 	 */
 	printf("           ip routes learned here: %s\n",
-	 if_learns_routes(ifp) ? "yes, from NET/ROM (\"ip learn\" says which)" :
-	 is_ax25(ifp) ? "yes, from IP over AX.25 (\"ip learn\" says which)" :
+	 if_learns_routes(ifp) ? "yes, from NET/ROM (\"ip learn\" defines which)" :
+	 is_ax25(ifp) ? "yes, from IP over AX.25 (\"ip learn\" defines which)" :
 	 "no, this kind of port learns none");
 
 	/* Frame sizes: shown ALWAYS here, with where the number comes from.
