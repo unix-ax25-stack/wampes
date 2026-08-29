@@ -540,6 +540,22 @@ static const uint8 *dama_station(const struct ax25_cb *axp)
  */
 #define DAMA_SLOT_DEFAULT       5000L   /* ms */
 
+/* UND EIN MINDESTABSTAND ZWISCHEN ZWEI POLLS, ohne den die Runde rast.
+ *
+ * Gemessen, als der erste echte Slave gegenueberstand: er beantwortet den
+ * Poll, das beendet den Zug, der naechste begann sofort - 221794 Polls in
+ * 25 Sekunden, bei EINER Station.  Mit mehreren waere es dasselbe, nur
+ * abwechselnd.
+ *
+ * TNN fuehrt dafuer dama_init, Vorgabe 100 in Einheiten von 10 ms, also eine
+ * Sekunde (config.c; einstellbar bis 1000, das waeren zehn).  Dieselbe Zahl
+ * hier, und aus demselben Grund: der Abstand ist es, der aus "so schnell wie
+ * die Leitung kann" eine Runde macht - und er laesst dem Kanal Luft fuer
+ * das, was NICHT gepollt wird, den Verbindungsaufbau naemlich, der nach der
+ * Spezifikation in CSMA laeuft.
+ */
+#define DAMA_GAP_DEFAULT        1000L   /* ms */
+
 struct dama_m {
 	struct dama_m *next;
 	struct iface *ifp;
@@ -660,15 +676,39 @@ static void dama_master_turn(struct dama_m *mp)
  * das F-Bit des Gepollten oder durch die Frist.
  */
 
+/* Der Zug ist zu Ende - durch das F-Bit des Gepollten oder durch die
+ * Zeitscheibe.  Jetzt die Pause, nicht sofort der naechste Poll.
+ */
+
+static void dama_master_gap(struct dama_m *mp)
+{
+	stop_timer(&mp->t);
+	mp->busy = 0;
+	set_timer(&mp->t, DAMA_GAP_DEFAULT);
+	start_timer(&mp->t);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Der Zeitgeber, und er hat zwei Bedeutungen - welche, sagt mp->busy:
+ * laeuft ein Zug, ist die Zeitscheibe abgelaufen (der Gepollte schweigt);
+ * laeuft keiner, ist die Pause vorbei und die naechste Station ist dran.
+ */
+
 static void dama_master_next(void *arg)
 {
 	struct dama_m *mp = (struct dama_m *) arg;
 	uint8 who[AXALEN];
 
 	stop_timer(&mp->t);
-	mp->busy = 0;
-	if (mp->ifp->dama != DAMA_MASTER)
+	if (mp->ifp->dama != DAMA_MASTER) {
+		mp->busy = 0;
 		return;
+	}
+	if (mp->busy) {                 /* stumm geblieben - Zug abbrechen */
+		dama_master_gap(mp);
+		return;
+	}
 	if (!dama_next_station(mp->ifp, mp->turn, who)) {
 		memset(mp->turn, 0, AXALEN);  /* niemand verbunden: Runde ruht */
 		return;
@@ -726,7 +766,7 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	if (!addreq(dama_station(axp), mp->turn))
 		return;
 	if (isfinal)
-		dama_master_next(mp);
+		dama_master_gap(mp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -744,7 +784,7 @@ void dama_master_kick(struct iface *ifp)
 	mp = dama_m_port(ifp, 1);
 	if (mp->busy || run_timer(&mp->t))
 		return;
-	dama_master_next(mp);
+	dama_master_next(mp);           /* busy ist 0: das pollt sofort */
 }
 
 /*---------------------------------------------------------------------------*/
@@ -893,8 +933,8 @@ void dama_show(struct iface *ifp)
 		char buf[AXBUF];
 		struct dama_m *mp = dama_m_port(ifp, 0);
 
-		printf("           dama master, slot %lds, ",
-		       DAMA_SLOT_DEFAULT / 1000L);
+		printf("           dama master, slot %lds gap %lds, ",
+		       DAMA_SLOT_DEFAULT / 1000L, DAMA_GAP_DEFAULT / 1000L);
 		if (mp != NULL && mp->busy)
 			printf("turn %s", pax25(buf, mp->turn));
 		else

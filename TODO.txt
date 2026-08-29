@@ -6196,6 +6196,37 @@ sie gelten fuer JEDES fremde PID, und das naechste heisst anders.
 DAMA-MASTER (Thomas, 2026-08-28)
 ----------------------------------------------------------
 
+GEBAUT AM 2026-08-29, die Runde.  Was steht: reihum eine Station je Zug
+(dama_station() gruppiert wie TNNs realid), der Zug endet am F-Bit des
+Gepollten, sonst nach der Zeitscheibe; Mindestabstand zwischen zwei Polls;
+das DAMA-Bit auf unseren Rahmen; ein Zaehler fuer Slaves, die selbst pollen,
+ohne sie zu trennen.  Gemessen gegen einen ZWEITEN WAMPES-Knoten als Slave
+(tnn-lab/wampes-b): 20 Polls in 20 s, RR(P) -> RR(F) -> eine Sekunde Pause.
+
+WAS NOCH FEHLT:
+
+  * DAS PRIORITAETSSCHEMA (TNNs damapm/damapc/incDAMA): wer nichts sendet,
+    kommt seltener dran.  Eine Ergaenzung auf derselben Runde, kein anderer
+    Entwurf - und gegen einen einzelnen Slave nicht messbar, deshalb
+    zurueckgestellt, bis es einen Testfall gibt, der sie zeigt.
+  * SLOT UND GAP SIND FEST (5 s und 1 s).  TNN hat dafuer Parameter
+    (dama_init, einstellbar 0..1000 in 10-ms-Schritten).  Erst einstellbar
+    machen, wenn jemand einen Grund hat, sie zu aendern.
+  * DAS P AUF DEM LETZTEN I-RAHMEN statt als eigenes RR - spart einen Rahmen
+    je Zug.  lapb_output() muesste dafuer wissen, welcher der letzte des
+    Zuges ist.
+  * GEGEN TNNs SLAVE (der hinter /*#define DAMASLAVE*/ liegt und von seinen
+    Autoren unvollstaendig genannt wird) - das ist Thomas' zweite Haelfte des
+    Pruefmassstabs, und der schwaechere Zeuge von beiden.
+  * DER VERGLEICHSTEST MIT DIGIPEAT MODE 1, siehe unten.
+
+DER ZWEITE LABORKNOTEN steht als tnn-lab/wampes-b.  Er hat KEINEN
+Kommandokanal - TCPDIR ist compilezeitfest, und den Socket haelt der erste
+Knoten -, ist deshalb vollstaendig aus seiner net.rc konfiguriert und wird
+ueber den Trace des Masters beobachtet.  Fuer den Anlass, ueberhaupt einen
+Link zu haben, baut NET/ROM ihn auf.
+
+
 DER TEST, DEN THOMAS DAZU HABEN WILL (2026-08-29): einmal mit DIGIPEAT
 MODE 1 gegen TNN als Master fahren und sehen, wie der sich verhaelt, wenn wir
 klassisch wiederholen statt hop-to-hop.  Erwartung nach dem Lesen: der
