@@ -252,6 +252,20 @@ struct cmds Attab[] = {
 	"  exists only to be used from here." },
 #endif
 
+	{ "bpqether", bpqether_attach, 0, 2,
+	"attach bpqether <iface> [<label>] [<mtu>] [nopromisc]\n"
+	"  AX.25 inside ethernet frames, protocol 0x08ff - the same shape the\n"
+	"  Linux bpqether driver speaks, but towards a REAL segment instead of\n"
+	"  a tap device.  Everything on that segment can be a neighbour, and a\n"
+	"  switch does the work of a channel.\n"
+	"\n"
+	"  <iface>   the name the SYSTEM uses (eth0, en0, eth0.70)\n"
+	"  <label>   our own name for the port, default the same\n"
+	"  <mtu>     default 256, at most 1498\n"
+	"  nopromisc hear only what is addressed to us or broadcast.  The\n"
+	"            default is promiscuous, because that is what a radio\n"
+	"            channel is: everything on the segment is \"on the air\"." },
+
 	{ "ethertap", ethertap_attach, 0, 2,
 	"attach ethertap <linux-name> [mtu] [label]\n"
 	"  [label] is our own name for it, see \"attach tun\".  It comes after\n"

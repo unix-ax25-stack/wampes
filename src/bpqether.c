@@ -1,0 +1,599 @@
+/* BPQether on a REAL ethernet interface: AX.25 frames inside ethernet ones,
+ * protocol 0x08FF.
+ *
+ * "attach ethertap" has spoken this for years, but only towards a tap device,
+ * which means towards the kernel's own AX.25 stack on the same machine.  This
+ * is the other half: hang the node on a segment and let everything on it be a
+ * neighbour.  A switch then does what a channel does, one collision domain per
+ * VLAN, and a node reaches a whole set of partners without a radio between.
+ *
+ * THE FRAME, which is the kernel's (drivers/net/hamradio/bpqether.c) and not
+ * ours to change:
+ *
+ *     ethernet header, type 0x08FF
+ *     2 octets length, LITTLE endian, and it counts the AX.25 frame PLUS 5
+ *     the AX.25 frame, address field first - no KISS byte, no CRC
+ *
+ * The +5 is a leftover of the DOS BPQ this grew from.  It is not a mistake to
+ * be corrected; it is the format, and a receiver that computes anything else
+ * talks to nobody.
+ *
+ * WHY WE BIND ETH_P_ALL AND FILTER IN THE KERNEL, rather than binding
+ * ETH_P_BPQ and being done.  Linux delivers in this order
+ * (net/core/dev.c, __netif_receive_skb_core):
+ *
+ *     ptype_all          ETH_P_ALL sockets           <- before everything
+ *     vlan_do_receive()  a tagged frame is re-delivered on eth0.<n>
+ *     rx_handler         bridge, bonding, macvlan
+ *     ptype_base         ETH_P_BPQ sockets           <- only here
+ *
+ * So a socket bound to ETH_P_BPQ on a BRIDGE PORT can see nothing at all: the
+ * bridge's rx_handler consumes the frame two steps earlier.  The same happens
+ * when a VLAN device exists for the tag.  Binding ETH_P_ALL puts us in front
+ * of both, and SO_ATTACH_FILTER makes the kernel throw the rest away before it
+ * costs us anything - which is exactly what BIOCSETF does on the BSD side, so
+ * both systems end up with the same shape and the same filter program.
+ *
+ * OUR OWN FRAMES COME BACK on such a socket, and that has to be dropped or the
+ * node talks to itself: PACKET_OUTGOING here, BIOCSSEESENT there.
+ */
+
+#include <sys/types.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <net/if.h>
+
+#ifdef	linux
+#include <netpacket/packet.h>
+#include <net/ethernet.h>
+#include <linux/filter.h>
+#include <sys/ioctl.h>
+#endif
+
+#if defined __MACOSX__ || defined __FreeBSD__
+#include <net/bpf.h>
+#include <net/if_dl.h>
+#include <net/if_types.h>
+#include <net/route.h>
+#include <sys/sysctl.h>
+#include <sys/time.h>
+#endif
+
+#include "global.h"
+#include "hpux.h"
+#include "mbuf.h"
+#include "iface.h"
+#include "ax25.h"
+#include "netuser.h"
+#include "trace.h"
+#include "bpqether.h"
+
+#ifndef	ETH_P_BPQ
+#define	ETH_P_BPQ	0x08ff
+#endif
+
+#define BPQ_HDRLEN	14		/* dst, src, type */
+#define BPQ_LENLEN	2		/* the little endian length in front */
+#define BPQ_EXTRA	5		/* what that length counts on top */
+#define BPQ_MTU		256
+#define BPQ_MTU_MAX	(1500 - BPQ_LENLEN)
+
+static const uint8 Ether_bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
+struct bpq_edv {
+  int fd;
+  char ifname[IFNAMSIZ];		/* the host's name for the port */
+  uint8 hwaddr[6];			/* our own MAC on it */
+  int index;				/* linux: the ifindex to send from */
+  unsigned buflen;			/* bsd: what BIOCGBLEN asked for */
+  char *buf;				/* bsd: a whole read at a time */
+};
+
+/*---------------------------------------------------------------------------*/
+
+/* One filter program for both systems.  Classic BPF, and struct sock_filter
+ * on Linux has the same four fields in the same order as struct bpf_insn on
+ * BSD - so the table is written once with plain numbers and each side only
+ * wraps it.
+ *
+ *     ldh  [12]                  the ethertype
+ *     jeq  0x08ff  -> take it
+ *     jeq  0x8100  -> tagged, look behind the tag
+ *     ldh  [16]
+ *     jeq  0x08ff  -> take it
+ *     ret  0                     everything else
+ *
+ * The 802.1Q branch is there for the case where the tag is still IN the
+ * frame.  Where the kernel has already pulled it into its own field the
+ * ethertype at 12 is 0x08FF anyway and the first test matches.
+ */
+
+#define BPF_LDH_ABS	0x28
+#define BPF_JEQ_K	0x15
+#define BPF_RET_K	0x06
+
+struct bpq_insn {
+  unsigned short code;
+  unsigned char jt;
+  unsigned char jf;
+  unsigned int k;
+};
+
+static const struct bpq_insn Bpq_filter[] = {
+  { BPF_LDH_ABS, 0, 0, 12 },
+  { BPF_JEQ_K,   3, 0, ETH_P_BPQ },
+  { BPF_JEQ_K,   0, 3, 0x8100 },
+  { BPF_LDH_ABS, 0, 0, 16 },
+  { BPF_JEQ_K,   0, 1, ETH_P_BPQ },
+  { BPF_RET_K,   0, 0, 0xffffffffU },
+  { BPF_RET_K,   0, 0, 0 }
+};
+
+#define BPQ_FILTER_LEN	(sizeof(Bpq_filter) / sizeof(Bpq_filter[0]))
+
+/*---------------------------------------------------------------------------*/
+
+/* Our own MAC on that port.  Without it we would have to send under somebody
+ * else's, and a switch that does port security drops those - besides, the far
+ * end learns us from it and that is how it will answer once it may.
+ */
+
+static int bpqether_hwaddr(const char *ifname, uint8 *hwaddr)
+{
+
+#ifdef	linux
+  int s;
+  struct ifreq ifr;
+
+  if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) return -1;
+  memset(&ifr, 0, sizeof(ifr));
+  strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+  if (ioctl(s, SIOCGIFHWADDR, &ifr) < 0) {
+    close(s);
+    return -1;
+  }
+  memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, 6);
+  close(s);
+  return 0;
+#endif
+
+#if defined __MACOSX__ || defined __FreeBSD__
+  int mib[6] = { CTL_NET, AF_ROUTE, 0, AF_LINK, NET_RT_IFLIST, 0 };
+  size_t len = 0;
+  unsigned char *buf, *p;
+
+  if (sysctl(mib, 6, NULL, &len, NULL, 0) != 0) return -1;
+  if (!(buf = (unsigned char *) malloc(len))) return -1;
+  if (sysctl(mib, 6, buf, &len, NULL, 0) != 0) {
+    free(buf);
+    return -1;
+  }
+  for (p = buf; p < buf + len; ) {
+    struct if_msghdr *ifm = (struct if_msghdr *) p;
+    struct sockaddr_dl *sdl = (struct sockaddr_dl *) (ifm + 1);
+
+    p += ifm->ifm_msglen;
+    if (ifm->ifm_type != RTM_IFINFO || !(ifm->ifm_addrs & RTA_IFP)) continue;
+    if (sdl->sdl_family != AF_LINK || sdl->sdl_alen != 6) continue;
+    if (sdl->sdl_nlen == 0 || strncmp(sdl->sdl_data, ifname, sdl->sdl_nlen)
+	|| ifname[sdl->sdl_nlen]) continue;
+    memcpy(hwaddr, LLADDR(sdl), 6);
+    free(buf);
+    return 0;
+  }
+  free(buf);
+  return -1;
+#endif
+}
+
+/*---------------------------------------------------------------------------*/
+
+#ifdef	linux
+
+static int bpqether_open(struct bpq_edv *edv, int promisc)
+{
+
+  int fd;
+  struct ifreq ifr;
+  struct sock_fprog prog;
+  struct sockaddr_ll sll;
+
+  if ((fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) {
+    perror("bpqether: socket(AF_PACKET)");
+    return -1;
+  }
+
+  memset(&ifr, 0, sizeof(ifr));
+  strncpy(ifr.ifr_name, edv->ifname, IFNAMSIZ - 1);
+  if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0) {
+    perror("bpqether: SIOCGIFINDEX");
+    close(fd);
+    return -1;
+  }
+  edv->index = ifr.ifr_ifindex;
+
+  /* Attach the filter BEFORE the bind, so that not one unwanted frame is
+   * queued in the window between the two.
+   */
+  prog.len = BPQ_FILTER_LEN;
+  prog.filter = (struct sock_filter *) Bpq_filter;
+  if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER, &prog, sizeof(prog)) < 0)
+    perror("bpqether: SO_ATTACH_FILTER");
+
+  memset(&sll, 0, sizeof(sll));
+  sll.sll_family = AF_PACKET;
+  sll.sll_protocol = htons(ETH_P_ALL);
+  sll.sll_ifindex = edv->index;
+  if (bind(fd, (struct sockaddr *) &sll, sizeof(sll)) < 0) {
+    perror("bpqether: bind");
+    close(fd);
+    return -1;
+  }
+
+  if (promisc) {
+    struct packet_mreq mr;
+
+    memset(&mr, 0, sizeof(mr));
+    mr.mr_ifindex = edv->index;
+    mr.mr_type = PACKET_MR_PROMISC;
+    if (setsockopt(fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr,
+		   sizeof(mr)) < 0)
+      perror("bpqether: PACKET_MR_PROMISC");
+  }
+  return fd;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bpqether_recv(void *argp)
+{
+
+  int l;
+  struct bpq_edv *edv;
+  struct iface *ifp;
+  struct mbuf *bp;
+  struct sockaddr_ll from;
+  socklen_t fromlen = sizeof(from);
+  uint8 buf[BPQ_HDRLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  unsigned len;
+
+  ifp = (struct iface *) argp;
+  edv = (struct bpq_edv *) ifp->edv;
+
+  l = recvfrom(edv->fd, buf, sizeof(buf), 0, (struct sockaddr *) &from,
+	       &fromlen);
+  if (l <= BPQ_HDRLEN + BPQ_LENLEN) goto Fail;
+
+  /* Our own frames come back here.  Without this the node answers itself,
+   * and every link it opens is with a station that shares its callsign.
+   */
+  if (from.sll_pkttype == PACKET_OUTGOING) return;
+
+  len = buf[BPQ_HDRLEN] + buf[BPQ_HDRLEN + 1] * 256;
+  if (len < BPQ_EXTRA || len - BPQ_EXTRA !=
+      (unsigned) (l - BPQ_HDRLEN - BPQ_LENLEN)) goto Fail;
+
+  bp = qdata(buf + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
+  net_route(ifp, &bp);
+  return;
+
+Fail:
+  ifp->crcerrors++;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int bpqether_write(struct bpq_edv *edv, const uint8 *frame, int len)
+{
+
+  struct sockaddr_ll sll;
+
+  memset(&sll, 0, sizeof(sll));
+  sll.sll_family = AF_PACKET;
+  sll.sll_protocol = htons(ETH_P_BPQ);
+  sll.sll_ifindex = edv->index;
+  sll.sll_halen = 6;
+  memcpy(sll.sll_addr, frame, 6);       /* the destination we just wrote */
+  return sendto(edv->fd, frame, (size_t) len, 0, (struct sockaddr *) &sll,
+		sizeof(sll));
+}
+
+#endif	/* linux */
+
+/*---------------------------------------------------------------------------*/
+
+#if defined __MACOSX__ || defined __FreeBSD__
+
+static int bpqether_open(struct bpq_edv *edv, int promisc)
+{
+
+  char path[32];
+  int fd = -1;
+  int i;
+  int on = 1;
+  struct bpf_program prog;
+  struct ifreq ifr;
+  unsigned len;
+
+  /* /dev/bpf may be there as a cloner; where it is not, walk the numbered
+   * ones.  Whoever holds one has it exclusively, so a busy node is a normal
+   * finding and not an error.
+   */
+  if ((fd = open("/dev/bpf", O_RDWR)) < 0)
+    for (i = 0; i < 256 && fd < 0; i++) {
+      snprintf(path, sizeof(path), "/dev/bpf%d", i);
+      fd = open(path, O_RDWR);
+    }
+  if (fd < 0) {
+    perror("bpqether: /dev/bpf");
+    return -1;
+  }
+
+  memset(&ifr, 0, sizeof(ifr));
+  strncpy(ifr.ifr_name, edv->ifname, IFNAMSIZ - 1);
+  if (ioctl(fd, BIOCSETIF, &ifr) < 0) {
+    perror("bpqether: BIOCSETIF");
+    close(fd);
+    return -1;
+  }
+
+  /* Hand each frame over as it arrives.  Without this bpf holds them until
+   * its buffer is full, which on a quiet segment is minutes.
+   */
+  if (ioctl(fd, BIOCIMMEDIATE, &on) < 0) perror("bpqether: BIOCIMMEDIATE");
+
+  /* We write whole ethernet headers ourselves, source address included. */
+  if (ioctl(fd, BIOCSHDRCMPLT, &on) < 0) perror("bpqether: BIOCSHDRCMPLT");
+
+  /* And we do not want to read them back - see the note at the top. */
+  {
+    int off = 0;
+
+    if (ioctl(fd, BIOCSSEESENT, &off) < 0) perror("bpqether: BIOCSSEESENT");
+  }
+
+  if (promisc && ioctl(fd, BIOCPROMISC, NULL) < 0)
+    perror("bpqether: BIOCPROMISC");
+
+  prog.bf_len = BPQ_FILTER_LEN;
+  prog.bf_insns = (struct bpf_insn *) Bpq_filter;
+  if (ioctl(fd, BIOCSETF, &prog) < 0) perror("bpqether: BIOCSETF");
+
+  /* bpf reads in whole buffers of its own size, never less - so ask what it
+   * is rather than guessing, and keep one.
+   */
+  if (ioctl(fd, BIOCGBLEN, &len) < 0) len = 32768;
+  if (!(edv->buf = (char *) malloc(len))) {
+    close(fd);
+    return -1;
+  }
+  edv->buflen = len;
+  return fd;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bpqether_recv(void *argp)
+{
+
+  int l;
+  char *p, *end;
+  struct bpq_edv *edv;
+  struct iface *ifp;
+  struct mbuf *bp;
+
+  ifp = (struct iface *) argp;
+  edv = (struct bpq_edv *) ifp->edv;
+
+  if ((l = read(edv->fd, edv->buf, edv->buflen)) <= 0) return;
+
+  /* One read holds SEVERAL frames, each behind its own bpf_hdr and each
+   * aligned onwards with BPF_WORDALIGN.  Taking only the first would lose
+   * every frame that arrived while we were not looking.
+   */
+  for (p = edv->buf, end = edv->buf + l; p + sizeof(struct bpf_hdr) <= end; ) {
+    struct bpf_hdr *hdr = (struct bpf_hdr *) p;
+    uint8 *frame = (uint8 *) p + hdr->bh_hdrlen;
+    unsigned len;
+
+    if (p + hdr->bh_hdrlen + hdr->bh_caplen > end) break;
+    if (hdr->bh_caplen < BPQ_HDRLEN + BPQ_LENLEN ||
+	hdr->bh_caplen != hdr->bh_datalen)
+      goto next;                        /* truncated: not ours to guess at */
+    len = frame[BPQ_HDRLEN] + frame[BPQ_HDRLEN + 1] * 256;
+    if (len < BPQ_EXTRA ||
+	len - BPQ_EXTRA != hdr->bh_caplen - BPQ_HDRLEN - BPQ_LENLEN) {
+      ifp->crcerrors++;
+      goto next;
+    }
+    bp = qdata(frame + BPQ_HDRLEN + BPQ_LENLEN, len - BPQ_EXTRA);
+    net_route(ifp, &bp);
+next:
+    p += BPF_WORDALIGN(hdr->bh_hdrlen + hdr->bh_caplen);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int bpqether_write(struct bpq_edv *edv, const uint8 *frame, int len)
+{
+  return write(edv->fd, frame, (size_t) len);
+}
+
+#endif	/* __MACOSX__ || __FreeBSD__ */
+
+/*---------------------------------------------------------------------------*/
+
+/* Anywhere else: say so at attach time rather than failing to link.  A raw
+ * ethernet socket is the one thing here that has no portable spelling.
+ */
+
+#if !defined linux && !defined __MACOSX__ && !defined __FreeBSD__
+
+#define BPQETHER_UNSUPPORTED 1
+
+static int bpqether_open(struct bpq_edv *edv, int promisc)
+{
+  (void) edv;
+  (void) promisc;
+  return -1;
+}
+
+static void bpqether_recv(void *argp) { (void) argp; }
+
+static int bpqether_write(struct bpq_edv *edv, const uint8 *frame, int len)
+{
+  (void) edv;
+  (void) frame;
+  (void) len;
+  return -1;
+}
+
+#endif
+
+/*---------------------------------------------------------------------------*/
+
+/* Where a frame goes on the wire.  For now: everywhere.  A broadcast reaches
+ * the right station in every case, which is what the kernel driver does too
+ * (bpq_new_device sets dest_addr to the broadcast address).  Learning the one
+ * MAC that would do instead is the next step.
+ */
+
+static const uint8 *bpqether_target(struct iface *ifp, struct mbuf *bp)
+{
+  (void) ifp;
+  (void) bp;
+  return Ether_bcast;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
+{
+
+  int l;
+  struct bpq_edv *edv;
+  uint8 frame[BPQ_HDRLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  const uint8 *dest;
+
+  edv = (struct bpq_edv *) ifp->edv;
+  dump(ifp, IF_TRACE_OUT, *bpp);
+  ifp->rawsndcnt++;
+  ifp->lastsent = secclock();
+  if (ifp->trace & IF_TRACE_RAW) raw_dump(ifp, -1, *bpp);
+
+  dest = bpqether_target(ifp, *bpp);
+
+  l = pullup(bpp, frame + BPQ_HDRLEN + BPQ_LENLEN, BPQ_MTU_MAX);
+  if (l <= 0 || *bpp) {                 /* longer than we may carry */
+    free_p(bpp);
+    return -1;
+  }
+  memcpy(frame, dest, 6);
+  memcpy(frame + 6, edv->hwaddr, 6);
+  frame[12] = (ETH_P_BPQ >> 8) & 0xff;
+  frame[13] = ETH_P_BPQ & 0xff;
+  frame[BPQ_HDRLEN]     = (l + BPQ_EXTRA) % 256;
+  frame[BPQ_HDRLEN + 1] = (l + BPQ_EXTRA) / 256;
+
+  return bpqether_write(edv, frame, BPQ_HDRLEN + BPQ_LENLEN + l);
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void bpqether_show(struct iface *ifp)
+{
+
+  struct bpq_edv *edv = (struct bpq_edv *) ifp->edv;
+
+  printf("           bpqether on %s, our mac %02x:%02x:%02x:%02x:%02x:%02x\n",
+	 edv->ifname, edv->hwaddr[0], edv->hwaddr[1], edv->hwaddr[2],
+	 edv->hwaddr[3], edv->hwaddr[4], edv->hwaddr[5]);
+}
+
+/*---------------------------------------------------------------------------*/
+
+int bpqether_attach(int argc, char *argv[], void *p)
+{
+
+  int mtu = BPQ_MTU;
+  int promisc = 1;
+  int i;
+  char *label = 0;
+  struct bpq_edv *edv;
+  struct iface *ifp;
+
+  (void) p;
+
+#ifdef	BPQETHER_UNSUPPORTED
+  printf("attach bpqether: this system has no raw ethernet socket we know "
+	 "of - linux and BSD only\n");
+  return -1;
+#endif
+
+  /* "attach bpqether <iface> [<label>] [<mtu>] [nopromisc]".  The words after
+   * the interface are told apart by what they look like, the way "attach
+   * ethertap" does it: a number is the mtu, "nopromisc" is itself, and
+   * anything else is our own name for the port.
+   */
+  for (i = 2; i < argc; i++) {
+    if (!strcmp(argv[i], "nopromisc")) { promisc = 0; continue; }
+    if (argv[i][0] >= '0' && argv[i][0] <= '9') { mtu = atoi(argv[i]); continue; }
+    if (!label) { label = argv[i]; continue; }
+    printf("attach bpqether: unexpected \"%s\"\n", argv[i]);
+    return -1;
+  }
+  if (mtu < 64 || mtu > BPQ_MTU_MAX) {
+    printf("attach bpqether: mtu %d is outside 64..%d\n", mtu, BPQ_MTU_MAX);
+    return -1;
+  }
+  if (if_lookup(label ? label : argv[1]) != NULL) {
+    printf("Interface %s already exists\n", label ? label : argv[1]);
+    return -1;
+  }
+
+  edv = (struct bpq_edv *) callocw(1, sizeof(struct bpq_edv));
+  strncpy(edv->ifname, argv[1], sizeof(edv->ifname) - 1);
+
+  /* Ask the port for its own address before opening anything: a name that no
+   * interface answers to is worth saying plainly, and it is the commonest
+   * thing to get wrong in that line.
+   */
+  if (bpqether_hwaddr(edv->ifname, edv->hwaddr)) {
+    printf("attach bpqether: %s has no ethernet address - is that the name "
+	   "the system uses?\n", edv->ifname);
+    free(edv);
+    return -1;
+  }
+
+  if ((edv->fd = bpqether_open(edv, promisc)) < 0) {
+    free(edv->buf);
+    free(edv);
+    return -1;
+  }
+
+  ifp = (struct iface *) callocw(1, sizeof(struct iface));
+  ifp->name = strdup(label ? label : argv[1]);
+  ifp->addr = Ip_addr;
+  ifp->broadcast = 0xffffffffUL;
+  ifp->netmask = 0xffffffffUL;
+  ifp->hwaddr = (uint8 *) mallocw(AXALEN);
+  addrcp(ifp->hwaddr, Mycall);
+  ifp->mtu = mtu;
+  setencap(ifp, "AX25UI");
+  ifp->edv = edv;
+  ifp->send = axui_send;
+  ifp->raw = bpqether_send;
+  ifp->show = bpqether_show;
+  on_read(edv->fd, bpqether_recv, (void *) ifp);
+  ifp->next = Ifaces;
+  Ifaces = ifp;
+  return 0;
+}

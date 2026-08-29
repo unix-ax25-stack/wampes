@@ -98,6 +98,7 @@ OBJS          = adjtime.o \
 		dirutil.o \
 		domain.o \
 		domhdr.o \
+		bpqether.o \
 		ethertap.o \
 		files.o \
 		finger.o \
@@ -215,6 +216,7 @@ SRCS          = adjtime.c \
 		dirutil.c \
 		domain.c \
 		domhdr.c \
+		bpqether.c \
 		ethertap.c \
 		files.c \
 		finger.c \
@@ -767,6 +769,19 @@ domhdr.o:\
 	mbuf.h\
 	proc.h\
 	timer.h
+bpqether.o:\
+	../lib/configure.h\
+	ax25.h\
+	bpqether.c\
+	bpqether.h\
+	global.h\
+	hpux.h\
+	iface.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	timer.h\
+	trace.h
 ethertap.o:\
 	../lib/configure.h\
 	../lib/strdup.h\

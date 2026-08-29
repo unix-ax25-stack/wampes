@@ -57,14 +57,16 @@ install-complete: complete
 # after installing, take ownership and close the door.  Not run with -i - a
 # silent failure here is the case this exists to prevent.
 #
-# 755 and not 750, deliberately.  The access control belongs on the socket,
-# not on the way to it: remote_net.c publishes sockets/ax25 with mode 0660 and
-# a group of the sysop's choosing, and that is where the decision is made.
-# Locking the directory to one group cannot work anyway as soon as two parties
-# have a legitimate claim - users in "hams" and a mailbox running under
-# "daemon", say - and it would puzzle anybody who is not deep in Unix
-# permissions.  755 also agrees with what lib/rundir.c sets at every start,
-# so the two do not fight each other.
+# 755 and not 750 for TCPDIR itself, deliberately.  Locking the way IN to one
+# group cannot work as soon as two parties have a legitimate claim - users in
+# "hams" and a mailbox running under "daemon", say - and it would puzzle
+# anybody who is not deep in Unix permissions.  755 also agrees with what
+# lib/rundir.c sets at every start, so the two do not fight each other.
+#
+# The decision about who may use the node is made one level down, on
+# sockets/: that directory is the gate, 750 with a group of the sysop's
+# choosing, and the socket inside it is deliberately open (0666 - connect()
+# asks for write and never for execute).  See doc/PERMISSIONS.md.
 #
 # Files lose group and world write.  Anything holding credentials wants less
 # than that and has to say so itself; see doc/PERMISSIONS.md.
@@ -86,6 +88,10 @@ _secure:
 	[ -d $(TCPDIR)/sockets ] && chmod 750 $(TCPDIR)/sockets; \
 	find $(TCPDIR) -type f -exec chmod go-w {} \; ; \
 	echo "$(TCPDIR): root, 755, nothing below it writable by anyone else"; \
+	echo "  .sockets and sockets now belong to ROOT.  A node that runs under"; \
+	echo "  a normal account cannot create its sockets there any more - the"; \
+	echo "  running one keeps its own until it restarts, and then cnet stops"; \
+	echo "  reaching it.  chown that account back if the node is not root."; \
 	left=`find $(TCPDIR) ! -user root -print 2>/dev/null | head -5`; \
 	if [ -n "$$left" ]; then \
 		echo "still not owned by root, and each one is a way in:"; \

@@ -145,6 +145,7 @@ int domain0(int argc,char *argv[],void *p);
 int domain1(int argc,char *argv[],void *p);
 int dosntp(int argc,char *argv[],void *p);
 int dosource(int argc,char *argv[],void *p);
+int bpqether_attach(int argc,char *argv[],void *p);
 int ethertap_attach(int argc,char *argv[],void *p);
 int ipip_attach(int argc,char *argv[],void *p);
 int krnlif_attach(int argc,char *argv[],void *p);
