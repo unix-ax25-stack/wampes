@@ -859,3 +859,53 @@ fuer den Kanal und liest die uebrigen Monitor-Optionen im Handbuch nach; ist
 ein Zeitstempel darunter, stempelt der Knoten an der Quelle und die Zeitspur
 entfaellt samt ihrer Fehlerquelle.  Die Kanalwahl lohnt sich in jedem Fall -
 im ersten Mitschnitt lief Verkehr von DB0FUZ und DB0FHN mit durch.
+
+
+DIE BEIDEN FELDER DER rtt-SPALTE, UND DIE EINHEIT VON T
+=======================================================
+
+Die zweite Tabelle enthaelt eine Kontrolle, die die erste nicht hatte:
+
+   1:DB0BLO       1 F 155   6/303   0  3m 50s  566  220    78/100 260.0  27
+   2:IGATE        1 F   1   0/2     0  4m 35s  573  493    75/100 144.4  31
+   3:IGATEB       1 F   1   0/1     1  4m 33s  573  513    62/100 933.3  31
+   4:DB0AVH-4     2 F 151   0/301   0  3m 50s  535  238   100/100   0.0  26
+
+DB0BLO und DB0AVH-4 haben dieselbe gemessene Zeit (303 gegen 301 ms) und
+dieselbe Standzeit (beide 3m 50s), aber die erste Zahl ist einmal 6 und
+einmal 0.  Daraus folgt die Bedeutung der beiden Felder:
+
+    rechts  UNSERE eigene Messung in Millisekunden, halbe Umlaufzeit.
+            Bei --delay 300 je Richtung sind das 606 ms Umlauf -> 303.
+    links   die Zahl VOM PARTNER.  Sie haengt nicht an unserer Messung,
+            sonst staende bei DB0AVH-4 ebenfalls eine 6.
+
+DAMIT STEHT DIE ANTWORT FESTER ALS VORHER, nicht wackliger: der RMNC hat
+denselben Weg gesehen wie wir, also 606 ms, und meldet 6.  Das sind 600 ms,
+die GANZE Umlaufzeit.  Halb waere 3 gewesen.
+
+DB0AVH-4 mit 0 ist entweder ein Partner, der nicht misst, oder der FlexNet-
+Poll ist dort noch nicht durch (POLLINTERVAL 5 Minuten, die Verbindung stand
+erst 3m 50s).  Als KONTROLLOBJEKT ist das nuetzlich: springt DB0AVH-4
+spaeter auf 6/301, sind Deutung und Zeitpunkt zugleich bestaetigt.
+
+OFFEN DABEI: ob DB0AVH-4 ueber dieselbe verzoegerte Leitung laeuft.  Die
+301 ms sprechen dafuer, aber nachgesehen ist es nicht - und wenn es ein
+eigener Weg ist, aendert das die Lesart der Kontrolle.
+
+DIE EINHEIT VON T faellt nebenbei mit ab.  "=>d db0blo" zeigt
+
+    *** DB0BLO (0-3) T=155
+    *** route: DB0BLO-4 DB0BLO
+
+Der Nachbar ist direkt, T ist also im Wesentlichen die Linkverzoegerung:
+
+    Link         Umlauf gemessen     T     Umlauf/T
+    IGATE               4 ms         1       4,0
+    DB0AVH-4          602 ms       151       3,99
+    DB0BLO            606 ms       155       3,91
+
+EINE T-EINHEIT SIND 4 MILLISEKUNDEN UMLAUFZEIT.  Zwei der drei stimmen
+genau; DB0BLO liegt 2 % daneben, was plausibel ist, weil dort ein echter
+RMNC mit eigener Bearbeitungszeit haengt und nicht ein internes Gateway.
+Drei Punkte sind wenig - die Reihe mit 100 und 200 ms prueft auch das mit.
