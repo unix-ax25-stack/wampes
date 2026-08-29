@@ -668,3 +668,65 @@ Links die im SCHUB erreichte Rate, rechts der alte Mittelwert ueber das
 Fenster.  Die Drossel laeuft die ganze Zeit exakt auf 1200, waehrend der
 Mittelwert von 799 auf 1101 wandert.  Wer den Mittelwert liest, verdaechtigt
 das Werkzeug.  Beim naechsten Lauf steht die Antwort in der Spalte "von".
+
+
+ZWEITER LAUF, UND WARUM DIE DROSSEL DAS FALSCHE WERKZEUG IST
+============================================================
+
+Auch der zweite Lauf brach ab, jetzt mit einer Zahl, die alles erklaert:
+
+    Trash   :(21) CONNECTED to 1:DB0BLO - 00:56:24
+    Trash   :(21) LINK FAILURE with 1:DB0BLO - 00:56:28
+
+VIER SEKUNDEN von SABM/UA bis "tot", dazwischen fuenf Wiederholungen des
+FLEX_INIT.  Daraus folgt T1 rund 0,8 s und N2 rund 5.  Damit waere selbst
+4800 mit 0,59 s Umlauf nur knapp darunter und 2400 schon draussen - die
+Stufenleiter aus dem vorigen Abschnitt traegt nicht.
+
+DER EIGENTLICHE FEHLER LIEGT ABER TIEFER, und er liegt bei uns:
+
+    xnet schreibt einen Rahmen ins pty.  Das nimmt ihn SOFORT an - ein pty
+    hat einen Puffer, keine Bitrate.  T1 laeuft ab DIESEM Moment.  Auf der
+    Leitung ist der Rahmen erst Sekunden spaeter.  T1 laeuft ab, xnet
+    wiederholt, die Wiederholung legt sich HINTER ihr eigenes Original in
+    dieselbe Schlange.  Die Schlange waechst, die Laufzeit waechst, es
+    kommen mehr Wiederholungen.
+
+Das ist eine Rueckkopplung, die den Link umbringt, ganz gleich wie langsam
+man stellt - und sie ist eine Eigenschaft unseres Pruefstands, nicht des
+Protokolls.  Auf einer echten 1200-Baud-Strecke gibt es die Schlange im TNC
+zwar auch, aber dort sind T1 und N2 seit jeher darauf eingestellt.  Hier
+haben wir eine Strecke gebaut, deren Laufzeit von der Warteschlange abhaengt
+und damit von der Zahl der Wiederholungen.  Ein Messgeraet, dessen Anzeige
+davon abhaengt, wie oft man hinsieht.
+
+DIE LOESUNG: FlexNet misst LAUFZEIT, nicht Bitrate.  Also brauchen wir keine
+Drossel, sondern eine VERZOEGERUNGSSTRECKE - volle Bandbreite, aber jedes
+Byte kommt um d spaeter an, wie ein Satellitensprung.  Dann staut sich
+nichts, denn es wird nichts zurueckgehalten, was Bandbreite braeuchte.
+
+slowpty kann das jetzt mit --delay <ms> (je Richtung, "300,500" getrennt).
+Gemessen ueber zwei Pseudoterminals:
+
+    241 B: erstes Byte nach  303.2 ms, alle nach  303.2 ms
+      5 B: erstes Byte nach  303.9 ms, alle nach  303.9 ms
+
+Der ganze Rahmen kommt geschlossen an, exakt 300 ms spaeter.  Keine
+Bandbreitengrenze, also keine Schlange.  --delay schaltet --bps ab, wenn das
+nicht ausdruecklich danebensteht; beides zugleich war ja gerade der Fehler.
+
+DER VERSUCH, DEN WIR JETZT FAHREN.  Nicht eine Messung, sondern drei, denn
+eine einzelne Zahl kann zufaellig passen:
+
+    --delay 100    Zuschlag 200 ms Umlauf   ->   ganz T=2   halb T=1
+    --delay 200    Zuschlag 400 ms          ->   ganz T=4   halb T=2
+    --delay 300    Zuschlag 600 ms          ->   ganz T=6   halb T=3
+
+Der Umlauf bleibt mit hoechstens 0,64 s unter T1 von 0,8 s, der Link haelt
+also.  Und wenn die gemeldete Zahl mit dem Zuschlag LINEAR waechst und dabei
+auf der einen oder der anderen Reihe liegt, ist nicht nur das Ergebnis
+belegt, sondern auch die Rechenvorschrift - und zwar dreifach statt einmal.
+
+Die Startzeile rechnet die Erwartung gleich mit aus:
+
+    Umlauf-Zuschlag 600 ms  ->  FlexNet ganz 6, halb 3
