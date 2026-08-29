@@ -1039,6 +1039,25 @@ RUND ZWEI TAGE beim RMNC.  Eine Verbindung, die 23 Minuten steht, ist bei
 etwa 4 Prozent des Weges - und genau in dieser Phase sieht man im Betrieb
 die meisten Links.
 
+PRAKTISCH BENUTZBAR WIRD DAS DURCH n.  Die Verlaufszeile zeigt die Werte
+einzeln, man kann sie also ZAEHLEN - und dann steht der angezeigte Wert
+vorher fest, statt geraten werden zu muessen:
+
+    angezeigt = 600/n + wahr        n = Zahl der Werte in der Verlaufszeile
+
+Umgekehrt genauso: aus Anzeige und n faellt der wahre Wert heraus, ohne auf
+das Einschwingen zu warten.  Bei DB0BLO nach sieben Werten:
+(91 - 600/7) = 5,3 -> 6, und das ist die Zahl, um die es geht.  Die drei
+Treffer oben sind der Beleg, dass die Verlaufszeile wirklich ALLE Werte
+seit Verbindungsaufbau fuehrt und nicht nur die letzten paar - sonst haette
+das Zaehlen nicht gestimmt.
+
+BEOBACHTETE POLLFREQUENZ dabei: DB0AVH-4 fuenf Polls in 23m55s, also rund
+5 Minuten - das ist POLLINTERVAL.  DB0BLO kam auf sechs in 23m 4s; die
+ersten Werte nach dem Verbindungsaufbau folgen dichter, danach stellt sich
+der Takt ein.  Fuer die Umrechnung Polls -> Stunden oben ist 5 Minuten also
+der richtige Ansatz.
+
 DER EIGENTLICHE MANGEL IST ABER NICHT DIE ANFANGSTRAEGHEIT.  Ein Mittelwert
 ueber die ganze Vorgeschichte VERGISST NIE; seine Zeitkonstante waechst mit
 jedem Poll.  Nach zwei Tagen braucht eine ECHTE Aenderung der Strecke wieder
