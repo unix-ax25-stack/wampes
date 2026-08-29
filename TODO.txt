@@ -6215,6 +6215,28 @@ WAS NOCH FEHLT:
   * DAS P AUF DEM LETZTEN I-RAHMEN statt als eigenes RR - spart einen Rahmen
     je Zug.  lapb_output() muesste dafuer wissen, welcher der letzte des
     Zuges ist.
+
+    DIE SPEZIFIKATION SCHREIBT ES NICHT VOR (Thomas' Frage).  Vorgeschrieben
+    ist die Asymmetrie durch AX.25: ein I-Rahmen ist IMMER ein Kommando, nur
+    S- und U-Rahmen koennen Antworten sein und damit das F tragen.  Also
+    darf ein Master, der die Transaktion eroeffnet, das P auf einen I-Rahmen
+    legen - Daten und Kanaluebergabe in einem -, waehrend ein Slave dafuer
+    einen S-Rahmen braucht.  Steht so schon in doc/DAMA-SLAVE.md.
+
+    TNN macht genau das, sdi() in l2tx.c:
+
+        txfPF = 0;                     /* normalerweise ohne POLL      */
+        if (Fenster voll || nichts mehr zu senden)
+          if (dama(lnkpoi->liport))
+            txfPF = L2CPF;             /* letztes Frame mit POLL!      */
+
+    und sendet einen eigenen Poll nur, wenn damatx() nichts erzeugt hat.
+
+    Unser eigenes RR ist auf der Leitung NICHT falsch - der Slave bekommt so
+    oder so ein Kommando mit P, und unser Slave nimmt auch ein I mit P an
+    (dama_poll_begin() prueft Kommando+PF).  Es kostet einen Rahmen je Zug.
+    Und es faellt erst mit Verkehr auf: hat der Master nichts zu senden, ist
+    es ohnehin RR(P).
   * GEGEN TNNs SLAVE (der hinter /*#define DAMASLAVE*/ liegt und von seinen
     Autoren unvollstaendig genannt wird) - das ist Thomas' zweite Haelfte des
     Pruefmassstabs, und der schwaechere Zeuge von beiden.
