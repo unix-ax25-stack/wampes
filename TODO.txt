@@ -5997,6 +5997,34 @@ WAS OFFEN BLEIBT:
   * FESTNAGELN (call auf mac) ist nicht gebaut - siehe unten, es wollte
     niemand.
 
+ZWEI TAPS IN EINER BRIDGE - der hypothetische Fall (Thomas, 2026-08-29).
+Nachgesehen: "attach ethertap" ist dafuer HALB gebaut, und die kaputte
+Haelfte ist das Senden.
+
+  EMPFANGEN wuerde gehen.  ethertap_recv() prueft nur den Ethertype (0x08ff)
+  und niemals die Zieladresse, gibt also alles nach oben, was die Bridge
+  hereinreicht.
+  SENDEN nicht.  ethertap_send_bpq() schreibt einen FESTEN Kopf: Ziel ist
+  edv->hwaddr_remote, und das ist die MAC des EIGENEN tap-Geraets, beim
+  attach ermittelt.  Genau richtig, solange der Gegenpart der Kernel
+  derselben Maschine ist - in einer Bridge landet der Rahmen damit aber beim
+  lokalen Host und nie beim zweiten tap.  (Die Quelle ist uebrigens
+  fe:fe: plus die letzten vier Oktette derselben MAC, auch fest.)
+
+WAS ES KOSTEN WUERDE, falls es jemand braucht: dieselben zwei Aufrufe wie im
+bpqether-Treiber, axroute_mac_learn() beim Empfangen und axroute_mac_get()
+beim Senden, und als RUECKFALL der Broadcast statt hwaddr_remote.  Das
+Lernen traegt dort sogar, weil die erfundene Quelladresse konstant ist und
+die Bridge sie ihrerseits lernt.
+
+WARUM ES TROTZDEM NICHT GEBAUT IST: der Rueckfall waere eine
+Verhaltensaenderung an einem Treiber, der tut, was er soll - heute geht der
+Rahmen gezielt an den Kernel, danach an alle.  Und fuer den Fall, dass
+mehrere Partner an einem Segment haengen, gibt es seit 2026-08-29 das
+richtige Werkzeug: "attach bpqether" auf die Bridge oder auf ein
+veth-Paar, mit Lernen und Broadcast-Rueckfall von Haus aus.  "attach
+ethertap" bleibt der schlanke Punkt-zu-Punkt-Treiber zum Kernel.
+
 
 WOFUER.  Wir machen viel mit HAMNET, also IP.  User und Linkpartner liessen
 sich zwar ueber axip/axudp zufuehren, aber BPQether hat zwei Vorteile, und der
