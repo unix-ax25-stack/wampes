@@ -278,27 +278,29 @@ void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
  * UI-frames will reduce the throughput to the CSMA value" - faellt damit weg.
  * Also: kurz warten, ob ein Fenster kommt, und sonst senden wie bisher.
  *
- * MIT EINER FRIST, und das ist der Unterschied zu einem Tor.  Kommt kein
- * Poll - weil wir keine Verbindung haben, weil der Master schweigt, weil wir
- * gar nicht in seiner Liste stehen -, geht der Rahmen trotzdem.  Ein
- * unbegrenztes Warten waere die Aenderung an der Entscheidung, die hier
- * gerade nicht getroffen wird.
+ * GEWARTET WIRD AUF DEN POLL, nicht auf eine Uhr.  Eine kurze eigene Frist
+ * war der erste Entwurf und war falsch (Thomas): ist ein Master in Kraft,
+ * dann haben wir eine Verbindung - dama_in_force() speist sich aus
+ * lapb_input(), also aus Rahmen, die bei uns ENDEN -, und dann werden wir
+ * auch gepollt.  Auf einem 1k2-Kanal liegt der Poll-Abstand aber leicht
+ * ueber zwei Sekunden; eine Frist in dieser Groessenordnung haette fast
+ * immer zuerst zugeschlagen, und die Sache waere ins Leere gelaufen.
  *
- * ZWEI PIDs GEHEN SOFORT, beide auf Thomas' Entscheidung:
+ * Der Notausgang ist deshalb der WACHHUND, und nicht eine zweite Zahl:
+ * verstummt der Master, faellt dama_in_force(), es kommt kein Fenster mehr,
+ * und dann muss die Schlange leer.  Der Zeitgeber laeuft genau so lange -
+ * "ifconfig <iface> damatimeout" stellt beides zugleich.
  *
- *   ARP     eine verzoegerte Anfrage verzoegert JEDEN IP-Aufbau ueber den
- *           Port.  Und wer auf einem DAMA-Kanal IP im Datagramm-Modus
- *           faehrt, hat seinen Partner konfiguriert - dann entsteht die
- *           Anfrage erst gar nicht.
- *   NET/ROM ein Nodes-Rundspruch sind viele Rahmen auf einmal.  Und
- *           Routing-Information, deren Zeitpunkt ihre Bedeutung ist, soll
- *           nicht auf eine Zeitscheibe warten.
+ * NET/ROM GEHT SOFORT: ein Nodes-Rundspruch sind viele Rahmen auf einmal,
+ * und Routing-Information, deren Zeitpunkt ihre Bedeutung ist, soll nicht
+ * auf eine Zeitscheibe warten.  ARP steht hier NICHT mehr - das ist an der
+ * Quelle geloest, "dama slave" schaltet das Fragen auf dem Port ab
+ * (iface->noarp), und was nicht entsteht, muss auch nicht gehalten werden.
  *
  * Der Rest - Baken, APRS, IP ueber UI, was am Dienstsocket als Datagramm
- * hereinkommt - wartet die Frist ab.
+ * hereinkommt - wartet auf das Fenster.
  */
 
-#define DAMA_UI_HOLD    2000L           /* ms; siehe oben, kurz gehalten */
 #define DAMA_UI_MAX     8               /* mehr wird nicht gestapelt */
 
 struct dama_ui {
@@ -425,13 +427,13 @@ int dama_defer_ui(struct iface *ifp, struct mbuf **bpp)
 		return 0;
 	if ((pid = dama_ui_pid(*bpp)) < 0)
 		return 0;
-	if (pid == PID_ARP || pid == PID_NETROM)
+	if (pid == PID_NETROM)
 		return 0;
 	up = dama_ui_port(ifp, 1);
 	if (up->n >= DAMA_UI_MAX)
 		return 0;
 	if (!up->n) {
-		set_timer(&up->t, DAMA_UI_HOLD);
+		set_timer(&up->t, dama_watchdog(ifp) * 1000L);
 		start_timer(&up->t);
 	}
 	enqueue(&up->q, bpp);
@@ -512,6 +514,23 @@ int ifdama(int argc, char *argv[], void *p)
 	 * this port sends.
 	 */
 	ifp->dama_heard = 0;
+	/* UND DAS FRAGEN NACH ARP GEHT AUS (Thomas).  Eine ARP-Anfrage ist ein
+	 * Rundspruch an QST; auf einem DAMA-Kanal kostet das den Kanal, und
+	 * wer dort IP im Datagramm-Modus faehrt, hat seinen Partner ohnehin
+	 * eingetragen - dann entsteht sie erst gar nicht.  Gesagt wird es,
+	 * weil eine Nebenwirkung, die niemand sieht, die schlechtere Art ist,
+	 * Voreinstellungen zu treffen; und zurueckgenommen ist sie mit einer
+	 * Zeile.  Antworten tun wir weiter.
+	 */
+	if (!ifp->noarp) {
+		ifp->noarp = 1;
+		printf("%s: arp requests switched off - a request is a "
+		       "broadcast to QST, and it\n"
+		       "  costs the channel; a partner that is configured "
+		       "needs none.  \"ifconfig %s\n"
+		       "  arp on\" puts it back.  Incoming requests are "
+		       "answered either way.\n", ifp->name, ifp->name);
+	}
 	return 0;
 }
 
@@ -541,7 +560,8 @@ void dama_show(struct iface *ifp)
 {
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, master ", dama_watchdog(ifp));
+	printf("           dama slave, timeout %ds, arp %s, master ",
+	       dama_watchdog(ifp), ifp->noarp ? "off" : "on");
 	if (dama_in_force(ifp)) {
 		char buf[AXBUF];
 		printf("%s", pax25(buf, ifp->dama_master));

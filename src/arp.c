@@ -50,6 +50,15 @@ struct mbuf **bpp               /* IP datagram to be queued if unresolved */
 		ntohip(&ip,bpp);
 		icmp_output(&ip,*bpp,ICMP_QUENCH,0,NULL);
 		free_p(bpp);
+	} else if(iface != NULL && iface->noarp){
+		/* Auf diesem Port ist das Fragen abgeschaltet - siehe
+		 * iface->noarp.  Dieselbe Antwort wie im Filterfall darunter:
+		 * lieber sofort "nicht erreichbar" als ein Datagramm, das bis
+		 * zum PENDING-Timer in der Queue haengt.
+		 */
+		ntohip(&ip,bpp);
+		icmp_output(&ip,*bpp,ICMP_DEST_UNREACH,ICMP_HOST_UNREACH,NULL);
+		free_p(bpp);
 	} else if(!ip_might_learn(target,LEARN_ARP,iface)){
 		/* GAR NICHT ERST FRAGEN.  Duerfen wir die Antwort nicht
 		 * eintragen, dann fuehrt die Anfrage zu nichts: die Gegenseite

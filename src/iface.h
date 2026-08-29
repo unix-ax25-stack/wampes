@@ -123,6 +123,21 @@ struct iface {
 	int32 lastsent;         /* Clock time of last send */
 	int32 lastrecv;         /* Clock time of last receive */
 
+	/* ARP-ANFRAGEN AUF DIESEM PORT.  0 = erlaubt, wie es immer war.
+	 *
+	 * Auf einem DAMA-Kanal wird er beim "dama slave" abgeschaltet
+	 * (Thomas): eine ARP-Anfrage ist ein Rundspruch an QST, sie kostet
+	 * den Kanal, und wer dort IP im Datagramm-Modus faehrt, hat seinen
+	 * Partner ohnehin eingetragen - dann entsteht sie erst gar nicht.
+	 * Wer es anders will, schaltet es mit "ifconfig <iface> arp on"
+	 * wieder ein.
+	 *
+	 * Betroffen ist nur das FRAGEN.  Eine hereinkommende Anfrage
+	 * beantworten wir weiter: das kostet nichts, was nicht ohnehin
+	 * gesendet wuerde, und hilft der Gegenseite.
+	 */
+	int noarp;
+
 	int crccontrol;         /* CRC send control */
 	int crcfixed;           /* Set by "ifconfig <if> crc": stop autodetecting */
 #define CRC_OFF         0       /* Don't send CRC packets */

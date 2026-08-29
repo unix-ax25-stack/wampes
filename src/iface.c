@@ -36,6 +36,7 @@ static int ifencap(int argc,char *argv[],void *p);
 static int iftxqlen(int argc,char *argv[],void *p);
 int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
+static int ifarp(int argc,char *argv[],void *p);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
@@ -142,6 +143,11 @@ struct iface Encap = {
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
+	{ "arp",                  ifarp,          0,      2,
+	  "ifconfig <iface> arp on|off\n"
+	  "  Whether we ASK on this port.  An incoming request is answered\n"
+	  "  either way.  \"dama slave\" switches it off - see there.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "autoroute",            ifautoroute,    0,      2,
 	  "ifconfig <iface> autoroute on|off\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "digiarp",              ifdigiarp,      0,      2,
@@ -415,6 +421,22 @@ iflinkadr(int argc,char *argv[],void *p)
  * Schalter ohnehin nicht; das gehoert in den Filter (TODO.txt, "DREI REGELN
  * STATT NEUN").
  */
+
+static int
+ifarp(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(!strcmp(argv[1],"on") || !strcmp(argv[1],"yes"))
+		ifp->noarp = 0;
+	else if(!strcmp(argv[1],"off") || !strcmp(argv[1],"no"))
+		ifp->noarp = 1;
+	else {
+		printf("ifconfig %s arp on|off\n",ifp->name);
+		return 1;
+	}
+	return 0;
+}
 
 static int
 ifautoroute(int argc,char *argv[],void *p)
