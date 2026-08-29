@@ -110,7 +110,11 @@ struct bpq_auxdata {
 #define BPQ_LENLEN	2		/* the little endian length in front */
 #define BPQ_EXTRA	5		/* what that length counts on top */
 #define BPQ_MTU		256
-#define BPQ_MTU_MAX	(1500 - BPQ_LENLEN)
+/* The largest AX.25 FRAME that fits: an ethernet payload is 1500 octets and
+ * two of them are the length field in front.  Not the largest MTU - that is a
+ * different quantity, see the note at bpqether_attach().
+ */
+#define BPQ_FRAME_MAX	(1500 - BPQ_LENLEN)
 
 static const uint8 Ether_bcast[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -359,7 +363,7 @@ static void bpqether_recv(void *argp)
   struct mbuf *bp;
   struct msghdr msg;
   struct sockaddr_ll from;
-  uint8 buf[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  uint8 buf[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_FRAME_MAX];
   union {
     char buf[CMSG_SPACE(sizeof(struct bpq_auxdata))];
     struct cmsghdr align;
@@ -725,7 +729,7 @@ static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
   int l;
   int off;
   struct bpq_edv *edv;
-  uint8 frame[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_MTU_MAX];
+  uint8 frame[BPQ_HDRLEN + BPQ_TAGLEN + BPQ_LENLEN + BPQ_FRAME_MAX];
   const uint8 *dest;
 
   edv = (struct bpq_edv *) ifp->edv;
@@ -740,7 +744,7 @@ static int bpqether_send(struct iface *ifp, struct mbuf **bpp)
    */
   off = edv->vlan == BPQ_VLAN_NONE ? 0 : BPQ_TAGLEN;
 
-  l = pullup(bpp, frame + BPQ_HDRLEN + off + BPQ_LENLEN, BPQ_MTU_MAX);
+  l = pullup(bpp, frame + BPQ_HDRLEN + off + BPQ_LENLEN, BPQ_FRAME_MAX);
   if (l <= 0 || *bpp) {                 /* longer than we may carry */
     free_p(bpp);
     return -1;
@@ -829,8 +833,33 @@ int bpqether_attach(int argc, char *argv[], void *p)
     printf("attach bpqether: unexpected \"%s\"\n", argv[i]);
     return -1;
   }
-  if (mtu < 64 || mtu > BPQ_MTU_MAX) {
-    printf("attach bpqether: mtu %d is outside 64..%d\n", mtu, BPQ_MTU_MAX);
+  /* WHY THE CEILING IS ON THE FRAME AND NOT ON THE MTU (Thomas asked).
+   *
+   * The two are not the same size, and doc/AX25-MTU-SEGMENTATION.md puts it
+   * plainly: "The MTU does not decide what goes on the air; paclen does.
+   * What the MTU decides is WHO SPLITS the datagram."
+   *
+   * On a CONNECTED link an MTU of 1500 is perfectly reasonable here - the
+   * segmenter cuts the datagram into paclen-sized pieces and no frame ever
+   * approaches the ethernet limit.  That is the whole point of preferring
+   * segmentation to IP fragmentation, and it is why axip and tun take 1500
+   * as well.
+   *
+   * On the UI path there is no segmenter (axui_send() returns before it),
+   * so one datagram becomes one frame and the AX.25 header - 16 octets, more
+   * with digipeaters - comes on top.  An MTU close to the ceiling therefore
+   * fits on connected links and not on UI ones, and that is the operator's
+   * call rather than ours.
+   *
+   * So what is declared is what the PORT CAN CARRY, in ifp->framemax, the
+   * way sixpack.c does it.  ifmtu() then refuses an impossible setting with
+   * the node's own words, and "ifconfig verbose" says the number out loud -
+   * instead of the driver dropping frames without a sound.
+   */
+  if (mtu < 64 || mtu > BPQ_FRAME_MAX) {
+    printf("attach bpqether: mtu %d is outside 64..%d - an ethernet payload "
+	   "is 1500 octets\n         and two of them are the length field\n",
+	   mtu, BPQ_FRAME_MAX);
     return -1;
   }
   if (if_lookup(label ? label : argv[1]) != NULL) {
@@ -867,6 +896,7 @@ int bpqether_attach(int argc, char *argv[], void *p)
   ifp->hwaddr = (uint8 *) mallocw(AXALEN);
   addrcp(ifp->hwaddr, Mycall);
   ifp->mtu = mtu;
+  ifp->framemax = BPQ_FRAME_MAX;
   setencap(ifp, "AX25UI");
   ifp->edv = edv;
   ifp->send = axui_send;
