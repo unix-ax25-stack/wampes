@@ -6196,6 +6196,16 @@ sie gelten fuer JEDES fremde PID, und das naechste heisst anders.
 DAMA-MASTER (Thomas, 2026-08-28)
 ----------------------------------------------------------
 
+DER TEST, DEN THOMAS DAZU HABEN WILL (2026-08-29): einmal mit DIGIPEAT
+MODE 1 gegen TNN als Master fahren und sehen, wie der sich verhaelt, wenn wir
+klassisch wiederholen statt hop-to-hop.  Erwartung nach dem Lesen: der
+Benutzer weiss nichts von DAMA und sendet, wann er will, wir wiederholen
+sofort - also unaufgeforderte Sendungen.  TNN meckert POLLS an (polDAMA),
+nicht das; interessant ist also, ob es ueberhaupt auffaellt und was der
+Durchsatz macht.  Dasselbe danach gegen UNSEREN Master, damit die beiden
+vergleichbar sind - das ist der eigentliche Zweck.
+
+
 Der Slave steht und ist gegen TNNs Master gemessen (doc/DAMA-SLAVE.md).  Was
 fehlt, ist die andere Rolle.
 
