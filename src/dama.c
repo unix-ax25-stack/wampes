@@ -70,6 +70,8 @@
 
 /*---------------------------------------------------------------------------*/
 
+void dama_ui_flush(struct iface *ifp);   /* weiter unten, siehe dort */
+
 static int dama_watchdog(const struct iface *ifp)
 {
 	return ifp->dama_watchdog > 0 ? ifp->dama_watchdog : DAMA_WATCHDOG_DEFAULT;
@@ -93,6 +95,14 @@ static int dama_in_force(struct iface *ifp)
 		return 1;
 	ifp->dama_heard = 0;
 	ifp->dama_lost++;
+	/* HIER, und nicht erst wenn ein Zeitgeber es merkt: das ist der
+	 * Augenblick, in dem feststeht, dass kein Fenster mehr kommt.  Was
+	 * gewartet hat, hat ab jetzt nichts mehr, worauf es warten koennte
+	 * (Thomas).  Ohne das haette ein Rahmen, der kurz vor dem Verstummen
+	 * des Masters eingereiht wurde, bis zu einer ZWEITEN Wachhundzeit
+	 * gelegen - die seine begann ja erst mit dem Einreihen.
+	 */
+	dama_ui_flush(ifp);
 	return 0;
 }
 
@@ -282,14 +292,20 @@ void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
  * war der erste Entwurf und war falsch (Thomas): ist ein Master in Kraft,
  * dann haben wir eine Verbindung - dama_in_force() speist sich aus
  * lapb_input(), also aus Rahmen, die bei uns ENDEN -, und dann werden wir
- * auch gepollt.  Auf einem 1k2-Kanal liegt der Poll-Abstand aber leicht
- * ueber zwei Sekunden; eine Frist in dieser Groessenordnung haette fast
- * immer zuerst zugeschlagen, und die Sache waere ins Leere gelaufen.
+ * auch gepollt.  Wie lange das dauert, sagt der Kanal: ein Master pollt
+ * seine Stationen reihum, und bei sechzehn Stationen zu je zwei bis fuenf
+ * Sekunden ist man erst nach einer Minute wieder dran (Thomas).  Eine Frist
+ * von Sekunden haette also fast immer zuerst zugeschlagen und die Sache
+ * waere ins Leere gelaufen.  Fuer eine Bake ist eine Minute der richtige
+ * Preis - fuer ARP und NET/ROM waere er der falsche, und genau deshalb
+ * warten die nicht mit.
  *
- * Der Notausgang ist deshalb der WACHHUND, und nicht eine zweite Zahl:
- * verstummt der Master, faellt dama_in_force(), es kommt kein Fenster mehr,
- * und dann muss die Schlange leer.  Der Zeitgeber laeuft genau so lange -
- * "ifconfig <iface> damatimeout" stellt beides zugleich.
+ * Der Notausgang ist deshalb der WACHHUND und keine zweite Zahl: verstummt
+ * der Master, faellt dama_in_force(), es kommt kein Fenster mehr - und DORT
+ * wird geleert, im selben Augenblick, in dem das feststeht.  Der Zeitgeber
+ * daneben laeuft dieselbe Zeit und ist nur der Rueckhalt fuer einen Port,
+ * den ueberhaupt niemand mehr fragt.  "ifconfig <iface> damatimeout" stellt
+ * beides zugleich, und das ist richtig so: es ist derselbe Sachverhalt.
  *
  * NET/ROM GEHT SOFORT: ein Nodes-Rundspruch sind viele Rahmen auf einmal,
  * und Routing-Information, deren Zeitpunkt ihre Bedeutung ist, soll nicht
@@ -524,12 +540,15 @@ int ifdama(int argc, char *argv[], void *p)
 	 */
 	if (!ifp->noarp) {
 		ifp->noarp = 1;
-		printf("%s: arp requests switched off - a request is a "
-		       "broadcast to QST, and it\n"
-		       "  costs the channel; a partner that is configured "
-		       "needs none.  \"ifconfig %s\n"
-		       "  arp on\" puts it back.  Incoming requests are "
-		       "answered either way.\n", ifp->name, ifp->name);
+		printf("%s: arp requests switched off - on a DAMA channel a "
+		       "request is a broadcast\n"
+		       "  to QST and costs the channel.  Enter the partners "
+		       "instead:\n"
+		       "        arp add <ip> ax25 <call>\n"
+		       "  and none is needed.  \"ifconfig %s arp on\" puts it "
+		       "back; incoming\n"
+		       "  requests are answered either way.\n",
+		       ifp->name, ifp->name);
 	}
 	return 0;
 }
