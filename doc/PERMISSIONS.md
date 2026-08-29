@@ -145,8 +145,8 @@ permission on the directory.
 
 **The answer is `chown`, not `chmod`.**  A node running as root needs
 nothing at all - root writes whatever the bits say, and `root:hams 0750` is
-the ordinary case.  A node under a normal account wants the directory to BELONG
-to that account, with the mode unchanged:
+the ordinary case.  A node under a normal account wants the directory to
+BELONG to that account, with the mode unchanged:
 
     drwxr-x---  thomas:hams  /tcp/sockets
 
