@@ -812,8 +812,22 @@ showiface(struct iface *ifp, int verbose)
 	if(verbose && ifp->attached_as != NULL)
 		printf("           attached as %s\n",ifp->attached_as);
 	if(verbose)
-		printf("           trace 0x%x netmask 0x%08lx broadcast %s\n",
-		 ifp->trace,(unsigned long)ifp->netmask,inet_ntoa(ifp->broadcast));
+		/* DIE NETZMASKE IST int32 UND HAELT -1 (Loopback und Encap
+		 * setzen sie so, jedes attach schreibt 0xffffffffUL hinein).
+		 * "(unsigned long)" darauf ergibt auf LP64 sechzehn f - auf
+		 * 32 Bit war "unsigned long" genau 32 Bit und es stimmte.
+		 * Eine Regression der 64-Bit-Umstellung, von Thomas
+		 * vorhergesagt und hier bestaetigt: erst nach uint32
+		 * wandeln, dann nach unsigned long.
+		 *
+		 * Und der Trace ist 16 Bit breit - das hoechste Flag ist
+		 * IF_TRACE_RAW 0x2000 -, also "%04x" statt "%x": aus "0x0"
+		 * sieht man nicht, wie viele Stellen es haette.
+		 */
+		printf("           trace 0x%04x netmask 0x%08lx broadcast %s\n",
+		 (unsigned) ifp->trace,
+		 (unsigned long)(uint32)ifp->netmask,
+		 inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
 	if(verbose && is_ax25(ifp))
@@ -862,7 +876,15 @@ showiface(struct iface *ifp, int verbose)
 	 * once - three times "(node)" in one line said the same and read like
 	 * part of the number.
 	 */
-	if(is_ax25(ifp) || ifp->framemax){
+	/* "ax25:" NUR AUF EINEM PORT, DER AX.25 SPRICHT (Thomas).  Auf dem
+	 * NET/ROM-Pseudoport standen sie ebenfalls, weil er ein framemax hat -
+	 * und dort sind sie falsch: ueber NET/ROM wird kein AX.25 gesprochen,
+	 * die darunterliegenden Ports fuehren jeder ihr eigenes paclen und
+	 * maxframe, und was hier eingestellt wuerde, bewirkte nichts.  Die
+	 * Groessengrenze dagegen gilt sehr wohl und steht deshalb weiter
+	 * unten, ohne dieses Praefix.
+	 */
+	if(is_ax25(ifp)){
 		int inherited = !ifp->paclen || !ifp->maxframe || !ifp->emaxframe;
 
 		printf("           ax25: paclen %d%s maxframe %d%s emaxframe %d%s",
@@ -879,10 +901,16 @@ showiface(struct iface *ifp, int verbose)
 		 */
 		if(inherited)
 			printf("                 (* = the node's setting, not this port's)\n");
-		if(ifp->framemax)
-			printf("           ax25: this port carries at most %d octets\n",
-			 ifp->framemax);
 	}
+
+	/* Die Groessengrenze gilt fuer JEDEN Port, der eine hat - auch fuer
+	 * den NET/ROM-Pseudoport, wo sie das einzige der frueheren
+	 * "ax25:"-Zeilen ist, das dort ueberhaupt etwas bedeutet.  Also ohne
+	 * dieses Praefix und ausserhalb des Blocks.
+	 */
+	if(ifp->framemax)
+		printf("           link: carries at most %d octets\n",
+		 ifp->framemax);
 
 	if(!is_ax25(ifp))
 		return;
