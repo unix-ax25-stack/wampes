@@ -1085,3 +1085,45 @@ reaktionsfaehig.
 
 Das ist kein Geschmacksunterschied.  Wer die Vorgeschichte nie vergisst,
 misst irgendwann die Vergangenheit statt der Leitung.
+
+
+DB0AVH-4 IST PC/FLEXNET32 - DIE GLAETTUNG IST FLEXNETS EIGENE
+=============================================================
+
+Thomas: DB0AVH-4 laeuft nicht auf RMNC-Hardware, sondern ist PC/FlexNet32.
+Beides stammt vom selben Entwickler - dem, der auch das FlexNet-Protokoll
+geschaffen hat.
+
+DAMIT IST "600/n + wahr" KEINE EIGENHEIT EINER ALTEN HARDWARE.  Die Regel
+ist in ZWEI unabhaengigen Implementierungen desselben Autors auf voellig
+verschiedenen Plattformen bestaetigt:
+
+    DB0BLO    RMNC-Firmware      91 = 600/7 + 6
+    DB0AVH-4  PC/FlexNet32      101 = 600/6 + 1   und   151 = 600/4 + 1
+
+Es ist also FlexNets eigenes Verhalten, und die Einschwingzeit von rund
+600 Polls trifft die Referenzimplementierung selbst.  Weiter oben steht das
+noch als "der RMNC mittelt" - so gelesen ist es zu eng.
+
+FUER DAS GESPRAECH MIT DEM ENTWICKLER ist das der gewichtigere Punkt, noch
+vor den drei TNN-Sachen: ein Mittelwert ueber die ganze Vorgeschichte wird
+mit der Laufzeit einer Verbindung immer traeger.  Nach einigen Tagen meldet
+ein Link seinen alten Wert auch dann noch, wenn die Strecke sich laengst
+geaendert hat - und dieser Wert ist ein additiver Sockel unter jedem Ziel
+dahinter.
+
+WAS UNS DAZU NOCH FEHLT, damit nichts behauptet wird, was nicht gemessen
+ist: die 6 bei 606 ms und die 1 bei 4 ms hat XNET gemeldet, also ein
+Nachbau.  Von der Originalimplementierung haben wir bisher nur 600 gesehen
+(der Vorgabewert, nie gemessen) und 0 (unterhalb einer Einheit).  Dass sie
+dieselbe Einheit meint, ist hochwahrscheinlich - sonst wuerden xnets Zahlen
+im ganzen Netz falsch verrechnet -, aber gemessen ist es nicht.
+
+Zwei Wege, das zu schliessen:
+
+  * "tc qdisc add dev <if> root netem delay 300ms" auf den AXIP-Weg zu
+    DB0AVH-4.  Technisch viel einfacher als die serielle Leitung, weil kein
+    pty und keine Drossel noetig sind - aber es ist ein Link zu einem
+    fremden Standort.
+  * Die eine Frage an den Autor: volle Umlaufzeit oder halbe, und in
+    welcher Einheit?  Ein Satz Antwort ersetzt den ganzen Versuch.
