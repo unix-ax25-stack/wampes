@@ -495,3 +495,61 @@ unterscheiden.  Der Anhalte-Versuch gegen einen RMNC, der oben verabredet
 ist, bleibt also noetig.  Was der Mitschnitt zeigt, ist etwas anderes und
 auch nuetzlich: XNET und RMNC kommen auf DERSELBEN Strecke auf denselben
 Wert - sie sind untereinander einig, und wir sind die, die halbieren.
+
+
+================================================================
+DER VERSUCH, DER rtt/2 ENTSCHEIDET - VORBEREITET 2026-08-30
+================================================================
+
+Alle bisherigen Mitschnitte konnten die Frage nicht beantworten, und immer
+aus demselben Grund: die Strecken waren zu schnell.  FlexNet meldet in
+Einheiten von 100 ms, und bei 32 ms Umlaufzeit meldet jeder 0 - ob die Zahl
+die ganze Umlaufzeit meint oder die halbe, steht da nicht drin.
+
+THOMAS' IDEE: die Strecke kuenstlich langsam machen.  Auf db0blo haengt der
+RMNC ueber USB mit 115200 an /dev/ttyS0, und XNET (linuxsnet) haelt diesen
+Port.  Schiebt man ein Programm dazwischen, das byteweise und in konstanter
+Rate weiterreicht, wird aus der Frage eine Ablesung:
+
+    xnet  <->  /dev/xnetpty  [slowpty]  /dev/ttyS0  <->  RMNC
+
+    bps    Poll 201 B    Umlauf     ganz -> T    halb -> T
+    1200      1,675 s     1,717 s          17            9
+     600      3,350 s     3,433 s          34           17
+     300      6,700 s     6,867 s          69           34
+
+MIT 1200 ANFANGEN.  Bei 600 braucht der Poll allein 3,35 s, und T1 steht per
+Vorgabe auf 5 s - eine Wiederholung wuerde die Messung verschmutzen.  17
+gegen 9 ist eindeutig genug.
+
+DAS WERKZEUG IST testtools/slowpty.py (nicht versioniert).  Gemessen auf
+macOS: 300, 1200, 2400 und 4800 bps auf 0,1 Prozent genau; 9600 schafft der
+byteweise Weg nicht, und der Selbsttest sagt es.  Der Fahrplan holt einen
+Rueckstand EIN, statt ihn zu verzeihen - vorher kamen nur 83 bis 92 Prozent
+der bestellten Rate heraus, und die Messung waere um denselben Betrag falsch
+gewesen.
+
+UND DAS WICHTIGSTE: slowpty sieht jedes Byte, also muss man keinem der
+beiden Knoten glauben.  "--dump" schreibt jeden Schub mit Richtung, Laenge
+und Zeitstempel mit; nachgestellt mit 201 Byte hin und 5 zurueck:
+
+    0.009  -->    201 B  Dauer  1.667 s
+    2.188  <--      5 B  Dauer  0.035 s
+
+Die Umlaufzeit, wie der Sender sie erlebt, ist damit ablesbar: vom ersten
+Byte des Polls bis zum letzten der Antwort.  Was XNET und RMNC daneben in
+ihrem "=>l" melden, ist entweder diese Zahl oder ihre Haelfte - und dann ist
+es entschieden.
+
+WAS AUF db0blo ZU TUN IST:
+
+  1. xnet anhalten (es haelt /dev/ttyS0, lsof zeigt fd 5).
+  2. slowpty.py --dev /dev/ttyS0 --bps 1200 --link /dev/xnetpty
+       --dump /tmp/flex.txt --stats 60
+  3. xnet auf /dev/xnetpty statt /dev/ttyS0 umstellen und starten.
+  4. Einen Poll abwarten (POLLINTERVAL 5 Minuten) oder erzwingen, dann an
+     BEIDEN Enden "=>l" ablesen und mit /tmp/flex.txt vergleichen.
+
+ZU BEDENKEN: der Link ist waehrend des Umbaus unten und waehrend des
+Versuchs langsam.  Es ist ein Knoten im Betrieb, also Thomas' Entscheidung,
+wann.
