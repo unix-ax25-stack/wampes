@@ -6214,6 +6214,39 @@ Der Verlustrelais-Aufbau aus dem Slave-Test traegt hier genauso
 (testtools/lossrelay.py), und testtools/damachan.py hat die Gegenseite
 schon einmal gespielt.
 
+WEM GEHOERT EIN DIGIPEATETER RAHMEN? (Thomas, 2026-08-29) - OFFENE FRAGE,
+und sie betrifft BEIDE Rollen, also auch den fertigen Slave.
+
+DER FALL: wir sind DAMA-Slave auf Kanal A und wiederholen einen Benutzer,
+der von einem ANDEREN Port kommt.  Auf dem DAMA-Kanal steht dann
+
+    Quelle    das Rufzeichen des Benutzers - er ist der Absender
+    Digi      WIR, mit gesetztem Wiederholt-Bit
+    gesendet  von uns
+
+Also: das Wiederholt-Bit traegt unser Rufzeichen, der Rahmen aber ein
+fremdes als Quelle.
+
+WAS DER MASTER DAZU SAGT, ist die Frage, und sie hat zwei Haelften:
+
+  * ALS SLAVE - duerfen wir so einen Rahmen in UNSEREM Sendefenster
+    losschicken, oder erst, wenn der Master das Rufzeichen des BENUTZERS
+    pollt?  Bei uns entscheidet das heute ifp->dama_window (dama.c), und
+    das haengt am Poll an uns; die Quelle des Rahmens spielt keine Rolle.
+    Ist das richtig?
+  * ALS MASTER - wen tragen wir in die Poll-Liste ein, wenn wir so einen
+    Rahmen hoeren?  Die Quelle waere falsch: der Benutzer ist gar nicht auf
+    diesem Kanal, und ein Poll an ihn verfiele ungenutzt.  Der letzte
+    Wiederholer waere richtig, denn der hat gesendet.  Aber tut ein echter
+    Master das auch?
+
+WORAN ES ZU PRUEFEN IST: TNNs src/l2dama.c haben wir im Baum (tnn-lab), und
+dort steht der Master.  Die Frage ist konkret genug, um sie am Quelltext zu
+beantworten, statt sie zu messen - und danach am Verlustrelais gegenzuprobe
+n.  Erst dann waere klar, ob unser Slave an dieser Stelle schon richtig
+liegt oder es nur noch nie aufgefallen ist, weil im Labor niemand ueber uns
+digipeatet hat.
+
 WER DARF WELCHES RUFZEICHEN - SO_PEERCRED AM DIENSTSOCKET (Thomas,
 2026-08-29)
 ----------------------------------------------------------
