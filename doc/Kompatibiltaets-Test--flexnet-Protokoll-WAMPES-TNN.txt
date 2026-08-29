@@ -581,3 +581,90 @@ WAS AUF db0blo ZU TUN IST:
 ZU BEDENKEN: der Link ist waehrend des Umbaus unten und waehrend des
 Versuchs langsam.  Es ist ein Knoten im Betrieb, also Thomas' Entscheidung,
 wann.
+
+ERSTER LAUF AUF DB0BLO (2026-08-30, 00:35 bis 00:40)
+====================================================
+
+Der Versuch lief, und er ist GESCHEITERT - aber nicht ergebnislos.
+
+WAS NICHT KLAPPTE: die Strecke war zu langsam fuer die Timer der beiden
+Knoten.  Im Mitschnitt vierfach wiederholte I-Rahmen, REJ, DM, dann
+
+    Trash   :(66) LINK FAILURE with 1:DB0BLO - 00:35:53
+    Trash   :(141) LINK FAILURE with 1:DB0BLO - 00:39:44
+
+Der RMNC meldete durchgehend FLEX_RPRT "1600", also delay 600 -
+DEFAULTDELAY.  Er hat nie eine gueltige Messung zustande gebracht.
+
+WARUM ES SICH SELBST VERSTAERKT: T1 ist an beiden Enden adaptiv und stand
+von der Strecke mit 115200 praktisch auf null.  Damit die Schaetzung
+wachsen kann, braucht sie einen ERFOLGREICHEN Austausch - den es nicht
+gibt, weil jeder Versuch vorher ablaeuft.  Der Link kommt aus dem Loch
+nicht heraus.  Wer drosseln will, muss also stufenweise heruntergehen
+(4800, dann 2400) oder T1 vorher von Hand hochsetzen.
+
+DIE RECHNUNG MIT DEM ECHTEN RAHMEN.  Der XNET-Poll ist 241 FlexNet + 1
+PID + 1 ctl + 14 Adresse + Rahmung, rund 259 Oktette - vorher hatte ich
+nur die 241 gerechnet und die Zeiten damit zu klein angesetzt:
+
+      bps    Poll einfach   Umlauf     ganz -> T   halb -> T
+     1200        2,16 s      2,35 s        24          12
+     2400        1,08 s      1,18 s        12           6
+     4800        0,54 s      0,59 s         6           3
+
+4800 entscheidet die Frage schon (6 gegen 3) und ist mit 0,59 s Umlauf
+kurz genug, dass kein T1 stolpert.  2400 hat mehr Abstand zwischen den
+beiden Zahlen und duerfte auch noch tragen.
+
+WAS DER LAUF TROTZDEM BEWIESEN HAT: derselbe FLEX_INIT-Unterschied wie
+bei DB0AAT, jetzt an einem ZWEITEN RMNC an einem anderen Standort:
+
+    DB0BLO   -> DB0BLO-4   [6]   30 33 20 20 21 0D   "03  !"
+    DB0BLO-4 -> DB0BLO     [5]   30 3F 25 21 0D      "0?%!"
+    FlexLink:Init fm DB0BLO/3 (20 20)
+
+RMNC sechs Oktette mit zwei Leerzeichen - unsere Form -, XNET fuenf mit
+0x25, und xnets eigener Decoder nennt die beiden Leerzeichen wieder
+ausdruecklich.  Ebenso die Poll-Groessen: RMNC 201, XNET 241.  Damit ist
+doc/FLEXNET-SSID.md doppelt und unabhaengig bestaetigt.
+
+
+ZWEI FEHLER IN slowpty, VON THOMAS' VERDACHT AUFGEDECKT
+=======================================================
+
+Sein Satz nach dem Lauf war "ich glaube wir machen nicht 1k2 sondern ein
+Zehntel".  Belegen liess sich das nicht - 7815 B * 10 bit / 360 s = 217
+bps, und eine Drossel auf 120 bps kann keine 217 liefern.  Aber die Frage
+war berechtigt, denn die Statistikzeile MISCHTE Sendezeit und Leerlauf und
+konnte darum weder das eine noch das andere zeigen.  Beim Nachsehen kamen
+zwei echte Fehler heraus:
+
+  1. "--bps 1200,75" lief in BEIDEN Richtungen mit 1200.  Die Rueckrate
+     wurde eingelesen, in der Startzeile ausgegeben und dann nie benutzt -
+     "down = Pacer(bps, bits)" statt bps_back.  Eine Startzeile, die luegt,
+     ist schlimmer als gar keine.
+
+  2. Byteweise LESEN war falsch.  Auf einem pty kostet es nichts, an einem
+     echten Geraet dagegen alles: ein UART haelt ankommende Bytes bis zum
+     FIFO-Trigger zurueck, ein USB-Wandler bis zum latency timer, oft
+     16 ms.  Je Byte einmal lesen heisst, diese Frist JE BYTE zu zahlen -
+     bei 16 ms hoechstens 62 Byte/s, also rund 620 bps, ganz gleich was
+     --bps sagt.  Genau ein solcher Deckel saehe aus wie "wir sind zu
+     langsam".  Jetzt wird in Buendeln gelesen und weiterhin byteweise
+     getaktet geschrieben; die Verzoegerung entsteht also nach wie vor
+     beim Durchreichen.
+
+Der Selbsttest hat keinen der beiden gefunden, und das ist der Punkt: er
+laeuft ueber zwei Pseudoterminals, und ein pty hat weder eine zweite
+Richtung mit eigener Rate noch einen latency timer.  Wieder ein Pruefstand,
+der weniger kann als die Sache.
+
+DIE STATISTIKZEILE BELEGT JETZT IHRE RATE, statt sie zu behaupten:
+
+     3s  hin  240 B  1199 bps von 1200  (Schnitt 799)
+    12s  hin  1326 B  1200 bps von 1200  (Schnitt 1101)
+
+Links die im SCHUB erreichte Rate, rechts der alte Mittelwert ueber das
+Fenster.  Die Drossel laeuft die ganze Zeit exakt auf 1200, waehrend der
+Mittelwert von 799 auf 1101 wandert.  Wer den Mittelwert liest, verdaechtigt
+das Werkzeug.  Beim naechsten Lauf steht die Antwort in der Spalte "von".
