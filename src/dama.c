@@ -243,12 +243,203 @@ void dama_serve_others(struct iface *ifp, struct ax25_cb *polled)
 	if (ifp == NULL || polled == NULL || !ifp->dama_window)
 		return;
 
+	/* Vor den ANDEREN Verbindungen, was wartet - so steht xmit_damarl()
+	 * bei TNNs Slave auch vor der Link-Schleife.  Der Grund ist derselbe:
+	 * das Fenster ist die Gelegenheit, und ein UI-Rahmen, der sie
+	 * verpasst, wartet wieder eine ganze Runde.
+	 *
+	 * Die Antwort auf den Poll selbst ist trotzdem zuerst auf der
+	 * Leitung: die schickt die Zustandsmaschine, bevor lapb_input() hier
+	 * unten ankommt.  Gemessen sieht ein Master also RR, dann UI, dann
+	 * die uebrigen Verbindungen - alles in einem Fenster, und das ist,
+	 * worauf es ankommt.
+	 */
+	dama_ui_flush(ifp);
+
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
 		if (axp != polled && axp->iface == ifp &&
 		    addreq(axp->hdr.source, polled->hdr.source) &&
 		    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY))
 			lapb_output(axp);
 }
+
+/* UI IN DAS FENSTER LEGEN, WO EINES KOMMT - und nur dort.
+ *
+ * DAMA regelt verbundene Verbindungen.  Es VERBIETET nicht-DAMA nicht, es
+ * empfiehlt DAMA, und die Spezifikation nimmt Datagramme ausdruecklich aus
+ * der Poll-Disziplin heraus: "UI-frames originated by the node are no problem
+ * since all stations receive these frames" (doc/DAMA-SLAVE.md).  An dieser
+ * Entscheidung aendert sich nichts.
+ *
+ * Was sich aendert, ist eine Gelegenheit (Thomas): haben wir eine Verbindung
+ * und werden gepollt, dann sendet der Knoten in diesem Augenblick ohnehin,
+ * der Kanal gehoert ihm, und ein UI-Rahmen kostet dort NICHTS.  Genau der
+ * Verlust, den die Spezifikation im selben Absatz einraeumt - "the rare
+ * UI-frames will reduce the throughput to the CSMA value" - faellt damit weg.
+ * Also: kurz warten, ob ein Fenster kommt, und sonst senden wie bisher.
+ *
+ * MIT EINER FRIST, und das ist der Unterschied zu einem Tor.  Kommt kein
+ * Poll - weil wir keine Verbindung haben, weil der Master schweigt, weil wir
+ * gar nicht in seiner Liste stehen -, geht der Rahmen trotzdem.  Ein
+ * unbegrenztes Warten waere die Aenderung an der Entscheidung, die hier
+ * gerade nicht getroffen wird.
+ *
+ * ZWEI PIDs GEHEN SOFORT, beide auf Thomas' Entscheidung:
+ *
+ *   ARP     eine verzoegerte Anfrage verzoegert JEDEN IP-Aufbau ueber den
+ *           Port.  Und wer auf einem DAMA-Kanal IP im Datagramm-Modus
+ *           faehrt, hat seinen Partner konfiguriert - dann entsteht die
+ *           Anfrage erst gar nicht.
+ *   NET/ROM ein Nodes-Rundspruch sind viele Rahmen auf einmal.  Und
+ *           Routing-Information, deren Zeitpunkt ihre Bedeutung ist, soll
+ *           nicht auf eine Zeitscheibe warten.
+ *
+ * Der Rest - Baken, APRS, IP ueber UI, was am Dienstsocket als Datagramm
+ * hereinkommt - wartet die Frist ab.
+ */
+
+#define DAMA_UI_HOLD    2000L           /* ms; siehe oben, kurz gehalten */
+#define DAMA_UI_MAX     8               /* mehr wird nicht gestapelt */
+
+struct dama_ui {
+	struct dama_ui *next;
+	struct iface *ifp;
+	struct mbuf *q;
+	int n;
+	struct timer t;
+};
+
+static struct dama_ui *Dama_ui;
+
+static void dama_ui_expire(void *arg);
+
+static struct dama_ui *dama_ui_port(struct iface *ifp, int create)
+{
+	struct dama_ui *up;
+
+	for (up = Dama_ui; up; up = up->next)
+		if (up->ifp == ifp)
+			return up;
+	if (!create)
+		return NULL;
+	up = (struct dama_ui *) callocw(1, sizeof(struct dama_ui));
+	up->ifp = ifp;
+	up->next = Dama_ui;
+	up->t.func = dama_ui_expire;
+	up->t.arg = up;
+	Dama_ui = up;
+	return up;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Alles hinaus, was wartet.  Aus dem Fenster gerufen und aus der Frist, und
+ * beide Male ist es dasselbe: die Rahmen sind fertig, sie gehen an den
+ * Treiber.
+ */
+
+void dama_ui_flush(struct iface *ifp)
+{
+	struct dama_ui *up;
+	struct mbuf *bp;
+
+	if (ifp == NULL || (up = dama_ui_port(ifp, 0)) == NULL)
+		return;
+	stop_timer(&up->t);
+	while ((bp = dequeue(&up->q)) != NULL)
+		(*ifp->raw)(ifp, &bp);
+	up->n = 0;
+}
+
+static void dama_ui_expire(void *arg)
+{
+	struct dama_ui *up = (struct dama_ui *) arg;
+
+	dama_ui_flush(up->ifp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Der PID eines fertigen UI-Rahmens, oder -1.
+ *
+ * Das Adressfeld wird von Hand abgeschritten: der Rahmen ist schon gebaut,
+ * und ihn dafuer wieder auseinanderzunehmen waere teurer als die paar
+ * Schritte.  Nur ein UI-Rahmen kommt ueberhaupt in Frage - alles andere geht
+ * durch lapb und ist dort schon im Fenster.
+ */
+
+static int dama_ui_pid(struct mbuf *bp)
+{
+	int n;
+	int off;
+	uint8 buf[AXALEN * (MAXDIGIS + 2) + 2];
+
+	struct mbuf *p;
+
+	/* Der Kopf kann ueber mehrere mbufs verteilt sein, also abschreiten
+	 * statt indizieren - und ohne den Rahmen anzufassen, er soll ja noch
+	 * gesendet werden.
+	 */
+	for (n = 0, p = bp; p != NULL && n < (int) sizeof(buf); p = p->next) {
+		int k = (int) p->cnt;
+
+		if (k > (int) sizeof(buf) - n)
+			k = (int) sizeof(buf) - n;
+		memcpy(buf + n, p->data, (size_t) k);
+		n += k;
+	}
+	if (n < AXALEN * 2 + 2)
+		return -1;
+	for (off = 0; off + AXALEN <= n; off += AXALEN)
+		if (buf[off + ALEN] & E) {
+			off += AXALEN;
+			break;
+		}
+	if (off + 1 >= n)
+		return -1;
+	if ((buf[off] & ~PF) != UI)
+		return -1;
+	return buf[off + 1];
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* 1: uebernommen, der Aufrufer ist den Rahmen los.  0: er sendet selbst. */
+
+int dama_defer_ui(struct iface *ifp, struct mbuf **bpp)
+{
+	int pid;
+	struct dama_ui *up;
+
+	if (ifp == NULL || bpp == NULL || *bpp == NULL || ifp->raw == NULL)
+		return 0;
+	/* Kein DAMA-Kanal, oder kein Master in Kraft: es kommt kein Fenster,
+	 * auf das zu warten waere.
+	 */
+	if (!dama_in_force(ifp))
+		return 0;
+	/* Das Fenster ist gerade offen - dann ist Warten sinnlos, der Rahmen
+	 * geht sofort und richtig.
+	 */
+	if (ifp->dama_window)
+		return 0;
+	if ((pid = dama_ui_pid(*bpp)) < 0)
+		return 0;
+	if (pid == PID_ARP || pid == PID_NETROM)
+		return 0;
+	up = dama_ui_port(ifp, 1);
+	if (up->n >= DAMA_UI_MAX)
+		return 0;
+	if (!up->n) {
+		set_timer(&up->t, DAMA_UI_HOLD);
+		start_timer(&up->t);
+	}
+	enqueue(&up->q, bpp);
+	up->n++;
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
 
 /* Announce that WE speak DAMA, by setting the bit in our own source address.
  *

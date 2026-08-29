@@ -16,6 +16,7 @@
 #include "slip.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "dama.h"
 #include "netrom.h"
 #include "ip.h"
 #include "devparam.h"
@@ -381,6 +382,11 @@ struct mbuf **bpp
 	}
 	logsrc(iface,iface->hwaddr);
 	logdest(iface,idest);
+	/* Auf einem DAMA-Kanal wartet er kurz auf das Poll-Fenster - siehe
+	 * dama_defer_ui().  Ueberall sonst kehrt das sofort mit 0 zurueck.
+	 */
+	if(dama_defer_ui(iface,bpp))
+		return 0;
 	return (*iface->raw)(iface,bpp);
 }
 
@@ -485,6 +491,12 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	} else {
 		logsrc(iface,iface->hwaddr);
 		logdest(iface,idest);
+		/* Nur UI wartet hier, und das entscheidet dama_defer_ui() am
+		 * fertigen Rahmen selbst - ein I-Rahmen kommt ohnehin nicht
+		 * hier vorbei, der geht durch lapb.
+		 */
+		if(dama_defer_ui(iface,bpp))
+			return 0;
 		rval = (*iface->raw)(iface,bpp);
 	}
 	return rval;
@@ -665,7 +677,12 @@ struct mbuf **bpp
 				if (ifp) {
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
-					(*ifp->raw)(ifp, bpp);
+					/* Nur UI wird hier ueberhaupt wiederholt
+					 * (digipeat 2); auf einem DAMA-Kanal
+					 * darf auch das auf das Fenster warten.
+					 */
+					if(!dama_defer_ui(ifp,bpp))
+						(*ifp->raw)(ifp, bpp);
 				}
 			} else {
 				lapb_input(iface,&hdr,bpp);
