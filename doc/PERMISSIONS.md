@@ -122,6 +122,56 @@ a line somebody should think about once:
 cannot know who is meant to have the radio, and an install that reaches
 into the account database is not one anybody should run.
 
+### Connecting and binding are governed by different things
+
+Easy to miss, and it costs an afternoon when it bites:
+
+    connect()   the MODE ON THE SOCKET decides, plus x on the directory
+                to get there at all
+    bind()      the WRITE BIT ON THE DIRECTORY decides.  The mode on the
+                socket has nothing to do with it
+
+A unix socket is created by `bind()` the way a file is created by `open()`:
+it is a new entry in a directory, so the directory must be writable by
+whoever makes it.  `srw-rw-rw-` says every account may *reach* the node; it
+says nothing about who may *start* one.
+
+`bind_socket()` (`lib/rundir.c`) makes that sharper rather than softer.  A
+socket left behind by a node that died is still in the way - `bind()` says
+EADDRINUSE - so it looks at what is there, refuses to touch anything that is
+not a socket, checks that nobody is listening on it, and only then removes it
+and binds again.  **Both** the removing and the binding need write permission
+on the directory.
+
+**The answer is `chown`, not `chmod`.**  A node running as root needs nothing
+at all - root writes whatever the bits say, and `root:hams 0750` is the
+ordinary case.  A node under a normal account wants the directory to BELONG
+to that account, with the mode unchanged:
+
+    drwxr-x---  thomas:hams  /tcp/sockets
+
+    thomas    owner, may create the socket    -> the node starts
+    hams      r-x, may enter and connect      -> the clients get in
+    others    nothing
+
+Opening it up instead - 770, let alone 777 - is the worse trade by some way,
+and the next section says why: the moment the group may write, any member of
+it may delete `ax25` and bind their own socket under that name, and every
+client will connect to them with correct permissions and nothing to notice.
+Where that really is wanted, several daemons publishing their own sockets in
+one place, it is 1770 and the sticky bit is not optional.
+
+Running `make install` as root takes the ownership back (`chown -R root`, and
+deliberately so: a root node reads net.rc, where `!` runs a shell command).
+The running node keeps the sockets it already has, so nothing breaks until
+the next restart, and then `cnet` cannot reach it.  What it says at that
+point is
+
+    cannot listen on unix:/tcp/sockets/ax25: Permission denied
+
+and it says it to syslog, because a node started at boot has no console.
+`journalctl -u wampes` is where to look.
+
 ### The sticky bit on sockets/
 
 At 750 it makes no difference: only root may create or remove entries.
