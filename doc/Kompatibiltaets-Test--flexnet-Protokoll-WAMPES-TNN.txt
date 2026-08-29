@@ -730,3 +730,62 @@ belegt, sondern auch die Rechenvorschrift - und zwar dreifach statt einmal.
 Die Startzeile rechnet die Erwartung gleich mit aus:
 
     Umlauf-Zuschlag 600 ms  ->  FlexNet ganz 6, halb 3
+
+
+KORREKTUR: ES LIEFEN ZWEI PROZESSE
+==================================
+
+Nach dem "RMNC :Port 1: CRC error" fand Thomas die Ursache: es liefen zwei
+slowpty an derselben Leitung.  Damit ist der ganze Befund von oben neu zu
+sortieren, denn zwei Prozesse an einem Geraet STEHLEN EINANDER DIE BYTES -
+jeder liest, was der andere nicht bekommt.  Kein Rahmen kommt vollstaendig
+an, die Gegenstelle meldet CRC-Fehler, und jede Statistikzeile zeigt nur den
+eigenen Anteil.
+
+WAS DAMIT HINFAELLIG IST:
+
+  * "Die Drossel bringt den Link um" ist durch diese Laeufe NICHT belegt.
+    Der Link starb an fehlenden Bytes, nicht nachweislich an der Warte-
+    schlange.  Das Argument selbst bleibt richtig - ein pty hat einen Puffer
+    und keine Bitrate, T1 laeuft ab dem write() - aber es ist eine
+    Herleitung und keine Messung, und im vorigen Abschnitt steht es zu
+    stark.  Ungeprueft ist ungeprueft.
+  * Die 217 bps aus dem ersten Lauf sind wertlos.  Sie waren der Anteil
+    EINES der beiden Prozesse.  Thomas' "ich glaube wir machen ein Zehntel"
+    zeigte also auf etwas Echtes, nur nicht auf den Fahrplan: nicht die
+    Drossel lief zu langsam, sondern jeder Prozess sah einen Bruchteil.
+
+WAS BLEIBT:
+
+  * Der FLEX_INIT-Unterschied und die Poll-Groessen.  Das sind vollstaendig
+    dekodierte Rahmen mit gueltigem Inhalt; fehlende Bytes erzeugen keine
+    gueltigen Rahmen, sie verhindern sie.  Doppelt bestaetigt bleibt doppelt
+    bestaetigt.
+  * T1 rund 0,8 s.  Vier Sekunden von CONNECTED bis LINK FAILURE bei fuenf
+    Wiederholungen - der ABSTAND der Wiederholungen ist T1, ganz gleich
+    warum die Quittung ausblieb.  Unsicher ist dabei N2: fuenf ist gezaehlt,
+    aber nicht als Parameter bestaetigt.
+  * Die beiden slowpty-Fehler.  Die kamen aus dem Quelltext, nicht aus den
+    Laeufen.
+
+WAS DARAUS FOLGT FUER DAS WERKZEUG.  slowpty sperrt die Leitung jetzt mit
+flock() und verweigert den zweiten Start:
+
+    /dev/ttyS0 ist schon belegt - laeuft slowpty noch einmal?
+        Zwei Prozesse an einer Leitung stehlen einander die Bytes.
+        Nachsehen mit:  fuser -v /dev/ttyS0   bzw.  lsof /dev/ttyS0
+
+Und "--delay 0" ist jetzt wirklich eine reine Durchreiche.  Vorher prueften
+wir den WERT statt der Anwesenheit der Option - ausgerechnet der
+Kontrollversuch haette also mit 1200 bps gedrosselt.  Gemessen: 0,1 ms fuer
+einen 241-Byte-Rahmen, "ungebremst" in der Startzeile.
+
+DIE REIHENFOLGE FUER DEN NAECHSTEN VERSUCH ist damit eine andere.  Erst der
+Kontrollversuch, dann die Messung:
+
+  0. "--delay 0" - reine Durchreiche.  Der Link muss sich verhalten wie
+     ohne slowpty.  Kommen hier CRC-Fehler, liegt es am Werkzeug, und alles
+     Weitere waere Zeitverschwendung.
+  1. dann 100, 200, 300 ms wie oben.
+
+Erst dieser Schritt 0 haette die zwei Prozesse sofort gezeigt.
