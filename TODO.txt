@@ -6312,7 +6312,47 @@ WAS NOCH FEHLT:
   * GEGEN TNNs SLAVE (der hinter /*#define DAMASLAVE*/ liegt und von seinen
     Autoren unvollstaendig genannt wird) - das ist Thomas' zweite Haelfte des
     Pruefmassstabs, und der schwaechere Zeuge von beiden.
-  * DER VERGLEICHSTEST MIT DIGIPEAT MODE 1, siehe unten.
+  * DER VERGLEICHSTEST MIT DIGIPEAT MODE 1, siehe unten - und zwar
+    BEIDE Modi gegen einen TNN-MASTER (Thomas, 2026-08-30): erst
+    digipeat 2, dann digipeat 1, damit man den Unterschied am selben
+    Gegenueber sieht und nicht nur die Absolutwerte.
+
+  * WIE WIR VERSTOESSE SIGNALISIEREN - offen, und heute tun wir NICHTS
+    (Thomas' Frage, 2026-08-30).
+
+    HEUTE: dama_master_input() zaehlt und gibt beim ersten und jedem
+    zehnten Verstoss eine LOKALE Meldung aus.  Kein Wort an den Nutzer,
+    kein Disconnect.
+
+    EIN LOCH IM KRITERIUM, beim Nachlesen aufgefallen: wir zaehlen nur
+    KOMMANDOS MIT P, also jemanden, der UNS pollt.  TNNs Kriterium ist
+    "senden ohne Aufforderung durch den Master", und das ist weiter.  Ein
+    nicht-DAMA-faehiger TNC pollt selten - er sendet einfach I-Rahmen,
+    wann er will, meist ohne P.  Den zaehlen wir gar nicht.  Unser Zaehler
+    misst damit den selteneren Teil des Problems.
+
+    TNN: Verwarnung als TEXT IN DIE VERBINDUNG, nach DAMA-MaxPol (par 6,
+    Vorgabe 5) Disconnect.
+
+    ZUM INFO-UI MIT PID=text, das damals zur Diskussion stand: wo eine
+    Sitzung besteht, ist Text IN der Verbindung besser - quittiert, landet
+    im Terminal, und so kennen es die Nutzer.  ABER es gibt zwei Faelle,
+    in denen dieser Weg gar nicht offensteht:
+
+      - Der Link traegt ein Protokoll statt Text.  Unsere eigene Regel
+        (axp->openpid, siehe ax25user.c und lapb.c) verbietet Text auf
+        einer NET/ROM-, FlexNet- oder IP-Sitzung, und zu Recht.  Dort
+        bliebe nur, kommentarlos zu trennen.
+      - Der Stoerer hat GAR KEINE Sitzung mit uns.  Das ist der
+        Digipeat-Fall: unter "digipeat 1" sind die unaufgeforderten Rahmen
+        WIEDERHOLTE FREMDE, und der, der sie ausloest, steht mit uns in
+        keiner Verbindung.
+
+    VORSCHLAG: TNNs Weg als Regelfall (Text in die Sitzung, Zaehler als
+    Parameter mit Vorgabe 5, dann Disconnect), das UI mit PID=text als
+    Rueckfallebene fuer genau diese beiden Faelle - und dokumentiert, dass
+    es unquittiert ist und beim Empfaenger auch stumm bleiben kann.
+    Nicht gebaut, erst zu entscheiden.
 
 DER ZWEITE LABORKNOTEN steht als tnn-lab/wampes-b.  Er hat KEINEN
 Kommandokanal - TCPDIR ist compilezeitfest, und den Socket haelt der erste
