@@ -97,9 +97,39 @@ DREI MOEGLICHE ANTWORTEN, zu entscheiden:
      wiederholten Digi setzt den Master.  Eindeutig, aber der direkte Poll
      des Masters lernt nichts.
 
-b) und c) lassen sich verbinden: konfiguriert schlaegt gelernt, gelernt
-wird nur aus dem eindeutigen Fall.  Das waere auch genau die Bedeutung, die
-der geplante "learn"-Schalter haben soll.
+NACHTRAG DESSELBEN TAGES, UND ER KIPPT c) - Thomas' Gegenbeispiel, keine
+zwei Minuten nachdem ich b)+c) empfohlen hatte:
+
+    userA verbindet sich aus seinem LAN ueber SEINEN EIGENEN
+    WAMPES-DAMA-Client mit userB, den er direkt hoert.  userB sieht dann
+    genau das, was ich als eindeutig ausgegeben hatte: einen markierten
+    Rahmen ueber einen wiederholten Digi.  Nur ist dieser Digi userAs
+    Client und nicht der Master.
+
+EIN VIA-DIGI ZU SEIN HEISST NICHT, DER MASTER ZU SEIN - so wenig, wie das
+Bit zu setzen es heisst.  Damit ist c) unbrauchbar.
+
+DIE ALLGEMEINE AUSSAGE, die daraus folgt und die man sich merken sollte:
+
+    DER MASTER IST AUF DER LEITUNG NICHT ERKENNBAR.
+
+Es gibt kein Signal in AX.25, das ihn von einer Station unterscheidet, die
+DAMA spricht und gerade sendet oder wiederholt.  Das Bit ist eine
+FAEHIGKEIT, keine Rolle.  Ein wiederholter Digi ist eine FUNKTION, keine
+Rolle.  Und ein Kommando mit P sendet jede AX.25-Station, wenn T1 ablaeuft.
+Alle drei Kandidaten fallen aus demselben Grund: sie beschreiben, was eine
+Station TUT, nicht was sie IST.
+
+UEBRIG BLEIBT b): der Sysop sagt, wer der Master ist.  Und a) bleibt
+richtig, aber als eigene Sache - "wer gesendet hat" korrekt zu bestimmen
+ist unabhaengig davon geboten.
+
+WAS AUS "learn" DANN WIRD: es bleibt das heutige Verhalten (den Absender
+eines markierten Rahmens uebernehmen), also das, was TNN und Linux auch
+tun.  Es traegt im gewoehnlichen Fall, weil auf einem echten DAMA-Kanal
+der Master die einzige Station ist, die mit allen spricht - aber es ist
+eine Bequemlichkeit mit bekannten Fehlerfaellen und darf deshalb NICHT die
+Vorgabe sein, sobald es die Konfiguration gibt.
 
 TNN UND LINUX HELFEN HIER NICHT: beide pruefen nur "markiert + Kommando mit
 P" (rxfDA + rxfPF/rxfCR bzw. AX25_COMMAND && pf) und haben dieselbe Luecke.
