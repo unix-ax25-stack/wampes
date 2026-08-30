@@ -7101,10 +7101,20 @@ nur die Folge unterscheidet sich.  Die Statuszeile nennt die Betriebsart:
 DIE VERWARNUNG GEHT ALS UI, nicht in die Sitzung (Thomas' Einwand, siehe
 oben: sie stuende sonst in der Mail, die der Nutzer gerade abruft).
 Adressiert an den, der GESENDET hat (dama_station), nicht an den Urheber.
-Wortlaut von Thomas:
+Wortlaut von Thomas, und er unterscheidet sich nach Betriebsart:
 
-    DAMA: this channel is controlled by a DAMA master, who polls you -
-    please use DAMA (5), disconnecting
+    permissive  DAMA Notice (1): this channel is controlled by a DAMA
+                master, who polls you - please use DAMA
+    enforce     DAMA Notice (1/5): ... - you need to enable DAMA
+                DAMA Notice (5/5): ... - you need to enable DAMA,
+                disconnecting
+
+DIE ZAEHLUNG STEHT VORN, nicht als Fussnote am Ende - "(1)" hinter dem Satz
+sah aus wie eine Anmerkung.  Und die Schwelle erscheint NUR in "enforce":
+in "permissive" wird nie getrennt, ein "1/5" waere dort eine Drohung ohne
+Deckung.  Aus demselben Grund unterscheidet sich der Ton - "please use" ist
+eine Bitte, "you need to enable" eine Ansage, und nur eine davon ist
+gedeckt.
 
 GEMESSEN mit testtools/damaviol.py - einer Station, die auf einer stehenden
 Verbindung RR(P) schickt, also genau den Verstoss erzeugt.  Mit einem

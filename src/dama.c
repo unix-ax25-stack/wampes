@@ -929,6 +929,7 @@ static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 	struct ax25 hdr;
 	struct mbuf *bp;
 	char buf[160];
+	char zahl[24];
 	int len;
 
 	if (ifp == NULL || (bp = alloc_mbuf(sizeof(buf))) == NULL)
@@ -939,9 +940,21 @@ static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 	 * zwar nur in "enforce" beim Erreichen der Schwelle: ein Absturz, der
 	 * ausschliesslich im seltensten Zweig zuschlaegt.
 	 */
+	/* DIE ZAEHLUNG NACH VORN, nicht als Fussnote ans Ende (Thomas) - und
+	 * die Schwelle nur dort, wo es sie gibt: in "permissive" wird nie
+	 * getrennt, ein "1/5" waere dort eine Drohung ohne Deckung.  Der Ton
+	 * unterscheidet sich aus demselben Grund: "please use" ist eine Bitte,
+	 * "you need to enable" eine Ansage, und nur eine davon ist gedeckt.
+	 */
+	if (ifp->dama_policy == DAMA_ENFORCE)
+		snprintf(zahl, sizeof(zahl), "%ld/%d", n, DAMA_MAXVIOL);
+	else
+		snprintf(zahl, sizeof(zahl), "%ld", n);
 	len = snprintf(buf, sizeof(buf),
-		       "DAMA: this channel is controlled by a DAMA master, "
-		       "who polls you - please use DAMA (%ld)%s\r", n,
+		       "DAMA Notice (%s): this channel is controlled by a "
+		       "DAMA master, who polls you - %s%s\r", zahl,
+		       ifp->dama_policy == DAMA_ENFORCE
+		       ? "you need to enable DAMA" : "please use DAMA",
 		       last ? ", disconnecting" : "");
 	if (len < 0)
 		len = 0;
