@@ -21,11 +21,25 @@
  *                                             hands us the channel.
  *
  * The paper is emphatic that the word "poll" does not mean the P bit - but
- * that is a remark about vocabulary, not about the wire.  Both existing
- * implementations key off exactly the pair above: TNN tests "rxfDA" and then
- * "rxfPF && rxfCR" (l2rx.c), Linux tests "type == AX25_COMMAND && pf"
- * (ax25_ds_in.c).  Two independent implementations, one rule; we follow them
- * rather than the prose.
+ * that is a remark about vocabulary, not about the wire.
+ *
+ * BERICHTIGT AM 2026-08-30, und die Berichtigung schwaecht die Begruendung:
+ * hier stand, ZWEI unabhaengige Implementierungen pruefen genau dieses Paar -
+ * TNN mit "rxfDA" und "rxfPF && rxfCR", Linux mit "AX25_COMMAND && pf".  Die
+ * TNN-Haelfte des Belegs steht aber in l2rx.c INNERHALB von "#ifdef
+ * DAMASLAVE", und in include/all.h steht "/*#define DAMASLAVE*/" - der Slave
+ * ist gar nicht uebersetzt.  Ein normal gebautes TNN liest das Bit zwar
+ * (rxfDA), loescht es sofort wieder aus dem Kopf und benutzt es nie; seine
+ * Master-Seite haengt rein an der Konfiguration (dama(port) = l2mode &
+ * MODE_a).
+ *
+ * Es bleibt also EINE Implementierung - Linux - plus ein abgeschaltetes
+ * Fragment.  Die Regel selbst hat sich im Betrieb bewaehrt und bleibt; nur
+ * ist sie schwaecher belegt, als hier stand.  Und die Spezifikation selbst
+ * (CNC 1989, S. 208) sagt zum Bit nur, es sei "the dormant bit 5 of THE
+ * MASTER'S SSID address field", auf 0 gesetzt, um dem TNC des Nutzers zu
+ * sagen, er moege DAMA einschalten - einmal beim Aufbau, gueltig bis zum
+ * Disconnect.
  *
  * THE WINDOW IS THE PROCESSING OF THE POLLING FRAME, and that turned out to
  * be all the machinery needed.  lapb_input() already ends with a call to

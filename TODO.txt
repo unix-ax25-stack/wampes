@@ -7407,3 +7407,39 @@ WEITERES AUS DEM PAPIER, das offene Punkte bei uns beruehrt:
     Entscheidung, Verwarnungen als UI zu schicken - der Knoten darf das.
   * DISC VOM NUTZER WARTET AUF DEN POLL: "he will wait to send his
     DISC-frame until polled by the master".
+
+------------------------------------------------------------------------
+UNSER MARKIEREN ALS SLAVE: TNN SIEHT ES GAR NICHT (2026-08-30)
+------------------------------------------------------------------------
+Thomas' Frage: "nur getestet kompatibel mit TNN (wirklich getestet?
+wirklich aus dessen source ablesbar)?"  Getestet war es NIE - ich hatte es
+angenommen.  Ablesbar ist es aber, und die Antwort ist schaerfer als
+"kompatibel":
+
+    rxfDA = !(rxfhdr[L2ILEN-1] & L2CDAMA);  /* ist es ein DAMA-Frame? */
+    rxfhdr[L2ILEN-1] |= L2CDAMA;            /* DAMA-Flag zuruecksetzen */
+
+TNN liest das Bit, LOESCHT ES SOFORT WIEDER aus dem Kopf, und der einzige
+Verbraucher von rxfDA steht in "#ifdef DAMASLAVE" (l2rx.c:196).  In
+include/all.h steht:
+
+    /*#define DAMASLAVE*/                 /* DAMA-Slave-Modus */
+
+Der Slave ist also gar nicht uebersetzt.  EIN NORMAL GEBAUTES TNN WERTET
+DAS BIT NICHT AUS.  Seine Master-Seite haengt rein an der Konfiguration,
+dama(port) = l2mode & MODE_a.  Unser Markieren als Slave ist fuer TNN
+unsichtbar - harmlos, aber nicht "verstanden".
+
+DARAUS FOLGT EINE KORREKTUR IM QUELLTEXT, gemacht: der Kopfkommentar von
+dama.c berief sich auf "zwei unabhaengige Implementierungen", die genau das
+Paar (DAMA-Bit + Kommando mit P) pruefen.  Die TNN-Haelfte dieses Belegs
+stammt aus abgeschaltetem Code.  Es bleibt EINE - Linux - plus ein
+Fragment.  Die Regel bleibt, aber sie ist schwaecher belegt als behauptet.
+
+WAS DAMIT ZUR ENTSCHEIDUNG STEHT: unser Markieren als Slave ist von der
+Spezifikation nicht gedeckt, von TNN nicht bemerkt, und von Linux nicht
+gelesen (dessen Slave liest nur, was der Master schickt).  Es hat einen
+Zweck - Thomas' Digipeat-Argument in dama_mark() - und eine dokumentierte
+Nebenwirkung: jede Station, die das Bit liest, haelt uns fuer den Master.
+Wer es liest, ist nach heutigem Stand: unser eigener Slave, und sonst
+niemand.
