@@ -7205,3 +7205,47 @@ WAS SCHON RICHTIG WAR (Thomas' zweite Frage): der Zaehler laeuft JE STATION
 und nicht je Sitzung, und dama_kick_marked() trennt ALLE Links dieser
 Station auf einmal.  Ein Nutzer mit drei Verbindungen bekommt also nicht
 dreimal so schnell die Schwelle voll und auch nicht drei Verwarnungen.
+
+------------------------------------------------------------------------
+WIE TNN ES MACHT (nachgelesen 2026-08-30, l2dama.c polDAMA)
+------------------------------------------------------------------------
+Thomas' Frage nach Timing und Haeufigkeit der Verwarnungen.  Die Antwort
+faellt zu unseren Gunsten aus - TNN hat genau die beiden Probleme, die er
+an unserem ersten Entwurf benannt hatte:
+
+    if (lnkpoi->state != L2SDSCED) {
+      lnkpoi->pollcnt++;                 /* JEDER Verstoss, jeder Rahmen */
+      if (MaxPollCnt) {
+        mbp->l2link = lnkpoi;            /* IN DIE VERBINDUNG */
+        putstr("\r*** from DAMA-Master ", mbp);
+        if (lnkpoi->pollcnt >= MaxPollCnt) {
+          putprintf(mbp, "> DISCONNECT: Too many non-DAMA Polls (%u) !!\r", ..);
+          dsclnk();
+        } else
+          putprintf(mbp, "> WARNING: non-DAMA Poll #%u, Disconnect after %u !!\r", ..);
+
+  * GEZAEHLT WIRD JE LINK (lnkpoi->pollcnt), nicht je Station.  Ein
+    Multiconnect-Nutzer wird mehrfach gezaehlt und mehrfach verwarnt.
+    Unser Zaehler je Station ist besser - und das ist genau der Punkt, den
+    Thomas als zweite Frage gestellt hatte.
+  * DIE MELDUNG GEHT IN DIE VERBINDUNG (mbp->l2link = lnkpoi, type 2),
+    landet also im Bytestrom der Anwendung - mitten in der Mail.  Genau
+    das, was Thomas verworfen hat.  Unser UI liegt daneben statt darin.
+  * KEINE BREMSE: jeder Verstoss erzeugt eine Meldung.  Wer mit maxframe 7
+    sendet, bekommt tatsaechlich fuenf auf einen Schlag und dann den
+    Disconnect - Thomas' Befuerchtung ist bei TNN die Wirklichkeit.
+  * KEINE GRACE-TIME nach dem Zwangsdisconnect.  Fuer seine 5 Minuten gibt
+    es dort also kein Vorbild; wir waeren die ersten.
+  * NUR ZWEI BETRIEBSARTEN: MaxPollCnt == 0 schaltet die Kontrolle ab (das
+    ist unser "lazy"), sonst wird verwarnt und getrennt (unser "enforce").
+    Ein "permissive" kennt TNN nicht.
+  * Nebenbei fuehrt es in der Heard-Liste ein mhp->damawarn je Station -
+    aber nur als Statistik, nicht als Schwelle.
+
+GEMESSEN DAZU (Thomas' Sorge um unnoetigen Verkehr): UI-Rahmen loesen bei
+UNS keine Verwarnung aus.  Zwoelf UI an QST, null Antworten, Zaehler blieb
+auf 0.  Der Grund ist strukturell: dama_master_input() haengt an
+lapb_input(), und dorthin kommen nur Rahmen im verbundenen Betrieb, die an
+uns gerichtet sind - UI laeuft in ax25.c durch einen anderen Zweig.  Dazu
+verlangt das Kriterium eine STEHENDE Verbindung, ein SABM zaehlt also auch
+nicht.
