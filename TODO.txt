@@ -6348,11 +6348,31 @@ WAS NOCH FEHLT:
         WIEDERHOLTE FREMDE, und der, der sie ausloest, steht mit uns in
         keiner Verbindung.
 
-    VORSCHLAG: TNNs Weg als Regelfall (Text in die Sitzung, Zaehler als
-    Parameter mit Vorgabe 5, dann Disconnect), das UI mit PID=text als
-    Rueckfallebene fuer genau diese beiden Faelle - und dokumentiert, dass
-    es unquittiert ist und beim Empfaenger auch stumm bleiben kann.
-    Nicht gebaut, erst zu entscheiden.
+    KORREKTUR, Thomas' Einwand am selben Tag - und er kippt den Vorschlag,
+    den ich hier zuerst stehen hatte (TNNs Weg als Regelfall):
+
+        "Nein, keine Meldung in PID=text. Sonst steht in Mails, die er
+         abruft: 'Schoene Gruesse aus ... tolles Wetter und *** 6
+         DAMA-Verstoesse'."
+
+    TEXT IN DIE SITZUNG IST BEI AX.25 NICHT AUSSERHALB DES BANDES.  Er
+    landet im Bytestrom, den die Anwendung liest - mitten in der Mail, die
+    der Nutzer gerade abruft.  Das ist keine Verwarnung, sondern eine
+    Beschaedigung der Nutzdaten, und zwar AUCH auf einem reinen Text-Link,
+    wo die openpid-Regel nichts dagegen hat.  TNNs Weg hat genau dieses
+    Problem.
+
+    DAMIT DREHT SICH DAS ARGUMENT UM: das UI mit PID=text ist der richtige
+    Kanal, und zwar aus genau dem Grund, aus dem ich es zuerst niedriger
+    gestellt hatte - es liegt AUSSERHALB der Sitzung.  Es kann nichts
+    zerstoeren, es erscheint im Monitor, und es ist unabhaengig davon, was
+    der Link sonst traegt.  Der Preis bleibt, dass es unquittiert ist und
+    ein Nutzer mit abgeschaltetem Monitor es nicht sieht - aber "nicht
+    gesehen" ist harmlos, "in die Mail geschrieben" nicht.
+
+    STAND: UI an das Rufzeichen des Stoerers, Zaehler als Parameter mit
+    Vorgabe 5 (wie TNNs par 6), danach Disconnect - der dann kommentarlos
+    sein darf, weil die Begruendung vorher im UI stand.  Nicht gebaut.
 
 DER ZWEITE LABORKNOTEN steht als tnn-lab/wampes-b.  Er hat KEINEN
 Kommandokanal - TCPDIR ist compilezeitfest, und den Socket haelt der erste
