@@ -6660,3 +6660,72 @@ vjtest/conf/flexnet, dann aber Punkt-zu-Punkt statt gemeinsamer Kanal),
 oder eben der Fix oben.  ZU ENTSCHEIDEN, siehe auch die Frage darunter,
 ob ein DAMA-Labor ueberhaupt ein gemeinsames Medium braucht: auf einem
 echten Kanal HOERT B den Poll an A, ueber UDP-Unicast nicht.
+
+------------------------------------------------------------------------
+DAMA-MASTER: DREI VERHALTEN, KONFIGURIERBAR (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Wie streng der Master ist, soll der Sysop entscheiden, nicht wir:
+
+  enforce     verwarnt und TRENNT bei Verstoessen.  Das ist TNNs Verhalten
+              (par 6 DAMA-MaxPol, Vorgabe 5).
+  permissive  verwarnt NICHT im Sinne von drohen, sondern INFORMIERT per
+              UI, dass man DAMA benutzen sollte.  Kein Disconnect.
+  lazy        sagt nichts und nimmt DAMA- wie Nicht-DAMA-Nutzer
+              stillschweigend an.
+
+VORGABE: der mittlere (Thomas tendiert dahin).  Das passt auch dazu, dass
+wir sonst nirgends von uns aus trennen - siehe die Begruendung beim Slave,
+der bei verstummtem Master nicht auflegt: ein Disconnect kostet den
+Benutzer alles oberhalb von AX.25.
+
+Der Zaehler je Station (struct dama_v) laeuft in allen drei Betriebsarten
+weiter, denn er ist auch Statistik; nur was daraus folgt, unterscheidet
+sich.  In "enforce" ist er die Schwelle, in "permissive" der Anlass fuer
+das UI, in "lazy" nur eine Zahl in der Statuszeile.
+
+------------------------------------------------------------------------
+DAMA-SLAVE: off | on | learn (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Folgt aus dem Befund, dass unser Master das DAMA-Bit auch auf sein SABM
+setzt und ein Slave daran den Kanal erkennt (dama_mark() in sendframe(),
+Auswertung in lapb.c:202).  Damit ist "einen Master hoeren" eine
+brauchbare Quelle - aber nicht ueberall erwuenscht:
+
+  off     nie Slave, egal was zu hoeren ist.
+  on      der Port IST ein DAMA-Kanal, wie heute "dama slave".
+  learn   Slave werden, sobald ein Master gehoert wird.
+
+XNET hat genau diesen Schalter als "ds", mit der Begruendung "Bei Digis
+ist diese automatische Aktivierung des Slave-Modes nicht erwuenscht" - und
+dieselbe Ueberlegung steht schon in dama_heard_frame(): ein Port, der die
+MASTER-Rolle haelt, darf sich nicht von jemandem in die Slave-Rolle reden
+lassen, der mit gesetztem Bit ankommt.
+
+SYNTAX OFFEN.  Heute nimmt ifdama() "off | slave [timeout <sec>] | master".
+Naheliegend waere "off | slave | learn | master", aber das ist zu
+entscheiden.
+
+------------------------------------------------------------------------
+KORREKTUR ZUM LABORZUSCHNITT: ZWEI EINSTIEGE, NICHT EINE BRUECKE
+------------------------------------------------------------------------
+Ich hatte aus Thomas' Szenario "je ein Partner pro Port" gemacht.  Das ist
+zu eng - der SEHR UEBLICHE Fall ist ein anderer (Thomas):
+
+    Zwei Nutzer, die sich gegenseitig NICHT hoeren, verbinden sich ueber
+    den DAMA-Repeater.  Das Paket kommt auf useraccess1 herein und geht
+    auf useraccess2 wiederholt wieder hinaus.
+
+Damit ist der Knoten weder eine Bruecke zwischen zwei Medien noch eine
+Station unter Gleichen, sondern hat MEHRERE EINSTIEGE, auf denen er
+jeweils Master sein kann, und wiederholt zwischen ihnen.
+
+WAS DARAN NEU ZU DENKEN IST: auf dem AUSGANGSPORT sind wir der Master, und
+ein Master darf senden, wann er will - eine Wiederholung ist dort also
+kein Verstoss und braucht kein Fenster.  Sind wir dort dagegen SLAVE,
+muesste die Wiederholung auf den Poll warten, und dama_defer_ui() haelt
+heute nur UI zurueck, keine I-Rahmen.  Das ist zu pruefen, bevor daraus
+ein Fehlerbild wird.
+
+Und fuers Labor heisst es: ein Aufbau mit ZWEI DAMA-Einstiegen an EINEM
+Knoten, je ein Nutzer daran.  Das braucht wieder keine gemeinsame Adresse
+und faellt nicht in die uhnp-Falle.
