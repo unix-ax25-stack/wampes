@@ -1411,3 +1411,45 @@ NEBENBEI NOCH ZWEI UNTERSCHIEDE IM UMGANG MIT DEN WERTEN:
   * Ueber RTT_MAX (59999) bedeutet bei TNN "Link ist tot, komplette
     Neumessung notwendig" - der Wert wird auf 0 gesetzt.  Ein Horizont, den
     wir so nicht fuehren.
+
+
+KORREKTUR: "VERGIFTET" WAR FALSCH - DIE 600 LANDET AUF TNNS EIGENEM WERT
+========================================================================
+
+Thomas: "vergiftet beisst".  Er hat recht, und zwar vollstaendig.  Die
+beiden Zahlen nebeneinander:
+
+    hisrtt = atoi("600") * 10;                    ->  6000
+    (my_quality + (his_quality ? his_quality : 6000))/2
+
+UNSERE 600 LANDET EXAKT AUF TNNS EIGENEM ERSATZWERT.  Haetten wir gar
+nichts gemeldet, rechnete TNN mit 6000; melden wir 600, rechnet es mit
+6000.  Identisch, kein Schaden - und mit ziemlicher Sicherheit kein Zufall,
+sondern wieder dieselbe Abstammung.  Der vorige Abschnitt beschreibt das
+fehlende Erkennen richtig, zieht daraus aber die falsche Folge.
+
+UND DIE ASYMMETRIE LAEUFT ANDERSHERUM, als dort dargestellt:
+
+    wir von TNN:   SRTT/10, aus der Portgeschwindigkeit geraten, am
+                   Laborport 53 = 5,3 s.  NICHT als Schaetzung erkennbar.
+                   Dauer: STUNDEN - TNNs SRTT faellt nur 1/16 je Messung,
+                   auf reinem FlexNet gibt es kaum Messgelegenheiten, und
+                   wir glaetten den Wert selbst noch mit 7/8.
+
+    TNN von uns:   600, also genau sein eigener Vorgabewert.
+                   Dauer: NULL, weil es ohnehin damit gerechnet haette -
+                   und range() ersetzt den Wert beim ersten echten Bericht
+                   sofort und ungeglaettet.
+
+TNN REICHT ALSO SCHLECHTERE WERTE NACH HINTEN DURCH ALS WIR, und zwar
+laenger.  Es liegt an TNNs fehlendem SENTINEL, nicht an dessen fehlender
+Erkennung.  Der Punkt fuers Gespraech ist damit nicht "ihr nehmt unsere 600
+fuer bare Muenze", sondern der schon bekannte: "euer 'keine Ahnung' sieht
+aus wie eine Messung, und es steht stundenlang".
+
+AUCH DER KOLLISIONSFALL SCHADET TNN NICHT: eine echte Umlaufzeit von 60 s,
+die wir als 600 senden, kommt bei TNN als 60 s an - richtig.  Wehtun tut die
+Kollision nur bei RMNC, XNET und uns, also genau bei denen, die die 600
+ERKENNEN und deshalb einen gueltigen Messwert wegwerfen.  Der Einzeiler in
+recv_poll() bleibt damit richtig, aber seine Begruendung ist eine andere als
+oben behauptet.
