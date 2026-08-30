@@ -3730,10 +3730,32 @@ unsere eigene Poll-Messung einspringt (und locdelay wird auf mindestens
 1 angehoben, unsere eigene 0 kann also nicht entstehen) - sauber ist es
 nicht.
 
-DIE BILLIGE HAELFTE DES FIXES, ohne Protokollfrage: einen GEMESSENEN
-Wert nie als Sentinel senden. Kommt locdelay auf genau DEFAULTDELAY
+DIE BILLIGE HAELFTE DES FIXES IST GEBAUT (2026-08-30). Einen GEMESSENEN
+Wert nie als Sentinel senden: kommt locdelay auf genau DEFAULTDELAY
 heraus, eine Einheit danebenlegen - eine Luege von 0,1 s ist besser als
-ein falsches "unbekannt". Eine Zeile in recv_poll().
+ein falsches "unbekannt". Zwei Zeilen, und zwar an der QUELLE in
+recv_rprt() neben dem vorhandenen Boden, nicht in recv_poll(): dann
+rechnet auch die Glaettung in pp->delay mit dem konsistenten Wert.
+
+GEMESSEN, nicht nur gebaut. testtools/flexpeer.py haelt mit "--rtt" die
+Antwort auf einen FLEX_POLL zurueck und erzwingt damit eine BEKANNTE
+Umlaufzeit; "--sendpoll <sek>" fragt den Knoten seinerseits, damit man
+sieht, was er meldet. Bei 120,0 s Umlauf (= locdelay 600) und sonst
+identischem Aufbau:
+
+    ohne Schutz:   FLEX_RPRT b'1600\r'   <- Messwert, als Sentinel gelesen
+    mit  Schutz:   FLEX_RPRT b'1599\r'   <- die Messung ueberlebt
+
+Davor meldeten beide 1600, solange nichts gemessen war - der
+Sentinel-Pfad selbst ist unveraendert.
+
+Die Kalibrierung ist knapp: das Fenster fuer locdelay == 600 ist
++-100 ms, und der Vorlauf zwischen send_poll() und dem Eintreffen
+schwankt um etwa +-0,2 s, also eine Einheit. Ein erster Lauf traf 599
+statt 600 und bewies darum nichts - erst die A/B-Gegenprobe mit
+demselben Halten entscheidet. Beim Feintakten fiel ausserdem ein Fehler
+in flexpeer.py auf: vr wurde ohne Modulo 8 gefuehrt, und bei N(S)=7
+passt (8 << 5) nicht mehr in ein Oktett.
 
 DIE ANDERE HAELFTE IST BEANTWORTET (Thomas' langer Mitschnitt vom
 2026-08-30, ausgewertet mit testtools/flexread.py). XNET sendet als

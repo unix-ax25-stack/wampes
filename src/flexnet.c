@@ -1515,6 +1515,20 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 		pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
 		if (pp->locdelay < 1)
 			pp->locdelay = 1;
+		/*
+		 * Never let a MEASURED value collide with the sentinel.
+		 * recv_poll() sends DEFAULTDELAY when we have nothing, and
+		 * every partner that follows the convention - RMNC, XNET,
+		 * PC/FlexNet32 and we ourselves - discards that value on
+		 * receipt (see the "delay != DEFAULTDELAY" test above).  A
+		 * genuine measurement landing on it would therefore be
+		 * thrown away, and the peer would keep its previous, better
+		 * figure - the bad news would not arrive precisely when it
+		 * matters.  Being one unit off is a lie of 0.1 s; sending a
+		 * false "no idea" is worse.
+		 */
+		if (pp->locdelay == DEFAULTDELAY)
+			pp->locdelay = DEFAULTDELAY - 1;
 		pp->lastpolltime = 0;
 		if (pp->delay)
 			pp->delay = (7.0 * pp->delay + pp->locdelay) / 8.0;
