@@ -7145,3 +7145,63 @@ ZWEI FEHLER AUF DEM WEG, beide meine:
 
 NOCH FEST: die Schwelle 5 (TNNs par 6).  Einstellbar zu machen lohnt erst,
 wenn jemand einen Grund hat, sie zu aendern.
+
+------------------------------------------------------------------------
+DAMA-VERWARNUNGEN: EIN ZUG IST EIN VERSTOSS (Thomas, 2026-08-30) - GEBAUT
+------------------------------------------------------------------------
+Seine Frage: "sagt er das bei jedem Paket?  Wer maxframe 7 macht sendet 7
+Pakete und erhaelt 5 Notices auf einmal und den disconnect."  Berechtigt -
+so war es gebaut, und es war falsch.
+
+ZWEI FEHLER, beide behoben:
+
+  1. GEZAEHLT WURDE JE RAHMEN.  Wer sich den Kanal einmal nimmt und sieben
+     Rahmen hinauslegt, hat EINMAL verstossen.  Die Grenze ist dabei unser
+     eigener POLL und keine Uhr: er hat ausserhalb seines Zuges gesendet,
+     und der naechste Poll eroeffnet die naechste Gelegenheit.  Eine
+     Zeitschranke waere falsch - auf 1k2 dauert ein voller Zug aus sieben
+     Rahmen zu 256 Oktetten gut fuenfzehn Sekunden.
+  2. DIE MELDUNG HING AM RAHMEN statt an der Zaehlung.  Auch nachdem (1)
+     stand, gingen sieben gleiche Verwarnungen auf einen Schlag hinaus -
+     Laerm auf genau dem Kanal, den wir schonen wollen.  Jetzt nur, wenn
+     wirklich hochgezaehlt wurde (vp->fresh).
+
+GEMESSEN mit "damaviol.py --burst 7":
+
+     4.0s  7 x RR(P)  ->  DAMA Warning (1/5)
+     8.0s  7 x RR(P)  ->  (nichts, 2/5)
+    24.4s  7 x RR(P)  ->  DAMA Fatal (5/5) ... disconnecting
+    29.0s  DISC
+
+DREI STUFEN im Text (Thomas): "Notice" ohne Konsequenz, "Warning" kuendigt
+eine an, "Fatal" vollzieht sie.  Wer nicht trennt, warnt auch nicht - in
+"permissive" bleibt es bei "Notice" und "please use DAMA".
+
+OFFEN: DIE GRACE-TIME.  Thomas' dritte Frage - "was hindert ihn, nach 0.5s
+wieder eine neue Session aufzubauen?" - ist gemessen und die Antwort lautet
+heute: nichts.  Die Station baut sofort wieder auf, und weil der Zaehler bei
+ihr bleibt (er altert nach Verbindungsende oder 600 s), fliegt sie beim
+naechsten Verstoss sofort wieder raus:
+
+    32.4s  DAMA Fatal (6/5) ... disconnecting     35.0s DISC
+    36.4s  DAMA Fatal (7/5) ... disconnecting     41.0s DISC
+    44.6s  DAMA Fatal (8/5) ... disconnecting
+
+WIRKSAM IST DAS - den Kanal bekommt sie nicht.  Nur kostet es alle vier
+Sekunden ein UI und einen DISC, also genau den Funkverkehr, den DAMA sparen
+soll.  Zu entscheiden ist eines von beiden:
+
+  a) VERBINDUNGEN ABWEISEN.  Nach einem Rauswurf N Sekunden lang kein
+     Connect von dieser Station annehmen (DM statt UA).  Wirksam, aber ein
+     neuer Eingriff im Verbindungsaufbau.
+  b) NUR DIE MELDUNG BREMSEN.  Trennen wie bisher, aber das "Fatal" nur
+     einmal je Minute.  Kein neuer Eingriff, und der Laerm ist weg -
+     der DISC bleibt aber.
+
+Dazu eine Kleinigkeit: "(6/5)" liest sich schief, sobald die Schwelle
+ueberschritten ist.
+
+WAS SCHON RICHTIG WAR (Thomas' zweite Frage): der Zaehler laeuft JE STATION
+und nicht je Sitzung, und dama_kick_marked() trennt ALLE Links dieser
+Station auf einmal.  Ein Nutzer mit drei Verbindungen bekommt also nicht
+dreimal so schnell die Schwelle voll und auch nicht drei Verwarnungen.

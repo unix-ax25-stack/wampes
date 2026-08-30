@@ -797,6 +797,8 @@ struct dama_v {
 	uint8 call[AXALEN];
 	long n;
 	int32 last;                     /* secclock des letzten Verstosses */
+	int32 at_poll;                  /* ifp->dama_polls dabei - siehe unten */
+	int fresh;                      /* dieser Aufruf hat hochgezaehlt */
 	int kick;                       /* zu trennen, sobald es sicher ist */
 };
 
@@ -834,7 +836,27 @@ static struct dama_v *dama_violation(struct iface *ifp, const uint8 *call)
 	for (vp = Dama_v; vp != NULL; vp = vp->next)
 		if (vp->ifp == ifp && addreq(vp->call, call)) {
 			vp->last = now;
+			/* EIN ZUG IST EIN VERSTOSS, nicht ein Rahmen (Thomas).
+			 * Wer mit maxframe 7 sieben Rahmen schickt, hat sich
+			 * den Kanal EINMAL genommen; ihn siebenmal zu zaehlen
+			 * verbraucht die Schwelle in einem Wimpernschlag und
+			 * schickt Verwarnungen, die niemand mehr lesen kann,
+			 * bevor der Disconnect kommt.
+			 *
+			 * Die Grenze ist unser eigener POLL und keine Uhr: er
+			 * hat ausserhalb seines Zuges gesendet, und der
+			 * naechste Poll eroeffnet die naechste Gelegenheit,
+			 * es wieder zu tun.  Eine Zeitschranke waere hier
+			 * falsch - auf 1k2 dauert ein voller Zug aus sieben
+			 * Rahmen zu 256 Oktetten gut fuenfzehn Sekunden.
+			 */
+			if (vp->at_poll == ifp->dama_polls) {
+				vp->fresh = 0;
+				return vp;
+			}
+			vp->at_poll = ifp->dama_polls;
 			vp->n++;
+			vp->fresh = 1;
 			return vp;
 		}
 	vp = (struct dama_v *) callocw(1, sizeof(struct dama_v));
@@ -842,6 +864,8 @@ static struct dama_v *dama_violation(struct iface *ifp, const uint8 *call)
 	addrcp(vp->call, call);
 	vp->n = 1;
 	vp->last = now;
+	vp->at_poll = ifp->dama_polls;
+	vp->fresh = 1;
 	vp->next = Dama_v;
 	Dama_v = vp;
 	return vp;
@@ -950,9 +974,19 @@ static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 		snprintf(zahl, sizeof(zahl), "%ld/%d", n, DAMA_MAXVIOL);
 	else
 		snprintf(zahl, sizeof(zahl), "%ld", n);
+	/* DREI STUFEN, und der Name sagt, was folgt (Thomas): "Notice" ist
+	 * eine Mitteilung ohne Konsequenz, "Warning" kuendigt eine an,
+	 * "Fatal" vollzieht sie.  Wer nicht trennt, warnt auch nicht - in
+	 * "permissive" bleibt es bei der Mitteilung.
+	 *
+	 * Und "me, the master" statt "a DAMA master": das Wort DAMA stand
+	 * dreimal in einem Satz, und das "a" meinte ohnehin uns selbst.
+	 */
 	len = snprintf(buf, sizeof(buf),
-		       "DAMA Notice (%s): this channel is controlled by a "
-		       "DAMA master, who polls you - %s%s\r", zahl,
+		       "DAMA %s (%s): this channel is controlled by me, the "
+		       "master, who polls you - %s%s\r",
+		       ifp->dama_policy != DAMA_ENFORCE ? "Notice" :
+		       last ? "Fatal" : "Warning", zahl,
 		       ifp->dama_policy == DAMA_ENFORCE
 		       ? "you need to enable DAMA" : "please use DAMA",
 		       last ? ", disconnecting" : "");
@@ -992,7 +1026,13 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		long n = vp->n;
 
 		ifp->dama_violations++;         /* Summe fuer die Statuszeile */
-		if (n == 1 || !(n % 10)) {
+		/* ALLES WEITERE NUR, WENN WIRKLICH HOCHGEZAEHLT WURDE.  Sonst
+		 * haengt die Meldung am RAHMEN statt an der Zaehlung, und ein
+		 * Zug aus sieben Rahmen erzeugt sieben gleiche Verwarnungen
+		 * auf einen Schlag - Laerm, den niemand liest, auf genau dem
+		 * Kanal, den wir schonen wollen (Thomas).
+		 */
+		if (vp->fresh && (n == 1 || !(n % 10))) {
 			char buf[AXBUF];
 
 			/* WER GESENDET HAT, nicht wer den Rahmen verfasst hat
@@ -1018,7 +1058,7 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		 * allen drei Betriebsarten - der Zaehler ist auch Statistik -,
 		 * nur die Folge unterscheidet sich.
 		 */
-		if (ifp->dama_policy != DAMA_LAZY &&
+		if (vp->fresh && ifp->dama_policy != DAMA_LAZY &&
 		    (n == 1 || !(n % 10) ||
 		     (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL)))
 			dama_warn(ifp, who, n,
