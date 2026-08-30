@@ -6622,3 +6622,41 @@ WAS BEI UNS ZU ENTSCHEIDEN WAERE, wenn es gebaut wird:
   * ES ERSETZT DAS VERZEICHNIS NICHT.  Wer nicht an den Socket kommt,
     braucht keine Ausweise; wer herankommt, wird feiner unterschieden.  Zwei
     Tore.  Siehe doc/PERMISSIONS.md, "What that admission is worth".
+
+------------------------------------------------------------------------
+AXUDP: DER GELERNTE QUELLPORT HAENGT AN DER ADRESSE, NICHT AM RUFZEICHEN
+------------------------------------------------------------------------
+Gefunden am 2026-08-30 beim Aufbau des Drei-Knoten-DAMA-Labors
+(tnn-lab/dama3), und es ist keine Laboreigenheit.
+
+src/uhnp.c fuehrt die gelernte UDP-Quellportnummer je HOST-ADRESSE:
+
+    if (sockaddr_addr_eq((struct sockaddr *) &up->addr, addr)) { ... }
+
+und in axip_raw() schlaegt sie sowohl die Route als auch den Vorgabeport
+("a learned source port beats both", uhnp.h).  Sitzen ZWEI Partner hinter
+derselben Adresse, teilen sie sich einen Eintrag, und wer zuletzt gesendet
+hat, bestimmt, wohin ALLES geht.
+
+GEMESSEN: Knoten A hat Routen zu DL9SAU-2 (Port 10101) und DL9SAU-4
+(Port 10103), beide auf 127.0.0.1.  Er empfaengt vom Master und lernt
+10101, empfaengt von B und ueberschreibt auf 10103 - danach kommt beim
+jeweils anderen nichts mehr an.  Im Trace sieht es aus, als haette A
+gesendet, denn dump() steht in axip_raw() VOR dem Routennachschlag.
+
+AUF DER LUFT FAELLT ES NICHT AUF, weil jeder Partner seine eigene IP hat.
+Es trifft aber einen realen Fall: zwei Knoten an einem Standort hinter
+einer NAT-Adresse.  Der Schluessel muesste das RUFZEICHEN sein (also der
+axip-Route folgen), nicht der Host.
+
+NICHT GEAENDERT.  Das ist ein Eingriff in den NAT-Weg, der Fremdstationen
+betrifft, und er will fuer sich geprueft werden - nicht nebenbei, waehrend
+ein Labor aufgebaut wird.
+
+FOLGE FUERS LABOR: drei Knoten auf 127.0.0.1 gehen so nicht.  Zur Wahl
+stehen eigene Loopback-Adressen (127.0.0.2/3, braucht "ifconfig lo0 alias"
+und damit root), ein anderer Transport (KISS ueber UDP wie in
+vjtest/conf/flexnet, dann aber Punkt-zu-Punkt statt gemeinsamer Kanal),
+oder eben der Fix oben.  ZU ENTSCHEIDEN, siehe auch die Frage darunter,
+ob ein DAMA-Labor ueberhaupt ein gemeinsames Medium braucht: auf einem
+echten Kanal HOERT B den Poll an A, ueber UDP-Unicast nicht.
