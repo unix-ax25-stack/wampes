@@ -6854,3 +6854,45 @@ globalen Einstellung geht das nicht.  Das ist der Preis von Thomas'
 Vereinfachung und bewusst bezahlt - die Alternative waeren Modi je Port und
 damit Fallkombinationen, die niemand mehr abschaetzen oder testen kann.
 Master gewinnt, der Via-Digi-Fall gehoert dann auf einen anderen Knoten.
+
+------------------------------------------------------------------------
+GEMESSEN: ZWEI DAMA-CLIENTS VERBINDEN SICH SEHR WOHL
+------------------------------------------------------------------------
+Thomas' Frage, ob zwei DAMA-Clients ohne Master ueberhaupt zusammenkommen
+oder am fehlenden Poll verhungern.  Labor tnn-lab/twoslaves, beide
+"dama slave", sonst nichts auf dem Kanal:
+
+    AX25: DL9SAU-8->DL9SAU-7 SABM(P)
+    AX25: DL9SAU-7->DL9SAU-8 UA(F)
+    AX25: DL9SAU-7->DL9SAU-8 I NR=0 NS=0 pid=NET/ROM [DAMA]
+
+    Connected      DL9SAU-7->DL9SAU-8
+    dama slave, timeout 120s, master DL9SAU-8, found 1 lost 0 polls 0
+
+SIE VERBINDEN SICH UND BLEIBEN VERBUNDEN.  Kein Verhungern, kein
+Timeout-Disconnect ueber die 60 Sekunden des Laufs.  Der Grund ist, dass
+jeder zum Poll-Geber des anderen wird: ein SABM ist ein Kommando mit P, und
+jedes T1-bedingte RR(P) ebenso.
+
+UND ES IST ZUGLEICH DAS GEGENBEISPIEL zur Frage, ob sich der Master an
+"Kommando mit P + DAMA-Flag" erkennen laesst (Thomas): das Paket traegt
+beides, genau dieses Paar pruefen TNN, Linux und wir - aber ausgeloest hat
+es hier ein SLAVE.  S1 traegt danach "master DL9SAU-8" ein, also den
+anderen Client.  Das Paar erkennt "hier will jemand jetzt eine Antwort",
+nicht die Rolle.
+
+ZWEI LOSE ENDEN AUS DIESEM LAUF, noch nicht erklaert:
+  * "polls 0", obwohl ein markiertes Kommando mit P ankam und
+    dama_poll_begin() dort zaehlt.
+  * S1s I-Rahmen ging hinaus, obwohl dama_holds() bei gesetztem dama_link
+    und in Kraft befindlichem DAMA haette halten muessen.
+Beides ist zu klaeren, bevor daraus Schluesse gezogen werden - moeglich
+ist, dass der P eines U-Rahmens nicht als "poll" gilt und der I-Rahmen auf
+einem Weg hinausging, der das Gatter nicht befragt.
+
+TERMINOLOGIE (Thomas): im Client-Modus verwaltet der NUTZER, nicht der
+Sysop.  Das ist mehr als sprachlich - einem Heimnutzer zuzumuten, das
+Rufzeichen des Masters zu kennen und einzutragen, ist etwas anderes, als es
+einem Sysop zuzumuten.  Der Vorschlag "Master konfigurieren" wird dadurch
+schwerer, und "learn" darf nicht einfach aufgegeben werden: es muss mit
+seinen bekannten Fehlerfaellen leben und sie dokumentieren.
