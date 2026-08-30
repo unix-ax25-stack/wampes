@@ -1127,3 +1127,80 @@ Zwei Wege, das zu schliessen:
     fremden Standort.
   * Die eine Frage an den Autor: volle Umlaufzeit oder halbe, und in
     welcher Einheit?  Ein Satz Antwort ersetzt den ganzen Versuch.
+
+
+DER LANGE MITSCHNITT AUF DB0BLO-4 - DIE ORIGINALIMPLEMENTIERUNG MISST 6
+=======================================================================
+
+Thomas' Typescript vom 2026-08-30, Port 1 (seriell zum RMNC) und Port 4
+(AXIP zu DB0AVH-4), 2450 Zeilen, ausgewertet mit testtools/flexread.py.
+147 FlexNet-Rahmen.  Ohne Zeitspur, also nur Reihenfolge.
+
+DIE RPRT-REIHE AUF PORT 1, in ihrer Reihenfolge:
+
+    DB0BLO-4 (xnet) -> DB0BLO:   600 600 600 600 600  dann 30x  6
+    DB0BLO (RMNC)   -> DB0BLO-4:  41   303 303   72    60    52
+
+xnet sendet den ROHWERT: erst fuenfmal seinen Vorgabewert 600, dann stabil
+6.  Der RMNC sendet etwas anderes - eine fallende Reihe.  Das ist sein
+ARITHMETISCHES MITTEL ab 600, also (600 + wahr*(n-1))/n:
+
+    303  ->  n=2     (600 + 6*1)/2   = 303,00
+     72  ->  n=9     (600 + 6*8)/9   =  72,00
+     60  ->  n=11    (600 + 6*10)/11 =  60,00
+     52  ->  n=13    (600 + 6*12)/13 =  51,69
+
+Vier Treffer, drei davon exakt, mit monoton wachsendem n.  UND DIE
+GEGENPROBE: mit wahr=3 statt 6 - also der halben Umlaufzeit - findet sich
+fuer KEINEN der vier Werte ein passendes n.
+
+DAMIT IST DIE LUECKE ZU, die zwei Abschnitte weiter oben noch offen stand.
+Nicht mehr nur xnet, ein Nachbau, meldet 6 fuer 606 ms Umlauf, sondern die
+Implementierung des Protokollautors selbst - arithmetisch belegt und mit
+ausgeschlossener Alternative.  PC/FlexNet32 fuegt sich ein: seine gesendeten
+87, 87, 76 passen auf n=7 und n=8 bei einem Rohwert von 1.
+
+    Die Einheit ist 100 ms, die Zahl ist die GANZE Umlaufzeit.
+    Gemessen an drei Implementierungen, zwei davon vom Protokollautor.
+
+RMNC UND FLEXNET32 SENDEN GEGLAETTET, XNET UND WIR SENDEN ROH.  Das ist
+kein Detail: ihr Sendewert traegt den 600er-Startwert hunderte Polls lang
+ins Netz hinaus, und dort ist er ein additiver Sockel unter jedem Ziel
+hinter ihnen.  Der Punkt fuers Gespraech mit dem Entwickler.
+
+DREI LESEFEHLER VON MIR, HIER MIT ERLEDIGT:
+
+  1. DIE SPALTEN IN XNETS ANZEIGE SIND UMGEKEHRT, als ich sie gelesen habe:
+
+         rtt 6/303   6   = was WIR messen
+                     303 = was der RMNC meldet     = (600+6)/2,  sein n=2
+         rtt 0/301   0   = was WIR messen
+                     301 = was FlexNet32 meldet    = (600+1)/2,  sein n=2
+
+     Links die eigene Messung, rechts die des Partners, BEIDE in
+     100-ms-Einheiten.  Nicht "links vom Partner, rechts eigene ms".
+
+  2. DAMIT LOEST SICH "301 ms AUF EINEM 10-MBIT-LINK" RESTLOS AUF: es waren
+     nie Millisekunden.  Es war FlexNet32s Mittelwert nach zwei Polls.  Die
+     ganze Ratlosigkeit dazu, samt meinem Verdacht auf eine Verseuchung
+     fremder Links, hatte eine falsch gelesene Spaltenueberschrift als
+     Ursache.
+
+  3. XNET SENDET AUF DEM SCHNELLEN LINK 0, NICHT 1.  Ich hatte die 1 aus
+     FlexNet32s Anzeige fuer xnets Untergrenze gehalten und mit unserem
+     "if (pp->locdelay < 1) pp->locdelay = 1;" gleichgesetzt.  Die 1 ist
+     FlexNet32s eigene Untergrenze.  Unsere gibt es, xnets nicht.
+
+WEITER BESTAETIGT, jetzt mit Haeufigkeiten aus einem einzigen Mitschnitt:
+
+    xnet   30 3f 25 21 0d       fuenf Oktette   35x
+    RMNC   30 33 20 20 21 0d    sechs, zwei Leerzeichen   4x
+
+Und: die verzoegerte serielle Strecke blieb instabil - 15 SABM und 16 UA auf
+Port 1, dazu 35 INIT-Wiederholungen von xnet.  Die Messung gelang trotzdem,
+weil die RPRT-Reihe ueber die Abbrueche hinweg lesbar ist.
+
+WERKZEUG: testtools/flexread.py zieht die Rahmen aus dem Typescript.  Der
+Monitor schreibt Kopfzeile und Hexdump getrennt, mit Leerzeilen und
+Ueberdruck dazwischen - von Hand sieht man die Reihe der gemeldeten Werte
+nicht, und genau die Reihe ist der Beleg.
