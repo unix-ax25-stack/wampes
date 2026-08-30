@@ -755,9 +755,18 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		    !(ifp->dama_violations % 10)) {
 			char buf[AXBUF];
 
+			/* WER GESENDET HAT, nicht wer den Rahmen verfasst hat
+			 * (Thomas).  Bei einer digipeateten Sitzung ist
+			 * hdr->source der Benutzer am fernen Ende - der war
+			 * nie auf unserem Kanal und kann fuer nichts.  Den
+			 * Kanal belegt hat der Digipeater, und das ist genau
+			 * die Station, die dama_station() liefert; die Regel
+			 * dafuer steht schon im Kommentar dort.  Dieselbe
+			 * Adresse ist spaeter der Empfaenger der Verwarnung.
+			 */
 			printf("%s: %s polled us - on a DAMA channel the "
 			       "master decides who\n  transmits (%ld so far)\n",
-			       ifp->name, pax25(buf, hdr->source),
+			       ifp->name, pax25(buf, dama_station(axp)),
 			       (long) ifp->dama_violations);
 		}
 	}

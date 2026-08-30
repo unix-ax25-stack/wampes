@@ -6370,9 +6370,29 @@ WAS NOCH FEHLT:
     ein Nutzer mit abgeschaltetem Monitor es nicht sieht - aber "nicht
     gesehen" ist harmlos, "in die Mail geschrieben" nicht.
 
-    STAND: UI an das Rufzeichen des Stoerers, Zaehler als Parameter mit
-    Vorgabe 5 (wie TNNs par 6), danach Disconnect - der dann kommentarlos
-    sein darf, weil die Begruendung vorher im UI stand.  Nicht gebaut.
+    UND DER MONITOR IST NICHT DAS PROBLEM, das ich daraus gemacht hatte
+    (Thomas): wer ploetzlich rausfliegt, schaltet den Monitor ein, um zu
+    sehen warum.  Genau dann wartet die Verwarnung dort auf ihn.  Der
+    Einwand "wird vielleicht nicht gesehen" trifft also gerade den Fall
+    nicht, auf den es ankommt.
+
+    AN WEN SIE GEHT - und hier war unser Code falsch, jetzt behoben:
+    NICHT an hdr->source.  Bei einer digipeateten Sitzung ist das der
+    Benutzer am fernen Ende; der war nie auf unserem Kanal.  Belegt hat
+    ihn der DIGIPEATER, und das ist genau die Station, die dama_station()
+    liefert - die Regel dafuer stand schon im Kommentar dort ("wer auf
+    unserem Kanal wirklich sendet, ist der letzte Digipeater, der noch
+    aussteht"), nur die Verstossmeldung hielt sich nicht daran.
+
+    STAND: UI an die sendende Station (dama_station), Zaehler als
+    Parameter mit Vorgabe 5 (wie TNNs par 6), danach Disconnect - der
+    kommentarlos sein darf, weil die Begruendung vorher im UI stand.
+    Nicht gebaut.  Wie der Text aussieht, bespricht Thomas spaeter.
+
+    NOCH OFFEN DABEI: unser Zaehler ist PRO PORT (ifp->dama_violations),
+    TNNs Schwelle ist pro Benutzer.  Fuer "nach 5 Verstoessen trennen"
+    braucht es einen Zaehler je Station, nicht je Kanal - sonst trifft die
+    fuenfte Verwarnung irgendwen.
 
 DER ZWEITE LABORKNOTEN steht als tnn-lab/wampes-b.  Er hat KEINEN
 Kommandokanal - TCPDIR ist compilezeitfest, und den Socket haelt der erste
