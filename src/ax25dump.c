@@ -162,7 +162,14 @@ int check       /* Not used */
 			fprintf(fp," Invalid seq number");
 		fputs(s_ext, fp);
 	} else
-		putc('\n',fp);
+		/* AUCH HIER die DAMA-Marke, und das war eine Luecke genau an
+		 * der wichtigsten Stelle: das ganze Poll-Verfahren besteht aus
+		 * S- und U-Rahmen, und ausgerechnet fuer die druckte der
+		 * Monitor ein blankes Zeilenende.  Wer ein unmarkiertes SABM zu
+		 * sehen glaubte, sah in Wahrheit den Monitor schweigen - mich
+		 * hat es einen halben Befund gekostet.
+		 */
+		fputs(s_ext, fp);
 
 }
 static char *
