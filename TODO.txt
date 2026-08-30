@@ -7693,3 +7693,71 @@ der Bitrate (die 120 s haengen an der Umlaufzeit, "usually more than 30
 seconds at 1200 baud").  Und die Zugdauer von 5 s ist weiterhin gegriffen -
 sie sollte sich am Fenster orientieren (maxframe * paclen bei dieser
 Bitrate), nicht an einer runden Zahl.
+
+========================================================================
+DAMA: STAND AM ENDE DES 2026-08-30 UND WAS NOCH ANSTEHT
+========================================================================
+
+FERTIG UND GEMESSEN AN DIESEM TAG
+  * Drei Master-Betriebsarten lazy/permissive/enforce, Vorgabe permissive.
+  * Verstosszaehler JE STATION mit doppelter Alterung (Verbindungsende,
+    600 s).  Ein ZUG ist ein Verstoss, nicht ein Rahmen.
+  * Verwarnung als UI mit drei Stufen (Notice/Warning/Fatal), Zaehlung
+    vorn, Schwelle nur wo sie gedeckt ist.
+  * Bann von 300 s nach dem Zwangsdisconnect, gilt auch fuer den
+    Gerufenen; Abweisungsmeldung hoechstens einmal je Minute.
+  * dama_master -> dama_sender: das Feld enthaelt jetzt, WER GESENDET hat.
+  * ax25dump zeigt [DAMA] auch auf S- und U-Rahmen (kostete zwei falsche
+    Befunde, bevor es auffiel).
+  * Kanalzugriff: persist=255/slottime=0 statt fulldup, in beiden Rollen.
+  * "ifconfig <if> hf-datarate <bit/s>".
+  * Antwortfrist und Zugdauer getrennt, beide aus der Bitrate; Wachhund
+    des Slaves ebenso.
+  * DAMA-Master verlangt digipeat 2 - Ablehnung in beiden Reihenfolgen.
+
+OFFEN, UND WAS ES BRAUCHT
+
+  A. ENTSCHEIDUNGEN (kein Bauen, nur ein Satz von Thomas)
+     1. MARKIERT UNSER SLAVE WEITER?  Von der Spezifikation nicht gedeckt
+        (das Bit ist das des Masters), von TNN nicht gelesen (der Slave ist
+        dort gar nicht uebersetzt), von Linux nur gelesen.  Wer es liest,
+        ist nach heutigem Stand unser eigener Slave - und ein Linux als
+        DAMA-Slave, den es dann sein ganzes Geraet umschalten laesst.
+     2. FLUCHTTUER DES BANNS: "wer mit DAMA-Bit anklopft, darf sofort
+        wieder herein" greift fuer eine Linux-Station nie, weil sie nie
+        markiert.  Entweder nur die Zeit, oder Hereinlassen auf Bewaehrung
+        mit dem Zaehler auf der Schwelle.
+     3. DER GERUFENE OHNE DAMA: der strenge Weg (unmarkiertes UA -> DISC an
+        ihn, DM an den Rufer) faellt, weil er jeden Linux-Slave traefe.  Es
+        bleibt der nachsichtige: am VERHALTEN urteilen.
+
+  B. BAUEN, OHNE NEUES LABOR
+     4. "dama slave off | on | learn".  "on" braucht nichts Neues; die
+        Arbeit steckt in "learn" - umschalten, sobald eine Station reihum
+        mit MEHREREN spricht (das Poll-Kriterium).
+     5. PRIORITAETSSCHEMA: wer auf einen Poll nur mit RR/F antwortet, wird
+        heruntergestuft und uebersprungen; ein I-Frame stellt ihn wieder
+        her.  Steht im Papier (S. 204), ist also kein TNN-Eigenbau.
+     6. EIN LINK JE ZUG (TNNs zael/indx mit break).  Braucht neue
+        Zustandsfuehrung im Master.
+
+  C. MESSEN, BRAUCHT AUFBAU
+     7. Mehrere Sitzungen desselben Rufzeichens zu verschiedenen Zielen -
+        EINE Verwarnung, nicht mehrere.  Dasselbe mit einer ueber uns
+        wiederholten Sitzung.  (Der Zaehler je Station sollte es koennen;
+        gemessen ist es nicht.)
+     8. Verstoss WAEHREND FREMDEM ZUG - der Fall, in dem unser Kriterium
+        ueberhaupt erst greift.  Braucht den gemeinsamen Kanal.
+     9. persist/slottime auf einem Porttyp MIT Kanalzugriff (kiss, 6pack).
+        Ueber axip nicht pruefbar.
+    10. Der gemeinsame Kanal haengt an uhnp: der gelernte UDP-Quellport
+        haengt an der Adresse statt am Rufzeichen, drei Knoten auf
+        127.0.0.1 stehlen einander die Bytes.
+
+  D. DOKUMENTATION
+    11. doc/DAMA-SLAVE.md: der Abschnitt "Two slaves that connect to each
+        other lock each other out" ist GEMESSEN falsch - sie verbinden sich
+        und bleiben verbunden.
+    12. Die Argumentation fulldup gegen persist/slottime gehoert dorthin
+        (Thomas' Anregung): Porteigenschaft gegen Zustand, Simplex gegen
+        Duplex, und warum der Master erst recht nicht darf.
