@@ -6957,3 +6957,48 @@ DAMIT: kein Ersatz fuer die Konfiguration, aber der erste Kandidat, der als
 von ihm nicht verlangen sollte (das Rufzeichen des Masters zu kennen).
 Sinnvolle Staffelung waere: konfiguriert schlaegt gelernt, gelernt schlaegt
 geraten, und geraten ist das heutige Verhalten als letzte Zuflucht.
+
+------------------------------------------------------------------------
+EINORDNUNG: DIE ERKENNUNG BETRIFFT NUR "learn" (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Sein Einwand ordnet die ganze vorige Diskussion neu, und zwar
+vereinfachend.
+
+"on" BRAUCHT KEINE ERKENNUNG.  Der normale Client-Modus geht schlicht davon
+aus, dass auf dieser Frequenz DAMA gesprochen wird: Bit immer setzen, ueber
+den DAMA-Digi arbeiten, fertig.  Verbindet sich jemand direkt, oder kommt
+userA-LAN ueber userAs eigenen Client - Pech.  Er haelt sich nicht an die
+Regel der Frequenz.  Das ist eine BETRIEBSREGEL und kein Fehlerfall, den
+Software abfangen muesste.  Damit faellt der ganze Aufwand fuer "on" weg.
+
+UND EIN KONFIGURIERTES MASTER-RUFZEICHEN IM CLIENT IST NICHT NUR SCHWER
+ZUMUTBAR, SONDERN SCHAEDLICH.  Zwei Faehigkeiten gingen verloren:
+
+  1. FREQUENZWECHSEL.  Anderer Kanal, anderer DAMA-Master, nichts
+     umzukonfigurieren.
+  2. NOTBEHELF BEI AUSFALL.  Faellt der DAMA-Digi aus, sagt einer mit gutem
+     Standort "ich bin DAMA-Master", und die anderen verbinden sich ueber
+     ihn - statt dass alle auf Nicht-DAMA umstellen muessen.  Kommt der
+     echte zurueck, wird der Not-Master zurueckgestellt.
+
+     UND ES GIBT DABEI KEINEN KONFLIKT, weil ein DAMA-Master KEINE PAKETE
+     AN SICH ZIEHT: der Connect-Pfad ist die Entscheidung der Nutzer.  Zwei
+     Master koennen nebeneinander bestehen.  Das ist der Grund, warum die
+     lose Variante nicht nur bequemer, sondern besser ist.
+
+WO DER DURCHBRUCH BEI "learn" LIEGT: die Frage ist nicht, WER der Master
+ist, sondern OB DIESE FREQUENZ DAMA FAEHRT.  Genau dafuer taugt das
+Poll-Kriterium von oben - ein einzelner markierter Rahmen von einem
+Nachbar-Slave darf uns nicht in den Slave-Modus schalten, eine Station, die
+reihum mit vielen spricht, schon.
+
+DAMIT WIRD DIE STAFFELUNG EINFACHER als das, was ich zwei Nachrichten
+vorher vorgeschlagen hatte ("konfiguriert schlaegt gelernt schlaegt
+geraten"):
+
+    off     nie Slave.
+    on      diese Frequenz ist ein DAMA-Kanal.  Keine Erkennung noetig.
+    learn   unbekannt - umschalten, sobald ein Master ERKANNT ist, und
+            dafuer das Poll-Kriterium.
+
+Ein konfiguriertes Master-Rufzeichen kommt darin nicht mehr vor.
