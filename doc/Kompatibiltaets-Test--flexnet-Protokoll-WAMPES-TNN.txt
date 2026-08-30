@@ -1293,3 +1293,52 @@ und in der konservativen Richtung.
 WAS UNBERUEHRT BLEIBT: die rtt/2-Entscheidung.  Die vier Werte 303, 72, 60,
 52 liegen alle in der Wachstumsphase, die Rechnung ist dieselbe, und wahr=3
 findet weiterhin fuer keinen einzigen ein passendes n.
+
+
+DIE SPALTEN SIND BEWIESEN: T = MITTELWERT BEIDER RICHTUNGEN
+===========================================================
+
+Thomas: beide Seiten melden stabil 5h20m, es gab also KEINEN Neuaufbau.
+Damit ist die letzte Unklarheit weg - der RMNC steht nach 17 Polls auf 1,
+und 5h20m liegen weit darueber.  Meine Rechnung "kann nach 5h nicht bei 1
+sein" beruhte auf dem falschen Mittelungsmodell, siehe voriger Abschnitt.
+
+UND DAMIT LAESST SICH T NACHRECHNEN.  Fuer alle acht bisher gesehenen
+Zeilen, nach der Regel
+
+    T = round((eigene Messung + Wert des Partners) / 2),  Boden 1
+
+    heute  DB0BLO       0/1     ->    1   angezeigt   1
+    heute  IGATE        0/0     ->    1   angezeigt   1
+    heute  IGATEB       8/3     ->    6   angezeigt   6
+    heute  DB0AVH-4     0/1     ->    1   angezeigt   1
+    nachts DB0BLO       6/303   ->  155   angezeigt 155
+    nachts DB0AVH-4     0/301   ->  151   angezeigt 151
+    nachts IGATE        0/2     ->    1   angezeigt   1
+    nachts IGATEB       0/1     ->    1   angezeigt   1
+
+ACHT VON ACHT, EXAKT.  Damit ist die Spaltenzuordnung nicht mehr
+erschlossen, sondern belegt:
+
+    links   die EIGENE Messung
+    rechts  der Wert des PARTNERS
+    beide in 100-ms-Einheiten
+
+Und es ist genau die Regel, die weiter oben fuer XNET schon steht -
+Mittelwert beider Richtungen, kaufmaennisch gerundet, mit Boden 1.  Sie war
+aus einem anderen Mitschnitt hergeleitet und ist hier unabhaengig
+bestaetigt.
+
+NOCH EINE TABELLE VON MIR FAELLT DAMIT: "eine T-Einheit sind 4 ms
+Umlaufzeit" war ein Artefakt.  Weil die eigene Messung damals bei 0 bis 6
+lag und die fremde bei rund 300, war (a+b)/2 ungefaehr b/2 - das sah nach
+"halber Millisekundenwert" aus und passte auf drei Zeilen.  T IST
+UEBERHAUPT KEINE ZEITEINHEIT, sondern der Mittelwert zweier Verzoegerungen
+in derselben 100-ms-Einheit wie alles andere.
+
+MERKSATZ FUER DIESEN GANZEN ABEND: dreimal habe ich aus zwei oder drei
+Zeilen ein Bildungsgesetz geraten, das dann auf mehr Zeilen nicht mehr
+galt - erst die T-Einheit, dann die Spalten, dann das Mittelungsfenster.
+Was jedes Mal geholfen hat, war nicht besseres Nachdenken, sondern MEHR
+ZEILEN: die Verlaufsreihe statt eines Werts, acht Links statt drei, fuenf
+Stunden statt zwanzig Minuten.
