@@ -109,6 +109,28 @@ static int dama_in_force(struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+/* WER DIESEN RAHMEN AUF UNSEREM KANAL GESENDET HAT.
+ *
+ * Nicht die Quelle: kommt er ueber Digipeater, dann hat der LETZTE, der ihn
+ * schon wiederholt hat, zuletzt getastet - die Quelle sitzt womoeglich weit
+ * weg und war nie auf dieser Frequenz.  Das ist dieselbe Unterscheidung, die
+ * dama_station() fuer die Gegenrichtung trifft, nur von der anderen Seite:
+ * dort der erste NOCH NICHT wiederholte Digi (wen wir als naechstes ansprechen),
+ * hier der letzte SCHON wiederholte (wer uns zuletzt erreicht hat).
+ *
+ * nextdigi ist der Index des ersten Digis, der noch nicht wiederholt hat -
+ * der davor ist also der gesuchte.
+ */
+
+static const uint8 *dama_sender(const struct ax25 *hdr)
+{
+	if (hdr->ndigis > 0 && hdr->nextdigi > 0)
+		return hdr->digis[hdr->nextdigi - 1];
+	return hdr->source;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* A frame has arrived carrying the master's DAMA bit.  That is all it takes
  * to keep the watchdog fed - any DAMA frame, not only a poll, which is what
  * TNN does too (damaok is set before the poll is even looked at).  It is also
@@ -116,7 +138,7 @@ static int dama_in_force(struct iface *ifp)
  * master, only that this port may follow one.
  */
 
-void dama_heard_frame(struct iface *ifp, const uint8 *src)
+void dama_heard_frame(struct iface *ifp, const struct ax25 *hdr)
 {
 	/* SLAVE, not "not off", and that is load-bearing rather than tidy:
 	 * once there is a master role, a port that holds it must NOT be talked
@@ -135,14 +157,18 @@ void dama_heard_frame(struct iface *ifp, const uint8 *src)
 	if (ifp->dama_heard == 0)
 		ifp->dama_entered++;
 	ifp->dama_heard = secclock();
-	/* And WHO it was.  Without this any neighbour's command with the poll
-	 * bit would hand us the channel, which is the opposite of the point:
-	 * on a DAMA channel exactly one station decides who transmits.  The
-	 * callsign is remembered rather than the bit, so a master that marks
-	 * only the connect - which the paper allows - still polls recognisably
-	 * afterwards.
+	/* UND WER GESENDET HAT - nicht wer den Rahmen verfasst hat.  Ohne das
+	 * wuerde uns jedes Kommando mit P von irgendwem den Kanal in die Hand
+	 * druecken, was das Gegenteil des Verfahrens waere.  Gemerkt wird das
+	 * Rufzeichen und nicht das Bit, damit ein Master, der nur den Aufbau
+	 * markiert - was die Spezifikation erlaubt -, danach trotzdem
+	 * erkennbar pollt.
+	 *
+	 * Es heisst SENDER und nicht MASTER, und das ist keine Wortklauberei:
+	 * wer der Master ist, sagt uns die Leitung nicht.  Das hier ist, wer
+	 * uns zuletzt erreicht hat - eine Groesse, die es gibt.
 	 */
-	addrcp(ifp->dama_master, src);
+	addrcp(ifp->dama_sender, dama_sender(hdr));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -203,12 +229,13 @@ int dama_holds(struct ax25_cb *axp)
  * away is the normal end of every connection.
  */
 
-void dama_poll_begin(struct iface *ifp, int ispoll, const uint8 *src)
+void dama_poll_begin(struct iface *ifp, int ispoll, const struct ax25 *hdr)
 {
 	if (ifp == NULL)
 		return;
 	ifp->dama_window = 0;
-	if (ispoll && dama_in_force(ifp) && addreq(src, ifp->dama_master)) {
+	if (ispoll && dama_in_force(ifp) &&
+	    addreq(dama_sender(hdr), ifp->dama_sender)) {
 		ifp->dama_window = 1;
 		ifp->dama_polls++;
 	}
@@ -1081,11 +1108,11 @@ void dama_show(struct iface *ifp)
 	}
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, master ",
+	printf("           dama slave, timeout %ds, heard from ",
 	       dama_watchdog(ifp));
 	if (dama_in_force(ifp)) {
 		char buf[AXBUF];
-		printf("%s", pax25(buf, ifp->dama_master));
+		printf("%s", pax25(buf, ifp->dama_sender));
 	} else
 		printf("not heard");
 	printf(", found %ld lost %ld polls %ld\n",

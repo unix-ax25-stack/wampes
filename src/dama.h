@@ -20,9 +20,9 @@
 #define DAMA_SLAVE      1
 #define DAMA_MASTER     2
 
-void dama_heard_frame(struct iface *ifp,const uint8 *src);
+void dama_heard_frame(struct iface *ifp,const struct ax25 *hdr);
 int  dama_holds(struct ax25_cb *axp);
-void dama_poll_begin(struct iface *ifp,int ispoll,const uint8 *src);
+void dama_poll_begin(struct iface *ifp,int ispoll,const struct ax25 *hdr);
 void dama_poll_end(struct iface *ifp);
 void dama_serve_others(struct iface *ifp,struct ax25_cb *polled);
 /* UI auf einem DAMA-Port: kurz halten, ob ein Poll-Fenster kommt, und dort

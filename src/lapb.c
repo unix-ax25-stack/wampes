@@ -200,10 +200,10 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 * already handles a master that stops speaking DAMA at all.
 	 */
 	if(hdr->ext & SSID_DAMA){
-		dama_heard_frame(iface,hdr->source);
+		dama_heard_frame(iface,hdr);
 		axp->dama_link = 1;
 	}
-	dama_poll_begin(iface,poll,hdr->source);
+	dama_poll_begin(iface,poll,hdr);
 	/* Und die andere Rolle: auf einem Master-Port endet hier der Zug des
 	 * Gepollten (F-Bit), und hier wird gezaehlt, wer selbst pollt.
 	 */

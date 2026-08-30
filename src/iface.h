@@ -171,9 +171,21 @@ struct iface {
 				 * on this port - the whole of a slave's
 				 * permission to transmit, and it belongs to
 				 * the station, not to one connection */
-	uint8 dama_master[7];   /* Whose polls count.  On a DAMA channel one
-				 * station decides who transmits, so a poll
-				 * from anybody else is not a poll. */
+	uint8 dama_sender[7];   /* WER ZULETZT DAMA GESPROCHEN HAT, und nicht
+				 * mehr als das.  Frueher hiess das Feld
+				 * dama_master, und es stand der falsche Name
+				 * ueber dem richtigen Wert: gespeichert wurde
+				 * die QUELLE eines markierten Rahmens, und die
+				 * ist bei store-and-forward das Rufzeichen des
+				 * fernen Nutzers, nicht das des Masters.  Wer
+				 * der Master ist, laesst sich auf der Leitung
+				 * ueberhaupt nicht feststellen - das Bit sagt
+				 * "spricht DAMA", eine Digi-Rolle sagt
+				 * "wiederholt gerade", und ein Kommando mit P
+				 * sendet jede Station, wenn T1 ablaeuft.
+				 * Gespeichert wird jetzt, WER GESENDET HAT
+				 * (letzter wiederholter Digi, sonst Quelle) -
+				 * eine Groesse, die es wirklich gibt. */
 
 	int32 crcerrors;        /* Packets received with CRC errors */
 	int32 ax25errors;       /* Packets received with bad ax25 header */
