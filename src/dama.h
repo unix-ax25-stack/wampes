@@ -20,6 +20,24 @@
 #define DAMA_SLAVE      1
 #define DAMA_MASTER     2
 
+/* WIE STRENG DER MASTER IST - Sache des Sysops, nicht unsere (Thomas).
+ *
+ *   lazy        sagt nichts und nimmt DAMA- wie Nicht-DAMA-Nutzer
+ *               stillschweigend an.
+ *   permissive  informiert den Stoerer per UI, dass er DAMA benutzen
+ *               sollte.  Kein Disconnect.  VORGABE.
+ *   enforce     verwarnt und trennt nach DAMA_MAXVIOL Verstoessen - das
+ *               ist TNNs Verhalten (par 6 DAMA-MaxPol, Vorgabe 5).
+ *
+ * Die Vorgabe ist die mittlere, und das passt zu dem, was sonst ueberall
+ * hier steht: unser Slave legt bei verstummtem Master auch nicht auf, weil
+ * ein Disconnect den Benutzer alles oberhalb von AX.25 kostet.  Dieselbe
+ * Haltung, nur von der Master-Seite.
+ */
+#define DAMA_LAZY       0
+#define DAMA_PERMISSIVE 1
+#define DAMA_ENFORCE    2
+
 void dama_heard_frame(struct iface *ifp,const struct ax25 *hdr);
 int  dama_holds(struct ax25_cb *axp);
 void dama_poll_begin(struct iface *ifp,int ispoll,const struct ax25 *hdr);

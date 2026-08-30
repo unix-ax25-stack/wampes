@@ -594,6 +594,7 @@ struct dama_m {
 static struct dama_m *Dama_m;
 
 static void dama_master_next(void *arg);
+static void dama_kick_marked(struct iface *ifp);
 
 static struct dama_m *dama_m_port(struct iface *ifp, int create)
 {
@@ -725,6 +726,8 @@ static void dama_master_gap(struct dama_m *mp)
 static void dama_master_next(void *arg)
 {
 	struct dama_m *mp = (struct dama_m *) arg;
+
+	dama_kick_marked(mp->ifp);      /* hier ist kein Rahmen in Arbeit */
 	uint8 who[AXALEN];
 
 	stop_timer(&mp->t);
@@ -794,6 +797,7 @@ struct dama_v {
 	uint8 call[AXALEN];
 	long n;
 	int32 last;                     /* secclock des letzten Verstosses */
+	int kick;                       /* zu trennen, sobald es sicher ist */
 };
 
 static struct dama_v *Dama_v;
@@ -811,7 +815,7 @@ static int dama_station_linked(struct iface *ifp, const uint8 *call)
 	return 0;
 }
 
-static long dama_violation(struct iface *ifp, const uint8 *call)
+static struct dama_v *dama_violation(struct iface *ifp, const uint8 *call)
 {
 	struct dama_v *vp;
 	struct dama_v **pp;
@@ -830,7 +834,8 @@ static long dama_violation(struct iface *ifp, const uint8 *call)
 	for (vp = Dama_v; vp != NULL; vp = vp->next)
 		if (vp->ifp == ifp && addreq(vp->call, call)) {
 			vp->last = now;
-			return ++vp->n;
+			vp->n++;
+			return vp;
 		}
 	vp = (struct dama_v *) callocw(1, sizeof(struct dama_v));
 	vp->ifp = ifp;
@@ -839,7 +844,115 @@ static long dama_violation(struct iface *ifp, const uint8 *call)
 	vp->last = now;
 	vp->next = Dama_v;
 	Dama_v = vp;
-	return vp->n;
+	return vp;
+}
+
+/* TRENNEN, ABER NICHT HIER UND JETZT.
+ *
+ * Der erste Entwurf legte den DISC direkt in dama_master_input() - und der
+ * Knoten stuerzte beim fuenften Verstoss ab.  Zu Recht: diese Funktion
+ * laeuft FRUEH in lapb_input(), und danach arbeitet die Zustandsmaschine
+ * mit demselben Kontrollblock weiter.  Wer eine Verbindung mitten aus ihrer
+ * eigenen Empfangsverarbeitung herausreisst, zieht ihr den Boden weg.
+ *
+ * Der Master hat aber einen sicheren Ort: seinen Rundentimer.  Dort ist
+ * kein Rahmen in Arbeit, und die Runde geht ohnehin ueber alle Links.
+ */
+
+static void dama_kick_marked(struct iface *ifp)
+{
+	struct ax25_cb *axp;
+	struct ax25_cb *next;
+	struct dama_v *vp;
+
+	for (vp = Dama_v; vp != NULL; vp = vp->next) {
+		if (vp->ifp != ifp || !vp->kick)
+			continue;
+		vp->kick = 0;
+		for (axp = Ax25_cb; axp != NULL; axp = next) {
+			next = axp->next;
+			if (axp->iface != ifp || axp->peer != NULL)
+				continue;
+			if (axp->state != LAPB_CONNECTED &&
+			    axp->state != LAPB_RECOVERY)
+				continue;
+			if (!addreq(dama_station(axp), vp->call))
+				continue;
+			/* Die Begruendung stand vorher im UI, der DISC darf
+			 * also wortlos sein.
+			 */
+			free_q(&axp->txq);
+			axp->retries = 0;
+			sendctl(axp, LAPB_COMMAND, DISC | PF);
+			stop_timer(&axp->t3);
+			start_timer(&axp->t1);
+			lapbstate(axp, LAPB_DISCPENDING);
+		}
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* NACH WIE VIELEN VERSTOESSEN GETRENNT WIRD, in "enforce".  Fuenf, wie TNNs
+ * par 6 (DAMA-MaxPol).  Noch fest; einstellbar zu machen lohnt erst, wenn
+ * jemand einen Grund hat, es zu aendern.
+ */
+#define DAMA_MAXVIOL    5
+
+/* DIE VERWARNUNG GEHT ALS UI, NICHT IN DIE SITZUNG - und das war Thomas'
+ * Einwand gegen meinen ersten Vorschlag:
+ *
+ *     "Nein, keine Meldung in PID=text.  Sonst steht in Mails, die er
+ *      abruft: 'Schoene Gruesse aus ... tolles Wetter und *** 6
+ *      DAMA-Verstoesse'."
+ *
+ * Text in eine AX.25-Sitzung ist NICHT ausserhalb des Bandes: er landet im
+ * Bytestrom, den die Anwendung liest, also mitten in der Mail.  Das ist
+ * keine Verwarnung, sondern eine Beschaedigung der Nutzdaten - und zwar
+ * auch auf einem reinen Text-Link, wo die openpid-Regel nichts dagegen
+ * hat.  TNNs Weg ("im QSO verwarnt") hat genau dieses Problem.
+ *
+ * Das UI liegt dagegen ausserhalb der Sitzung, kann nichts zerstoeren, und
+ * es funktioniert unabhaengig davon, was der Link sonst traegt (NET/ROM,
+ * FlexNet, IP).  Dass es unquittiert ist, wiegt leicht: wer ploetzlich
+ * rausfliegt, schaltet den Monitor ein, um zu sehen warum - und genau dann
+ * wartet sie dort auf ihn (Thomas).
+ *
+ * ADRESSIERT AN DEN, DER GESENDET HAT, nicht an den Urheber des Rahmens:
+ * bei einer digipeateten Sitzung ist das nicht dasselbe.
+ *
+ * DER WORTLAUT IST VORLAEUFIG - Thomas will ihn noch festlegen.
+ */
+
+static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
+{
+	struct ax25 hdr;
+	struct mbuf *bp;
+	char buf[160];
+	int len;
+
+	if (ifp == NULL || (bp = alloc_mbuf(sizeof(buf))) == NULL)
+		return;
+	/* snprintf und ein Puffer mit Luft.  Der erste Entwurf nahm sprintf
+	 * und char[80] - und der Text war mit ", disconnecting" GENAU EIN
+	 * OKTETT zu lang.  Clang macht daraus einen trap, also SIGILL, und
+	 * zwar nur in "enforce" beim Erreichen der Schwelle: ein Absturz, der
+	 * ausschliesslich im seltensten Zweig zuschlaegt.
+	 */
+	len = snprintf(buf, sizeof(buf),
+		       "DAMA: this channel is controlled by a DAMA master, "
+		       "who polls you - please use DAMA (%ld)%s\r", n,
+		       last ? ", disconnecting" : "");
+	if (len < 0)
+		len = 0;
+	if (len > (int) sizeof(buf))
+		len = (int) sizeof(buf);
+	memcpy(bp->data, buf, (size_t) len);
+	bp->cnt = (uint) len;
+	memset(&hdr, 0, sizeof(hdr));
+	addrcp(hdr.dest, call);
+	hdr.cmdrsp = LAPB_COMMAND;
+	ax_send_ui(ifp, &hdr, PID_NO_L3, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -862,7 +975,8 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	if (ispoll && !isu &&
 	    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY)) {
 		const uint8 *who = dama_station(axp);
-		long n = dama_violation(ifp, who);
+		struct dama_v *vp = dama_violation(ifp, who);
+		long n = vp->n;
 
 		ifp->dama_violations++;         /* Summe fuer die Statuszeile */
 		if (n == 1 || !(n % 10)) {
@@ -887,6 +1001,18 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 			       "master polls (%ld so far)\n",
 			       ifp->name, pax25(buf, who), n);
 		}
+		/* WAS DARAUS FOLGT, entscheidet der Sysop.  Gezaehlt wird in
+		 * allen drei Betriebsarten - der Zaehler ist auch Statistik -,
+		 * nur die Folge unterscheidet sich.
+		 */
+		if (ifp->dama_policy != DAMA_LAZY &&
+		    (n == 1 || !(n % 10) ||
+		     (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL)))
+			dama_warn(ifp, who, n,
+				  ifp->dama_policy == DAMA_ENFORCE &&
+				  n >= DAMA_MAXVIOL);
+		if (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL)
+			vp->kick = 1;   /* vollzogen wird im Rundentimer */
 	}
 	if ((mp = dama_m_port(ifp, 0)) == NULL || !mp->busy)
 		return;
@@ -1019,13 +1145,36 @@ int ifdama(int argc, char *argv[], void *p)
 			       "digipeat 2\n  does that.\n", ifp->name);
 			return 1;
 		}
+		/* VORGABE PERMISSIVE, nicht lazy und nicht enforce.  Wer
+		 * nichts sagt, bekommt den mittleren Weg: informieren, aber
+		 * niemandem die Verbindung nehmen.
+		 */
+		ifp->dama_policy = DAMA_PERMISSIVE;
+		if (argc > 2) {
+			if (!strcmp(argv[2], "lazy"))
+				ifp->dama_policy = DAMA_LAZY;
+			else if (!strcmp(argv[2], "permissive"))
+				ifp->dama_policy = DAMA_PERMISSIVE;
+			else if (!strcmp(argv[2], "enforce"))
+				ifp->dama_policy = DAMA_ENFORCE;
+			else {
+				printf("ifconfig %s dama master "
+				       "[lazy|permissive|enforce]\n"
+				       "  lazy        nimmt jeden stillschweigend an\n"
+				       "  permissive  informiert per UI, trennt nicht (default)\n"
+				       "  enforce     verwarnt und trennt nach %d Verstoessen\n",
+				       ifp->name, DAMA_MAXVIOL);
+				return 1;
+			}
+		}
 		ifp->dama = DAMA_MASTER;
 		ifp->dama_heard = 0;
 		dama_master_kick(ifp);
 		return 0;
 	}
 	if (strcmp(argv[1], "slave")) {
-		printf("ifconfig %s dama off | slave [timeout <seconds>]\n",
+		printf("ifconfig %s dama off | slave [timeout <seconds>]"
+		       " | master [lazy|permissive|enforce]\n",
 		       ifp->name);
 		return 1;
 	}
@@ -1048,7 +1197,8 @@ int ifdama(int argc, char *argv[], void *p)
 			ifp->dama_watchdog = (int) n;
 			continue;
 		}
-		printf("ifconfig %s dama off | slave [timeout <seconds>]\n",
+		printf("ifconfig %s dama off | slave [timeout <seconds>]"
+		       " | master [lazy|permissive|enforce]\n",
 		       ifp->name);
 		return 1;
 	}
@@ -1096,7 +1246,9 @@ void dama_show(struct iface *ifp)
 		char buf[AXBUF];
 		struct dama_m *mp = dama_m_port(ifp, 0);
 
-		printf("           dama master, slot %lds gap %lds, ",
+		printf("           dama master (%s), slot %lds gap %lds, ",
+	       ifp->dama_policy == DAMA_LAZY ? "lazy" :
+	       ifp->dama_policy == DAMA_ENFORCE ? "enforce" : "permissive",
 		       DAMA_SLOT_DEFAULT / 1000L, DAMA_GAP_DEFAULT / 1000L);
 		if (mp != NULL && mp->busy)
 			printf("turn %s", pax25(buf, mp->turn));

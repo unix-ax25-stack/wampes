@@ -156,7 +156,8 @@ struct iface {
 	 * is in force depends on a master actually being heard, which is what
 	 * dama_heard records.
 	 */
-	int dama;               /* DAMA_OFF or DAMA_SLAVE */
+	int dama;               /* DAMA_OFF, DAMA_SLAVE oder DAMA_MASTER */
+	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_watchdog;      /* Seconds of silence before we stop following
 				 * a master; 0 means the built-in default */
 	int32 dama_heard;       /* When a DAMA marked frame was last seen here,

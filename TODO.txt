@@ -7083,3 +7083,55 @@ schadet, ist bisher NICHT gefunden - denkbar waere nur, dass der gemerkte
 Master verstummt, waehrend ein anderer weiter pollt; dann bliebe das
 Fenster zu, bis der Wachhund greift.  Auch das ist zu messen, bevor es
 behauptet wird.
+
+------------------------------------------------------------------------
+GEBAUT: DIE DREI MASTER-BETRIEBSARTEN (2026-08-30)
+------------------------------------------------------------------------
+    ifconfig <port> dama master [lazy|permissive|enforce]
+
+    lazy        zaehlt, sagt nichts.
+    permissive  informiert per UI, trennt nicht.  VORGABE.
+    enforce     verwarnt und trennt nach DAMA_MAXVIOL (5) Verstoessen.
+
+Der Zaehler je Station laeuft in allen dreien - er ist auch Statistik -,
+nur die Folge unterscheidet sich.  Die Statuszeile nennt die Betriebsart:
+
+    dama master (permissive), slot 5s gap 1s, idle, polls 0, ...
+
+DIE VERWARNUNG GEHT ALS UI, nicht in die Sitzung (Thomas' Einwand, siehe
+oben: sie stuende sonst in der Mail, die der Nutzer gerade abruft).
+Adressiert an den, der GESENDET hat (dama_station), nicht an den Urheber.
+Wortlaut von Thomas:
+
+    DAMA: this channel is controlled by a DAMA master, who polls you -
+    please use DAMA (5), disconnecting
+
+GEMESSEN mit testtools/damaviol.py - einer Station, die auf einer stehenden
+Verbindung RR(P) schickt, also genau den Verstoss erzeugt.  Mit einem
+echten Slave entsteht der nie (der antwortet mit F), und mit einem einzelnen
+Knoten ohne DAMA auch kaum, weil der Master ihn ununterbrochen pollt:
+
+    lazy        6 Verstoesse, kein einziges UI
+    permissive  UI bei 1, kein DISC
+    enforce     UI bei 1, UI bei 5 mit ", disconnecting", DISC 0,8 s spaeter
+
+ZWEI FEHLER AUF DEM WEG, beide meine:
+
+  1. DER DISC LAG ZUERST IN dama_master_input().  Der Knoten stuerzte ab, und
+     ich hielt es fuer die Ursache: diese Funktion laeuft frueh in
+     lapb_input(), und danach arbeitet die Zustandsmaschine mit demselben
+     Kontrollblock weiter.  Verschoben in den RUNDENTIMER (dama_kick_marked,
+     gerufen aus dama_master_next) - dort ist kein Rahmen in Arbeit.  Das
+     ist fuer sich richtig, war aber NICHT die Ursache.
+  2. DIE ECHTE URSACHE: sprintf in einen char[80], und der Text war mit
+     ", disconnecting" GENAU EIN OKTETT zu lang.  Clang macht daraus einen
+     trap, also SIGILL - und zwar nur in "enforce" beim Erreichen der
+     Schwelle.  Ein Absturz, der ausschliesslich im seltensten Zweig
+     zuschlaegt und darum in keinem der anderen Laeufe auffiel.  Jetzt
+     snprintf und char[160].
+
+     Gefunden habe ich ihn erst, als ich aufhoerte zu raten und die Laenge
+     ausgerechnet habe: 80 Zeichen plus NUL in einen Puffer von 80.
+
+NOCH FEST: die Schwelle 5 (TNNs par 6).  Einstellbar zu machen lohnt erst,
+wenn jemand einen Grund hat, sie zu aendern.
