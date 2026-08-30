@@ -3735,11 +3735,27 @@ Wert nie als Sentinel senden. Kommt locdelay auf genau DEFAULTDELAY
 heraus, eine Einheit danebenlegen - eine Luege von 0,1 s ist besser als
 ein falsches "unbekannt". Eine Zeile in recv_poll().
 
-DIE ANDERE HAELFTE braucht den Mitschnitt: was XNET sendet, wenn es
-nichts gemessen hat. Thomas' Trace legt intern 300 nahe (die
-Verschiebung um 299), aber was auf dem Draht als "keine Ahnung" steht,
-ist damit nicht gesagt. Er hat XNET getract und weiss nicht, ob der RMNC
-es anders haelt.
+DIE ANDERE HAELFTE IST BEANTWORTET (Thomas' langer Mitschnitt vom
+2026-08-30, ausgewertet mit testtools/flexread.py). XNET sendet als
+"keine Ahnung" DENSELBEN SENTINEL wie wir:
+
+    DB0BLO-4 (xnet) -> DB0BLO:   600 600 600 600 600   dann 30x  6
+
+Die Vermutung "intern 300" aus dem alten Trace ist damit vom Tisch. Und
+der RMNC haelt es NICHT anders, was den Wert angeht - seine
+Mittelwertreihe startet ebenfalls auf 600. Nur der UMGANG damit ist ein
+anderer: wir schalten mit der ersten Messung sauber um, der RMNC mittelt
+die 600 hunderte Polls lang in seinen Sendewert hinein (303, 72, 60, 52
+sind alle davon verunreinigt). Siehe
+doc/Kompatibiltaets-Test--flexnet-Protokoll-WAMPES-TNN.txt.
+
+NEU DAZU, durch die Umstellung auf die volle Umlaufzeit: die billige
+Haelfte oben wird ETWAS dringlicher. Bisher braeuchte es fuer einen
+gemessenen locdelay von genau 600 eine Umlaufzeit von 120 s
+(600 * 200 ms), nachher genuegen 60 s (600 * 100 ms) - doppelt so leicht
+erreichbar. Auf einem gesunden Link immer noch absurd, auf einem mit
+T1-Wiederholungen nicht mehr undenkbar. Kein Hindernis fuer die
+Umstellung, aber bei der Gelegenheit mitzunehmen.
 
 ------------------------------------------------------------------------
 FLEX_INIT: WAS WAMPES BEIM EMPFANG DAMIT TUT (Thomas' Frage, 2026-08-18)
