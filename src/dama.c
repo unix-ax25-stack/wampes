@@ -27,8 +27,8 @@
  * hier stand, ZWEI unabhaengige Implementierungen pruefen genau dieses Paar -
  * TNN mit "rxfDA" und "rxfPF && rxfCR", Linux mit "AX25_COMMAND && pf".  Die
  * TNN-Haelfte des Belegs steht aber in l2rx.c INNERHALB von "#ifdef
- * DAMASLAVE", und in include/all.h steht "/*#define DAMASLAVE*/" - der Slave
- * ist gar nicht uebersetzt.  Ein normal gebautes TNN liest das Bit zwar
+ * DAMASLAVE", und in include/all.h ist genau dieses DAMASLAVE auskommentiert
+ * - der Slave ist also gar nicht uebersetzt.  Ein normal gebautes TNN liest das Bit zwar
  * (rxfDA), loescht es sofort wieder aus dem Kopf und benutzt es nie; seine
  * Master-Seite haengt rein an der Konfiguration (dama(port) = l2mode &
  * MODE_a).
