@@ -7048,6 +7048,38 @@ OHNE DIE PRUEFUNG VERSCHWINDEN BEIDE GEMESSENEN PROBLEME, und niemand muss
 den Master identifizieren.  ifp->dama_master bliebe als reine ANZEIGE fuer
 die Diagnose stehen, ohne Wirkung auf den Mechanismus.
 
-NOCH NICHT GEMESSEN.  Der Zweit-Nutzer-Versuch im Bruecken-Labor wird damit
-zum VERGLEICH zwischen beiden Varianten statt zum blossen Nachweis eines
-Fehlers: mit Pruefung soll der erste Link stehenbleiben, ohne sie nicht.
+JETZT GEMESSEN - UND MEINE VORHERSAGE WAR FALSCH.  Zweiter Nutzer
+DL9SAU-11 auf eigenem Port, beide durch den Repeater zu DL9SAU-6:
+
+    Connected  DL9SAU-6->DL9SAU-5  via DL9SAU-2
+    Connected  DL9SAU-6->DL9SAU-11 via DL9SAU-2
+    EAX25: DL9SAU-6->DL9SAU-5  I ... [DAMA]
+    EAX25: DL9SAU-6->DL9SAU-11 I ... [DAMA]
+    dama slave, timeout 120s, master DL9SAU-5, found 1 lost 0 polls 3
+
+BEIDE LINKS STEHEN UND BEIDE TRAGEN VERKEHR.  Nichts bleibt stehen.
+
+DER GRUND STEHT IN dama_serve_others():
+
+    if (axp != polled && axp->iface == ifp &&
+        addreq(axp->hdr.source, polled->hdr.source) && ...)
+            lapb_output(axp);
+
+Gruppiert wird nach UNSEREM EIGENEN Quellrufzeichen.  Oeffnet sich das
+Fenster fuer irgendeinen unserer Links auf dem Port, werden ALLE geleert.
+Der gemerkte Master pendelt zwar zwischen DL9SAU-5 und DL9SAU-11, aber
+beide senden - also passt immer wieder einer, das Fenster oeffnet sich oft
+genug, und beim Oeffnen wird ohnehin alles bedient.
+
+DIE FEHLZUORDNUNG IST ALSO FOLGENLOS, jedenfalls in dieser Konstellation.
+Das stuetzt Thomas' Schluss (der Slave braucht die Identitaet nicht), aber
+aus einem anderen Grund als wir beide angenommen hatten: nicht weil er sie
+ignoriert, sondern weil die Buchhaltung tolerant genug ist, dass ihr Irrtum
+nirgends ankommt.
+
+WAS DARAUS FOLGT: die Pruefung addreq(src, ifp->dama_master) zu entfernen
+waere eine Vereinfachung, keine Fehlerbehebung.  Ein Fall, in dem sie
+schadet, ist bisher NICHT gefunden - denkbar waere nur, dass der gemerkte
+Master verstummt, waehrend ein anderer weiter pollt; dann bliebe das
+Fenster zu, bis der Wachhund greift.  Auch das ist zu messen, bevor es
+behauptet wird.
