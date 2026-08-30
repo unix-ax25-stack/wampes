@@ -54,3 +54,52 @@ wiederholte Digi ist, wer wirklich gesendet hat - dieselbe Regel, die
 dama_station() schon fuehrt), oder der Repeater muss auf dem DAMA-Kanal
 unter eigenem Rufzeichen aufbauen.  Das erste ist der kleinere Eingriff
 und passt zu dem, was an anderer Stelle schon steht.
+
+------------------------------------------------------------------------
+DAS DAMA-BIT SAGT "SPRICHT DAMA", NICHT "IST MASTER" (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Schaerfer als der Store-and-Forward-Fund darueber, und dieser ist nur eine
+Erscheinungsform davon.
+
+SEIN FALL: zwei Nutzer auf dem Funkkanal, die ueber den DAMA-Repeater
+arbeiten, beschliessen sich DIREKT zu verbinden.  Er schickt ein SABM mit
+DAMA-Bit - weil das auf diesem Kanal ueblich ist und er es zu Recht setzt,
+er spricht ja DAMA.  Wir empfangen es und machen ihn zum Master.  Er ist
+aber selbst nur Slave.
+
+    if (ifp == NULL || ifp->dama != DAMA_SLAVE) return;
+    ...
+    addrcp(ifp->dama_master, src);   /* jeder markierte Rahmen, jeder Absender */
+
+AX25-NAT SCHEIDET AUS (Thomas): der Repeater duerfte nicht unter eigenem
+Rufzeichen aufbauen, die Quelle ginge verloren.  Derselbe Einwand wie
+seinerzeit beim FlexNet-Pfad - der Digi-Pfad bleibt immer erhalten.
+
+WAS EINDEUTIG IST, und es ist genau sein Fall 1: kommt der markierte Rahmen
+UEBER EINEN WIEDERHOLTEN DIGI
+
+    UserA via A,B,C,wampes-dama-master*
+    UserA via A,B,C,wampes-dama-master*,X,Y
+
+dann hat dieser Digi auf unserem Kanal gesendet, und er tut es in der Rolle
+des Knotens.  Das laesst keine zweite Deutung zu.  Im HAEUFIGSTEN Fall aber
+- der Master pollt uns auf unserem eigenen Link zu ihm - steht er direkt in
+der Quelle und ist dort von einem Slave nicht zu unterscheiden.
+
+DREI MOEGLICHE ANTWORTEN, zu entscheiden:
+
+  a) PFAD STATT ABSENDER.  Wer gesendet hat, ist der letzte wiederholte
+     Digi, sonst die Quelle - dieselbe Regel, die dama_station() schon
+     fuehrt.  Behebt den Store-and-Forward-Fall, loest Fall 2 NICHT.
+  b) MASTER KONFIGURIEREN, "dama slave <call>".  Der Sysop weiss, wer der
+     Master ist.  Kein Raten mehr, dafuer eine Angabe mehr in der net.rc.
+  c) LERNEN NUR AUS DEM DIGI-FALL.  Nur ein markierter Rahmen ueber einen
+     wiederholten Digi setzt den Master.  Eindeutig, aber der direkte Poll
+     des Masters lernt nichts.
+
+b) und c) lassen sich verbinden: konfiguriert schlaegt gelernt, gelernt
+wird nur aus dem eindeutigen Fall.  Das waere auch genau die Bedeutung, die
+der geplante "learn"-Schalter haben soll.
+
+TNN UND LINUX HELFEN HIER NICHT: beide pruefen nur "markiert + Kommando mit
+P" (rxfDA + rxfPF/rxfCR bzw. AX25_COMMAND && pf) und haben dieselbe Luecke.
