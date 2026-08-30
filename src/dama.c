@@ -974,18 +974,26 @@ int ifdama(int argc, char *argv[], void *p)
 		return 0;
 	}
 	if (!strcmp(argv[1], "master")) {
+		/* REFUSED, NOT WARNED, and that is Thomas' call: in a net.rc
+		 * nobody sees a warning scroll past, and the node would go on
+		 * running a configuration that cannot work.  The same refusal
+		 * guards the other order in dodigipeat(), because which of the
+		 * two lines comes first is not obvious to anybody.
+		 */
+		if (Digipeat != 2) {
+			printf("%s: refused - dama mode master needs digi mode "
+			       "2 (\"ax25 digipeat 2\")\n  Repeating verbatim "
+			       "hands the called station an UNMARKED connect: "
+			       "it answers\n  without DAMA, never having seen "
+			       "it, and we then hold that against it -\n  while "
+			       "the session misses the time slots.  Only "
+			       "terminating and setting\n  up our own link "
+			       "marks it (dama_mark in sendframe), and only "
+			       "digipeat 2\n  does that.\n", ifp->name);
+			return 1;
+		}
 		ifp->dama = DAMA_MASTER;
 		ifp->dama_heard = 0;
-		if (Digipeat != 2)
-			printf("%s: warning - a DAMA master needs \"ax25 "
-			       "digipeat 2\"\n  Repeating verbatim hands the "
-			       "called station an UNMARKED connect: it answers "
-			       "without\n  DAMA, never having seen it, and we "
-			       "then hold that against it - while the\n  "
-			       "session misses the time slots.  Only "
-			       "terminating and setting up our own\n  link "
-			       "marks it (dama_mark in sendframe), and only "
-			       "digipeat 2 does that.\n", ifp->name);
 		dama_master_kick(ifp);
 		return 0;
 	}

@@ -403,19 +403,24 @@ int argc,
 char *argv[],
 void *p)
 {
-	int r = setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
 	const char *port;
 
-	/* Andersherum dieselbe Warnung wie in ifdama(): ein DAMA-Master braucht
-	 * digipeat 2, weil nur ein selbst aufgebauter Link das DAMA-Bit traegt.
+	/* Andersherum dieselbe ABLEHNUNG wie in ifdama(): ein DAMA-Master
+	 * braucht digipeat 2, weil nur ein selbst aufgebauter Link das
+	 * DAMA-Bit traegt.  Geprueft wird VOR setintrc(), damit der Wert gar
+	 * nicht erst gesetzt und dann zurueckgenommen werden muss - und nur
+	 * fuer 0 und 1, damit ein Tippfehler weiterhin die Bereichsmeldung von
+	 * setintrc() bekommt und nicht diese hier.
 	 */
-	if (!r && argc > 1 && Digipeat != 2 &&
-	    (port = dama_master_port()) != NULL)
-		printf("warning - %s is a DAMA master and needs digipeat 2\n"
-		       "  Repeated verbatim, the called station gets an unmarked "
-		       "connect, answers\n  without DAMA, and the session misses "
-		       "the time slots.\n", port);
-	return r;
+	if (argc > 1 && (!strcmp(argv[1], "0") || !strcmp(argv[1], "1")) &&
+	    (port = dama_master_port()) != NULL) {
+		printf("refused - dama mode master needs digi mode 2, and %s is "
+		       "a DAMA master\n  Repeated verbatim, the called station "
+		       "gets an unmarked connect, answers\n  without DAMA, and "
+		       "the session misses the time slots.\n", port);
+		return 1;
+	}
+	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
 }
 /* Set limit on retransmission backoff */
 static int

@@ -6818,19 +6818,34 @@ UNMARKIERTES SABM, antwortete ohne DAMA (er hat es nie gesehen), wir
 hielten ihm genau das vor, und die Sitzung liefe an den Zeitscheiben
 vorbei.  Der Fehler waere also unserer, die Strafe seine.
 
-GEBAUT: eine Warnung, und zwar von BEIDEN Seiten, weil die Reihenfolge der
-Konfiguration beliebig ist.  Gemessen an beiden Reihenfolgen:
+GEBAUT: eine ABLEHNUNG, von beiden Seiten, weil die Reihenfolge der
+Konfiguration beliebig ist.
 
-    chan: warning - a DAMA master needs "ax25 digipeat 2"
-      Repeating verbatim hands the called station an UNMARKED connect: ...
+    ICH HATTE ZUERST NUR GEWARNT, mit dem ARP-Schalter als Vorbild ("hat
+    der Sysop 'arp off' selbst gesagt, bleibt es").  Thomas hat das
+    verworfen, und sein Grund sticht: in einer net.rc sieht niemand eine
+    Warnung vorbeilaufen, und der Knoten liefe mit einer Konfiguration
+    weiter, die nicht funktionieren kann.  Der ARP-Fall ist auch nicht
+    derselbe - dort wird etwas UMGESCHALTET, das sich zurueckschalten
+    laesst, hier waere es ein Betrieb, der Nutzer bestraft.
 
-    warning - chan is a DAMA master and needs digipeat 2
-      Repeated verbatim, the called station gets an unmarked connect, ...
+Gemessen an beiden Reihenfolgen, und zwar auf die WIRKUNG und nicht nur auf
+die Meldung:
 
-NUR EINE WARNUNG, KEIN ERZWINGEN.  Der Digipeat-Modus ist eine globale
-Ansage des Sysops; ein Portbefehl nimmt sie ihm nicht aus der Hand -
-dieselbe Haltung wie beim ARP-Schalter ("hat der Sysop 'arp off' selbst
-gesagt, bleibt es").
+    digipeat 1, dann dama master:
+        chan: refused - dama mode master needs digi mode 2 ...
+        input line: ifconfig chan dama master
+        -> "ifconfig chan verbose" zeigt keine dama-Zeile
+
+    dama master, dann digipeat 1:
+        refused - dama mode master needs digi mode 2, and chan is a ...
+        input line: ax25 digipeat 1
+        -> "Digipeat: 2", und der Port ist weiterhin dama master
+
+Die Pruefung in dodigipeat() steht VOR setintrc(), damit der Wert gar nicht
+erst gesetzt und dann zurueckgenommen werden muss, und sie greift nur bei
+"0" und "1" - ein Tippfehler bekommt weiterhin die Bereichsmeldung von
+setintrc() und nicht diese hier.
 
 DER KONFLIKT, DER DARAUS FOLGT UND DEN WIR NICHT AUFLOESEN: ein Knoten, der
 auf einem Port Master ist und auf einem anderen reiner Via-Digi fuer
