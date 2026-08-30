@@ -933,6 +933,24 @@ void dama_master_stop(struct iface *ifp)
  * bloss seine Liste abarbeitet.
  */
 
+/* Ist irgendein Port Master?  Dann darf der Digipeat-Modus nicht auf 1 -
+ * siehe die Warnung in ifdama().  Die Reihenfolge der Konfiguration ist
+ * beliebig, also muss die Warnung von BEIDEN Seiten kommen: wer erst den
+ * Master setzt und dann den Modus, wuerde sie sonst nie sehen.
+ */
+
+const char *dama_master_port(void)
+{
+	struct iface *ifp;
+
+	for (ifp = Ifaces; ifp != NULL; ifp = ifp->next)
+		if (ifp->dama == DAMA_MASTER)
+			return ifp->name;
+	return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
 int ifdama(int argc, char *argv[], void *p)
 {
 	struct iface *ifp = (struct iface *) p;
@@ -958,6 +976,16 @@ int ifdama(int argc, char *argv[], void *p)
 	if (!strcmp(argv[1], "master")) {
 		ifp->dama = DAMA_MASTER;
 		ifp->dama_heard = 0;
+		if (Digipeat != 2)
+			printf("%s: warning - a DAMA master needs \"ax25 "
+			       "digipeat 2\"\n  Repeating verbatim hands the "
+			       "called station an UNMARKED connect: it answers "
+			       "without\n  DAMA, never having seen it, and we "
+			       "then hold that against it - while the\n  "
+			       "session misses the time slots.  Only "
+			       "terminating and setting up our own\n  link "
+			       "marks it (dama_mark in sendframe), and only "
+			       "digipeat 2 does that.\n", ifp->name);
 		dama_master_kick(ifp);
 		return 0;
 	}

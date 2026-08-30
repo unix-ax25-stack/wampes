@@ -11,6 +11,7 @@
 #include "proc.h"
 #include "iface.h"
 #include "ax25.h"
+#include "dama.h"
 #include "lapb.h"
 #include "slhc.h"
 #include "pidfilter.h"
@@ -402,7 +403,19 @@ int argc,
 char *argv[],
 void *p)
 {
-	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
+	int r = setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
+	const char *port;
+
+	/* Andersherum dieselbe Warnung wie in ifdama(): ein DAMA-Master braucht
+	 * digipeat 2, weil nur ein selbst aufgebauter Link das DAMA-Bit traegt.
+	 */
+	if (!r && argc > 1 && Digipeat != 2 &&
+	    (port = dama_master_port()) != NULL)
+		printf("warning - %s is a DAMA master and needs digipeat 2\n"
+		       "  Repeated verbatim, the called station gets an unmarked "
+		       "connect, answers\n  without DAMA, and the session misses "
+		       "the time slots.\n", port);
+	return r;
 }
 /* Set limit on retransmission backoff */
 static int

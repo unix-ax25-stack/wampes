@@ -6800,3 +6800,42 @@ WAS DAMIT ZU MESSEN BLEIBT:
     sind - heute haelt dama_defer_ui() nur UI zurueck.
   * Ein Link je Zug / Verstoss waehrend fremdem Zug: braucht den
     gemeinsamen Kanal und haengt an uhnp oder Loopback-Adressen.
+
+------------------------------------------------------------------------
+REGEL: DAMA-MASTER BRAUCHT DIGIPEAT 2 (Thomas, 2026-08-30) - GEBAUT
+------------------------------------------------------------------------
+Sein Fall, und er ist der haeufige: userA kommt ueber einen Interlink
+herein, auf dem es kein DAMA gibt, und verbindet sich durch uns hindurch
+mit einem lokalen Nutzer.  Wir sind der DAMA-Master-Repeater.
+
+    Die weitergeleitete Verbindung braucht ein SABM MIT DAMA-Bit, und wir
+    muessen sie als DAMA-Sitzung fuehren.
+
+In Modus 2 geschieht das von selbst: wir terminieren und bauen selbst auf,
+also geht der Rahmen durch sendframe(), also markiert dama_mark() ihn.  In
+Modus 1 wuerden wir wortwoertlich wiederholen - der lokale Nutzer saehe ein
+UNMARKIERTES SABM, antwortete ohne DAMA (er hat es nie gesehen), wir
+hielten ihm genau das vor, und die Sitzung liefe an den Zeitscheiben
+vorbei.  Der Fehler waere also unserer, die Strafe seine.
+
+GEBAUT: eine Warnung, und zwar von BEIDEN Seiten, weil die Reihenfolge der
+Konfiguration beliebig ist.  Gemessen an beiden Reihenfolgen:
+
+    chan: warning - a DAMA master needs "ax25 digipeat 2"
+      Repeating verbatim hands the called station an UNMARKED connect: ...
+
+    warning - chan is a DAMA master and needs digipeat 2
+      Repeated verbatim, the called station gets an unmarked connect, ...
+
+NUR EINE WARNUNG, KEIN ERZWINGEN.  Der Digipeat-Modus ist eine globale
+Ansage des Sysops; ein Portbefehl nimmt sie ihm nicht aus der Hand -
+dieselbe Haltung wie beim ARP-Schalter ("hat der Sysop 'arp off' selbst
+gesagt, bleibt es").
+
+DER KONFLIKT, DER DARAUS FOLGT UND DEN WIR NICHT AUFLOESEN: ein Knoten, der
+auf einem Port Master ist und auf einem anderen reiner Via-Digi fuer
+DAMA-faehige Nutzer sein soll, braucht beide Modi gleichzeitig.  Mit einer
+globalen Einstellung geht das nicht.  Das ist der Preis von Thomas'
+Vereinfachung und bewusst bezahlt - die Alternative waeren Modi je Port und
+damit Fallkombinationen, die niemand mehr abschaetzen oder testen kann.
+Master gewinnt, der Via-Digi-Fall gehoert dann auf einen anderen Knoten.
