@@ -677,6 +677,7 @@ struct dama_m {
 	struct iface *ifp;
 	uint8 turn[AXALEN];             /* wer gerade dran ist */
 	int busy;                       /* 0: zwischen zwei Zuegen */
+	int answered;                   /* der Gepollte hat sich gemeldet */
 	struct timer t;
 };
 
@@ -761,6 +762,43 @@ static int dama_next_station(struct iface *ifp, const uint8 *after, uint8 *out)
  * am Sendeweg fuer eine Ersparnis, die noch niemand gemessen hat.
  */
 
+/* WIE LANGE WIR AUF DIE ERSTE ANTWORT WARTEN - und das ist NICHT die Laenge
+ * des Zuges.  Die Spezifikation trennt beides (CNC 1989, S. 204):
+ *
+ *   "if the user does not respond within a given time frame (say around
+ *    1/2 second) then the master assumes the poll got clobbered"
+ *   "Once permission is granted several frames might be transmitted in a
+ *    block."
+ *
+ * Bis hierher hatten wir EINEN Zeitgeber fuer beides, und der stand auf der
+ * groesseren Zahl - eine stumme Station kostete uns fuenf Sekunden, wo eine
+ * halbe genuegt haette.
+ *
+ * WORAUS DIE FRIST BESTEHT: TX-Delay des Gepollten, ein kurzer Rahmen, und
+ * etwas Luft.  Nur der mittlere Teil haengt an der Bitrate - das TX-Delay
+ * ist die Einschwingzeit des Senders und wird bei 9600 nicht kuerzer.  Bei
+ * 1200 Baud kommt damit 250 + 133 + 100 = 483 ms heraus, also genau die
+ * "around 1/2 second" des Papiers; bei 9600 sind es 367 ms.
+ *
+ * OHNE hf-datarate bleibt es bei der alten Zeitscheibe.  Raten waere hier
+ * schlechter als das bisherige Verhalten.
+ */
+
+static int32 dama_answer_time(struct iface *ifp)
+{
+	int32 txd = 250;                /* ms, wenn der Port nichts sagt */
+	int32 v;
+
+	if (ifp->hf_datarate <= 0)
+		return DAMA_SLOT_DEFAULT;
+	if (ifp->ioctl != NULL &&
+	    (v = (*ifp->ioctl)(ifp, PARAM_TXDELAY, 0, 0)) > 0)
+		txd = v * 10;           /* KISS zaehlt in 10 ms */
+	return txd + (20 * 8 * 1000) / ifp->hf_datarate + 100;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dama_master_turn(struct dama_m *mp)
 {
 	struct ax25_cb *axp;
@@ -783,7 +821,8 @@ static void dama_master_turn(struct dama_m *mp)
 	sendctl(last, LAPB_COMMAND, RR | PF);
 	mp->ifp->dama_polls++;
 	mp->busy = 1;
-	set_timer(&mp->t, DAMA_SLOT_DEFAULT);
+	mp->answered = 0;
+	set_timer(&mp->t, dama_answer_time(mp->ifp));
 	start_timer(&mp->t);
 }
 
@@ -815,16 +854,20 @@ static void dama_master_gap(struct dama_m *mp)
 static void dama_master_next(void *arg)
 {
 	struct dama_m *mp = (struct dama_m *) arg;
-
-	dama_kick_marked(mp->ifp);      /* hier ist kein Rahmen in Arbeit */
 	uint8 who[AXALEN];
 
+	dama_kick_marked(mp->ifp);      /* hier ist kein Rahmen in Arbeit */
 	stop_timer(&mp->t);
 	if (mp->ifp->dama != DAMA_MASTER) {
 		mp->busy = 0;
 		return;
 	}
-	if (mp->busy) {                 /* stumm geblieben - Zug abbrechen */
+	if (mp->busy) {
+		/* Zwei Bedeutungen, je nachdem: hat er sich nie gemeldet, war
+		 * es die Antwortfrist - der Poll ging verloren oder die
+		 * Station ist weg.  Hat er sich gemeldet, war es die
+		 * Zugdauer, und der Block war zu lang.  Beides endet den Zug.
+		 */
 		dama_master_gap(mp);
 		return;
 	}
@@ -1292,6 +1335,17 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		return;
 	if (!addreq(dama_station(axp), mp->turn))
 		return;
+	if (!mp->answered) {
+		/* Er hat sich gemeldet, also gilt ab jetzt die ZUGDAUER und
+		 * nicht mehr die Antwortfrist: was er in einem Block sendet,
+		 * darf laenger dauern als das Warten darauf, dass er
+		 * ueberhaupt anfaengt.
+		 */
+		mp->answered = 1;
+		stop_timer(&mp->t);
+		set_timer(&mp->t, DAMA_SLOT_DEFAULT);
+		start_timer(&mp->t);
+	}
 	if (isfinal)
 		dama_master_gap(mp);
 }
@@ -1529,9 +1583,10 @@ void dama_show(struct iface *ifp)
 		char buf[AXBUF];
 		struct dama_m *mp = dama_m_port(ifp, 0);
 
-		printf("           dama master (%s), slot %lds gap %lds, ",
+		printf("           dama master (%s), answer %ldms slot %lds gap %lds, ",
 	       ifp->dama_policy == DAMA_LAZY ? "lazy" :
 	       ifp->dama_policy == DAMA_ENFORCE ? "enforce" : "permissive",
+	       (long) dama_answer_time(ifp),
 		       DAMA_SLOT_DEFAULT / 1000L, DAMA_GAP_DEFAULT / 1000L);
 		if (mp != NULL && mp->busy)
 			printf("turn %s", pax25(buf, mp->turn));

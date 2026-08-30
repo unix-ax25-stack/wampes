@@ -7514,7 +7514,7 @@ zahlen wir also fuenf Sekunden, wo eine halbe genuegte - und die
 Begruendung im Kommentar ("die Frist soll den Zug nicht abschneiden")
 beschreibt die andere Frist.
 
-RICHTIG WAEREN ZWEI:
+GEBAUT AM 2026-08-30, beide:
   * ANTWORTFRIST, vom Poll bis zum ersten Rahmen.  Kurz, und GENAU DIESE
     skaliert mit der Bitrate: bei 1200 Baud ist eine halbe Sekunde knapp
     TXDELAY plus ein kurzer Rahmen, bei 9600 ein Bruchteil davon.
@@ -7657,3 +7657,39 @@ Anlage.
 NICHT GEMESSEN, aus demselben Grund wie vorher: es braucht einen Porttyp
 mit eigenem Kanalzugriff.  Ueber axip gibt es keinen - und genau deshalb
 gehoert "hf-datarate" auch dort erlaubt, sonst bleibt das Labor blind.
+
+------------------------------------------------------------------------
+GEBAUT: hf-datarate UND DIE TRENNUNG DER BEIDEN FRISTEN (2026-08-30)
+------------------------------------------------------------------------
+    ifconfig <iface> hf-datarate <bit/s>
+
+Die Geschwindigkeit AUF DER LUFT.  Abgewiesen nur, wo es gar keine
+Funkstrecke gibt (is_ax25) - auf axip und bpqether erlaubt, damit sich DAMA
+dort pruefen laesst.
+
+DIE ANTWORTFRIST wird daraus gerechnet: TX-Delay des Ports (ueber
+PARAM_TXDELAY, sonst 250 ms), dazu ein kurzer Rahmen (20 Oktette) bei der
+angegebenen Bitrate, dazu 100 ms Luft.  Bei 1200 Baud sind das 483 ms -
+also die "around 1/2 second" des Papiers, ohne dass die Zahl von dort
+abgeschrieben waere.  Nur der mittlere Teil skaliert; das TX-Delay ist die
+Einschwingzeit des Senders und wird bei 9600 nicht kuerzer.
+
+OHNE hf-datarate bleibt alles wie bisher (Antwortfrist = Zeitscheibe).
+Raten waere schlechter als das bekannte Verhalten.
+
+GEMESSEN, eine stumme Station am Master, 28 Sekunden:
+
+    ohne hf-datarate:   polls  5     (5 s Frist + 1 s Pause = 6 s je Zug)
+    mit  hf-datarate:   polls 19     (0,48 s + 1 s Pause = 1,48 s je Zug)
+
+19 * 1,48 s = 28 s.  Eine stumme Station kostet jetzt eine halbe Sekunde
+statt fuenf, und die Runde laeuft fast viermal so schnell.  Die Statuszeile
+nennt beide Fristen:
+
+    dama master (lazy), answer 483ms slot 5s gap 1s, idle, polls 19, ...
+
+WAS DAMIT NOCH OFFEN IST: der SLAVE rechnet seinen Wachhund noch nicht aus
+der Bitrate (die 120 s haengen an der Umlaufzeit, "usually more than 30
+seconds at 1200 baud").  Und die Zugdauer von 5 s ist weiterhin gegriffen -
+sie sollte sich am Fenster orientieren (maxframe * paclen bei dieser
+Bitrate), nicht an einer runden Zahl.
