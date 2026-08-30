@@ -6881,14 +6881,30 @@ es hier ein SLAVE.  S1 traegt danach "master DL9SAU-8" ein, also den
 anderen Client.  Das Paar erkennt "hier will jemand jetzt eine Antwort",
 nicht die Rolle.
 
-ZWEI LOSE ENDEN AUS DIESEM LAUF, noch nicht erklaert:
-  * "polls 0", obwohl ein markiertes Kommando mit P ankam und
-    dama_poll_begin() dort zaehlt.
-  * S1s I-Rahmen ging hinaus, obwohl dama_holds() bei gesetztem dama_link
-    und in Kraft befindlichem DAMA haette halten muessen.
-Beides ist zu klaeren, bevor daraus Schluesse gezogen werden - moeglich
-ist, dass der P eines U-Rahmens nicht als "poll" gilt und der I-Rahmen auf
-einem Weg hinausging, der das Gatter nicht befragt.
+DIE BEIDEN LOSEN ENDEN HABEN EINE GEMEINSAME URSACHE, und sie verbindet
+dieses Labor mit dem Bruecken-Labor:
+
+    Bruecke:      DL9SAU-5->DL9SAU-6 v DL9SAU-2* SABM(P)     ohne [DAMA]
+                  DL9SAU-5->DL9SAU-6 v DL9SAU-2* I ... [DAMA]
+    Zwei Slaves:  DL9SAU-8->DL9SAU-7 SABM(P)                 ohne [DAMA]
+                  DL9SAU-7->DL9SAU-8 I ... [DAMA]
+
+DAS ERSTE SABM IST IN BEIDEN AUFBAUTEN UNMARKIERT, spaetere Rahmen sind es.
+
+Daraus folgt beides: "polls 0", weil das einzige Kommando mit P unmarkiert
+war und dama_heard erst durch den spaeteren I-Rahmen gesetzt wurde
+(daher "found 1", aber kein Poll) - und der I-Rahmen ging hinaus, weil zu
+diesem Zeitpunkt noch gar kein DAMA in Kraft war.  KEIN LOCH IM GATTER.
+
+Und im Bruecken-Labor ist es dieselbe Ursache: der Gerufene tritt erst
+verspaetet in die Disziplin ein, weil das SABM unmarkiert war.
+
+WO ES HAENGT, IST NOCH OFFEN.  dama_mark() sitzt in sendframe(), und ein
+SABM geht ueber sendctl() dorthin - es muesste also markiert werden.  Zu
+pruefen ist, ob axp->iface zum Zeitpunkt des ersten SABM schon steht;
+dama_mark() steigt bei iface == NULL wortlos aus.  Das ist der naechste
+Schritt und der einzige echte Fehler, der aus diesen beiden Laeufen
+uebrig bleibt.
 
 TERMINOLOGIE (Thomas): im Client-Modus verwaltet der NUTZER, nicht der
 Sysop.  Das ist mehr als sprachlich - einem Heimnutzer zuzumuten, das
