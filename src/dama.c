@@ -88,9 +88,33 @@
 
 void dama_ui_flush(struct iface *ifp);   /* weiter unten, siehe dort */
 
+/* WIE LANGE EIN MASTER SCHWEIGEN DARF, bevor wir ihm nicht mehr folgen.
+ *
+ * Was der Sysop sagt, gilt.  Sonst rechnen wir es aus der Bitrate, und der
+ * Anker dafuer steht im Papier (CNC 1989, S. 207): der Abstand zweier Polls
+ * einer Station ist "usually more than 30 seconds at 1200 baud".  Das ist
+ * die Umlaufzeit ueber alle Stationen, und sie skaliert mit der Bitrate -
+ * auf 9600 ist dieselbe Runde in gut dreieinhalb Sekunden herum.
+ *
+ * Viermal die Umlaufzeit als Frist: einen Poll zu verpassen ist normal,
+ * zwei kann eine Kollision erklaeren, bei vier ist er weg.  Bei 1200 Baud
+ * kommen daraus genau die 120 Sekunden heraus, die vorher als feste
+ * Vorgabe dastanden - die Formel gibt also den bisherigen Wert wieder und
+ * macht ihn nur fuer schnellere Kanaele richtig.
+ *
+ * Ohne hf-datarate bleibt es bei der festen Vorgabe.
+ */
+
 static int dama_watchdog(const struct iface *ifp)
 {
-	return ifp->dama_watchdog > 0 ? ifp->dama_watchdog : DAMA_WATCHDOG_DEFAULT;
+	if (ifp->dama_watchdog > 0)
+		return ifp->dama_watchdog;
+	if (ifp->hf_datarate > 0) {
+		long t = 4L * 36000L / ifp->hf_datarate;   /* 30 s bei 1200 */
+
+		return (int) (t < 5 ? 5 : t);
+	}
+	return DAMA_WATCHDOG_DEFAULT;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -799,6 +823,35 @@ static int32 dama_answer_time(struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+/* WIE LANGE EINE STATION DEN KANAL HALTEN DARF, wenn sie einmal angefangen
+ * hat.  Nicht dieselbe Frage wie die Antwortfrist darueber: dort geht es
+ * darum, ob sie ueberhaupt anfaengt, hier darum, wann genug ist.
+ *
+ * Die Antwort steht im Fenster: mehr als maxframe Rahmen zu paclen Oktetten
+ * darf sie in einem Zug ohnehin nicht senden.  Bei 1200 Baud mit sieben mal
+ * 256 sind das rund 13 Sekunden - und genau diese Groesse nannte schon der
+ * Kommentar zur alten festen Zeitscheibe, die deshalb ABSICHTLICH kuerzer
+ * war: sie musste damals auch die stumme Station ueberspringen.  Diese
+ * Aufgabe hat jetzt die Antwortfrist, also darf die Zugdauer sein, was sie
+ * sein soll.
+ *
+ * Ohne hf-datarate bleibt es bei der alten Zahl.
+ */
+
+static int32 dama_turn_time(const struct iface *ifp)
+{
+	long bits;
+	int mf = ifp->maxframe > 0 ? ifp->maxframe : 7;
+	int pl = ifp->paclen > 0 ? ifp->paclen : 256;
+
+	if (ifp->hf_datarate <= 0)
+		return DAMA_SLOT_DEFAULT;
+	bits = (long) mf * (pl + 20) * 8;
+	return (int32) (bits * 1000L / ifp->hf_datarate + 500);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dama_master_turn(struct dama_m *mp)
 {
 	struct ax25_cb *axp;
@@ -1343,7 +1396,7 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		 */
 		mp->answered = 1;
 		stop_timer(&mp->t);
-		set_timer(&mp->t, DAMA_SLOT_DEFAULT);
+		set_timer(&mp->t, dama_turn_time(ifp));
 		start_timer(&mp->t);
 	}
 	if (isfinal)
@@ -1583,13 +1636,20 @@ void dama_show(struct iface *ifp)
 		char buf[AXBUF];
 		struct dama_m *mp = dama_m_port(ifp, 0);
 
-		printf("           dama master (%s), answer %ldms slot %lds gap %lds, ",
-	       ifp->dama_policy == DAMA_LAZY ? "lazy" :
-	       ifp->dama_policy == DAMA_ENFORCE ? "enforce" : "permissive",
-	       (long) dama_answer_time(ifp),
-		       DAMA_SLOT_DEFAULT / 1000L, DAMA_GAP_DEFAULT / 1000L);
+		printf("           dama master (%s), answer %ldms turn %ldms "
+		       "gap %lds, ",
+		       ifp->dama_policy == DAMA_LAZY ? "lazy" :
+		       ifp->dama_policy == DAMA_ENFORCE ? "enforce" :
+		       "permissive",
+		       (long) dama_answer_time(ifp),
+		       (long) dama_turn_time(ifp),
+		       DAMA_GAP_DEFAULT / 1000L);
+		/* "serving" und nicht noch einmal "turn": die Zeile nennt
+		 * schon eine Zugdauer, und dasselbe Wort fuer zwei Dinge in
+		 * einer Zeile liest sich als Fehler.
+		 */
 		if (mp != NULL && mp->busy)
-			printf("turn %s", pax25(buf, mp->turn));
+			printf("serving %s", pax25(buf, mp->turn));
 		else
 			printf("idle");
 		printf(", polls %ld, non-dama polls heard %ld\n",
@@ -1598,13 +1658,12 @@ void dama_show(struct iface *ifp)
 	}
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, heard from ",
-	       dama_watchdog(ifp));
+	printf("           dama slave, timeout %ds, ", dama_watchdog(ifp));
 	if (dama_in_force(ifp)) {
 		char buf[AXBUF];
-		printf("%s", pax25(buf, ifp->dama_sender));
+		printf("heard from %s", pax25(buf, ifp->dama_sender));
 	} else
-		printf("not heard");
+		printf("nothing heard");
 	printf(", found %ld lost %ld polls %ld\n",
 	       (long) ifp->dama_entered, (long) ifp->dama_lost,
 	       (long) ifp->dama_polls);
