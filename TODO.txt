@@ -7340,3 +7340,70 @@ other lock each other out".  GEMESSEN (tnn-lab/twoslaves) tun sie das
 nicht - sie verbinden sich und bleiben verbunden, weil jeder zum Poll-Geber
 des anderen wird.  Einer von beiden Saetzen ist falsch, und die Messung
 wiegt schwerer.
+
+------------------------------------------------------------------------
+DIE SPEZIFIKATION SELBST (CNC 1989, DK4EG) - NACHGELESEN 2026-08-30
+------------------------------------------------------------------------
+Thomas hat das PDF wieder bereitgestellt.  Die entscheidende Stelle steht
+auf Seite 208, im Abschnitt "wie sagt man dem Nutzer, er moege DAMA
+einschalten":
+
+    "In case #1 of the above it would be sufficient to tell the user to
+     switch to DAMA mode only once, at connect time.  This state would
+     then remain in effect until disconnect.  However since there is no
+     PID field in SABM-frames this information has to be carried in some
+     other way, such as utilizing the dormant bit 5 of THE MASTER'S SSID
+     ADDRESS FIELD.  It is proposed that DAMA test versions set this bit
+     to 0 to convey the necessary information to the users TNC."
+
+DREI DINGE STEHEN DAMIT FEST:
+
+  1. DAS BIT IST DAS DES MASTERS.  Sein Zweck ist, dem TNC DES NUTZERS zu
+     sagen, er moege in den DAMA-Modus wechseln.
+  2. AKTIV LOW - "set this bit to 0".  Deckt sich mit Linux
+     (~buf[13] & AX25_DAMA_FLAG) und mit unserem htonax25().
+  3. EINMAL BEIM AUFBAU GENUEGT, danach gilt es bis zum Disconnect.  Das
+     ist die "liberale Lesart" in lapb.c, und sie ist die richtige.
+
+DAMIT IST THOMAS' FRAGE BEANTWORTET - MIT JA: der SABM an unseren
+DAMA-Slave-User auf dem Einstieg MUSS das Bit tragen, ob wir ihn nun selbst
+rufen oder einen ueber die Linkstrecke hereinkommenden Ruf weiterreichen.
+Genau das ist der vorgeschlagene Mechanismus, und die Spezifikation sieht
+den Fall ausdruecklich vor (S. 205): "When a node attempts to connect to a
+user, the node adds the users ID to it's polling list and begins to send
+SABMs to that station."  Unser jetziges Verhalten ist dort richtig.
+
+UNSER MARKIEREN ALS SLAVE IST DAGEGEN NICHT GEDECKT.  Wer das Bit als
+Slave setzt, sagt "ich bin hier der Master".  Die Folge steht schon in
+doc/DAMA-SLAVE.md und ist damit als echte Abweichung bestaetigt: jede
+Station, die das Bit liest, haelt uns fuer den Master - ein DAMA-faehiger
+TNC, der uns ruft, sperrt sich selbst und wartet auf Polls, die nie kommen.
+
+UND ES ERKLAERT THOMAS' POSTULAT ZU DEN ZWEI SLAVES.  Er hatte angenommen,
+das Bit im SABM heisse "ich bin Slave, ich moechte mit einem Master
+sprechen".  Nach dem Papier heisst es das GEGENTEIL.  Zwei unserer Slaves,
+die sich verbinden, erklaeren sich also gegenseitig zum Master - und genau
+deshalb funktioniert es in der Messung (tnn-lab/twoslaves): jeder pollt den
+anderen.  Es funktioniert, weil beide dasselbe Falsche behaupten.
+
+WEITERES AUS DEM PAPIER, das offene Punkte bei uns beruehrt:
+
+  * DIE HALBE SEKUNDE: "if the user does not respond within a given time
+    frame (say around 1/2 second) then the master assumes the poll got
+    clobbered ... The master then passes permission to transmit to all
+    other active stations".  Unsere Zeitscheibe steht auf 5 s - begruendet
+    mit dem vollen Fenster auf 1k2, aber die Spezifikation nennt hier eine
+    ganz andere Groesse.  Zu ueberdenken.
+  * DAS PRIORITAETSSCHEMA STEHT IM PAPIER, nicht nur in TNN: "If when
+    polled by the master the user responds with an empty frame (Receive
+    Ready/Final), then the master will reduce the user in polling priority
+    and will skip him on the next time around", und "when these stations
+    respond with an I-frame they will again regain their original
+    priority".  Das ist TNNs damapm/damapc/incDAMA, und es ist damit kein
+    TNN-Eigenbau, sondern Teil des Entwurfs.
+  * UI VOM NUTZER ZUM KNOTEN GIBT ES NICHT: "Normally UI-frames are never
+    sent from a user to a node ... UI-frames originated by the node are no
+    problem since all stations receive these frames."  Das deckt unsere
+    Entscheidung, Verwarnungen als UI zu schicken - der Knoten darf das.
+  * DISC VOM NUTZER WARTET AUF DEN POLL: "he will wait to send his
+    DISC-frame until polled by the master".
