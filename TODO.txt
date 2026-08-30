@@ -7002,3 +7002,52 @@ geraten"):
             dafuer das Poll-Kriterium.
 
 Ein konfiguriertes Master-Rufzeichen kommt darin nicht mehr vor.
+
+------------------------------------------------------------------------
+DER SLAVE BRAUCHT DIE IDENTITAET DES MASTERS GAR NICHT (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Sein Beispiel loest die ganze vorige Suche auf, und zwar indem es zeigt,
+dass die Frage falsch gestellt war.
+
+    DL9SAU-5 -> DL9SAU-6 v DL9SAU-2, DL9SAU-1*
+
+DL9SAU-1 ist DL9SAU-6s EIGENER WAMPES-Client.  In digimode 2 terminiert er
+und auf der LAN-Seite ist kein DAMA - DL9SAU-6 sieht nichts davon, alles
+gut.  In digimode 1 sieht er das DAMA-Bit und das P-Bit, kann aber aus
+"markiert + letzter wiederholter Digi" NICHT schliessen, dass das der
+Master ist: der letzte wiederholte Digi ist sein eigener Knoten.
+
+    "Aber er benoetigt doch das Wissen gar nicht: er sieht fuer die
+     Verbindung DAMA-Poll-Bit und antwortet darauf."
+
+Damit faellt auch die Variante a) von oben ("Sender statt Quelle"): sie
+liefert hier ebenfalls die falsche Antwort.  Und sie muss gar nichts
+liefern.
+
+DASS DIE ANTWORT RECHTZEITIG KOMMT, besorgt der Weg von selbst - sie laeuft
+ueber DL9SAU-1 zurueck auf den Kanal, und dort liegt sie in DESSEN Zug.
+Die Zeitscheibe gehoert der Station, die auf dem Kanal sendet, und das ist
+DL9SAU-1; wer hinter ihm haengt, erbt sie.
+
+WAS DIE HEUTIGE PRUEFUNG NOCH KAUFT:
+
+    if (ispoll && dama_in_force(ifp) && addreq(src, ifp->dama_master))
+
+Nur eines: dass nicht irgendein Nachbar mit einem Kommando-mit-P uns den
+Kanal in die Hand drueckt.  Das ist aber genau Thomas' "Pech"-Fall - wer
+sich auf einer DAMA-Frequenz direkt verbindet, haelt sich nicht an die
+Regel der Frequenz.  Wir fuehren also Buchhaltung, um einen BETRIEBSFEHLER
+abzufangen, und diese Buchhaltung ist es, die
+
+  * im Bruecken-Fall die falsche Adresse merkt (die Quelle DL9SAU-5 statt
+    des Senders DL9SAU-2), und
+  * beim zweiten store-and-forwardeten Nutzer umkippt und den ersten Link
+    stehen laesst.
+
+OHNE DIE PRUEFUNG VERSCHWINDEN BEIDE GEMESSENEN PROBLEME, und niemand muss
+den Master identifizieren.  ifp->dama_master bliebe als reine ANZEIGE fuer
+die Diagnose stehen, ohne Wirkung auf den Mechanismus.
+
+NOCH NICHT GEMESSEN.  Der Zweit-Nutzer-Versuch im Bruecken-Labor wird damit
+zum VERGLEICH zwischen beiden Varianten statt zum blossen Nachweis eines
+Fehlers: mit Pruefung soll der erste Link stehenbleiben, ohne sie nicht.
