@@ -1204,3 +1204,32 @@ WERKZEUG: testtools/flexread.py zieht die Rahmen aus dem Typescript.  Der
 Monitor schreibt Kopfzeile und Hexdump getrennt, mit Leerzeilen und
 Ueberdruck dazwischen - von Hand sieht man die Reihe der gemeldeten Werte
 nicht, und genau die Reihe ist der Beleg.
+
+
+ENTSCHIEDEN (Thomas, 2026-08-30): WIR SCHLIESSEN UNS AN
+=======================================================
+
+Damit ist auch die letzte offene Frage aus Abschnitt 6 und 7 beantwortet.
+Es gibt keinen Grund mehr, an der Halbierung festzuhalten:
+
+    pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
+
+wird durch die volle Umlaufzeit ersetzt.  Die alte Zeile bleibt
+auskommentiert stehen, mit einer Begruendung, die auf die Messungen dieses
+Dokuments verweist - gemessen gegen ALLE verfuegbaren Implementierungen, die
+FlexNet sprechen:
+
+    XNET          Nachbau              meldet 6 fuer 606 ms
+    RMNC          Originalautor        misst 6, arithmetisch belegt
+    PC/FlexNet32  Originalautor        fuegt sich ein (n=7, n=8)
+    TNN           Nachbau              Kommentar zu flex_tx_rtt_reply
+
+Die sachliche Ueberlegung dagegen bleibt richtig und gehoert in den
+Kommentar: eine Routing-Metrik SOLLTE die Zeit zum Ziel nennen, und ueber
+eine Kette summiert ist die Einweg-Zeit die sinnvolle Groesse.  Nur ist die
+Zahl kein Hausgebrauch - sie geht ins Netz und wird dort mit den Zahlen
+aller anderen verrechnet.  Wer als einziger halbiert, sieht guenstiger aus
+als er ist, und zwar bei jedem Ziel hinter sich.
+
+NICHT MEHR HEUTE ABEND.  Was zu tun bleibt: die Zeile, der Kommentar, und
+ein Blick darauf, ob der Vorgabewert DEFAULTDELAY dabei mitzieht.
