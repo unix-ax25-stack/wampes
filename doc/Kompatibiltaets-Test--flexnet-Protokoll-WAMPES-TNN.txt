@@ -1342,3 +1342,72 @@ galt - erst die T-Einheit, dann die Spalten, dann das Mittelungsfenster.
 Was jedes Mal geholfen hat, war nicht besseres Nachdenken, sondern MEHR
 ZEILEN: die Verlaufsreihe statt eines Werts, acht Links statt drei, fuenf
 Stunden statt zwanzig Minuten.
+
+
+TNNS QUELLTEXT BESTAETIGT DIE MESSUNG - UND ZEIGT EIN LOCH
+==========================================================
+
+Thomas' Frage, wie TNN mit dem Sentinel umgeht, liess sich nachlesen statt
+messen: die TNN-Quellen liegen unter direwolf-libax25-agwpe/tnn.
+
+KORREKTUR ZU WEITER OBEN: "TNN hat gar keinen Sentinel" ist falsch.  Es hat
+dieselbe 600, nur an anderer Stelle (l3tab.c, update_peer_quality):
+
+    if (pp->typ == FLEXNET)
+        range(&pp->quality,
+              (pp->my_quality + (pp->his_quality ? pp->his_quality : 6000))/2);
+
+6000 in TNNs 10-ms-Einheiten sind 60 s - exakt DEFAULTDELAY 600 in
+100-ms-Einheiten.  Der Wert ist also auch bei TNN vorhanden, als Ersatz fuer
+"der Partner hat nichts gemeldet".  Es SENDET ihn nur nicht (dann kommt die
+SRTT-Schaetzung) und ERKENNT ihn nicht beim Empfang.  Damit ist die 600 in
+allen vier Implementierungen nachgewiesen - noch ein Abstammungsnachweis.
+
+DAS LOCH (l3vc.c, case '1'):
+
+    myrtt  = (tic10 - pp->rttstart);
+    myrtt += (myrtt / 8 + 1);            /* ca. 12,5% Aufschlag */
+    myrtt  = max(myrtt, 10);
+    mbp2str(mbp, buf);
+    hisrtt = atoi((char *) buf) * 10;    /* Flex gibt in 100ms an */
+    hisrtt = max(hisrtt, 10);
+    update_peer_quality(pp, (ULONG)myrtt, (ULONG)hisrtt);
+
+Keine Pruefung auf 600.  Unsere "1600"-Antwort wird zu hisrtt = 6000, also
+60 Sekunden, und geht ungefiltert in die Metrik.  UNSER "KEINE AHNUNG"
+VERGIFTET TNNS WEGWAHL - bei jedem Verbindungsaufbau, denn den ersten Poll
+beantworten wir immer mit 600.  Dasselbe gilt fuer RMNC, XNET und
+FlexNet32, die alle dieselbe 600 senden.  Auf der Sendeseite kann TNN nicht
+kollidieren, weil es nie einen Sentinel sendet.
+
+    Ein guter Punkt fuers Gespraech, und ein konkreter: drei Zeilen bei ihm
+    (ein Vergleich gegen 6000 vor dem update_peer_quality), oder gar nichts
+    bei uns - denn wir duerfen die 600 nicht weglassen, sie ist die
+    Konvention aller anderen.
+
+ZWEI BESTAETIGUNGEN UNSERER MESSUNG AUS DER PRIMAERQUELLE, ungefragt
+mitgeliefert:
+
+  * "hisrtt = atoi(buf) * 10;   /* Flex gibt in 100ms an */"
+    Die EINHEIT auf der Leitung ist 100 ms, im Quelltext hingeschrieben.
+
+  * "es enthaelt unsere eigene Laufzeit*2 (Flexnet uebertraegt
+     Hin-und-Rueck-Laufzeiten)" ueber flex_tx_rtt_reply(), und auf der
+    Empfangsseite "er sendetet RTT, wir wollen Delay".
+    Die GANZE UMLAUFZEIT, auf beiden Seiten kommentiert.
+
+Damit steht die Entscheidung aus gestern Nacht nicht mehr nur auf Messungen,
+sondern zusaetzlich auf dem Quelltext einer unabhaengigen Implementierung.
+
+UND EINE DRITTE, ungefragt: "(my_quality + his_quality)/2" ist genau die
+T-Regel, die wir an acht Anzeigezeilen nachgerechnet haben - Mittelwert
+beider Richtungen.  Jetzt im Quelltext einer dritten Implementierung.
+
+NEBENBEI NOCH ZWEI UNTERSCHIEDE IM UMGANG MIT DEN WERTEN:
+
+  * TNN glaettet nur die EIGENE Messung (smooth(), mit RTT_ALPHA); den Wert
+    des Partners uebernimmt es roh (range() klemmt nur die Grenzen).  Wir
+    glaetten beide mit 7/8.
+  * Ueber RTT_MAX (59999) bedeutet bei TNN "Link ist tot, komplette
+    Neumessung notwendig" - der Wert wird auf 0 gesetzt.  Ein Horizont, den
+    wir so nicht fuehren.
