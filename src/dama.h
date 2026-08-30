@@ -58,6 +58,7 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	const struct ax25 *hdr, int isu, int ispoll, int isfinal);
 void dama_master_stop(struct iface *ifp);
 void dama_master_kick(struct iface *ifp);
+int  dama_connect_refused(struct iface *ifp,const struct ax25 *hdr);
 
 const char *dama_master_port(void);
 

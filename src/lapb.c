@@ -119,6 +119,17 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	 * are here and that this is not the way, so his own fallback starts
 	 * now rather than after his retries run out.
 	 */
+	/* EIN BANN NACH ZU VIELEN DAMA-VERSTOESSEN, und dieselbe Antwort wie
+	 * gleich darunter: DM sagt ihm sofort, dass wir da sind und dass es so
+	 * nicht geht.  Wer mit gesetztem DAMA-Bit anklopft, kommt herein - das
+	 * prueft dama_connect_refused() selbst.
+	 */
+	if((type == SABM || type == SABME) && dama_connect_refused(iface,hdr)){
+		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
+		free_p(bpp);
+		return 0;
+	}
+
 	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF){
 		eax25_hint(iface,hdr);
 		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));

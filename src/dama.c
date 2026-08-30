@@ -799,6 +799,7 @@ struct dama_v {
 	int32 last;                     /* secclock des letzten Verstosses */
 	int32 at_poll;                  /* ifp->dama_polls dabei - siehe unten */
 	int fresh;                      /* dieser Aufruf hat hochgezaehlt */
+	int32 ban_until;                /* secclock, 0: kein Bann */
 	int kick;                       /* zu trennen, sobald es sicher ist */
 };
 
@@ -923,6 +924,41 @@ static void dama_kick_marked(struct iface *ifp)
  */
 #define DAMA_MAXVIOL    5
 
+/* WIE LANGE NACH EINEM ZWANGSDISCONNECT NICHTS MEHR ANGENOMMEN WIRD.
+ *
+ * Nicht das Sperren ist der Zweck, sondern das Ende des Kreislaufs, den
+ * Thomas beschrieben hat: verbinden, irgendwo einloggen, fliegen, wieder
+ * verbinden, weitermachen wo man war, wieder fliegen.  Der kostet mehr
+ * Kanal als der Bann.
+ *
+ * Fuenf Minuten (Thomas).  TNN hat dafuer kein Vorbild - dort gibt es nach
+ * dem Zwangsdisconnect gar nichts, der Nutzer kommt sofort wieder.
+ */
+#define DAMA_BAN        300L    /* Sekunden */
+
+/* EIN TEXT ALS UI AN EINE STATION.  Verwarnung und Abweisung nehmen
+ * denselben Weg - beide liegen ausserhalb der Sitzung, und genau das ist
+ * ihr Zweck.
+ */
+
+static void dama_ui(struct iface *ifp, const uint8 *call,
+		    const char *text, int len)
+{
+	struct ax25 hdr;
+	struct mbuf *bp;
+
+	if (ifp == NULL || len <= 0 || (bp = alloc_mbuf((uint) len)) == NULL)
+		return;
+	memcpy(bp->data, text, (size_t) len);
+	bp->cnt = (uint) len;
+	memset(&hdr, 0, sizeof(hdr));
+	addrcp(hdr.dest, call);
+	hdr.cmdrsp = LAPB_COMMAND;
+	ax_send_ui(ifp, &hdr, PID_NO_L3, &bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* DIE VERWARNUNG GEHT ALS UI, NICHT IN DIE SITZUNG - und das war Thomas'
  * Einwand gegen meinen ersten Vorschlag:
  *
@@ -950,13 +986,11 @@ static void dama_kick_marked(struct iface *ifp)
 
 static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 {
-	struct ax25 hdr;
-	struct mbuf *bp;
 	char buf[160];
 	char zahl[24];
 	int len;
 
-	if (ifp == NULL || (bp = alloc_mbuf(sizeof(buf))) == NULL)
+	if (ifp == NULL)
 		return;
 	/* snprintf und ein Puffer mit Luft.  Der erste Entwurf nahm sprintf
 	 * und char[80] - und der Text war mit ", disconnecting" GENAU EIN
@@ -970,10 +1004,16 @@ static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 	 * unterscheidet sich aus demselben Grund: "please use" ist eine Bitte,
 	 * "you need to enable" eine Ansage, und nur eine davon ist gedeckt.
 	 */
-	if (ifp->dama_policy == DAMA_ENFORCE)
-		snprintf(zahl, sizeof(zahl), "%ld/%d", n, DAMA_MAXVIOL);
-	else
+	/* "x/y" sagt: y Meldungen gibt es.  Ist die Schwelle ueberschritten,
+	 * waere "6/5" schief - dann ist die Zaehlung vorbei und es wird nur
+	 * noch abgewiesen (Thomas).
+	 */
+	if (ifp->dama_policy != DAMA_ENFORCE)
 		snprintf(zahl, sizeof(zahl), "%ld", n);
+	else if (n > DAMA_MAXVIOL)
+		snprintf(zahl, sizeof(zahl), "%d/%d", DAMA_MAXVIOL, DAMA_MAXVIOL);
+	else
+		snprintf(zahl, sizeof(zahl), "%ld/%d", n, DAMA_MAXVIOL);
 	/* DREI STUFEN, und der Name sagt, was folgt (Thomas): "Notice" ist
 	 * eine Mitteilung ohne Konsequenz, "Warning" kuendigt eine an,
 	 * "Fatal" vollzieht sie.  Wer nicht trennt, warnt auch nicht - in
@@ -994,12 +1034,67 @@ static void dama_warn(struct iface *ifp, const uint8 *call, long n, int last)
 		len = 0;
 	if (len > (int) sizeof(buf))
 		len = (int) sizeof(buf);
-	memcpy(bp->data, buf, (size_t) len);
-	bp->cnt = (uint) len;
-	memset(&hdr, 0, sizeof(hdr));
-	addrcp(hdr.dest, call);
-	hdr.cmdrsp = LAPB_COMMAND;
-	ax_send_ui(ifp, &hdr, PID_NO_L3, &bp);
+	dama_ui(ifp, call, buf, len);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* DARF DIESER VERBINDUNGSAUFBAU HEREIN?  1 heisst nein, der Aufrufer soll
+ * mit DM antworten.
+ *
+ * Gefragt wird nur auf einem Master-Port und nur, wenn diese Station nach
+ * zu vielen Verstoessen hinausgeflogen ist.  Der Sinn ist nicht das
+ * Sperren, sondern das Ende des Kreislaufs (Thomas): verbinden, einloggen,
+ * fliegen, wieder verbinden, weitermachen, wieder fliegen.
+ *
+ * ZWEI AUSWEGE, und der erste ist der eigentliche Zweck der Sache:
+ *
+ *   - WER MIT GESETZTEM DAMA-BIT ANKLOPFT, kommt sofort wieder herein und
+ *     der Bann faellt.  Er hat getan, worum ihn die Verwarnung gebeten
+ *     hat; ihn dann noch warten zu lassen waere Strafe ohne Zweck.
+ *   - Nach Ablauf der Frist ohnehin.
+ *
+ * BEI JEDER ABWEISUNG GEHT EIN UI HINAUS mit Grund und Restzeit.  Waehrend
+ * des Banns bekommt er von uns keine Sitzung - auch keine zu unserem
+ * eigenen Infodienst, denn sonst haetten wir "enforce" eingeschaltet und
+ * enforcten nicht (Thomas): Mailbox, DX-Cluster, Convers und Login sind ja
+ * auch bei uns.  Die Auskunft steckt deshalb in der Meldung.
+ */
+
+int dama_connect_refused(struct iface *ifp, const struct ax25 *hdr)
+{
+	struct dama_v *vp;
+	const uint8 *who;
+	char buf[160];
+	int len;
+	long rest;
+
+	if (ifp == NULL || hdr == NULL || ifp->dama != DAMA_MASTER)
+		return 0;
+	who = dama_sender(hdr);
+	for (vp = Dama_v; vp != NULL; vp = vp->next)
+		if (vp->ifp == ifp && addreq(vp->call, who))
+			break;
+	if (vp == NULL || vp->ban_until == 0)
+		return 0;
+	if (hdr->ext & SSID_DAMA) {     /* er hat es eingeschaltet */
+		vp->ban_until = 0;
+		vp->n = 0;
+		return 0;
+	}
+	if ((rest = vp->ban_until - secclock()) <= 0) {
+		vp->ban_until = 0;
+		vp->n = 0;
+		return 0;
+	}
+	len = snprintf(buf, sizeof(buf),
+		       "DAMA Fatal: rejecting - this channel is controlled by "
+		       "me, the master, who polls you; enable DAMA and call "
+		       "again, or wait %lds\r", rest);
+	if (len > 0)
+		dama_ui(ifp, who, buf, len > (int) sizeof(buf)
+			? (int) sizeof(buf) : len);
+	return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1064,8 +1159,10 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 			dama_warn(ifp, who, n,
 				  ifp->dama_policy == DAMA_ENFORCE &&
 				  n >= DAMA_MAXVIOL);
-		if (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL)
+		if (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL) {
 			vp->kick = 1;   /* vollzogen wird im Rundentimer */
+			vp->ban_until = secclock() + DAMA_BAN;
+		}
 	}
 	if ((mp = dama_m_port(ifp, 0)) == NULL || !mp->busy)
 		return;

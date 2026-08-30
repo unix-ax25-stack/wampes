@@ -7249,3 +7249,49 @@ lapb_input(), und dorthin kommen nur Rahmen im verbundenen Betrieb, die an
 uns gerichtet sind - UI laeuft in ax25.c durch einen anderen Zweig.  Dazu
 verlangt das Kriterium eine STEHENDE Verbindung, ein SABM zaehlt also auch
 nicht.
+
+------------------------------------------------------------------------
+LINUX MARKIERT AUSGEHENDE RAHMEN NIE (nachgelesen 2026-08-30)
+------------------------------------------------------------------------
+Die Annahme, ein DAMA-faehiger Slave markiere sein UA, TRAEGT NICHT.  In
+net/ax25 kommt AX25_DAMA_FLAG GENAU EINMAL vor, und zwar im Empfangspfad:
+
+    ax25_addr.c:174:   *dama = ~buf[13] & AX25_DAMA_FLAG;
+
+Jeder Schreibpfad setzt dagegen 0x60 bzw. 0x20:
+
+    #define AX25_SSSID_SPARE  0x60      /* standard AX.25   */
+    #define AX25_ESSID_SPARE  0x20      /* extended AX.25   */
+    #define AX25_DAMA_FLAG    0x20      /* aktiv LOW!       */
+
+    buf[6] &= ~AX25_SSSID_SPARE;
+    if (modulus == AX25_MODULUS) buf[6] |= AX25_SSSID_SPARE;
+    else                         buf[6] |= AX25_ESSID_SPARE;
+
+Bit 0x20 bleibt in BEIDEN Moduli gesetzt - und gesetzt heisst "kein DAMA".
+Linux' Slave liest das Bit des Masters und markiert selbst nichts.
+
+RUECKBLICKEND IST DAS KONSEQUENT: nach der Spezifikation ist das Bit die
+Markierung DES MASTERS ("the DAMA bit in the master's SSID octet").  Dass
+WIR auch als Slave markieren, ist Thomas' Lesart und steht so im Kommentar
+von dama_mark() - eine Erweiterung von uns, die Digipeating erst
+funktionieren laesst.  Sie von anderen zu erwarten war der Fehler.
+
+ZWEI ENTWUERFE FALLEN DAMIT:
+
+  1. DER STRENGE WEG beim Gerufenen (unmarkiertes UA -> DISC an Z, DM an
+     den Rufer A) wuerde JEDEN LINUX-DAMA-SLAVE abweisen, also einen
+     voellig regelkonformen Nutzer.  Nicht baubar.  Es bleibt der
+     nachsichtige Weg: am VERHALTEN urteilen - sendet Z ausserhalb seines
+     Zuges? -, nicht am Bit beim Aufbau.
+
+  2. DIE FLUCHTTUER DES BANNS ("wer mit gesetztem DAMA-Bit anklopft, kommt
+     sofort herein") greift fuer eine Linux-Station nie.  Wer korrekt DAMA
+     einschaltet und wieder anklopft, bliebe die vollen fuenf Minuten
+     ausgesperrt - der Anreiz liefe leer.
+
+     ZU ENTSCHEIDEN: entweder nur die Zeit (5 min, keine Fluchttuer), oder
+     HEREINLASSEN AUF BEWAEHRUNG - der Zaehler steht ja noch auf der
+     Schwelle, also fliegt er beim ersten neuen Verstoss sofort wieder
+     raus, statt erst nach fuenf.  Das gibt dem, der sich gebessert hat,
+     seine Verbindung zurueck und kostet den anderen einen Connect.
