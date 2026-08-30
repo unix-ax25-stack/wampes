@@ -265,6 +265,22 @@ setcall(uint8 *out,const char *call)
 	 * Then compute length of callsign field and make sure
 	 * it isn't excessive
 	 */
+	/* A "*" is not part of a callsign: it is the has-been-repeated mark of
+	 * the TNC2 notation, and it belongs in the SSID byte, not in the text.
+	 * It used to be refused in one spelling and swallowed in the other -
+	 * "DB0AAA*" made the callsign field seven characters and failed, while
+	 * atoi() in "DB0AAA-1*" stopped at the star and the mark was dropped
+	 * without a word.  Refuse both alike; the day a caller carries the bit,
+	 * it takes the mark off and sets it itself, and this still sees only a
+	 * callsign.
+	 *
+	 * Deliberately only this character.  setcall() is tolerant of other
+	 * trailing junk, and at least one caller has been relying on that - see
+	 * the note about a stray CR in remote_net.c.
+	 */
+	if(strchr(call,'*') != NULL)
+		return -1;
+
 	dp = strchr(call,'-');
 	if(dp == NULL)
 		csize = strlen(call);
