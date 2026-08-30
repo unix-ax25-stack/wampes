@@ -7788,3 +7788,27 @@ OFFEN, UND WAS ES BRAUCHT
     12. Die Argumentation fulldup gegen persist/slottime gehoert dorthin
         (Thomas' Anregung): Porteigenschaft gegen Zustand, Simplex gegen
         Duplex, und warum der Master erst recht nicht darf.
+
+------------------------------------------------------------------------
+ZWEI LABORFORMEN, UND NUR EINE BRAUCHT EIN GEMEINSAMES MEDIUM
+------------------------------------------------------------------------
+Praezisierung nach einer zu weiten Verallgemeinerung von mir (Thomas):
+
+  * DER BRUECKEN-AUFBAU (tnn-lab/bridge) IST GETREU, nicht behelfsmaessig.
+    Sein Fall ist: ein Nutzer im LAN repeatet ueber SEINEN EIGENEN
+    WAMPES-DAMA-Client zum WAMPES-DAMA-Master, und er sieht den Master
+    NICHT.  Genau deshalb hat der Client zwei Ports.  Das ist keine
+    Beschraenkung des Labors, sondern die Topologie selbst - zwei Medien,
+    jedes Punkt zu Punkt, und Unicast-Strecken bilden das richtig ab.
+
+  * NUR DER GEMEINSAME KANAL braucht eine Broadcast-Domaene: mehrere
+    Stationen auf EINER Frequenz, die einander hoeren oder eben nicht.
+    Dort scheitert ein Buendel von axudp-Strecken, und dort hakt es an
+    uhnp.  Betroffen sind die Punkte C.7 bis C.10 der Uebersicht.
+
+Also nicht "axudp taugt nicht fuers DAMA-Labor", sondern: es taugt fuer
+alles, was Punkt zu Punkt IST, und nicht fuer das, was eine geteilte
+Frequenz IST.
+
+(Und zum 1200er Standard, von Thomas bestaetigt: DAMA wird eben genau im
+langsamen Simplexbetrieb verwendet - die Vorgabe trifft den Regelfall.)
