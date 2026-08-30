@@ -6644,10 +6644,31 @@ GEMESSEN: Knoten A hat Routen zu DL9SAU-2 (Port 10101) und DL9SAU-4
 jeweils anderen nichts mehr an.  Im Trace sieht es aus, als haette A
 gesendet, denn dump() steht in axip_raw() VOR dem Routennachschlag.
 
-AUF DER LUFT FAELLT ES NICHT AUF, weil jeder Partner seine eigene IP hat.
-Es trifft aber einen realen Fall: zwei Knoten an einem Standort hinter
-einer NAT-Adresse.  Der Schluessel muesste das RUFZEICHEN sein (also der
-axip-Route folgen), nicht der Host.
+AUF DER LUFT GIBT ES DAS PROBLEM NICHT, aber der Vergleich taugt anders,
+als ich ihn zuerst gezogen hatte (Thomas' Korrektur): auf der Luft ist das
+Wesentliche die gemeinsame BROADCAST-DOMAENE - man hoert einander, das
+Rufzeichen unterscheidet, und was unterhalb der MAC-Schicht liegt, spielt
+keine Rolle.  Ueber axip/axudp gibt es das gar nicht: was ankommt, geht
+nicht an alle (allenfalls QST).  Das ist PUNKT ZU PUNKT, EIN PARTNER EIN
+LINKINTERFACE.
+
+DESHALB GEHOERT DER SCHLUESSEL ANS RUFZEICHEN, und daran haengen dann IP
+UND der benutzte UDP-Port.  Nicht der Host, wie es heute ist.
+
+CAVE, UND HIER KANN DER PATCH SCHEITERN (Thomas): DAS GEHT NUR BEI axudp.
+Ein axip-Port im Modus USE_IP spricht rohes IP-Protokoll 93 und hat gar
+keine Ports - dort gibt es nichts zu lernen, und NAT-freundlich ist es
+ohnehin nicht.  Die heutige Abfrage in axip_raw() ist an dieser Stelle
+schon richtig:
+
+    if (edv->type == USE_UDP) {
+      struct sockaddr *sa = search_udp_host_nat_port(...);
+      ...
+    }
+
+Wer den Schluessel aendert, MUSS diese Bedingung stehen lassen.  Ein
+Umbau, der sie uebersieht, bricht axip - und zwar still, denn im Labor
+laeuft alles ueber UDP.
 
 NICHT GEAENDERT.  Das ist ein Eingriff in den NAT-Weg, der Fremdstationen
 betrifft, und er will fuer sich geprueft werden - nicht nebenbei, waehrend
