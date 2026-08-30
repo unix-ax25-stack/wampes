@@ -7557,3 +7557,63 @@ GEBAUT IST BISHER NUR fulldup (dama_duplex(), gebunden an dama_in_force(),
 und es nimmt nur zurueck, was es selbst gesetzt hat).  NICHT GEMESSEN: das
 braucht einen Porttyp mit eigenem Kanalzugriff - ueber axip gibt es keinen,
 und genau deshalb ist es im Labor nie aufgefallen.
+
+------------------------------------------------------------------------
+TNN SETZT PERSISTENCE, NICHT VOLLDUPLEX (nachgelesen 2026-08-30)
+------------------------------------------------------------------------
+Thomas' Frage, was TNN beim Kanalzugriff tut.  Es macht es ANDERS ALS
+LINUX (l2misc.c):
+
+    /* gilt immer - Master-Seite */
+    P = 255;
+    if (islinkport(port) && !fullduplex(port))                      P = 200;
+    else if (!fullduplex(port) && !dama(port) && !islinkport(port)) P = 160;
+    W = p->txdelay;                    /* Slottime = TX-Delay */
+
+    /* autopers(), Slave-Haelfte (nicht uebersetzt) */
+    if (damaslaveon(port)) {
+      p->persistance = 255;            /* sofort antworten */
+      p->slottime = 0;                 /* keine Wartezeit  */
+      l1ctl(L1CCMD, port);             /* zum TNC bringen  */
+    }
+
+Ein DAMA-Port laeuft bei TNN also auf PERSISTENCE 255, waehrend ein
+gewoehnlicher Nutzereinstieg 160 bekommt und ein Linkport 200.  Die
+Slave-Haelfte setzt zusaetzlich SLOTTIME 0.  KEIN VOLLDUPLEX.
+
+(Ein dritter, mit #if 0 abgeschalteter Block von DB2OS skaliert die
+Persistence mit der Zahl der Stationen und nimmt DAMA und Vollduplex
+ausdruecklich aus - dasselbe Prinzip nochmal.)
+
+DER UNTERSCHIED IST NICHT KOSMETISCH: persist=255 mit slottime=0 wartet
+weiterhin, bis der TRAEGER weg ist, und tastet dann ohne Wuerfeln.
+fulldup tastet ohne hinzuhoeren - und riskiert, dem Master ins Traegerende
+zu fahren, gerade bei einem 201 oder 241 Oktette langen Poll.
+
+EMPFEHLUNG: TNNs Variante nehmen.  Zwei unabhaengige Belege (Master-Seite
+und Slave-Haelfte), und sie ist die sicherere.  Gebaut ist bisher fulldup
+(dama_duplex()); umzustellen waere es auf drei ioctl-Aufrufe statt einem -
+PARAM_PERSIST auf 255, PARAM_SLOTTIME auf 0, und beide beim Verlassen
+zuruecksetzen auf das, was vorher galt.  kiss.c und sixpack.c fuehren beide
+Parameter bereits.
+
+------------------------------------------------------------------------
+hf-datarate: WO SETZBAR, UND FUER WELCHE ROLLE (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Name von ihm: "ifconfig <if> hf-datarate <n>" - sprechend, weil es die
+Geschwindigkeit AUF DER LUFT meint und nicht die zum TNC.  Bei 9600 Baud
+FSK ueber eine 38400er Leitung waere die Leitungsgeschwindigkeit falsch.
+
+WO SETZBAR (Thomas): kiss, 6pack, Kernel-Interfaces.  Nicht loopback,
+encap, ipip - dort gibt es keine Funkstrecke.  Bei axip und bpqether
+eigentlich nicht von Belang, ABER: "man will dama testen.  Hat man keine
+Timer, kann man nicht testen."  Also dort erlauben, denn sonst ist das
+Labor blind - genau die Luecke, die uns heute schon zweimal getroffen hat.
+
+FUER WELCHE ROLLE - BEIDE, aber fuer Verschiedenes:
+  * MASTER: die Antwortfrist (die halbe Sekunde des Papiers skaliert mit
+    der Bitrate) und daraus die Umlaufzeit.
+  * SLAVE: sein Wachhund.  Die 120 s haengen an der Umlaufzeit ("more than
+    30 seconds at 1200 baud", S. 207) - auf 9600 waere das viel zu traege.
+    Und die Empfehlung des Papiers, T1 hoeher als den Pollabstand zu
+    setzen, haengt ebenfalls daran.
