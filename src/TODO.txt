@@ -1,0 +1,56 @@
+
+------------------------------------------------------------------------
+GEMESSEN: STORE-AND-FORWARD BEHAELT DAS RUFZEICHEN DES NUTZERS
+------------------------------------------------------------------------
+Bruecken-Labor tnn-lab/bridge, 2026-08-30.  Nutzer DL9SAU-5 kommt ueber
+einen Interlink ohne DAMA herein und verbindet sich durch den Repeater
+DL9SAU-2 mit DL9SAU-6 auf dem DAMA-Kanal.
+
+WAMPES' "store and forward" (digipeat 2) baut NICHT unter eigenem
+Rufzeichen neu auf.  Der else-Zweig in ax25.c reicht den Rahmen an
+lapb_input() weiter - die Linkschicht wird je Hop terminiert (eigenes T1,
+eigenes Fenster, "ax25 status" zeigt zwei Kontrollbloecke), aber Absender
+bleibt der Nutzer und wir sind nur der wiederholte Digi:
+
+    AX25: DL9SAU-5->DL9SAU-6 v DL9SAU-2* SABM(P)          ohne [DAMA]
+    AX25: DL9SAU-5->DL9SAU-6 v DL9SAU-2* I ... [DAMA]
+
+DAS SABM GEHT UNMARKIERT HINAUS.  Erst der erste eigene Rahmen traegt das
+Bit; der Gerufene tritt also erst dann in die Disziplin ein (bei ihm
+"found 1").  Ein Fenster beim Verbindungsaufbau, danach richtig.
+
+EAX25 IST DABEI NICHT BETROFFEN, und ich hatte es zuerst falsch
+zugespitzt.  Mit "eax25 always" auf dem Kanal geht zwar ein SABME unter
+DL9SAU-5s Rufzeichen hinaus, obwohl der "eax25 off" hat und nie eines
+gesehen hat - aber eax25_remember() legt das Urteil auf die AX_ROUTE zu
+diesem Rufzeichen, und die fuehrt beim Empfaenger ueber uns:
+
+    30-Aug 13:43  chan   E  DL9SAU-5 via DL9SAU-2
+
+Der Eintrag ist also RICHTIG fuer den Weg, auf dem er benutzt wird - der
+erste Hop sind wir, und wir sprechen EAX25 wirklich.  Deshalb hat das
+ausgiebige Testen von EAX25 unter digipeat 2 seinerzeit auch nichts
+gefunden: es gab nichts zu finden (Thomas: "das liest sich korrekt im digi
+mode 2").
+
+DER DAMA-FALL IST DER FALSCHE, und der Unterschied ist genau der Weg:
+
+    addrcp(ifp->dama_master, src);   /* dama.c - blankes Rufzeichen, je Port */
+
+Kein Pfad, keine Route.  Gemessen beim Gerufenen:
+
+    dama slave, timeout 120s, master DL9SAU-5, found 1 lost 0 polls 2
+
+ER HAELT DEN FERNEN NUTZER FUER DEN MASTER.  Dass es trotzdem laeuft, ist
+Zufall: unsere Polls gehen auf diesem Link ebenfalls unter dessen
+Rufzeichen hinaus, passen also zum gemerkten Namen.  Kaeme ein ZWEITER
+store-and-forwardeter Nutzer ueber denselben Kanal, kippte der gemerkte
+Master auf dessen Rufzeichen - und ein Poll des echten Masters unter
+EIGENEM Rufzeichen wuerde dann nicht mehr als Poll erkannt.
+
+NICHT GEAENDERT.  Was daraus folgt, ist zu entscheiden: entweder muss der
+Slave den Master am PFAD erkennen statt am Absender (der letzte
+wiederholte Digi ist, wer wirklich gesendet hat - dieselbe Regel, die
+dama_station() schon fuehrt), oder der Repeater muss auf dem DAMA-Kanal
+unter eigenem Rufzeichen aufbauen.  Das erste ist der kleinere Eingriff
+und passt zu dem, was an anderer Stelle schon steht.
