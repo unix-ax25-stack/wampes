@@ -95,44 +95,72 @@ static int dama_watchdog(const struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
-/* DEM KANALZUGRIFF SAGEN, DASS ER NICHT MEHR WUERFELN MUSS.
+/* DEM KANALZUGRIFF SAGEN, DASS ER NICHT MEHR WUERFELN MUSS - ABER WEITER
+ * HINHOEREN.
  *
- * Wer gepollt wurde, hat die Erlaubnis - er soll SOFORT tasten.  Laeuft
+ * Wer gepollt wurde, hat die Erlaubnis und soll SOFORT tasten.  Laeuft
  * dagegen die uebliche p-Persistenz, kostet das bei unseren eigenen
  * Vorgaben (persist 63, slottime 10) im Mittel vier Slots, also gut 400 ms,
- * mit langem Schwanz.  Und die Spezifikation gibt dem Master nur "around
- * 1/2 second" Geduld (CNC 1989, S. 204), danach geht er zum naechsten.  Wir
- * kaemen also regelmaessig zu spaet, ohne dass irgendetwas kaputt aussieht.
+ * mit langem Schwanz - und die Spezifikation gibt dem Master nur "around
+ * 1/2 second" Geduld (CNC 1989, S. 204).  Wir kaemen also regelmaessig zu
+ * spaet, ohne dass irgendetwas kaputt aussieht.
  *
- * Linux macht dasselbe (ax25_ds_subr.c: ax25_kiss_cmd(dev, 5, 1) beim
- * Eintritt, 0 beim Verlassen) - dort steht die Nummer 5 fuer FullDuplex,
- * gesichert aus den Treiberkonstanten des Kernels.
+ * PERSISTENCE UND SLOTTIME, NICHT VOLLDUPLEX, und das war mein Fehler im
+ * ersten Entwurf (Thomas hat ihn zerlegt):
  *
- * EIN AUFRUF, DREI RICHTIGE WIRKUNGEN: kiss.c schickt das KISS-Kommando an
- * den TNC, sixpack.c setzt sein eigenes Flag (dort macht den Kanalzugriff
- * der HOST, nicht der TNC), krnlif.c sagt es dem Kernel.  Auf axip und
- * bpqether laeuft er ins Leere, und das ist dort richtig - es gibt kein
- * CSMA, auf das man verzichten koennte.
+ *   - fulldup heisst "sende, egal was das DCD sagt - die Frequenz gehoert
+ *     mir".  Erdacht wurde es fuer DUPLEX-EINSTIEGE mit zwei Frequenzen,
+ *     wo der Master immer hoert und nie uebersprochen wird.  DAMA wird
+ *     aber vor allem auf SIMPLEX gesprochen, also auf einer geteilten
+ *     Frequenz.
+ *   - Es ist ausserdem eine PORTEIGENSCHAFT und kein Zustand fuer die
+ *     Dauer eines Polls.  Setzen wir sie, gilt sie auch fuer den SABM, den
+ *     ein Slave in CSMA hinauslegt - und genau dort muss er hinhoeren,
+ *     sonst uebersprich er den gerade Sendenden, womoeglich den Master.
+ *   - Der MASTER darf sie erst recht nicht setzen: er muss am DCD hoeren,
+ *     ob der Gepollte noch sendet, und darf ihn nicht abhacken.
  *
- * ZURUECKGENOMMEN WIRD NUR, WAS WIR SELBST GESETZT HABEN.  Hat der Sysop
- * den Port ohnehin auf Vollduplex gestellt, bleibt es dabei - dieselbe
- * Ruecksicht wie beim ARP-Schalter.
+ * persist=255 mit slottime=0 laesst das DCD in Kraft und nimmt nur das
+ * Wuerfeln weg: sobald der Kanal frei ist, wird getastet.  Genau das tut
+ * TNN (l2misc.c: P=255 auf einem DAMA-Port gegen 160 auf einem
+ * gewoehnlichen Einstieg, und autopers() setzt zusaetzlich slottime 0).
+ * Und fullduplex(port) ist dort eine L1-Eigenschaft, die der DAMA-Code nur
+ * LIEST und nie setzt - die Anlage beschreibt sie, nicht das Verfahren.
+ *
+ * EIN WEG, DREI PORTTYPEN: kiss.c schickt die Parameter an den TNC,
+ * sixpack.c setzt seine eigenen (dort macht den Kanalzugriff der HOST),
+ * krnlif.c sagt es dem Kernel.  Auf axip und bpqether laeuft es ins Leere,
+ * und das ist richtig - es gibt kein CSMA, auf das man verzichten koennte.
+ *
+ * ZURUECKGENOMMEN WIRD NUR, WAS WIR SELBST GESETZT HABEN.
  */
 
-static void dama_duplex(struct iface *ifp, int on)
+static void dama_channel_access(struct iface *ifp, int on)
 {
 	if (ifp == NULL || ifp->ioctl == NULL)
 		return;
 	if (on) {
-		if (ifp->dama_duplex)
+		int32 p, w;
+
+		if (ifp->dama_ca_set)
 			return;                 /* laeuft schon */
-		if ((*ifp->ioctl)(ifp, PARAM_FULLDUP, 0, 0) > 0)
-			return;                 /* der Sysop wollte es so */
-		if ((*ifp->ioctl)(ifp, PARAM_FULLDUP, 1, 1) >= 0)
-			ifp->dama_duplex = 1;
-	} else if (ifp->dama_duplex) {
-		(*ifp->ioctl)(ifp, PARAM_FULLDUP, 1, 0);
-		ifp->dama_duplex = 0;
+		p = (*ifp->ioctl)(ifp, PARAM_PERSIST, 0, 0);
+		w = (*ifp->ioctl)(ifp, PARAM_SLOTTIME, 0, 0);
+		if (p < 0 && w < 0)
+			return;                 /* Port kennt beides nicht */
+		ifp->dama_persist_save = p;
+		ifp->dama_slot_save = w;
+		(*ifp->ioctl)(ifp, PARAM_PERSIST, 1, 255);
+		(*ifp->ioctl)(ifp, PARAM_SLOTTIME, 1, 0);
+		ifp->dama_ca_set = 1;
+	} else if (ifp->dama_ca_set) {
+		if (ifp->dama_persist_save >= 0)
+			(*ifp->ioctl)(ifp, PARAM_PERSIST, 1,
+				      ifp->dama_persist_save);
+		if (ifp->dama_slot_save >= 0)
+			(*ifp->ioctl)(ifp, PARAM_SLOTTIME, 1,
+				      ifp->dama_slot_save);
+		ifp->dama_ca_set = 0;
 	}
 }
 
@@ -154,7 +182,7 @@ static int dama_in_force(struct iface *ifp)
 		return 1;
 	ifp->dama_heard = 0;
 	ifp->dama_lost++;
-	dama_duplex(ifp, 0);            /* wieder CSMA, also wieder wuerfeln */
+	dama_channel_access(ifp, 0);    /* wieder CSMA, also wieder wuerfeln */
 	/* HIER, und nicht erst wenn ein Zeitgeber es merkt: das ist der
 	 * Augenblick, in dem feststeht, dass kein Fenster mehr kommt.  Was
 	 * gewartet hat, hat ab jetzt nichts mehr, worauf es warten koennte
@@ -215,7 +243,7 @@ void dama_heard_frame(struct iface *ifp, const struct ax25 *hdr)
 		return;
 	if (ifp->dama_heard == 0) {
 		ifp->dama_entered++;
-		dama_duplex(ifp, 1);
+		dama_channel_access(ifp, 1);
 	}
 	ifp->dama_heard = secclock();
 	/* UND WER GESENDET HAT - nicht wer den Rahmen verfasst hat.  Ohne das
@@ -1358,7 +1386,7 @@ int ifdama(int argc, char *argv[], void *p)
 	if (!strcmp(argv[1], "off")) {
 		ifp->dama = DAMA_OFF;
 		ifp->dama_heard = 0;
-		dama_duplex(ifp, 0);
+		dama_channel_access(ifp, 0);
 		dama_master_stop(ifp);
 		/* Das Fragen nach ARP kommt zurueck, WENN wir es waren, die es
 		 * abgeschaltet haben (Thomas' Frage).  Der Grund war DAMA;
@@ -1416,6 +1444,14 @@ int ifdama(int argc, char *argv[], void *p)
 		}
 		ifp->dama = DAMA_MASTER;
 		ifp->dama_heard = 0;
+		/* Auch der Master, und aus demselben Grund wie bei TNN: ein
+		 * DAMA-Port bekommt dort P=255 gegen 160 auf einem
+		 * gewoehnlichen Einstieg.  Das DCD bleibt in Kraft - er hoert
+		 * also weiter, ob der Gepollte noch sendet, und hackt ihn
+		 * nicht ab (Thomas).  Raum fuer neue Clients schafft die
+		 * PAUSE zwischen zwei Polls, nicht die Wuerfelei.
+		 */
+		dama_channel_access(ifp, 1);
 		dama_master_kick(ifp);
 		return 0;
 	}

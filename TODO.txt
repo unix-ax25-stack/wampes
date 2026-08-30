@@ -7617,3 +7617,43 @@ FUER WELCHE ROLLE - BEIDE, aber fuer Verschiedenes:
     30 seconds at 1200 baud", S. 207) - auf 9600 waere das viel zu traege.
     Und die Empfehlung des Papiers, T1 hoeher als den Pollabstand zu
     setzen, haengt ebenfalls daran.
+
+------------------------------------------------------------------------
+KORREKTUR: PERSISTENCE STATT VOLLDUPLEX - IN BEIDEN ROLLEN (Thomas)
+------------------------------------------------------------------------
+Mein erster Einbau (dama_duplex(), KISS 5 = FullDuplex nach Linux' Vorbild)
+war in BEIDEN Rollen falsch.  Thomas' Zerlegung:
+
+  * fulldup heisst "sende, egal was das DCD sagt - die Frequenz gehoert
+    mir".  Erdacht fuer DUPLEX-EINSTIEGE mit zwei Frequenzen (Master auf
+    439.000, Slave 7,6 MHz tiefer), wo der Master immer hoert und nie
+    uebersprochen wird.  DAMA wird aber vor allem auf SIMPLEX gesprochen,
+    auf einer GETEILTEN Frequenz.
+
+  * ES IST EINE PORTEIGENSCHAFT, KEIN ZUSTAND FUER DIE DAUER EINES POLLS.
+    Das war der Punkt, den ich uebersehen hatte: setzen wir sie, gilt sie
+    auch fuer den SABM, den ein Slave in CSMA hinauslegt - und genau dort
+    muss er hinhoeren, sonst uebersprich er den gerade Sendenden,
+    womoeglich den Master selbst, der ihn ja hoeren soll.
+
+  * DER MASTER DARF SIE ERST RECHT NICHT SETZEN: er muss am DCD hoeren, ob
+    der Gepollte noch sendet, und darf ihn nicht abhacken.  Ausnahme waere
+    ein echter Duplexeinstieg - aber auch dort muesste sichergestellt sein,
+    dass er nicht einen User anspricht, der gerade selbst sendet, denn
+    Clients sind in der Regel nicht duplex.
+
+TNN BESTAETIGT DAS IM CODE: fullduplex(port) ist dort eine L1-Eigenschaft
+(portpar[port].l1mode & MODE_d), und JEDES Vorkommen ist ein Lesen - der
+DAMA-Code setzt sie nie.  Die Anlage beschreibt sie, nicht das Verfahren.
+Was DAMA dort setzt, ist die Persistence.
+
+GEBAUT: dama_channel_access() setzt PARAM_PERSIST auf 255 und
+PARAM_SLOTTIME auf 0, merkt sich die alten Werte und nimmt nur zurueck, was
+es selbst gesetzt hat.  In BEIDEN Rollen - beim Slave gebunden an
+dama_in_force(), beim Master an "ifconfig <if> dama master".  fulldup wird
+nirgends mehr angefasst; das bleibt die Ansage des Sysops ueber seine
+Anlage.
+
+NICHT GEMESSEN, aus demselben Grund wie vorher: es braucht einen Porttyp
+mit eigenem Kanalzugriff.  Ueber axip gibt es keinen - und genau deshalb
+gehoert "hf-datarate" auch dort erlaubt, sonst bleibt das Labor blind.
