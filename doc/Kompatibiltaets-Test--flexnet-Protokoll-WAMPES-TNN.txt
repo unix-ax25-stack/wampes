@@ -1233,3 +1233,63 @@ als er ist, und zwar bei jedem Ziel hinter sich.
 
 NICHT MEHR HEUTE ABEND.  Was zu tun bleibt: die Zeile, der Kommentar, und
 ein Blick darauf, ob der Vorgabewert DEFAULTDELAY dabei mitzieht.
+
+
+KORREKTUR: ES IST EIN GLEITENDES FENSTER, KEIN MITTEL UEBER ALLES
+=================================================================
+
+Der RMNC nach 5h20m, mit abgebautem slowpty:
+
+    DB0BLO  4-15     1/1      5h,20m P 8
+                     1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+SECHZEHN EINSEN UND KEINE 600.  Die Verlaufszeile ist also ein FENSTER
+ueber die letzten Werte und nicht die ganze Vorgeschichte - gestern Nacht
+standen dort 7 bzw. 6 Werte, weil die Verbindung 23 Minuten alt war und es
+noch keine 16 gab.
+
+Mit gleitendem Fenster W=16 nachgerechnet passen alle bisherigen
+Beobachtungen weiterhin exakt:
+
+    n= 2  wahr=6  -> 303,0   beobachtet 303      n= 4  wahr=1 -> 150,8 / 151
+    n= 9  wahr=6  ->  72,0   beobachtet  72      n= 6  wahr=1 -> 100,8 / 101
+    n=11  wahr=6  ->  60,0   beobachtet  60      n= 7  wahr=6 ->  90,9 /  91
+    n=13  wahr=6  ->  51,7   beobachtet  52
+
+Und nur das Fenster erklaert den heutigen Wert: bei ~64 Polls waere ein
+Mittel ueber ALLES (600+63)/64 = 10,4; angezeigt ist 1.
+
+    Genauigkeit der Aussage: die Wachstumsphase verlangt W >= 14, der
+    heutige Wert verlangt W <= 63, und die Anzeige zeigt 16.  W = 16 ist
+    damit die natuerliche Lesart, streng belegt ist 14..63.
+
+ZWEI BEHAUPTUNGEN VON MIR FALLEN DAMIT:
+
+  1. "EIN MITTEL UEBER DIE GANZE VORGESCHICHTE VERGISST NIE, SEINE
+     ZEITKONSTANTE WAECHST MIT JEDEM POLL" - falsch.  Ein gleitendes
+     Fenster vergisst vollstaendig, und zwar abrupt: solange die 600 darin
+     liegt, steht dort 38 bis 40, und in dem Moment, wo sie hinausfaellt,
+     springt der Wert auf den wahren.  Das ist kein Mangel, das ist ein
+     brauchbarer Filter.
+
+         n=15 -> 40,9    n=16 -> 38,4    n=17 -> 1,0
+
+     Statt "rund 600 Polls, zwei Tage" sind es SIEBZEHN POLLS, rund 85
+     Minuten.  Die Tabelle "wie lange bis der Startwert weg ist" ist fuer
+     die RMNC-Zeile um den Faktor 35 falsch; XNET (15/16) und WAMPES (7/8)
+     stimmen dort, das sind echte exponentielle Filter.
+
+  2. "n LAESST SICH AUS DER VERLAUFSZEILE ABZAEHLEN" - nur solange n <= 16.
+     Gestern stimmte es, weil die Verbindung jung war.  Als allgemeine
+     Methode war es zu weit gefasst.
+
+WAS FUERS GESPRAECH MIT DEM ENTWICKLER UEBRIG BLEIBT, und es ist deutlich
+weniger, als ich gestern geschrieben habe: RMNC und FlexNet32 senden den
+geglaetteten Wert, und solange die 600 im Fenster liegt, wirbt ein frischer
+Link mit 300, 72, 60 statt mit seinem wahren Wert.  Rund 85 Minuten lang
+sieht eine gute Strecke schlechter aus, als sie ist.  Real, aber klein -
+und in der konservativen Richtung.
+
+WAS UNBERUEHRT BLEIBT: die rtt/2-Entscheidung.  Die vier Werte 303, 72, 60,
+52 liegen alle in der Wachstumsphase, die Rechnung ist dieselbe, und wahr=3
+findet weiterhin fuer keinen einzigen ein passendes n.
