@@ -7295,3 +7295,48 @@ ZWEI ENTWUERFE FALLEN DAMIT:
      Schwelle, also fliegt er beim ersten neuen Verstoss sofort wieder
      raus, statt erst nach fuenf.  Das gibt dem, der sich gebessert hat,
      seine Verbindung zurueck und kostet den anderen einen Connect.
+
+------------------------------------------------------------------------
+DAS DAMA-BIT FLIESST NUR IN EINE RICHTUNG (nachgelesen 2026-08-30)
+------------------------------------------------------------------------
+Thomas' Frage, wie sich TNN gegenueber einem Linux verhaelt.  Aus TNNs
+Master-Schleife (l2dama.c):
+
+    for (i = 0, lnkpoi = lnktbl; i < LINKNMBR; ++i, ++lnkpoi) {
+      if (lnkpoi->state == L2SDSCED) continue;        /* nur aktive Links */
+      if (portpar[lnkpoi->liport].dch != k) continue; /* nur dieser Kanal */
+      if ((lnkpoi->flag & L2FDAMA1) == 0) {           /* war nicht dran   */
+        if (lnkpoi->zael == lnkpoi->indx) {           /* darf er senden?  */
+          ... poll ...
+          break;                                      /* EIN User je Zug */
+
+KEINE PRUEFUNG DES DAMA-BITS.  TNN pollt jeden aktiven Link auf dem Kanal,
+gleich ob die Station je etwas markiert hat.  TNN UND LINUX VERTRAGEN SICH
+also: der Linux-Slave liest TNNs Bit, sperrt sich selbst, beantwortet die
+Polls, und weil er nie selbst pollt, zaehlt TNN keine Verstoesse.
+
+DAS BIT FLIESST NUR IN EINE RICHTUNG: MASTER -> SLAVE.  Das ist der Grund,
+warum Linux nur liest und nie schreibt, und es passt zu unserer eigenen
+Tabelle in doc/DAMA-SLAVE.md ("the DAMA bit in the MASTER's SSID octet").
+
+UNSER MASTER MACHT ES GENAUSO - dama_master_turn() hat keine Bit-Pruefung.
+Wir sind kompatibel.
+
+WAS DIE SPEZIFIKATION SELBST SAGT, WEISS ICH NICHT.  Das PDF von DK4EG
+liegt mir nicht vor; doc/DAMA-SLAVE.md ist UNSERE Lesart und sagt an der
+Stelle selbst, dass das Markieren als Slave eine Erweiterung von uns ist
+(mit der Digipeat-Begruendung).  Als Beleg fuer die Spezifikation taugt es
+nicht.  Wer das PDF hat, moege nachsehen.
+
+ZWEI NEBENFUNDE IM SELBEN AUSSCHNITT:
+  * "zael == indx" mit anschliessendem break ist genau das EIN LINK JE ZUG,
+    das bei uns noch offen ist.
+  * "if (!dcd)" ist der Traeger, den wir nicht haben und durch die
+    Zeitscheibe ersetzt haben.
+
+UND EIN WIDERSPRUCH IN UNSERER EIGENEN DOKU, noch aufzuloesen:
+doc/DAMA-SLAVE.md hat einen Abschnitt "Two slaves that connect to each
+other lock each other out".  GEMESSEN (tnn-lab/twoslaves) tun sie das
+nicht - sie verbinden sich und bleiben verbunden, weil jeder zum Poll-Geber
+des anderen wird.  Einer von beiden Saetzen ist falsch, und die Messung
+wiegt schwerer.

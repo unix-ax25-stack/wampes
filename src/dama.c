@@ -800,6 +800,7 @@ struct dama_v {
 	int32 at_poll;                  /* ifp->dama_polls dabei - siehe unten */
 	int fresh;                      /* dieser Aufruf hat hochgezaehlt */
 	int32 ban_until;                /* secclock, 0: kein Bann */
+	int32 ban_said;                 /* wann wir es zuletzt sagten */
 	int kick;                       /* zu trennen, sobald es sicher ist */
 };
 
@@ -1069,7 +1070,30 @@ int dama_connect_refused(struct iface *ifp, const struct ax25 *hdr)
 	int len;
 	long rest;
 
-	if (ifp == NULL || hdr == NULL || ifp->dama != DAMA_MASTER)
+	if (hdr == NULL)
+		return 0;
+
+	/* ERSTENS: IST DER GERUFENE GESPERRT?  Ihn erst aufzubauen, um ihn
+	 * gleich wieder zu trennen, waere doppelte Arbeit auf dem Kanal - und
+	 * in fuenf Minuten ist seine Haltezeit ohnehin abgelaufen (Thomas).
+	 * Der Rufer bekommt sein DM sofort, und das ist die richtige Antwort
+	 * im richtigen Protokoll: "Verbindung abgelehnt", an den, der sie
+	 * aufgebaut hat und es anders versuchen kann.
+	 *
+	 * KEIN UI dabei.  An den Rufer eine Meldung ueber einen Dritten zu
+	 * schicken hilft ihm nicht, und der Gerufene kann nichts dafuer, dass
+	 * er gerufen wurde.
+	 *
+	 * Gesucht wird ueber ALLE Ports: der Bann steht auf dem DAMA-Kanal,
+	 * der Ruf kommt ueber den Link herein.
+	 */
+	for (vp = Dama_v; vp != NULL; vp = vp->next)
+		if (vp->ban_until && addreq(vp->call, hdr->dest) &&
+		    vp->ban_until > secclock())
+			return 1;
+
+	/* ZWEITENS: KLOPFT EIN GESPERRTER SELBST AN? */
+	if (ifp == NULL || ifp->dama != DAMA_MASTER)
 		return 0;
 	who = dama_sender(hdr);
 	for (vp = Dama_v; vp != NULL; vp = vp->next)
@@ -1087,13 +1111,23 @@ int dama_connect_refused(struct iface *ifp, const struct ax25 *hdr)
 		vp->n = 0;
 		return 0;
 	}
-	len = snprintf(buf, sizeof(buf),
-		       "DAMA Fatal: rejecting - this channel is controlled by "
-		       "me, the master, who polls you; enable DAMA and call "
-		       "again, or wait %lds\r", rest);
-	if (len > 0)
-		dama_ui(ifp, who, buf, len > (int) sizeof(buf)
-			? (int) sizeof(buf) : len);
+	/* HOECHSTENS EINMAL JE MINUTE.  Gemessen: eine Station, die alle zwei
+	 * Sekunden ein SABM wiederholt, holte sich in fuenf Minuten rund 150
+	 * Abweisungs-UIs ab - genau der Verkehr, den DAMA sparen soll.  Die
+	 * Auskunft muss ihn erreichen, aber einmal genuegt; der DM sagt ihm
+	 * bei jedem Versuch, dass es nicht geht.
+	 */
+	if (vp->ban_said == 0 || secclock() - vp->ban_said >= 60) {
+		vp->ban_said = secclock();
+		len = snprintf(buf, sizeof(buf),
+			       "DAMA Fatal: rejecting - this channel is "
+			       "controlled by me, the master, who polls you; "
+			       "enable DAMA and call again, or wait %lds\r",
+			       rest);
+		if (len > 0)
+			dama_ui(ifp, who, buf, len > (int) sizeof(buf)
+				? (int) sizeof(buf) : len);
+	}
 	return 1;
 }
 
@@ -1162,6 +1196,7 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		if (ifp->dama_policy == DAMA_ENFORCE && n >= DAMA_MAXVIOL) {
 			vp->kick = 1;   /* vollzogen wird im Rundentimer */
 			vp->ban_until = secclock() + DAMA_BAN;
+			vp->ban_said = 0;
 		}
 	}
 	if ((mp = dama_m_port(ifp, 0)) == NULL || !mp->busy)
