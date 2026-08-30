@@ -7723,6 +7723,12 @@ OFFEN, UND WAS ES BRAUCHT
         dort gar nicht uebersetzt), von Linux nur gelesen.  Wer es liest,
         ist nach heutigem Stand unser eigener Slave - und ein Linux als
         DAMA-Slave, den es dann sein ganzes Geraet umschalten laesst.
+
+        EIN KOMPATIBILITAETSSCHALTER WAERE BILLIG (Thomas' Frage nach der
+        Zahl der Stellen): dama_mark() wird GENAU EINMAL gerufen, in
+        sendframe() (lapb.c).  Das ist der Weg, den jeder Rahmen einer
+        eigenen Verbindung nimmt - eine Bedingung an einer Stelle, nichts
+        Verstreutes.
      2. FLUCHTTUER DES BANNS: "wer mit DAMA-Bit anklopft, darf sofort
         wieder herein" greift fuer eine Linux-Station nie, weil sie nie
         markiert.  Entweder nur die Zeit, oder Hereinlassen auf Bewaehrung

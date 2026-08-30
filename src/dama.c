@@ -1485,6 +1485,28 @@ const char *dama_master_port(void)
 
 /*---------------------------------------------------------------------------*/
 
+/* OHNE ANGABE 1200 BIT/S ANNEHMEN (Thomas' Praeferenz).
+ *
+ * DAMA ist ganz ueberwiegend eine Sache der 1k2-Simplexeinstiege, und die
+ * Annahme gibt genau die Werte zurueck, die vorher als feste Vorgaben
+ * dastanden: Wachhund 120 s, und eine Antwortfrist von 483 ms, also die
+ * "around 1/2 second" des Papiers.  Wer schneller faehrt, sagt es - und
+ * bekommt es gesagt, damit er es nicht vergisst.
+ */
+
+static void dama_assume_rate(struct iface *ifp)
+{
+	if (ifp->hf_datarate > 0)
+		return;
+	ifp->hf_datarate = 1200;
+	printf("%s: hf-datarate not set, assuming 1200 bit/s for the DAMA "
+	       "timers.\n  Say \"ifconfig %s hf-datarate <bit/s>\" if the "
+	       "channel is faster - the\n  answer deadline and the watchdog "
+	       "are computed from it.\n", ifp->name, ifp->name);
+}
+
+/*---------------------------------------------------------------------------*/
+
 int ifdama(int argc, char *argv[], void *p)
 {
 	struct iface *ifp = (struct iface *) p;
@@ -1549,6 +1571,7 @@ int ifdama(int argc, char *argv[], void *p)
 				return 1;
 			}
 		}
+		dama_assume_rate(ifp);
 		ifp->dama = DAMA_MASTER;
 		ifp->dama_heard = 0;
 		/* Auch der Master, und aus demselben Grund wie bei TNN: ein
@@ -1593,6 +1616,7 @@ int ifdama(int argc, char *argv[], void *p)
 		return 1;
 	}
 
+	dama_assume_rate(ifp);
 	ifp->dama = DAMA_SLAVE;
 	/* Not "heard" yet: being told to follow a master is not the same as
 	 * having found one, and until one is found nothing may hold back what
