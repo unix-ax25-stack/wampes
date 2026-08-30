@@ -6729,3 +6729,74 @@ ein Fehlerbild wird.
 Und fuers Labor heisst es: ein Aufbau mit ZWEI DAMA-Einstiegen an EINEM
 Knoten, je ein Nutzer daran.  Das braucht wieder keine gemeinsame Adresse
 und faellt nicht in die uhnp-Falle.
+
+------------------------------------------------------------------------
+LESEDURCHGANG DIGIPEAT 1 vs 2, DAMA UND EAX25 (2026-08-30)
+------------------------------------------------------------------------
+Vor dem Labor, weil es im Quelltext steht.  GELESEN, nicht gemessen - das
+ist der Unterschied zu allem, was weiter unten als Test aussteht.
+
+ENTSCHIEDEN VORWEG (Thomas): der Digipeat-Modus bleibt EINE GLOBALE
+Einstellung, nicht je Port.  "Diese 1000 unterschiedlichen Faelle koennten
+wir sonst gar nicht alle abschaetzen und testen."  Digipeat ist ohnehin
+schon global (int Digipeat = 2 in ax25.c), es ist also nichts zu aendern,
+nur nichts hinzuzuerfinden.
+
+DIE ROLLENTEILUNG, jetzt ausformuliert:
+  digipeat 2  UEBERSETZEN.  Wir terminieren und bauen selbst neu auf, also
+              koennen wir auf der einen Seite DAMA sprechen und auf der
+              anderen einfaches AX.25.  Das ist der Fall "Nutzer kann kein
+              DAMA".
+  digipeat 1  DURCHREICHEN.  Der Nutzer kann selbst DAMA und benutzt uns
+              als reinen Via-Digi; die Polls des Masters muessen ihn
+              UNANGETASTET erreichen.  Dort ist Modus 1 nicht nur erlaubt,
+              sondern die einzig richtige Betriebsart.
+Die beiden Modi sind damit keine Geschmacksfrage, sondern gehoeren zu zwei
+verschiedenen Rollen desselben Knotens.
+
+  1. UNSER MASTER BAUT MIT GESETZTEM DAMA-BIT AUF.  dama_mark() steht in
+     sendframe() (lapb.c:1113), gilt also fuer jeden Rahmen unserer eigenen
+     Links einschliesslich SABM, und markiert in BEIDEN Rollen.  Der
+     Angerufene wertet es aus (lapb.c:202) und setzt axp->dama_link = 1;
+     ab da greift bei ihm das Sendegatter.  Damit ist Thomas' Frage
+     beantwortet: ja, mit Bit, und der Slave nimmt es an.
+
+  2. WIEDERHOLTE RAHMEN WERDEN NICHT MARKIERT.  Sie gehen nicht durch
+     sendframe(), sondern der Digipeat-Zweig in ax25.c ruft htonax25()
+     direkt.  Das ist die Transparenz, die Modus 1 braucht - und zugleich
+     der Grund, warum Modus 1 das Bild des Masters zerstoert: das
+     wiederholte SABM traegt die unmarkierte Adresse des fernen Nutzers.
+     Thomas' Schluss "digi mode 2 ist zwingend erforderlich" ist damit vom
+     Code bestaetigt.
+
+  3. DER VERSTOSSZAEHLER IST FUER WIEDERHOLTEN VERKEHR BLIND, und das hatte
+     ich nicht erwartet.  dama_master_input() bekommt UNSER axp; ein
+     wiederholter Rahmen gehoert zu einer Verbindung zwischen zwei ANDEREN
+     Stationen, hat bei uns also gar kein axp und erreicht lapb_input()
+     nie.  Zusammen mit dem schon bekannten zu engen Kriterium (nur
+     Kommandos mit P) sieht der Zaehler damit fast nichts von dem, was
+     Modus 1 erzeugt.
+
+  4. EAX25 UNTER MODUS 1 IST IN ORDNUNG.  Alle EAX25-Entscheidungen liegen
+     in lapb.c, also auf Verbindungen mit uns als Endpunkt; fuer
+     wiederholten Verkehr gibt es keine.  Und der Weg ntohax25() ->
+     htonax25() erhaelt beide Bits exakt:
+
+         ntoh:  if (!(source[ALEN] & SSID_EAX25)) ext |= SSID_EAX25;
+         hton:  if (ext & SSID_EAX25) cp[ALEN] &= ~SSID_EAX25; else |= ;
+
+     (dasselbe fuer SSID_DAMA).  Wir fassen also nichts an und schicken
+     auch kein SABME mit Rueckfall im Auftrag des Nutzers - dafuer
+     braeuchte es eine Verbindung, die es nicht gibt.  Das ist die Antwort
+     auf Thomas' EAX25-Frage, und sie ist die gute.
+
+WAS DAMIT ZU MESSEN BLEIBT:
+  * Bruecke mit zwei Ports, je einmal in Modus 2 und Modus 1 - uebersetzen
+    gegen durchreichen, und EAX25 dabei.  Braucht weder root noch den
+    uhnp-Fix.
+  * WIEDERHOLEN AUF DEMSELBEN IFACE (Thomas): zwei Nutzer auf einem Kanal,
+    die sich nicht hoeren.  Derselbe Aufbau, nur beide auf einem Port.
+  * Die unaufgeforderte Wiederholung, wenn wir auf dem AUSGANGSPORT Slave
+    sind - heute haelt dama_defer_ui() nur UI zurueck.
+  * Ein Link je Zug / Verstoss waehrend fremdem Zug: braucht den
+    gemeinsamen Kanal und haengt an uhnp oder Loopback-Adressen.
