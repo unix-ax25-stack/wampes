@@ -73,6 +73,7 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "cmdparse.h"
+#include "devparam.h"
 #include "dama.h"
 
 /* How long a master may be silent before we stop believing in him.  TNN uses
@@ -94,6 +95,49 @@ static int dama_watchdog(const struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+/* DEM KANALZUGRIFF SAGEN, DASS ER NICHT MEHR WUERFELN MUSS.
+ *
+ * Wer gepollt wurde, hat die Erlaubnis - er soll SOFORT tasten.  Laeuft
+ * dagegen die uebliche p-Persistenz, kostet das bei unseren eigenen
+ * Vorgaben (persist 63, slottime 10) im Mittel vier Slots, also gut 400 ms,
+ * mit langem Schwanz.  Und die Spezifikation gibt dem Master nur "around
+ * 1/2 second" Geduld (CNC 1989, S. 204), danach geht er zum naechsten.  Wir
+ * kaemen also regelmaessig zu spaet, ohne dass irgendetwas kaputt aussieht.
+ *
+ * Linux macht dasselbe (ax25_ds_subr.c: ax25_kiss_cmd(dev, 5, 1) beim
+ * Eintritt, 0 beim Verlassen) - dort steht die Nummer 5 fuer FullDuplex,
+ * gesichert aus den Treiberkonstanten des Kernels.
+ *
+ * EIN AUFRUF, DREI RICHTIGE WIRKUNGEN: kiss.c schickt das KISS-Kommando an
+ * den TNC, sixpack.c setzt sein eigenes Flag (dort macht den Kanalzugriff
+ * der HOST, nicht der TNC), krnlif.c sagt es dem Kernel.  Auf axip und
+ * bpqether laeuft er ins Leere, und das ist dort richtig - es gibt kein
+ * CSMA, auf das man verzichten koennte.
+ *
+ * ZURUECKGENOMMEN WIRD NUR, WAS WIR SELBST GESETZT HABEN.  Hat der Sysop
+ * den Port ohnehin auf Vollduplex gestellt, bleibt es dabei - dieselbe
+ * Ruecksicht wie beim ARP-Schalter.
+ */
+
+static void dama_duplex(struct iface *ifp, int on)
+{
+	if (ifp == NULL || ifp->ioctl == NULL)
+		return;
+	if (on) {
+		if (ifp->dama_duplex)
+			return;                 /* laeuft schon */
+		if ((*ifp->ioctl)(ifp, PARAM_FULLDUP, 0, 0) > 0)
+			return;                 /* der Sysop wollte es so */
+		if ((*ifp->ioctl)(ifp, PARAM_FULLDUP, 1, 1) >= 0)
+			ifp->dama_duplex = 1;
+	} else if (ifp->dama_duplex) {
+		(*ifp->ioctl)(ifp, PARAM_FULLDUP, 1, 0);
+		ifp->dama_duplex = 0;
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Is DAMA in force on this port at this moment?
  *
  * Not the same question as "is it configured": a slave follows a master only
@@ -110,6 +154,7 @@ static int dama_in_force(struct iface *ifp)
 		return 1;
 	ifp->dama_heard = 0;
 	ifp->dama_lost++;
+	dama_duplex(ifp, 0);            /* wieder CSMA, also wieder wuerfeln */
 	/* HIER, und nicht erst wenn ein Zeitgeber es merkt: das ist der
 	 * Augenblick, in dem feststeht, dass kein Fenster mehr kommt.  Was
 	 * gewartet hat, hat ab jetzt nichts mehr, worauf es warten koennte
@@ -168,8 +213,10 @@ void dama_heard_frame(struct iface *ifp, const struct ax25 *hdr)
 	 */
 	if (ifp == NULL || ifp->dama != DAMA_SLAVE)
 		return;
-	if (ifp->dama_heard == 0)
+	if (ifp->dama_heard == 0) {
 		ifp->dama_entered++;
+		dama_duplex(ifp, 1);
+	}
 	ifp->dama_heard = secclock();
 	/* UND WER GESENDET HAT - nicht wer den Rahmen verfasst hat.  Ohne das
 	 * wuerde uns jedes Kommando mit P von irgendwem den Kanal in die Hand
@@ -1311,6 +1358,7 @@ int ifdama(int argc, char *argv[], void *p)
 	if (!strcmp(argv[1], "off")) {
 		ifp->dama = DAMA_OFF;
 		ifp->dama_heard = 0;
+		dama_duplex(ifp, 0);
 		dama_master_stop(ifp);
 		/* Das Fragen nach ARP kommt zurueck, WENN wir es waren, die es
 		 * abgeschaltet haben (Thomas' Frage).  Der Grund war DAMA;

@@ -158,6 +158,10 @@ struct iface {
 	 */
 	int dama;               /* DAMA_OFF, DAMA_SLAVE oder DAMA_MASTER */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
+	int dama_duplex;        /* 1: WIR haben fulldup gesetzt, also auch
+				 * zurueckzunehmen.  Wie noarp_auto: was der
+				 * Sysop selbst gesagt hat, nehmen wir ihm
+				 * nicht wieder aus der Hand. */
 	int dama_watchdog;      /* Seconds of silence before we stop following
 				 * a master; 0 means the built-in default */
 	int32 dama_heard;       /* When a DAMA marked frame was last seen here,

@@ -7492,3 +7492,68 @@ Port mit eigener Kanalzugriffsregelung PARAM_FULLDUP auf 1, beim Verlassen
 zurueck auf 0 - also gebunden an dama_in_force(), damit der Rueckfall auf
 CSMA es auch wirklich zuruecknimmt.  Betrifft KISS und 6pack; auf axip und
 bpqether gibt es nichts zu setzen.
+
+------------------------------------------------------------------------
+ZWEI FRISTEN IN EINEM ZEITGEBER - UND DIE BITRATE FEHLT (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Sein Vorschlag, fuer DAMA eine Konfigurationsoption fuer die BITRATE der
+Funkstrecke einzufuehren, damit sich die Timer daran anpassen.  Beim
+Aufschreiben faellt auf, dass wir vorher noch etwas anderes trennen muessen.
+
+DAS PAPIER KENNT ZWEI FRISTEN, WIR HABEN EINEN ZEITGEBER:
+
+    "if the user does not respond within a given time frame (say around
+     1/2 second) then the master assumes the poll got clobbered"  (S. 204)
+    "Once permission is granted several frames might be transmitted in a
+     block."                                                      (S. 204)
+
+Die halbe Sekunde ist die Frist BIS ZUR ERSTEN ANTWORT, nicht die Laenge
+des Zuges.  Unser DAMA_SLOT_DEFAULT (5 s) tut aber beides: er laeuft ab dem
+Poll und wird erst durch das F-Bit geloescht.  Fuer eine STUMME Station
+zahlen wir also fuenf Sekunden, wo eine halbe genuegte - und die
+Begruendung im Kommentar ("die Frist soll den Zug nicht abschneiden")
+beschreibt die andere Frist.
+
+RICHTIG WAEREN ZWEI:
+  * ANTWORTFRIST, vom Poll bis zum ersten Rahmen.  Kurz, und GENAU DIESE
+    skaliert mit der Bitrate: bei 1200 Baud ist eine halbe Sekunde knapp
+    TXDELAY plus ein kurzer Rahmen, bei 9600 ein Bruchteil davon.
+  * ZUGDAUER, ab der ersten Antwort bis zum F-Bit.  Darf grosszuegig sein,
+    sie schneidet sonst einen laufenden Block ab.
+
+DAMIT IST DIE BITRATENOPTION NICHT BEQUEMLICHKEIT, SONDERN NOTWENDIGKEIT -
+ohne sie ist die Antwortfrist nicht auszurechnen.  Und sie erklaert, warum
+unsere 5 s gleichzeitig "eine Groessenordnung zu gross" und "viel zu klein"
+wirkten: zu gross fuer die eine Frist, und fuer die andere gar nicht
+gemeint.
+
+Die dritte Zahl aus dem Papier passt dann auch ins Bild: "the time interval
+from when an I-frame is sent to when the TNC sends an RR# ... should be set
+to a value that is clearly higher than the time between two polls of the
+master (usually more than 30 seconds at 1200 baud)" (S. 207).  Das ist die
+UMLAUFZEIT ueber alle Stationen, nicht die Frist einer einzelnen - und auch
+sie haengt an der Bitrate.
+
+ZU ENTSCHEIDEN: gehoert die Bitrate an den Port (ifconfig <if> bitrate) und
+gilt dann fuer Slave wie Master?  Fuer asy-Ports gibt es sie schon als
+Leitungsgeschwindigkeit, aber das ist die zum TNC und nicht die auf der
+Luft - bei 9600 Baud FSK ueber eine 38400er Leitung waere sie falsch.
+
+------------------------------------------------------------------------
+FULLDUP ODER persist/slottime? (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Sein Einwand zum eben gebauten Vollduplex-Schalter: es sei ggf. nicht nur
+KISS fulldup, sondern auch persist/slottime, die gesetzt werden sollten.
+
+DER UNTERSCHIED: fulldup tastet OHNE hinzuhoeren.  persist=255 mit
+slottime=0 wartet weiter, bis der Traeger weg ist, und tastet dann sofort.
+Nach einem Poll ist der Kanal frei, beides ginge - aber wenn der Master
+noch tastet (langer Poll-Rahmen, 201 oder 241 Oktette), ist die mildere
+Variante sicherer.  Linux hat sich fuer fulldup entschieden; das Papier
+schreibt zum Kanalzugriff des TNC nichts vor, es nennt nur T2/DWAIT unter
+einer Sekunde.
+
+GEBAUT IST BISHER NUR fulldup (dama_duplex(), gebunden an dama_in_force(),
+und es nimmt nur zurueck, was es selbst gesetzt hat).  NICHT GEMESSEN: das
+braucht einen Porttyp mit eigenem Kanalzugriff - ueber axip gibt es keinen,
+und genau deshalb ist es im Labor nie aufgefallen.
