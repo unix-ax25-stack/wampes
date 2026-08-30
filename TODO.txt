@@ -6912,3 +6912,48 @@ Rufzeichen des Masters zu kennen und einzutragen, ist etwas anderes, als es
 einem Sysop zuzumuten.  Der Vorschlag "Master konfigurieren" wird dadurch
 schwerer, und "learn" darf nicht einfach aufgegeben werden: es muss mit
 seinen bekannten Fehlerfaellen leben und sie dokumentieren.
+
+------------------------------------------------------------------------
+MASTER AN ZYKLISCHEN POLLS ERKENNEN (Thomas, 2026-08-30) - BESTER KANDIDAT
+------------------------------------------------------------------------
+Sein Gedanke, und er dreht die Sache um: die Unsichtbarkeit der Slaves ist
+kein Hindernis, sondern DAS SIGNAL.  DAMA existiert ja gerade deshalb, weil
+die Nutzer einander nicht hoeren - wen ich auf diesem Kanal ueberhaupt
+regelmaessig hoere, das ist der Knoten.
+
+DAS KRITERIUM:
+
+    Ein Sender, dessen Kommandos mit P an MEHRERE VERSCHIEDENE ZIELE
+    gehen, ist der Master.
+
+Es haelt beide Gegenbeispiele aus, an denen alles andere gescheitert ist:
+
+    zwei Slaves direkt verbunden   jeder pollt nur seinen Partner  -> 1 Ziel
+    userAs Client als Via-Digi     sendet nur fuer userA           -> 1 Ziel
+    der echte Master               pollt reihum alle Stationen     -> viele
+
+Der Grund, warum es traegt: es keyt auf VERHALTEN UEBER ZEIT GEGENUEBER
+MEHREREN PARTNERN statt auf ein Bit in einem einzelnen Rahmen.  Bit,
+Digi-Rolle und P-Bit sind alle daran gescheitert, dass sie beschreiben, was
+eine Station TUT - dieses hier beschreibt, mit WIE VIELEN sie es tut, und
+das kann nur der Knoten.
+
+GEZAEHLT WIRD NACH "WER GESENDET HAT" (letzter wiederholter Digi, sonst
+Quelle), nicht nach der Quelle: im Bruecken-Fall gehen die Polls des
+Masters unter dem Rufzeichen des NUTZERS hinaus, wie gemessen.
+
+DREI EINSCHRAENKUNGEN, und Thomas' eigene ist die erste:
+  * Auf einem leeren Kanal gibt es nichts zu lernen - und beim ersten
+    Kontakt, wo man es am dringendsten braeuchte, hat man noch nichts
+    gehoert.
+  * Es braucht FREMDEN VERKEHR, den wir heute gar nicht auswerten:
+    dama_heard_frame() haengt an lapb_input(), also nur an Rahmen, die an
+    uns gerichtet sind.  Promiskes Mithoeren waere neu.
+  * Ein Fehlschluss bleibt moeglich: eine Station, die fuer MEHRERE Nutzer
+    digipeatet, saehe genauso aus.
+
+DAMIT: kein Ersatz fuer die Konfiguration, aber der erste Kandidat, der als
+"learn" wirklich taugt - und er nimmt dem HEIMNUTZER genau das ab, was man
+von ihm nicht verlangen sollte (das Rufzeichen des Masters zu kennen).
+Sinnvolle Staffelung waere: konfiguriert schlaegt gelernt, gelernt schlaegt
+geraten, und geraten ist das heutige Verhalten als letzte Zuflucht.
