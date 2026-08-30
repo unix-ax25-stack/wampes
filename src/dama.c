@@ -733,6 +733,90 @@ static void dama_master_next(void *arg)
  * ist die kleinere Strafe.
  */
 
+/* WIE OFT EINE STATION VERSTOSSEN HAT, und "je Station" heisst hier wirklich
+ * je Station und nicht je Port (Thomas).  TNNs Schwelle - "sind mehr
+ * Verwarnungen noetig, als unter DAMA-MaxPol angegeben, so wird der User
+ * disconnected" - meint den einzelnen Benutzer; ein Portzaehler wuerde die
+ * fuenfte Verwarnung irgendwem zustellen.  Gezaehlt wird auf das Rufzeichen,
+ * das den Kanal BELEGT hat, also auf dama_station() und nicht auf den Urheber
+ * des Rahmens - bei einer digipeateten Sitzung sind das verschiedene.
+ *
+ * Die Liste bleibt klein, weil sie bei jedem Verstoss aufgeraeumt wird: eine
+ * Station ohne stehende Verbindung auf ihrem Port ist fertig, und ihr Zaehler
+ * mit ihr - dieselbe Semantik wie TNNs "im QSO verwarnt".  Aufgeraeumt wird
+ * dabei nur, wenn ueberhaupt jemand verstoesst; hoeren alle auf, bleibt der
+ * letzte Eintrag stehen, bis der naechste Verstoss ihn mitnimmt.  Das ist
+ * eine Handvoll Oktette und keinen eigenen Zeitgeber wert.
+ */
+
+/* UND ER ALTERT AUCH OHNE VERBINDUNGSENDE (Thomas' Frage).  Das Ende der
+ * Verbindung allein genuegt nicht: ein Link zwischen zwei Knoten steht
+ * wochenlang, und ein Zaehler, der dort nur waechst, laeuft irgendwann in
+ * jede Schwelle - bestraft wuerde Verhalten, das ueber Tage verteilt war.
+ *
+ * Zehn Minuten, und die Zahl ist nicht beliebig: eine Station, die das
+ * Verfahren nicht fahrt, sendet unaufgefordert im Sekundenabstand.  Ein
+ * Schub ist damit in Sekunden bei der Schwelle, und zehn Minuten Ruhe sind
+ * zwei Groessenordnungen daneben - wer so lange still war, hat aufgehoert.
+ */
+#define DAMA_VIOL_FORGET        600L    /* Sekunden ohne Verstoss */
+
+struct dama_v {
+	struct dama_v *next;
+	struct iface *ifp;
+	uint8 call[AXALEN];
+	long n;
+	int32 last;                     /* secclock des letzten Verstosses */
+};
+
+static struct dama_v *Dama_v;
+
+static int dama_station_linked(struct iface *ifp, const uint8 *call)
+{
+	struct ax25_cb *axp;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
+		if (axp->iface == ifp && axp->peer == NULL &&
+		    (axp->state == LAPB_CONNECTED ||
+		     axp->state == LAPB_RECOVERY) &&
+		    addreq(dama_station(axp), call))
+			return 1;
+	return 0;
+}
+
+static long dama_violation(struct iface *ifp, const uint8 *call)
+{
+	struct dama_v *vp;
+	struct dama_v **pp;
+
+	int32 now = secclock();
+
+	for (pp = &Dama_v; (vp = *pp) != NULL; ) {
+		if (dama_station_linked(vp->ifp, vp->call) &&
+		    now - vp->last < DAMA_VIOL_FORGET) {
+			pp = &vp->next;
+		} else {
+			*pp = vp->next;
+			free(vp);
+		}
+	}
+	for (vp = Dama_v; vp != NULL; vp = vp->next)
+		if (vp->ifp == ifp && addreq(vp->call, call)) {
+			vp->last = now;
+			return ++vp->n;
+		}
+	vp = (struct dama_v *) callocw(1, sizeof(struct dama_v));
+	vp->ifp = ifp;
+	addrcp(vp->call, call);
+	vp->n = 1;
+	vp->last = now;
+	vp->next = Dama_v;
+	Dama_v = vp;
+	return vp->n;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 		       const struct ax25 *hdr, int isu, int ispoll, int isfinal)
 {
@@ -750,9 +834,11 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	 */
 	if (ispoll && !isu &&
 	    (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY)) {
-		ifp->dama_violations++;
-		if (ifp->dama_violations == 1 ||
-		    !(ifp->dama_violations % 10)) {
+		const uint8 *who = dama_station(axp);
+		long n = dama_violation(ifp, who);
+
+		ifp->dama_violations++;         /* Summe fuer die Statuszeile */
+		if (n == 1 || !(n % 10)) {
 			char buf[AXBUF];
 
 			/* WER GESENDET HAT, nicht wer den Rahmen verfasst hat
@@ -764,10 +850,15 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 			 * dafuer steht schon im Kommentar dort.  Dieselbe
 			 * Adresse ist spaeter der Empfaenger der Verwarnung.
 			 */
-			printf("%s: %s polled us - on a DAMA channel the "
-			       "master decides who\n  transmits (%ld so far)\n",
-			       ifp->name, pax25(buf, dama_station(axp)),
-			       (long) ifp->dama_violations);
+			/* EINZEILIG, und der Port zuerst.  Wer zwei Ports als
+			 * Master fahrt, will am Log sehen, auf welchem
+			 * Einstieg der Stoerer sitzt (Thomas) - und eine
+			 * zweite Zeile ohne Portnamen waere im Wechsel
+			 * zweier Kanaele nicht mehr zuzuordnen.
+			 */
+			printf("%s: %s polled us - on a DAMA channel only the "
+			       "master polls (%ld so far)\n",
+			       ifp->name, pax25(buf, who), n);
 		}
 	}
 	if ((mp = dama_m_port(ifp, 0)) == NULL || !mp->busy)

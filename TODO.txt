@@ -6389,10 +6389,43 @@ WAS NOCH FEHLT:
     kommentarlos sein darf, weil die Begruendung vorher im UI stand.
     Nicht gebaut.  Wie der Text aussieht, bespricht Thomas spaeter.
 
-    NOCH OFFEN DABEI: unser Zaehler ist PRO PORT (ifp->dama_violations),
-    TNNs Schwelle ist pro Benutzer.  Fuer "nach 5 Verstoessen trennen"
-    braucht es einen Zaehler je Station, nicht je Kanal - sonst trifft die
-    fuenfte Verwarnung irgendwen.
+    ZAEHLER JE STATION IST GEBAUT (2026-08-30, Thomas: "nicht pro Port
+    sondern die verstossenden Nutzer jeweils").  struct dama_v fuehrt
+    Port + Rufzeichen + Zaehler; gezaehlt wird auf dama_station(), also
+    auf den, der den Kanal belegt hat.  ifp->dama_violations bleibt als
+    Summe fuer die Statuszeile.
+
+    WANN ER ALTERT (Thomas' Frage), zwei Wege, und beide sind noetig:
+      - Verbindungsende: keine stehende Verbindung der Station mehr auf
+        dem Port, Zaehler weg.  Das ist TNNs "im QSO verwarnt".
+      - ZEIT: 600 Sekunden ohne Verstoss.  Das Verbindungsende allein
+        genuegt nicht - ein Link zwischen zwei Knoten steht wochenlang,
+        und ein Zaehler der dort nur waechst laeuft irgendwann in jede
+        Schwelle; bestraft wuerde Verhalten, das ueber Tage verteilt war.
+        Zehn Minuten, weil eine Station die das Verfahren nicht fahrt im
+        SEKUNDENABSTAND unaufgefordert sendet - zwei Groessenordnungen
+        Abstand zum Schub.
+    Aufgeraeumt wird nur, wenn jemand verstoesst; hoeren alle auf, bleibt
+    der letzte Eintrag stehen.  Eine Handvoll Oktette, keinen eigenen
+    Zeitgeber wert.
+
+    DIE MELDUNG ist jetzt EINZEILIG mit dem Port zuerst (Thomas: bei zwei
+    Master-Ports will man sehen, auf welchem Einstieg der Stoerer sitzt).
+    Zweizeilig war die Fortsetzung im Wechsel zweier Kanaele nicht mehr
+    zuzuordnen.
+
+    NICHT VORGEFUEHRT: gebaut und uebersetzt, aber im Labor noch nicht
+    ausgeloest.  Zwei Laeufe gegen einen Knoten ohne DAMA (auch mit
+    ax25 t1 300, also ungeduldig) ergaben NULL Verstoesse bei 32 Polls -
+    und der Grund ist selbst ein Befund: bei nur EINER Station pollt der
+    Master sie ununterbrochen, jede Sendung wird sofort quittiert, also
+    muss sie nie selbst pollen.  Ein Verstoss nach unserem Kriterium
+    entsteht erst, wenn eine Station sendet WAEHREND eine andere den Zug
+    hat.  Das braucht den Drei-Knoten-Aufbau (tnn-lab/dama3).
+
+    UND ES BESTAETIGT DAS ZU ENGE KRITERIUM GEMESSEN: ein Knoten ohne
+    DAMA lief 35 s gegen unseren Master, sendete wann er wollte, und wurde
+    kein einziges Mal gezaehlt.
 
 DER ZWEITE LABORKNOTEN steht als tnn-lab/wampes-b.  Er hat KEINEN
 Kommandokanal - TCPDIR ist compilezeitfest, und den Socket haelt der erste
