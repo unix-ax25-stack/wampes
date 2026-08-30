@@ -157,6 +157,11 @@ struct iface {
 	 * dama_heard records.
 	 */
 	int dama;               /* DAMA_OFF, DAMA_SLAVE oder DAMA_MASTER */
+	int32 hf_datarate;      /* Bit/s AUF DER LUFT, 0: unbekannt.  Nicht
+				 * die Geschwindigkeit zum TNC - bei 9600 Baud
+				 * FSK ueber eine 38400er Leitung waere die
+				 * falsch (Thomas).  DAMA rechnet daraus seine
+				 * Fristen. */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_ca_set;        /* 1: WIR haben den Kanalzugriff umgestellt,
 				 * also auch zurueckzunehmen.  Wie noarp_auto:

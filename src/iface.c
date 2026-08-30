@@ -36,6 +36,7 @@ static int iftxqlen(int argc,char *argv[],void *p);
 int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifarp(int argc,char *argv[],void *p);
+static int ifhfdatarate(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
@@ -144,6 +145,10 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
 struct cmds Ifcmds[] = {
 	{ "arp",                  ifarp,          0,      1, NULL },
+	{ "hf-datarate",          ifhfdatarate,   0,      1,
+	  "ifconfig <iface> hf-datarate <bit/s>   (0 = unbekannt)\n"
+	  "  Die Geschwindigkeit AUF DER LUFT, nicht die zum TNC.  DAMA rechnet\n"
+	  "  daraus seine Fristen; ohne sie bleibt es bei den Vorgaben." },
 	{ "autoroute",            ifautoroute,    0,      2,
 	  "ifconfig <iface> autoroute on|off\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "digiarp",              ifdigiarp,      0,      2,
@@ -447,6 +452,55 @@ static void ifarp_usage(struct iface *ifp)
 	printf("  If you enable \"dama slave\" on this interface, arp is\n"
 	       "  switched off automatically - a request is a broadcast and\n"
 	       "  costs the channel.  You may turn it on again.\n");
+}
+
+
+/* WIE SCHNELL ES AUF DER LUFT GEHT - und das ist etwas anderes als die
+ * Geschwindigkeit zum TNC (Thomas): bei 9600 Baud FSK ueber eine 38400er
+ * Leitung waere die Leitungsgeschwindigkeit falsch, und bei axudp gibt es
+ * gar keine.
+ *
+ * DAMA braucht sie in BEIDEN ROLLEN, aber fuer Verschiedenes.  Der Master
+ * fuer die Frist, die er einer gepollten Station bis zur ersten Antwort
+ * laesst - die Spezifikation nennt "around 1/2 second" (CNC 1989, S. 204),
+ * und das ist bei 1200 Baud TX-Delay plus ein kurzer Rahmen.  Der Slave
+ * fuer seinen Wachhund, denn dessen Frist haengt an der Umlaufzeit ueber
+ * alle Stationen ("usually more than 30 seconds at 1200 baud", S. 207).
+ *
+ * ERLAUBT AUCH AUF axip UND bpqether, wo es fuer den Betrieb ohne Belang
+ * ist - denn ohne Zeiten laesst sich DAMA dort nicht PRUEFEN (Thomas), und
+ * genau diese Blindheit des Labors hat uns heute schon zweimal getroffen.
+ * Abgewiesen wird nur, wo es gar keine Funkstrecke gibt.
+ */
+
+static int
+ifhfdatarate(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	long n;
+
+	if(!is_ax25(ifp)){
+		printf("%s has no radio path.  \"hf-datarate\" says how fast it "
+		       "goes ON THE AIR,\n  and here there is no air - the port "
+		       "is a loopback, an encapsulation\n  or a tunnel.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		if(ifp->hf_datarate)
+			printf("%s: hf-datarate %ld bit/s\n", ifp->name,
+			       (long) ifp->hf_datarate);
+		else
+			printf("%s: hf-datarate not set\n", ifp->name);
+		return 0;
+	}
+	n = atol(argv[1]);
+	if(n < 0 || n > 10000000L){
+		printf("hf-datarate wants bit/s, 0 to 10000000 (0 = unknown)\n");
+		return 1;
+	}
+	ifp->hf_datarate = (int32) n;
+	return 0;
 }
 
 static int
@@ -934,6 +988,9 @@ showiface(struct iface *ifp, int verbose)
 	 * "ax25:"-Zeilen ist, das dort ueberhaupt etwas bedeutet.  Also ohne
 	 * dieses Praefix und ausserhalb des Blocks.
 	 */
+	if(ifp->hf_datarate)
+		printf("           link: %ld bit/s on the air\n",
+		       (long) ifp->hf_datarate);
 	if(ifp->framemax)
 		printf("           link: carries at most %d octets\n",
 		 ifp->framemax);
