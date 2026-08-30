@@ -7443,3 +7443,52 @@ Zweck - Thomas' Digipeat-Argument in dama_mark() - und eine dokumentierte
 Nebenwirkung: jede Station, die das Bit liest, haelt uns fuer den Master.
 Wer es liest, ist nach heutigem Stand: unser eigener Slave, und sonst
 niemand.
+
+------------------------------------------------------------------------
+UNSER SLAVE SCHALTET DEN TNC NICHT AUF VOLLDUPLEX - LINUX SCHON
+------------------------------------------------------------------------
+Thomas' Frage nach dem "sichtbaren Eingriff in die Hardware", und sie
+trifft eine Luecke bei uns.
+
+WAS LINUX TUT (ax25_ds_subr.c):
+
+    static void ax25_dev_dama_on(ax25_dev *ax25_dev) {
+      if (ax25_dev->dama.slave == 0)
+        ax25_kiss_cmd(ax25_dev, 5, 1);      /* KISS 5 = FullDuplex */
+      ax25_dev->dama.slave = 1;
+      ax25_ds_set_timer(ax25_dev);
+    }
+    void ax25_dev_dama_off(...) { ... ax25_kiss_cmd(ax25_dev, 5, 0); ... }
+
+Die Nummer ist gesichert, aus den Treiberkonstanten des Kernels:
+
+    #define PARAM_TXDELAY 1   #define PARAM_PERSIST 2
+    #define PARAM_SLOTTIME 3  #define PARAM_FULLDUP 5
+
+Also VOLLDUPLEX, nicht Persistence und nicht Wartezeit.  Der Sinn: wer
+gepollt wurde, hat die Erlaubnis und braucht kein CSMA - er soll SOFORT
+tasten.  Beim Verlassen des Modus wird es zurueckgenommen.
+
+WIR TUN DAS NICHT.  dama.c fasst PARAM_FULLDUP nirgends an, obwohl WAMPES
+die Maschinerie hat (param <interface>, kiss.c, krnlif.c, devparam.c).
+Unser Slave antwortet auf einen Poll, und dann laeuft beim KISS-TNC erst
+p-Persistence und Slot-Time: bei p ~ 0,25 und 100 ms Slot im Mittel vier
+Slots, also gut 400 ms, mit langem Schwanz.
+
+UND GENAU DORT LIEGT DIE FRIST AUS DEM PAPIER (S. 204): "if the user does
+not respond within a given time frame (say around 1/2 second) then the
+master assumes the poll got clobbered ... and moves on to the next user on
+its polling list".  Die halbe Sekunde ist die Geduld des MASTERS - ob wir
+sie einhalten koennen, entscheidet der TNC.
+
+TNN TAUGT HIER NICHT ALS VERGLEICH (Thomas: "ach tnn ist ja kein slave") -
+es ist reiner Master, und ein Master besitzt den Kanal ohnehin.
+
+WARUM ES IM LABOR NIE AUFFIEL: ueber axip gibt es kein CSMA.  Wieder ein
+Pruefstand, der weniger kann als die Sache.
+
+ZU BAUEN (noch nicht gemacht): beim Eintritt in den DAMA-Modus auf einem
+Port mit eigener Kanalzugriffsregelung PARAM_FULLDUP auf 1, beim Verlassen
+zurueck auf 0 - also gebunden an dama_in_force(), damit der Rueckfall auf
+CSMA es auch wirklich zuruecknimmt.  Betrifft KISS und 6pack; auf axip und
+bpqether gibt es nichts zu setzen.
