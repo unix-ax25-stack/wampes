@@ -101,15 +101,13 @@ from anybody else is not a poll.  Without that, any neighbour would hand us
 the channel - the opposite of the point, since on a DAMA channel exactly one
 station decides who transmits.
 
-**And we mark our own frames.**  On a port declared `dama slave`, our source
-SSID carries the bit too.  That is what makes digipeating work at all: when a
-user connects to DL1AAA *through* the master rather than connecting to the
-master and working onwards, the master is only a digipeater for that link and
-has nothing else to tell it we are a DAMA station.  A master that tracks every
-connection hop by hop - which is what WAMPES does - can then put us in its
-polling list.  Marked because the sysop declared the channel, not because a
-master happened to be heard: only the first is a statement we may make about
-ourselves.
+**We do not mark our own frames** - not by default.  The bit belongs to the
+master (see *Two slaves on one channel* below), and a slave that sets it
+claims to be one.  There is a switch, `dama slave mark`, for a channel whose
+master expects it; the reason it was once the default was digipeating - a
+master that only repeats for us has nothing else to tell it we speak DAMA -
+but no implementation actually needs that, and it harms a Linux station in
+slave mode.
 
 ## What marks a DAMA channel, and what hands us the turn
 
@@ -293,44 +291,99 @@ again rather than inheriting it.
 Measured on a port with a master running: an unmarked caller is answered and
 served at once, while the master's link is still held until its poll.
 
-**Our own marking stays on every link of the port**, because it says "we speak
-DAMA", not "this connection is DAMA" - that is the whole point of it, telling
-a master that only repeats for us.  The consequence is worth knowing: any
-station that reads the bit will take us for a master.  A DAMA-capable user TNC
-that calls us will gate itself and wait for polls we never send, until its own
-watchdog gives up.  On a DAMA channel that is the right outcome - see the next
-section - but it means `dama slave` on a port also says "direct contacts here
-are not expected to work".
+**With `dama slave mark`, the marking stays on every link of the port**,
+because it would say "we speak DAMA", not "this connection is DAMA".  The
+consequence is worth knowing, and it is the reason the switch defaults to off:
+any station that reads the bit takes us for a master.  A DAMA-capable user TNC
+calling us would gate itself and wait for polls we never send, until its own
+watchdog gives up - so with `mark` set, `dama slave` on a port also says
+"direct contacts here are not expected to work".
 
-## Two slaves that connect to each other lock each other out
+## Two slaves on one channel, and why we no longer mark our own frames
 
-Because we mark our own frames, another WAMPES slave reads them as "a master
-is here" and gates itself - and we do the same with its frames.  Neither ever
-polls the other, so both wait until the watchdog runs out, transmit, and put
-each other straight back into DAMA mode.
+This section used to say that two WAMPES slaves connecting to each other lock
+each other out, each reading the other's mark as "a master is here".  **That
+was wrong, and measuring it showed so:** they connect and stay connected.  A
+SABM is a command with the poll bit, and so is every T1-driven RR, so each
+becomes the other's poll-giver.  It worked - because both were claiming the
+same untruth.
 
-That is **deliberate, and it is the wanted behaviour**: on a DAMA channel
-potential slaves do not talk to each other.  If they must - the digi is off
-and the contact matters - they say so:
+**The claim itself was the problem, not the lockout.**  The specification is
+explicit about whose bit it is (CNC 1989, p. 208):
 
-    ifconfig <if> dama off
+> *utilizing the dormant bit 5 of **the master's SSID address field**.  It is
+> proposed that DAMA test versions set this bit to 0 to convey the necessary
+> information to the users TNC.*
 
-One line, rather than a switch nobody would understand.  Two DAMA masters on
-one frequency, which is what a marking slave amounts to, would be the worse
-answer.
+The bit says "I am the master here, switch to DAMA mode".  A slave that sets
+it says something untrue.  And Thomas' question - *"but usually it is a slave
+that connects"* - has a clean answer: when the user places the call, the
+**master's UA** carries the bit.  The mechanism does not depend on which end
+opened the connection, only on which end is the master.
+
+**So the default is now off**, with a switch for the sysop who has a master in
+front of him that expects it:
+
+    ifconfig <if> dama slave [timeout <seconds>] [mark|nomark]
+
+Marking costs nothing to give up, and that is the surprise: **nobody reads
+it.**  Our own master leaves `dama_heard_frame()` at once on a port that is
+not a slave, and TNN's master never looks at the bit at all - it polls every
+active link on the channel.  It does harm, though: a Linux station in DAMA
+slave mode takes the mark, switches its **whole device** into DAMA mode
+(`ax25_dev_dama_on()`, including a KISS full-duplex command to its TNC), and
+after three minutes without polls sends DISC to *every* DAMA connection on
+that device.
 
 XNET arrives at the same place from the other side.  Its `ds` parameter -
 *"allow DAMA slave mode"* - exists because *"Der Slave-Mode wird
 vollautomatisch beim Verbindungsaufbau zu einem Master aktiviert.  **Bei Digis
 ist diese automatische Aktivierung des Slave-Modes nicht erwuenscht.**"*  A
 node that is itself infrastructure should not be pushed into the slave role by
-somebody else's DAMA bit, which is why the default here is `off` and
-`dama slave` is a permission rather than a description.
+somebody else's DAMA bit, which is why `dama slave` is a permission rather
+than a description.
 
-**And nothing rescues such a station from outside.**  A master polls the links
-it *has*; it has none with a callsign that only talks to a third party, and an
-RR on a connection that does not exist would come back as DM or FRMR.  There
-is no way for a master to adopt a station it is not part of.
+**And nothing rescues a stalled station from outside.**  A master polls the
+links it *has*; it has none with a callsign that only talks to a third party,
+and an RR on a connection that does not exist would come back as DM or FRMR.
+There is no way for a master to adopt a station it is not part of.
+
+## Channel access: persistence, not full duplex
+
+A polled station has permission and should key up **at once**.  With the usual
+p-persistence it does not: at our own defaults - persist 63, slottime 10 - the
+mean wait is about four slots, so some 400 ms, with a long tail.  The paper
+gives the master *"around 1/2 second"* (p. 204) before it moves on, so we
+would be late again and again without anything looking broken.
+
+**What we set is persistence and slot time, not full duplex**, and the
+difference matters:
+
+* `fulldup` means *"transmit whatever the DCD says - the frequency is mine"*.
+  It was invented for **duplex accesses** with two frequencies, where the node
+  always hears and is never talked over.  DAMA, however, is spoken mostly on
+  **simplex**, on a shared frequency.
+* It is a **port property, not a state for the duration of a poll**.  The free
+  ticket applies while the window is open; the flag applies always - including
+  to the SABM a slave puts out in CSMA, where it *must* listen, or it talks
+  over whoever is sending, possibly the master itself.
+* **The master must not set it either.**  It has to hear on the DCD whether
+  the station it polled is still transmitting, and must not cut it off.  A
+  real duplex access would be the exception - and even there it would have to
+  be sure it is not addressing a user who is transmitting, since users are
+  usually not duplex.
+
+TNN confirms the reading in its code: `fullduplex(port)` is an **L1** property
+(`portpar[port].l1mode & MODE_d`) and every occurrence is a *read* - the DAMA
+code never sets it.  The installation describes it; the procedure does not
+touch it.  What TNN's DAMA code sets is the persistence: 255 on a DAMA port,
+against 160 on an ordinary user access and 200 on a link port, and its
+(uncompiled) slave half adds slottime 0.
+
+So while DAMA is in force we set `persist` to 255 and `slottime` to 0, in both
+roles, and put back exactly what was there before.  Linux chose `fulldup`
+instead; on a simplex channel that is the more dangerous of the two.
+
 
 ## Retransmission happens in the poll window
 
