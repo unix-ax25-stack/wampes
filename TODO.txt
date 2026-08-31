@@ -7149,6 +7149,51 @@ ZU ENTSCHEIDEN (Thomas), drei Stufen, die aufeinander aufbauen:
      die TNN mit dama_max = 15 ("Maximaler Aktivitaetszaehlerstand")
      ebenfalls fuehrt.  Das waere die getreue Umsetzung.
 
+NACHTRAG: DIE ENERGIEFRAGE, und sie kippt die Empfehlung (Thomas,
+2026-08-31).  Sein Einwand war nicht die Rundenlaenge, sondern das
+Gegenteil: sekuendlich zu pollen, obwohl der Nutzer vielleicht nie etwas
+sendet, ist verschenkte Sendeleistung.
+
+ZUERST DIE ENTLASTUNG: fuer eine EINZELNE stille Station greift der
+Rueckgang, und zwar als Leiter.  Gemessen mit --obey OHNE --data, also
+einer Station, die brav antwortet und nie etwas zu senden hat:
+
+    Poll bei  0,0  1,0  3,0  6,0  10,0  15,0  21,0  28,0 s
+    Abstand        1,0  2,0  3,0   4,0   5,0   6,0   7,0 s
+
+Das ist dama_hold = secclock() + prio, gedeckelt bei DAMA_MAXPRI 10 - eine
+stille Station landet bei einem Poll alle rund 11 s, und ein einziger
+I-Rahmen setzt sie sofort auf Stufe 0 zurueck.  Der Sekundentakt in den
+frueheren Messungen kam daher, dass die Teststation --data hatte und auf
+JEDEN Poll etwas schickte.
+
+DER EINWAND HAELT TROTZDEM, UND ZWAR IM VIELNUTZERFALL.  Bei 16 stillen
+Stationen ist die RUNDE laenger als der Rueckgang: jede ist laengst wieder
+faellig, wenn sie drankommt, der Deckel greift also nie.  Der Master
+sendet dann dauerhaft etwa alle 1,8 s einen Poll, obwohl niemand etwas
+will.  Teuer ist dabei nicht der Rahmen (19 Byte, bei 1k2 gut 0,13 s),
+sondern das TXDELAY davor: mit 300 ms kostet ein Poll rund 0,43 s
+Sendezeit, macht bei 1,8 s Takt ungefaehr ein Viertel Sendedauer fuer
+nichts.
+
+DAS ENTSCHEIDET ZWISCHEN b) UND c):
+
+  b) Gap/n haelt die Runde kurz, indem es die Polls DICHTER legt - die
+     Sendezeit des Masters steigt dabei etwa aufs Doppelte (Gap 1 s auf
+     62 ms, Zug von 1,8 s auf 0,9 s).  Es loest die Latenz und
+     VERSCHAERFT die Energiefrage.  Meine erste Empfehlung a)+b) war
+     insofern einseitig.
+  c) Nach Auslastung loest beides: laeuft Verkehr, zieht sich alles
+     zusammen; ist es still, dehnt sich die GANZE RUNDE und nicht nur die
+     einzelne Station.  Genau das meint "determined by total channel
+     activity", und genau das fehlt uns - dieselbe Luecke wie beim
+     stationsbezogenen Teil, nur eine Ebene hoeher.
+
+Thomas' zwei Beobachtungen - der Sekundentakt und die 16 Nutzer - sind
+also dasselbe Problem von zwei Seiten, und c) ist die einzige Antwort, die
+beide trifft.  a) (einstellbar machen) bleibt daneben sinnvoll und
+billig.
+
 NICHT GEAENDERT.  Es ist Kanaldisziplin und damit Sache des Sysops und
 der Messung, nicht eine Zahl, die ich still austausche.
 
