@@ -7859,3 +7859,41 @@ dama_violation() warf jeden Eintrag weg, dessen Station keine Verbindung
 mehr hat - und eine gebannte hat gerade keine.  Der naechste Verstoss von
 irgendwem haette also den Bann geloescht.  Jetzt ueberlebt ein laufender
 Bann das Aufraeumen.
+
+------------------------------------------------------------------------
+A.3 ENTSCHIEDEN: KEIN SONDERFALL FUER DEN GERUFENEN (Thomas, 2026-08-31)
+------------------------------------------------------------------------
+"Vielleicht machen wir es uns dann doch zu kompliziert und orientieren uns
+an TNN."  Zu Recht - sein Gegenbeispiel erledigt die weite Fassung des
+Kriteriums:
+
+    Eine Station hat zehn Pakete zu senden.  Die ersten sechs gehen auf HF
+    verloren, der Master haelt sie fuer stumm und zieht weiter.  Jetzt
+    trudeln die letzten vier ein - und waeren nach der weiten Fassung ein
+    Verstoss.
+
+Bestraft wuerde also die FUNKSTRECKE, nicht das Verhalten, und zwar auf
+einem Kanal, dessen ganzer Zweck es ist, mit schlechten Bedingungen fertig
+zu werden.  Dasselbe traefe schlechte Implementierungen und
+Fehlkonfigurationen gnadenlos.
+
+ES BLEIBT ALSO BEI TNNS KRITERIUM, und unseres ist bereits genau das:
+
+    TNN (l2rx.c):  if (dama(rxfprt)) if (rxfPF & L2CPF)  polDAMA();  /* I */
+                   if (dama(rxfprt)) if (rxfCR && rxfPF) polDAMA();  /* S */
+    wir (dama.c):  if (ispoll && !isu && (CONNECTED || RECOVERY))
+
+Kommando mit P, I- und S-Rahmen, stehende Verbindung.  Identisch - nur
+zaehlen wir je STATION statt je Link, und darin sind wir besser.
+
+UND KEIN SONDERFALL FUER DEN GERUFENEN: TNN macht keinen (polDAMA() fragt
+an keiner seiner drei Aufrufstellen, wer den Aufbau begonnen hat), also
+machen wir auch keinen.  Es ist NICHTS ZU BAUEN.
+
+BERICHTIGUNG MEINER EIGENEN SORGE: ich hatte behauptet, das enge Kriterium
+traefe gerade den nicht, den man fangen will - gestuetzt auf die Messung
+"32 Polls, 0 Verstoesse".  Die war eine Laboreigenheit: der Knoten hatte
+nichts zu senden und wurde ununterbrochen gepollt, sein T1 lief also nie
+ab.  Eine Station mit DATEN setzt das P-Bit auf den letzten Rahmen ihres
+Fensters, denn sie will die Quittung - und genau das faengt das Kriterium,
+einmal je Zug.  Der Fall wird also sehr wohl erfasst.
