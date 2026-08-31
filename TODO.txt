@@ -7959,3 +7959,36 @@ stehen und "hold > secclock()" bleibt fuer immer wahr.
 Der erste Messlauf zeigte es als "zwei Polls und dann 54 Sekunden Stille" -
 was ich zuerst fuer ein zu strenges Schema hielt.  Es war der Stillstand
 des Knotens.  Jetzt zwei begrenzte Durchgaenge statt einer Schleife.
+
+========================================================================
+STAND AM 2026-08-31 MITTAG
+========================================================================
+ERLEDIGT SEIT GESTERN ABEND
+  A.1  eigenes Markieren: Schalter, Vorgabe AUS.  Gemessen.
+  A.2  Bann: DAMA-Bit hebt sofort auf, sonst nach Ablauf auf Bewaehrung.
+  A.3  kein Sonderfall fuer den Gerufenen - nichts zu bauen (TNN macht
+       auch keinen, und die weite Fassung des Kriteriums wuerde die
+       Funkstrecke bestrafen statt das Verhalten).
+  B.5  Prioritaetsschema.  Gemessen in beide Richtungen: Abstaende
+       1,2,3,...,9 s bei leeren Antworten, jede Sekunde mit Daten.
+  B.6  ein Link je Zug.  Gemessen: die Polls wechseln zwischen den Links
+       einer Station.
+  D.11 doc/DAMA-SLAVE.md: der falsche Abschnitt umgeschrieben.
+  D.12 dito: neuer Abschnitt zum Kanalzugriff.
+
+DREI FEHLER, DIE DABEI AUFFIELEN UND BEHOBEN SIND
+  * DER MASTER POLLTE STORE-AND-FORWARDETE VERBINDUNGEN NIE - der
+    peer-Filter schloss genau den Hauptfall aus.  Gemessen: polls 0.
+  * EIN ENDLOSDURCHLAUF in der neuen Linkauswahl, der den Knoten
+    aufhaengte.  Von mir eingebaut, gefunden weil die Messung merkwuerdig
+    aussah - meine erste Deutung war "das Schema ist zu streng".
+  * DIE AUFRAEUMSCHLEIFE des Verstosszaehlers warf einen laufenden Bann
+    weg, weil die gebannte Station ja keine Verbindung mehr hat.
+
+BLEIBT
+  B.4  "dama slave learn" - zur Diskussion, ob wir es nach den neuen
+       Erkenntnissen ueberhaupt noch brauchen (Thomas).
+  C.7  mehrere Sitzungen desselben Rufzeichens: EINE Verwarnung.
+  C.8  Verstoss waehrend fremdem Zug.
+  C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
+  C.10 der gemeinsame Kanal, und damit uhnp.
