@@ -184,6 +184,20 @@ struct ax25_cb {
 	 */
 	int dama_served;
 
+	/* Prioritaet im Umlauf des Masters, nach dem Papier (CNC 1989,
+	 * S. 204): "If when polled by the master the user responds with an
+	 * empty frame (Receive Ready/Final), then the master will reduce the
+	 * user in polling priority and will skip him on the next time
+	 * around" - und "when these stations respond with an I-frame they
+	 * will again regain their original priority".
+	 *
+	 * dama_prio ist die Stufe (0 = hoechste), dama_hold der Zeitpunkt,
+	 * ab dem dieser Link wieder drankommt.  TNN fuehrt dasselbe als
+	 * damapm/damapc.
+	 */
+	int dama_prio;
+	int32 dama_hold;
+
 	/* Set when T1 expired under DAMA with frames still outstanding: the
 	 * master never acknowledged them, so they have to go again - but not
 	 * now, only in the window the next poll opens.  See dama.c.

@@ -731,6 +731,7 @@ static struct dama_m *Dama_m;
 
 static void dama_master_next(void *arg);
 static void dama_kick_marked(struct iface *ifp);
+static void dama_master_gap(struct dama_m *mp);
 
 static struct dama_m *dama_m_port(struct iface *ifp, int create)
 {
@@ -925,6 +926,8 @@ static void dama_master_turn(struct dama_m *mp)
 			any = 1;
 			if (axp->dama_served)
 				continue;
+			if (axp->dama_hold > secclock())
+				continue;       /* ruht noch */
 			axp->dama_served = 1;
 			lapb_output(axp);
 			last = axp;
@@ -938,8 +941,14 @@ static void dama_master_turn(struct dama_m *mp)
 			    addreq(dama_station(axp), mp->turn))
 				axp->dama_served = 0;
 	}
-	if (last == NULL) {             /* zwischendurch weggegangen */
-		mp->busy = 0;
+	if (last == NULL) {
+		/* Niemand zu bedienen - weggegangen, oder alle Links dieser
+		 * Station ruhen noch.  NICHT einfach aufhoeren: ohne
+		 * Zeitgeber bliebe die Runde stehen, bis zufaellig eine neue
+		 * Verbindung sie anstoesst.  Also weiter zur naechsten
+		 * Station.
+		 */
+		dama_master_gap(mp);
 		return;
 	}
 	sendctl(last, LAPB_COMMAND, RR | PF);
@@ -1185,6 +1194,12 @@ static void dama_kick_marked(struct iface *ifp)
  * par 6 (DAMA-MaxPol).  Noch fest; einstellbar zu machen lohnt erst, wenn
  * jemand einen Grund hat, es zu aendern.
  */
+/* WIE WEIT DIE PRIORITAET SINKEN KANN.  TNN fuehrt dasselbe als Parameter
+ * "DAMA-MaxPri" (0..30, empfohlen 10); zehn Stufen heissen bei uns bis zu
+ * zehn Sekunden Wartezeit, bevor eine ruhende Verbindung wieder drankommt.
+ */
+#define DAMA_MAXPRI     10
+
 #define DAMA_MAXVIOL    5
 
 /* WIE LANGE NACH EINEM ZWANGSDISCONNECT NICHTS MEHR ANGENOMMEN WIRD.
@@ -1407,12 +1422,34 @@ int dama_connect_refused(struct iface *ifp, const struct ax25 *hdr)
 /*---------------------------------------------------------------------------*/
 
 void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
-		       const struct ax25 *hdr, int isu, int ispoll, int isfinal)
+		       const struct ax25 *hdr, int isu, int isi, int ispoll,
+		       int isfinal)
 {
 	struct dama_m *mp;
 
 	if (ifp == NULL || ifp->dama != DAMA_MASTER || axp == NULL)
 		return;
+	/* DIE PRIORITAET IM UMLAUF, nach dem Papier (S. 204) und wie TNNs
+	 * incDAMA()/clrDAMA(): wer auf einen Poll nur eine LEERE Antwort
+	 * schickt, hatte nichts zu senden - er wird eine Stufe
+	 * heruntergesetzt und beim naechsten Mal uebersprungen.  Wer ein
+	 * I-Frame schickt, bekommt seinen Rang sofort zurueck.
+	 *
+	 * Gezaehlt wird je LINK und nicht je Station, denn es beschreibt,
+	 * ob DIESE Verbindung etwas zu tun hat - eine Station kann eine
+	 * ruhende und eine lebhafte zugleich haben.
+	 *
+	 * Die Wartezeit waechst mit der Stufe (Stufe in Sekunden), wie bei
+	 * TNN "damapc = damapm * 100" in Hundertsteln.
+	 */
+	if (isi) {
+		axp->dama_prio = 0;
+		axp->dama_hold = 0;
+	} else if (!isu) {
+		if (axp->dama_prio < DAMA_MAXPRI)
+			axp->dama_prio++;
+		axp->dama_hold = secclock() + axp->dama_prio;
+	}
 	/* EIN VERBINDUNGSAUFBAU IST KEIN VERSTOSS, und das war der erste
 	 * Messfehler: ein SABM ist ein Kommando mit P, also sah es aus wie ein
 	 * Poll.  Die Spezifikation legt den Aufbau aber ausdruecklich in CSMA

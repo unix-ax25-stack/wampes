@@ -218,7 +218,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	/* Und die andere Rolle: auf einem Master-Port endet hier der Zug des
 	 * Gepollten (F-Bit), und hier wird gezaehlt, wer selbst pollt.
 	 */
-	dama_master_input(iface,axp,hdr,class == U,poll,
+	dama_master_input(iface,axp,hdr,class == U,class == I,poll,
 			  (cmdrsp == LAPB_RESPONSE) && (control & PF));
 
 	/* This section follows the SDL diagrams by K3NA fairly closely */

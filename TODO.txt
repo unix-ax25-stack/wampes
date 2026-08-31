@@ -7897,3 +7897,47 @@ nichts zu senden und wurde ununterbrochen gepollt, sein T1 lief also nie
 ab.  Eine Station mit DATEN setzt das P-Bit auf den letzten Rahmen ihres
 Fensters, denn sie will die Quittung - und genau das faengt das Kriterium,
 einmal je Zug.  Der Fall wird also sehr wohl erfasst.
+
+------------------------------------------------------------------------
+B.5 GEBAUT: DAS PRIORITAETSSCHEMA
+------------------------------------------------------------------------
+Nach dem Papier (CNC 1989, S. 204) und TNNs Umsetzung:
+
+    "If when polled by the master the user responds with an empty frame
+     (Receive Ready/Final), then the master will reduce the user in
+     polling priority and will skip him on the next time around"
+    "when these stations respond with an I-frame they will again regain
+     their original priority"
+
+TNN (l2dama.c):
+    incDAMA():  if (damapm < dama_max) ++damapm;
+                damapc = damapm * 100;        /* Stufe in Hundertsteln */
+    clrDAMA():  damapm = 0; damapc = 0;
+gerufen bei einem S-Rahmen OHNE I-Feld bzw. bei einem empfangenen I-Rahmen.
+
+BEI UNS: axp->dama_prio (Stufe, 0 = hoechste) und axp->dama_hold (ab wann
+wieder dran).  Ein I-Rahmen setzt beides zurueck, ein S-Rahmen hebt die
+Stufe und setzt die Wartezeit auf "Stufe in Sekunden".  DAMA_MAXPRI ist 10,
+wie TNNs empfohlene DAMA-MaxPri - also bis zu zehn Sekunden Ruhe.
+
+JE LINK UND NICHT JE STATION, denn es beschreibt, ob DIESE Verbindung etwas
+zu tun hat: eine Station kann eine ruhende und eine lebhafte zugleich
+haben.
+
+DABEI EINE LATENTE FALLE ENTSCHAERFT: fand dama_master_turn() keinen
+bedienbaren Link, setzte es nur busy = 0 und kehrte zurueck - OHNE
+Zeitgeber.  Die Runde waere stehengeblieben, bis zufaellig eine neue
+Verbindung sie anstoesst.  Mit dem Prioritaetsschema waere das der
+Regelfall geworden (alle Links ruhen noch).  Jetzt geht es ueber
+dama_master_gap() zur naechsten Station.
+
+GEMESSEN im Bruecken-Labor, Abstaende zwischen zwei Polls:
+
+    +2 s   +8 s   +6 s   +15 s   dann eingependelt bei 14-15 s
+
+Ruhende Verbindungen werden also immer seltener gepollt, genau wie
+beabsichtigt.
+
+NICHT GEMESSEN: die RUECKKEHR auf volle Prioritaet nach einem I-Rahmen - in
+diesem Labor sendet nach dem NET/ROM-Aufbau niemand mehr Daten.  Der Zweig
+steht (isi -> prio = 0, hold = 0), vorgefuehrt ist er nicht.
