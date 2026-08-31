@@ -625,7 +625,29 @@ void dama_mark(struct ax25_cb *axp)
 	 * Slave den Kanal erkennt - ohne es wuerde ihn niemand als Master
 	 * annehmen.
 	 */
-	if (axp->iface->dama != DAMA_OFF)
+	/* DER MASTER MARKIERT IMMER, DER SLAVE NUR AUF WUNSCH.
+	 *
+	 * Das Bit ist nach der Spezifikation das des MASTERS (CNC 1989,
+	 * S. 208: "the dormant bit 5 of the master's SSID address field"),
+	 * und sein Zweck ist, dem TNC des Nutzers zu sagen, er moege DAMA
+	 * einschalten.  Wer es als Slave setzt, behauptet also, der Master
+	 * zu sein.
+	 *
+	 * Dass wir es frueher trotzdem taten, hatte einen Grund - ein Master,
+	 * der fuer uns nur digipeatet, erfaehrt sonst nichts von uns.  Nur
+	 * braucht das niemand: unser eigener Master steigt in
+	 * dama_heard_frame() bei einem Nicht-Slave-Port sofort aus, und TNNs
+	 * Master prueft das Bit gar nicht, er pollt jeden aktiven Link.  Es
+	 * schadet aber: ein Linux im DAMA-Slave-Modus schaltet daraufhin sein
+	 * GANZES GERAET um und trennt nach drei Minuten alle DAMA-
+	 * Verbindungen darauf.
+	 *
+	 * Deshalb Vorgabe AUS, mit Schalter (Thomas): "ifconfig <if> dama
+	 * slave mark" fuer den, der einen Master vor sich hat, der es
+	 * braucht.
+	 */
+	if (axp->iface->dama == DAMA_MASTER ||
+	    (axp->iface->dama == DAMA_SLAVE && axp->iface->dama_mark_own))
 		axp->hdr.ext |= SSID_DAMA;
 	else
 		axp->hdr.ext &= ~SSID_DAMA;
@@ -1012,8 +1034,14 @@ static struct dama_v *dama_violation(struct iface *ifp, const uint8 *call)
 	int32 now = secclock();
 
 	for (pp = &Dama_v; (vp = *pp) != NULL; ) {
-		if (dama_station_linked(vp->ifp, vp->call) &&
-		    now - vp->last < DAMA_VIOL_FORGET) {
+		/* EIN LAUFENDER BANN UEBERLEBT DAS AUFRAEUMEN, und das fehlte:
+		 * eine gebannte Station hat ja gerade KEINE Verbindung mehr -
+		 * der naechste Verstoss von irgendwem haette ihren Eintrag
+		 * mitgenommen und damit den Bann geloescht.
+		 */
+		if ((vp->ban_until != 0 && vp->ban_until > now) ||
+		    (dama_station_linked(vp->ifp, vp->call) &&
+		     now - vp->last < DAMA_VIOL_FORGET)) {
 			pp = &vp->next;
 		} else {
 			*pp = vp->next;
@@ -1286,14 +1314,25 @@ int dama_connect_refused(struct iface *ifp, const struct ax25 *hdr)
 			break;
 	if (vp == NULL || vp->ban_until == 0)
 		return 0;
-	if (hdr->ext & SSID_DAMA) {     /* er hat es eingeschaltet */
+	if (hdr->ext & SSID_DAMA) {
+		/* ER HAT ES EINGESCHALTET - voller Erlass.  Das ist der
+		 * eigentliche Zweck des Banns, und wer ihm nachkommt, soll
+		 * nicht auch noch warten.  Wirkt bei unseren eigenen Slaves
+		 * und bei RMNC; ein Linux markiert nie, fuer den greift der
+		 * Weg darunter.
+		 */
 		vp->ban_until = 0;
 		vp->n = 0;
 		return 0;
 	}
 	if ((rest = vp->ban_until - secclock()) <= 0) {
+		/* FRIST ABGELAUFEN: herein, aber AUF BEWAEHRUNG.  Der Zaehler
+		 * bleibt auf der Schwelle, der erste neue Verstoss wirft also
+		 * sofort wieder hinaus statt erst nach fuenf.  Bleibt er
+		 * ruhig, altert der Eintrag nach DAMA_VIOL_FORGET von selbst
+		 * weg.
+		 */
 		vp->ban_until = 0;
-		vp->n = 0;
 		return 0;
 	}
 	/* HOECHSTENS EINMAL JE MINUTE.  Gemessen: eine Station, die alle zwei
@@ -1610,7 +1649,22 @@ int ifdama(int argc, char *argv[], void *p)
 			ifp->dama_watchdog = (int) n;
 			continue;
 		}
-		printf("ifconfig %s dama off | slave [timeout <seconds>]"
+		/* "mark" setzt das DAMA-Bit auch auf UNSERE Rahmen.  Vorgabe
+		 * ist aus, siehe dama_mark(): das Bit ist das des Masters,
+		 * niemand braucht unseres, und einem Linux im Slave-Modus
+		 * schadet es.  Fuer den Fall, dass ein Master vor uns es
+		 * doch erwartet.
+		 */
+		if (!strcmp(argv[i], "mark")) {
+			ifp->dama_mark_own = 1;
+			continue;
+		}
+		if (!strcmp(argv[i], "nomark")) {
+			ifp->dama_mark_own = 0;
+			continue;
+		}
+		printf("ifconfig %s dama off"
+		       " | slave [timeout <seconds>] [mark|nomark]"
 		       " | master [lazy|permissive|enforce]\n",
 		       ifp->name);
 		return 1;
@@ -1682,7 +1736,9 @@ void dama_show(struct iface *ifp)
 	}
 	if (ifp->dama != DAMA_SLAVE)
 		return;
-	printf("           dama slave, timeout %ds, ", dama_watchdog(ifp));
+	printf("           dama slave%s, timeout %ds, ",
+	       ifp->dama_mark_own ? " (marking own frames)" : "",
+	       dama_watchdog(ifp));
 	if (dama_in_force(ifp)) {
 		char buf[AXBUF];
 		printf("heard from %s", pax25(buf, ifp->dama_sender));

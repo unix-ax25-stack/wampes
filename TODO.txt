@@ -7812,3 +7812,50 @@ Frequenz IST.
 
 (Und zum 1200er Standard, von Thomas bestaetigt: DAMA wird eben genau im
 langsamen Simplexbetrieb verwendet - die Vorgabe trifft den Regelfall.)
+
+------------------------------------------------------------------------
+ENTSCHIEDEN UND GEBAUT (2026-08-31): A.1 UND A.2
+------------------------------------------------------------------------
+A.1 EIGENES MARKIEREN: Schalter, VORGABE AUS (Thomas).
+
+    ifconfig <if> dama slave [timeout <sec>] [mark|nomark]
+
+Das Bit ist nach der Spezifikation das des Masters, und Thomas' Verwunderung
+("meist connectet doch ein Slave") loest sich damit auf: verbindet sich ein
+Nutzer zum Knoten, traegt das UA DES MASTERS das Bit - so steht es auch
+schon im Kommentar in lapb.c.  Der Mechanismus haengt nicht an der Richtung
+des Aufbaus, sondern daran, wer Master ist.
+
+VORGABE AUS KOSTET NICHTS, und das war gestern noch nicht klar: NIEMAND
+liest das Bit auf einem Master-Port.  dama_heard_frame() steigt bei einem
+Nicht-Slave-Port sofort aus, und TNNs Master prueft es gar nicht - er pollt
+jeden aktiven Link.  Das Digipeat-Argument, mit dem wir es eingefuehrt
+hatten, wird also von keiner Implementierung gebraucht.  Schaden tut es
+dagegen: ein Linux im DAMA-Slave-Modus schaltet daraufhin sein ganzes Geraet
+um.
+
+GEMESSEN:
+    dama slave        UA(F)   SABM(P)   I ... pid=NET/ROM     keine Marke
+    dama slave mark   UA(F) [DAMA]
+
+NEBENBEI ERLEDIGT SICH D.11: zwei unserer Slaves halten einander mit der
+neuen Vorgabe gar nicht mehr fuer den Master - sie sprechen gewoehnliches
+AX.25.  Weder sperren sie sich aus noch behauptet einer etwas Falsches.  Der
+Abschnitt in doc/DAMA-SLAVE.md beschreibt damit einen Zustand, den es nicht
+mehr gibt.
+
+A.2 BANN-ENDE: BEIDE WEGE (Thomas).
+  * SABM mit DAMA-Bit hebt ihn sofort auf, mit vollem Erlass (Zaehler auf
+    0).  Wirkt bei unseren eigenen Slaves mit "mark" und bei RMNC.
+  * Nach Ablauf der Frist herein, aber AUF BEWAEHRUNG: der Zaehler bleibt
+    auf der Schwelle, der erste neue Verstoss wirft sofort wieder hinaus.
+    Bleibt er ruhig, altert der Eintrag von selbst weg.
+
+    (Thomas' Korrektur zu meiner Formulierung: die getrennten Verbindungen
+    bekommt er natuerlich nicht zurueck - er darf sich neu verbinden.)
+
+DABEI EIN FEHLER VON GESTERN BEHOBEN: die Aufraeumschleife in
+dama_violation() warf jeden Eintrag weg, dessen Station keine Verbindung
+mehr hat - und eine gebannte hat gerade keine.  Der naechste Verstoss von
+irgendwem haette also den Bann geloescht.  Jetzt ueberlebt ein laufender
+Bann das Aufraeumen.

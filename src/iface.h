@@ -163,6 +163,8 @@ struct iface {
 				 * falsch (Thomas).  DAMA rechnet daraus seine
 				 * Fristen. */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
+	int dama_mark_own;      /* als Slave: eigene Rahmen markieren.  Vorgabe
+				 * AUS - das Bit ist das des Masters. */
 	int dama_ca_set;        /* 1: WIR haben den Kanalzugriff umgestellt,
 				 * also auch zurueckzunehmen.  Wie noarp_auto:
 				 * was der Sysop selbst gesagt hat, nehmen wir
