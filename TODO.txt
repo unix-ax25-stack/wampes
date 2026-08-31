@@ -7010,11 +7010,42 @@ etwas hinaus (txflag), pollt er in dieser Runde niemanden.
 
     if (!dcd && !txflag) { ... naechsten Link pollen ... }
 
+NACHGEPRUEFT AUF DIE AUSGABESEITE (Thomas' Rueckfrage: nicht sofort,
+nicht bei naechster Gelegenheit, sondern wenn der Client dran ist?).  JA,
+und xmit_damail() sagt es im Kopf selbst:
+
+    /* Daten aus der Dama-Sendeliste des aktiven Links (lnkpoi)
+       tatsaechlich aussenden - diese Funktion wird nur aufgerufen,
+       wenn der Link auch senden darf                              */
+
+Gerufen wird sie in der Poll-Schleife nur fuer den Link, der dran ist
+(lnkpoi->zael == lnkpoi->indx, DAMA-Flag 1 noch geloescht), und sie setzt
+dabei L2FDAMA1|L2FDAMA2|L2FDACK - sie IST die Aussendung an diese Station
+in ihrem Zug, danach break, eine Station je Runde.  Drei Zeitpunkte also,
+und sie sind wirklich verschieden:
+
+    sofort                 macht TNN auf einem DAMA-Port NIE
+    naechste Gelegenheit   damarl - freier Kanal am Anfang eines Umlaufs
+    WENN DER CLIENT DRAN   damail - in seinem Zug; dort liegt sendS()
+
+UND DIE AUFTEILUNG HAT EIN PRINZIP.  Auf damarl liegen UA, DM und FRMR -
+Aufbau und Abweisung.  Sie MUESSEN dort liegen, denn eine Station ohne
+Link hat keinen Zug, in dem man ihr antworten koennte.  Das ist genau
+unsere eigene Regel aus dama_master_input() von der anderen Seite her:
+
+    "Ein Verbindungsaufbau ist kein Verstoss ... eine Station ohne Link
+     wird nie gepollt und koennte sonst nie hereinkommen."
+
+Wir haben das fuer die ZAEHLUNG so entschieden, TNN hat dasselbe fuers
+SENDEN.  Was zu einer stehenden Verbindung gehoert, wartet auf den Zug;
+was eine Verbindung erst herstellt, geht bei naechster Gelegenheit.
+
 DARAUS FOLGT FUER UNSERE BEIDEN FRAGEN:
 
-  a) SOLL DIE ANTWORT AUF EINEN POLL AUSSER DER REIHE WARTEN?  JA.  Bei
-     TNN geht sie ueber sendS() auf damail, also in den Zug DIESER
-     Station.  Sie faellt nie in einen fremden Zug.  Wir antworten heute
+  a) SOLL DIE ANTWORT AUF EINEN POLL AUSSER DER REIHE WARTEN?  JA, UND
+     ZWAR BIS DIE STATION DRAN IST - nicht bloss bis zur naechsten
+     Luecke.  Bei TNN geht sie ueber sendS() auf damail, also in den Zug
+     DIESER Station.  Sie faellt nie in einen fremden Zug.  Wir antworten heute
      sofort - das ist der Unterschied, und TNN entscheidet ihn.
   b) UND DIE VERWARNUNG?  Auch die wartet.  UI geht bei TNN auf damarl,
      und damarl wird nur bei freiem Kanal am Anfang eines Umlaufs
