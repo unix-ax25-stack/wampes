@@ -7021,13 +7021,20 @@ Disconnect in der halben Zeit.
 
 ZWEI LABORFALLEN, die den ersten Durchgang gekostet haben:
 
-  * EIN UI MIT PID_NO_L3 LEHRT KEINE ROUTE.  axroute_learnable(): im
-    verbundenen Betrieb lernt jeder Rahmen, ein UI aber nur mit
-    pid != PID_NO_L3.  Fuer APRS ist das richtig - dessen Pfade
-    (WIDE1-1) fuehren nirgendwohin -, aber es gilt eben auch fuer ein
-    GERICHTETES Text-UI, mit dem sich eine Teststation anmelden will.
-    Der Kommentar darueber spricht von "broadcast", der Code prueft das
-    nicht; enger gefasst ist der Kommentar, nicht die Regel.
+  * EIN UI MIT PID_NO_L3 LEHRT KEINE ROUTE, und das ist so gewollt.
+    axroute_learnable(): im verbundenen Betrieb lernt jeder Rahmen, ein
+    UI nur mit pid != PID_NO_L3.  DAS KRITERIUM IST, DASS EINE SESSION
+    ZUSTANDE KOMMT (Thomas) - nur die beweist einen benutzbaren Weg.
+    Sein Beispiel dafuer: auf einem Port, auf dem DB0AAA auch direkt zu
+    hoeren ist, darf aus
+
+        DB0AAA>APRS,WIDE2-1
+
+    keine Route gelernt werden - der Pfad ist generisch und fuehrt
+    nirgendwohin.  Die Regel gilt deshalb fuer JEDES Text-UI und nicht
+    nur fuer Rundsprueche; dass auch ein gerichtetes nichts lehrt, ist
+    Folge desselben Grundsatzes und kein Versehen.  Im Labor heisst das
+    nur: eine Teststation meldet sich nicht per Text-UI an.
   * OHNE ROUTE ZUM FERNEN ENDE bleibt das nahe Bein in "Conn pend"
     stehen und der Nutzer bekommt nie sein UA - der Knoten haelt die
     Antwort zurueck, bis die Gegenseite steht.  Im Labor loest das
