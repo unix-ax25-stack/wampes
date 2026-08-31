@@ -59,6 +59,12 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 void dama_master_stop(struct iface *ifp);
 void dama_master_kick(struct iface *ifp);
 int  dama_connect_refused(struct iface *ifp,const struct ax25 *hdr);
+/* Der Master antwortet nicht in einen fremden Zug hinein.  Dasselbe
+ * Gespann wie dama_holds()/dama_wait() auf der Slave-Seite: das erste
+ * fragt, das zweite merkt es vor.
+ */
+int  dama_master_holds(struct ax25_cb *axp);
+void dama_master_owe(struct ax25_cb *axp);
 
 const char *dama_master_port(void);
 

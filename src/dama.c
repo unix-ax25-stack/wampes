@@ -87,6 +87,11 @@
 /*---------------------------------------------------------------------------*/
 
 void dama_ui_flush(struct iface *ifp);   /* weiter unten, siehe dort */
+/* Laeuft auf diesem Master-Port gerade ein Zug?  Als kleiner Helfer, weil
+ * struct dama_m erst weiter unten steht und dama_defer_ui() hier oben
+ * schon danach fragen muss.
+ */
+static int dama_master_busy(const struct iface *ifp);
 
 /* WIE LANGE EIN MASTER SCHWEIGEN DARF, bevor wir ihm nicht mehr folgen.
  *
@@ -572,6 +577,30 @@ int dama_defer_ui(struct iface *ifp, struct mbuf **bpp)
 
 	if (ifp == NULL || bpp == NULL || *bpp == NULL || ifp->raw == NULL)
 		return 0;
+	/* ALS MASTER warten wir nicht auf ein Fenster - wir machen die
+	 * Fenster.  Zurueckgehalten wird trotzdem, und aus demselben Grund
+	 * wie beim Slave: waehrend ein Zug laeuft, gehoert der Kanal dem, der
+	 * dran ist.  In der Luecke geht es sofort, denn DAS IST die Luecke;
+	 * dama_master_gap() ruft dann dama_ui_flush().
+	 */
+	if (ifp->dama == DAMA_MASTER) {
+		int mpid;
+
+		if (!dama_master_busy(ifp))
+			return 0;
+		if ((mpid = dama_ui_pid(*bpp)) < 0 || mpid == PID_NETROM)
+			return 0;
+		up = dama_ui_port(ifp, 1);
+		if (up->n >= DAMA_UI_MAX)
+			return 0;
+		if (!up->n) {
+			set_timer(&up->t, dama_watchdog(ifp) * 1000L);
+			start_timer(&up->t);
+		}
+		enqueue(&up->q, bpp);
+		up->n++;
+		return 1;
+	}
 	/* Kein DAMA-Kanal, oder kein Master in Kraft: es kommt kein Fenster,
 	 * auf das zu warten waere.
 	 */
@@ -733,6 +762,18 @@ static void dama_master_next(void *arg);
 static void dama_kick_marked(struct iface *ifp);
 static void dama_master_gap(struct dama_m *mp);
 
+static struct dama_m *dama_m_port(struct iface *ifp, int create);
+
+static int dama_master_busy(const struct iface *ifp)
+{
+	struct dama_m *mp;
+
+	if (ifp == NULL)
+		return 0;
+	mp = dama_m_port((struct iface *) ifp, 0);
+	return mp != NULL && mp->busy;
+}
+
 static struct dama_m *dama_m_port(struct iface *ifp, int create)
 {
 	struct dama_m *mp;
@@ -887,6 +928,62 @@ static int32 dama_turn_time(const struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+/* SCHULDET DER MASTER DIESER STATION EINE ANTWORT, DIE WARTEN MUSS?
+ *
+ * Ein Kommando mit P ist nach AX.25 mit F zu beantworten - daran ist nicht
+ * zu ruetteln.  WANN wir das tun, ist dagegen unsere Sache, und gemessen
+ * ging es bisher SOFORT hinaus, also mitten in den Zug einer anderen
+ * Station (C.8, 2026-08-31).  Auf einem Halbduplex-Kanal zerstoert das den
+ * Block dessen, der gerade dran ist und nichts dafuer kann.
+ *
+ * TNN macht es anders, und das hat den Ausschlag gegeben: sein sdl2fr()
+ * haengt Supervisory-Rahmen (sendS: RR/RNR/REJ) an die Liste DES LINKS
+ * (damail), und die wird nur geleert, wenn dieser Link an der Reihe ist -
+ * xmit_damail() sagt es im Kopf ausdruecklich ("wird nur aufgerufen, wenn
+ * der Link auch senden darf").  Nicht sofort, und auch nicht bloss bis zur
+ * naechsten Luecke, sondern BIS DIE STATION DRAN IST.
+ *
+ * Ist sie gerade selbst dran, ist jetzt der richtige Augenblick - dann
+ * halten wir nichts zurueck.
+ *
+ * DER PREIS, und er ist bei TNN derselbe: wer keine Antwort bekommt,
+ * pollt nach Ablauf seines T1 noch einmal, und das zaehlt als weiterer
+ * Verstoss.  Ein Stoerer erreicht die Schwelle also schneller als vorher.
+ * Das ist keine Nebenwirkung, sondern dasselbe Verhalten wie beim Vorbild.
+ */
+
+int dama_master_holds(struct ax25_cb *axp)
+{
+	struct iface *ifp;
+	struct dama_m *mp;
+
+	if (axp == NULL || (ifp = axp->iface) == NULL)
+		return 0;
+	if (ifp->dama != DAMA_MASTER)
+		return 0;
+	if ((mp = dama_m_port(ifp, 0)) == NULL)
+		return 0;
+	if (addreq(dama_station(axp), mp->turn))
+		return 0;       /* er ist dran - also jetzt */
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Vormerken.  Nur ein Merker, kein gespeicherter Rahmen: welche Antwort
+ * faellig ist - RR oder RNR - haengt davon ab, ob wir beschaeftigt sind,
+ * und das kann sich bis zu seinem Zug noch aendern.  Gerechnet wird
+ * deshalb erst beim Senden, genau wie enq_resp() es tut.
+ */
+
+void dama_master_owe(struct ax25_cb *axp)
+{
+	if (axp != NULL)
+		axp->dama_fpend = 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dama_master_turn(struct dama_m *mp)
 {
 	struct ax25_cb *axp;
@@ -966,6 +1063,20 @@ static void dama_master_turn(struct dama_m *mp)
 		dama_master_gap(mp);
 		return;
 	}
+	/* SCHULDEN ZUERST.  Haben wir dieser Station eine Antwort
+	 * vorenthalten, geht sie jetzt hinaus - und dann ist ihr Zug damit
+	 * verbraucht, sie wird in dieser Runde NICHT auch noch gepollt.  Das
+	 * ist TNNs Reihenfolge: dort entsteht der Poll nur, wenn die Liste
+	 * des Links leer ist ("if (damail.head == &damail) ... gleich
+	 * pollen"), ein vorgemerkter Rahmen verdraengt ihn also.  Gepollt
+	 * wird sie in der naechsten Runde.
+	 */
+	if (last->dama_fpend) {
+		last->dama_fpend = 0;
+		sendctl(last, LAPB_RESPONSE, (busy(last) ? RNR : RR) | PF);
+		dama_master_gap(mp);
+		return;
+	}
 	sendctl(last, LAPB_COMMAND, RR | PF);
 	mp->ifp->dama_polls++;
 	mp->busy = 1;
@@ -988,6 +1099,12 @@ static void dama_master_gap(struct dama_m *mp)
 {
 	stop_timer(&mp->t);
 	mp->busy = 0;
+	/* JETZT ist die Luecke, also geht jetzt hinaus, was auf sie gewartet
+	 * hat - die Verwarnung vor allem.  TNN leert seine damarl an genau
+	 * dieser Stelle: bei freiem Kanal am Anfang eines Umlaufs, VOR dem
+	 * naechsten Poll.
+	 */
+	dama_ui_flush(mp->ifp);
 	set_timer(&mp->t, DAMA_GAP_DEFAULT);
 	start_timer(&mp->t);
 }

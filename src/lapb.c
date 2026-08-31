@@ -465,15 +465,23 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				axp->flags.remotebusy = NO;
 				stop_timer(&axp->t4);
 			}
-			if(poll)
-				enq_resp(axp);
+			if(poll){
+				if(dama_master_holds(axp))
+					dama_master_owe(axp);
+				else
+					enq_resp(axp);
+			}
 			ackours(axp,nr,0);
 			break;
 		case REJ:
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
-			if(poll)
-				enq_resp(axp);
+			if(poll){
+				if(dama_master_holds(axp))
+					dama_master_owe(axp);
+				else
+					enq_resp(axp);
+			}
 			ackours(axp,nr,1);
 			/* stop_timer(&axp->t1); */
 			/* start_timer(&axp->t3); */
@@ -579,8 +587,12 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					lapbstate(axp,LAPB_CONNECTED);
 				}
 			} else {
-				if(poll)
-					enq_resp(axp);
+				if(poll){
+					if(dama_master_holds(axp))
+						dama_master_owe(axp);
+					else
+						enq_resp(axp);
+				}
 				ackours(axp,nr,0);
 				/* Keep timer running even if all frames
 				 * were acked, since we must see a Final
@@ -603,8 +615,12 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					lapbstate(axp,LAPB_CONNECTED);
 				}
 			} else {
-				if(poll)
-					enq_resp(axp);
+				if(poll){
+					if(dama_master_holds(axp))
+						dama_master_owe(axp);
+					else
+						enq_resp(axp);
+				}
 				ackours(axp,nr,1);
 				if(axp->unack != 0){
 					/* This is certain to trigger output */
@@ -1240,8 +1256,18 @@ int poll)
 		sendctl(axp,LAPB_RESPONSE,REJ|pf);
 	} else {
 		if(poll){
-			tmp = busy(axp) ? RNR : RR;
-			sendctl(axp,LAPB_RESPONSE,tmp|pf);
+			/* Auch hier: als Master nicht in einen fremden Zug
+			 * hinein.  Der REJ-Zweig darueber bleibt sofort - ein
+			 * REJ fordert eine Wiederholung an, und ihn
+			 * zurueckzuhalten wuerde den Link anhalten, waehrend
+			 * flags.rejsent schon gesetzt ist.
+			 */
+			if(dama_master_holds(axp)){
+				dama_master_owe(axp);
+			} else {
+				tmp = busy(axp) ? RNR : RR;
+				sendctl(axp,LAPB_RESPONSE,tmp|pf);
+			}
 		} else
 			start_timer(&axp->t2);
 	}

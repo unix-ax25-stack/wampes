@@ -197,6 +197,11 @@ struct ax25_cb {
 	 */
 	int dama_prio;
 	int32 dama_hold;
+	/* WIR SCHULDEN IHM EIN F.  Gesetzt, wenn als Master eine Antwort auf
+	 * einen Poll ausser der Reihe faellig waere: die geht nicht sofort
+	 * hinaus, sondern im Zug DIESER Station.  Siehe dama_master_holds().
+	 */
+	int dama_fpend;
 
 	/* Set when T1 expired under DAMA with frames still outstanding: the
 	 * master never acknowledged them, so they have to go again - but not
