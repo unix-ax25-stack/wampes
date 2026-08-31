@@ -8092,5 +8092,44 @@ ax25-to-udp-Sessions lernt und auf xnets axudp-Port weiterleitet):
      Schleifenschutz plus die Frage, welche Rufzeichen wohin duerfen.
      "forward" ist es NICHT.
 
+PRAEZISIERT (Thomas): es geht NICHT darum, alles zusammenzuruehren.  Das
+Ziel ist eng: ein Nutzer auf dem axudp-Port soll DB0FHN auf dem
+xnet-Port DIREKT adressieren koennen - ihn "sehen" -, und die Antwort aus
+xnet soll ihn erreichen.  Und als OPTION, die man ein- und ausschalten
+kann.
+
+DIE MASCHINERIE DAFUER IST FAST VOLLSTAENDIG DA, und das ist der Punkt:
+
+  * Der Empfangsweg verwirft den Rahmen nur deshalb, weil idest keines
+    unserer Rufzeichen ist (die eine Zeile oben).
+  * ax_route WEISS ABER SCHON, auf welchem Port ein Rufzeichen erreichbar
+    ist - dieselbe Tabelle, die auch die MAC fuer bpqether traegt.
+
+Die Bruecke waere also: "idest gehoert nicht uns, steht aber in der
+Routentabelle auf einem ANDEREN Port -> dorthin senden".  Der Rueckweg ist
+derselbe Nachschlag, sobald die axudp-Seite das Rufzeichen des Nutzers
+gelernt hat.
+
+DAMIT IST DER uhnp-UMBAU DIE VORAUSSETZUNG DIESER BRUECKE und nicht bloss
+eine Nachbarbaustelle: ohne "welcher UDP-Endpunkt gehoert zu welchem
+Rufzeichen" findet die Antwort nicht zurueck.  Es ist genau das, was
+Thomas' gepatchtes ax25ipd als "ax25-to-udp-session-learning" schon tut.
+
+WAS VORHER ZU KLAEREN WAERE - und es ist nicht die Technik:
+
+  * SCHLEIFEN.  Ein gebrueckter Rahmen traegt KEINE Spur davon, dass er
+    gebrueckt wurde: wir tragen uns ja gerade nicht in den Digi-Pfad ein.
+    Es gibt also nichts, woran ein zweiter Knoten es erkennen koennte.
+    Zwei brueckende Knoten, die einander das Ziel zuweisen, laufen
+    endlos.  Ethernet loest das mit Spanning Tree, AX.25 hat dafuer
+    nichts.
+    ENTSCHAERFUNG, die sich anbietet: nur zu KONFIGURIERTEN Routen
+    bruecken, nicht zu gelernten.  Dann ist eine Schleife ein
+    Konfigurationsfehler statt eines Verhaltens, das von selbst entsteht.
+  * WIR WERDEN UNSICHTBAR.  Der Nutzer sieht nicht mehr, ueber wen er
+    laeuft - fuer die Fehlersuche im Betrieb ist das ein Verlust, und im
+    Digi-Pfad zu stehen ist ja gerade der Vorteil von AX.25.
+  * LAST.  Wir tragen Verkehr, an dem wir nicht beteiligt sind.
+
 NICHTS DAVON GEBAUT - Ueberlegungen, festgehalten damit sie nicht verloren
 gehen.
