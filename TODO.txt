@@ -6976,6 +6976,66 @@ ENTSCHEIDUNGSLOGIK des Masters, nicht die Physik des Kanals.  Der Aufbau
 ist fuer das eine getreu und fuer das andere blind.
 
 ------------------------------------------------------------------------
+C.7 GEMESSEN: EIN RUFZEICHEN, ZWEI SITZUNGEN, EINE VERWARNUNG (2026-08-31)
+------------------------------------------------------------------------
+Moeglich geworden durch den uhnp-Umbau (drei Gegenstellen auf 127.0.0.1),
+gemessen gegen den Master MIT der neuen Kanaldisziplin.
+
+ZWEI SITZUNGEN DESSELBEN RUFZEICHENS auf einem Kanal bekommt man nicht
+dadurch, dass man zweimal dasselbe ruft - ein Link ist ein PAAR, der
+zweite SABM waere derselbe Link.  Es braucht zwei verschiedene Ziele:
+
+    A   USER-1 -> DL9SAU-1                 direkt zum Knoten
+    B   USER-1 -> PEER-1 via DL9SAU-1      store and forward (digipeat 2)
+
+Bei digipeat 2 terminiert der Knoten jeden Hop; "ax25 status" zeigt dann
+drei Kontrollbloecke, davon ZWEI Sitzungen desselben Rufzeichens auf
+unserem Kanal:
+
+    Connected   DL9SAU-1->USER-1
+    Connected   USER-1->PEER-1 via DL9SAU-1*
+    Connected   PEER-1->USER-1 via DL9SAU-1*     (das ferne Bein)
+
+ERGEBNIS.  USER-1 verstoesst auf BEIDEN Sitzungen, neun Runden lang, also
+18 Kommandos mit P:
+
+    Verwarnungen empfangen: 1
+    Log des Knotens:        1 Zeile, "(1 so far)"
+
+Der Zaehler haengt an (Interface, Station) - so von Thomas vorgegeben
+("nicht pro Port sondern die verstossenden Nutzer jeweils") - und das
+haelt auch, wenn dieselbe Station auf mehreren Wegen sendet.
+
+DIE FOLGE, DIE MAN DAZUSAGEN MUSS: ein Stoerer mit Multiconnect erreicht
+die Schwelle NICHT schneller als einer mit einer Verbindung.  Innerhalb
+eines Poll-Fensters zaehlt nur der erste Verstoss (vp->at_poll ==
+ifp->dama_polls), und das gilt ueber alle seine Sitzungen zusammen.  Das
+ist dieselbe Linie wie "ein Zug ist ein Verstoss" und wie die
+Fairness-Regel des Masters ("EIN LINK JE ZUG, NICHT ALLE EINER STATION").
+Wer es anders will, muesste beides zugleich aendern.
+
+UNTERSCHIED ZU TNN, und er faellt hier zusammen mit dem aus dem
+C.8-Abschnitt: TNN zaehlt fuer den Zwangsdisconnect je LINK
+(lnkpoi->pollcnt).  Derselbe Lauf gaebe dort zwei Verwarnungen und den
+Disconnect in der halben Zeit.
+
+ZWEI LABORFALLEN, die den ersten Durchgang gekostet haben:
+
+  * EIN UI MIT PID_NO_L3 LEHRT KEINE ROUTE.  axroute_learnable(): im
+    verbundenen Betrieb lernt jeder Rahmen, ein UI aber nur mit
+    pid != PID_NO_L3.  Fuer APRS ist das richtig - dessen Pfade
+    (WIDE1-1) fuehren nirgendwohin -, aber es gilt eben auch fuer ein
+    GERICHTETES Text-UI, mit dem sich eine Teststation anmelden will.
+    Der Kommentar darueber spricht von "broadcast", der Code prueft das
+    nicht; enger gefasst ist der Kommentar, nicht die Regel.
+  * OHNE ROUTE ZUM FERNEN ENDE bleibt das nahe Bein in "Conn pend"
+    stehen und der Nutzer bekommt nie sein UA - der Knoten haelt die
+    Antwort zurueck, bis die Gegenseite steht.  Im Labor loest das
+    "ax25 route add ax0 default".
+
+Werkzeug: testtools/damamulti.py (spielt Nutzer und Ziel zugleich).
+
+------------------------------------------------------------------------
 WIE TNN ES MACHT - BEIDE C.8-FRAGEN BEANTWORTET (2026-08-31)
 ------------------------------------------------------------------------
 Nachgesehen in TheNetNode 1.79 (/Users/thomas/direwolf-libax25-agwpe/tnn,
