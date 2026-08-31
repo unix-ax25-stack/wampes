@@ -8133,3 +8133,49 @@ WAS VORHER ZU KLAEREN WAERE - und es ist nicht die Technik:
 
 NICHTS DAVON GEBAUT - Ueberlegungen, festgehalten damit sie nicht verloren
 gehen.
+
+------------------------------------------------------------------------
+BRUECKE: SCHLEIFENSCHUTZ UND DER FALL "ZWEI EINSTIEGE" (Thomas)
+------------------------------------------------------------------------
+SCHLEIFENSCHUTZ, und es ist die richtige Antwort auf ein Problem, das
+in-band nicht loesbar ist: NICHT UMLERNEN.  Wurde ein Rufzeichen links
+gehoert und steht so in der Routentabelle, dann darf ein Rahmen, der
+rechts zurueckkommt, den Eintrag NICHT ueberschreiben.  Damit kann sich
+eine Schleife nicht selbst tragen - "quasi wie ein fixed arp auf ethernet
+festgeklopft" (Thomas).
+
+Die Lernstelle dafuer ist learn_from()/axroute_add() im Empfangsweg von
+ax25.c, also eine Bedingung an EINER Stelle.  Zu klaeren waere nur, wie
+lange festgeklopft wird: eine Station, die wirklich die Frequenz wechselt,
+muss irgendwann wiedergefunden werden.  Die Alterung des MAC-Lernens fuer
+bpqether (eine Stunde) ist der naheliegende Anker.
+
+DAS ZWEITE SZENARIO: zwei Nutzereinstiege, 2 m und 70 cm, identisch
+konfiguriert, "wie einen behandeln".  Thomas' zwei Fragen, und sie haben
+unterschiedlich schwere Antworten:
+
+  1. WOHIN GEHT DIE ANTWORT auf ein SABM ueber den einen Link?
+     HEUTE SCHON RICHTIG, ohne Bruecke: axroute() nimmt den Port aus der
+     Routentabelle, und der steht dort, weil die Station dort gehoert
+     wurde.  Ein SABM von 2 m wird auf 2 m beantwortet.  Es gibt also
+     nichts zu entscheiden und keine Prioritaet zu vergeben.
+
+  2. SENDEN WIR EIGENE BROADCASTS (QST, NODES, ARP) AUF BEIDEN?
+     HEUTE SCHON, und zwar richtig: "netrom broadcast <iface> nodes" und
+     der ARP-Schalter sind JE PORT konfiguriert - der Sysop sagt fuer jede
+     Frequenz einzeln, was dort hinausgeht.  Das ist auch das einzig
+     Sinnvolle: wer auf 2 m hoert, hoert den 70-cm-Broadcast nicht.
+
+OFFEN IST GENAU EIN FALL, und er ist der schwierige: ein Nutzer auf 2 m
+will eine Station erreichen, die wir NOCH NIE GEHOERT haben.  Die Tabelle
+weiss nichts, heute faellt der Rahmen weg.  Ein Ethernet-Switch wuerde auf
+alle Ports FLUTEN - und genau das Fluten ist die Stelle, an der Schleifen
+entstehen.
+
+    Moeglichkeiten, falls es je gebaut wird:
+      - gar nicht fluten (heutiges Verhalten): der Nutzer muss die Station
+        einmal gehoert haben, oder eine konfigurierte Route muss sie
+        nennen.  Sicher, aber "direkt sehen" gilt dann nur fuer bekannte.
+      - nur auf Ports fluten, die ausdruecklich als Brueckenpaar benannt
+        sind, und nur zu KONFIGURIERTEN Routen.  Dann ist eine Schleife ein
+        Konfigurationsfehler statt eines Verhaltens, das entsteht.
