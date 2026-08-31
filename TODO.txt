@@ -6774,6 +6774,141 @@ Gegenueber auf EINEN Socket legen, nrpeer/eaxpeer --zielstation einen
 eigenen aufmachen.  Beides steht im testtools/README richtiggestellt.
 
 ------------------------------------------------------------------------
+GEMESSEN: STORE-AND-FORWARD BEHAELT DAS RUFZEICHEN DES NUTZERS
+------------------------------------------------------------------------
+Bruecken-Labor tnn-lab/bridge, 2026-08-30.  Nutzer DL9SAU-5 kommt ueber
+einen Interlink ohne DAMA herein und verbindet sich durch den Repeater
+DL9SAU-2 mit DL9SAU-6 auf dem DAMA-Kanal.
+
+WAMPES' "store and forward" (digipeat 2) baut NICHT unter eigenem
+Rufzeichen neu auf.  Der else-Zweig in ax25.c reicht den Rahmen an
+lapb_input() weiter - die Linkschicht wird je Hop terminiert (eigenes T1,
+eigenes Fenster, "ax25 status" zeigt zwei Kontrollbloecke), aber Absender
+bleibt der Nutzer und wir sind nur der wiederholte Digi:
+
+    AX25: DL9SAU-5->DL9SAU-6 v DL9SAU-2* SABM(P)          ohne [DAMA]
+    AX25: DL9SAU-5->DL9SAU-6 v DL9SAU-2* I ... [DAMA]
+
+DAS SABM GEHT UNMARKIERT HINAUS.  Erst der erste eigene Rahmen traegt das
+Bit; der Gerufene tritt also erst dann in die Disziplin ein (bei ihm
+"found 1").  Ein Fenster beim Verbindungsaufbau, danach richtig.
+
+EAX25 IST DABEI NICHT BETROFFEN, und ich hatte es zuerst falsch
+zugespitzt.  Mit "eax25 always" auf dem Kanal geht zwar ein SABME unter
+DL9SAU-5s Rufzeichen hinaus, obwohl der "eax25 off" hat und nie eines
+gesehen hat - aber eax25_remember() legt das Urteil auf die AX_ROUTE zu
+diesem Rufzeichen, und die fuehrt beim Empfaenger ueber uns:
+
+    30-Aug 13:43  chan   E  DL9SAU-5 via DL9SAU-2
+
+Der Eintrag ist also RICHTIG fuer den Weg, auf dem er benutzt wird - der
+erste Hop sind wir, und wir sprechen EAX25 wirklich.  Deshalb hat das
+ausgiebige Testen von EAX25 unter digipeat 2 seinerzeit auch nichts
+gefunden: es gab nichts zu finden (Thomas: "das liest sich korrekt im digi
+mode 2").
+
+DER DAMA-FALL IST DER FALSCHE, und der Unterschied ist genau der Weg:
+
+    addrcp(ifp->dama_master, src);   /* dama.c - blankes Rufzeichen, je Port */
+
+Kein Pfad, keine Route.  Gemessen beim Gerufenen:
+
+    dama slave, timeout 120s, master DL9SAU-5, found 1 lost 0 polls 2
+
+ER HAELT DEN FERNEN NUTZER FUER DEN MASTER.  Dass es trotzdem laeuft, ist
+Zufall: unsere Polls gehen auf diesem Link ebenfalls unter dessen
+Rufzeichen hinaus, passen also zum gemerkten Namen.  Kaeme ein ZWEITER
+store-and-forwardeter Nutzer ueber denselben Kanal, kippte der gemerkte
+Master auf dessen Rufzeichen - und ein Poll des echten Masters unter
+EIGENEM Rufzeichen wuerde dann nicht mehr als Poll erkannt.
+
+NICHT GEAENDERT.  Was daraus folgt, ist zu entscheiden: entweder muss der
+Slave den Master am PFAD erkennen statt am Absender (der letzte
+wiederholte Digi ist, wer wirklich gesendet hat - dieselbe Regel, die
+dama_station() schon fuehrt), oder der Repeater muss auf dem DAMA-Kanal
+unter eigenem Rufzeichen aufbauen.  Das erste ist der kleinere Eingriff
+und passt zu dem, was an anderer Stelle schon steht.
+
+------------------------------------------------------------------------
+DAS DAMA-BIT SAGT "SPRICHT DAMA", NICHT "IST MASTER" (Thomas, 2026-08-30)
+------------------------------------------------------------------------
+Schaerfer als der Store-and-Forward-Fund darueber, und dieser ist nur eine
+Erscheinungsform davon.
+
+SEIN FALL: zwei Nutzer auf dem Funkkanal, die ueber den DAMA-Repeater
+arbeiten, beschliessen sich DIREKT zu verbinden.  Er schickt ein SABM mit
+DAMA-Bit - weil das auf diesem Kanal ueblich ist und er es zu Recht setzt,
+er spricht ja DAMA.  Wir empfangen es und machen ihn zum Master.  Er ist
+aber selbst nur Slave.
+
+    if (ifp == NULL || ifp->dama != DAMA_SLAVE) return;
+    ...
+    addrcp(ifp->dama_master, src);   /* jeder markierte Rahmen, jeder Absender */
+
+AX25-NAT SCHEIDET AUS (Thomas): der Repeater duerfte nicht unter eigenem
+Rufzeichen aufbauen, die Quelle ginge verloren.  Derselbe Einwand wie
+seinerzeit beim FlexNet-Pfad - der Digi-Pfad bleibt immer erhalten.
+
+WAS EINDEUTIG IST, und es ist genau sein Fall 1: kommt der markierte Rahmen
+UEBER EINEN WIEDERHOLTEN DIGI
+
+    UserA via A,B,C,wampes-dama-master*
+    UserA via A,B,C,wampes-dama-master*,X,Y
+
+dann hat dieser Digi auf unserem Kanal gesendet, und er tut es in der Rolle
+des Knotens.  Das laesst keine zweite Deutung zu.  Im HAEUFIGSTEN Fall aber
+- der Master pollt uns auf unserem eigenen Link zu ihm - steht er direkt in
+der Quelle und ist dort von einem Slave nicht zu unterscheiden.
+
+DREI MOEGLICHE ANTWORTEN, zu entscheiden:
+
+  a) PFAD STATT ABSENDER.  Wer gesendet hat, ist der letzte wiederholte
+     Digi, sonst die Quelle - dieselbe Regel, die dama_station() schon
+     fuehrt.  Behebt den Store-and-Forward-Fall, loest Fall 2 NICHT.
+  b) MASTER KONFIGURIEREN, "dama slave <call>".  Der Sysop weiss, wer der
+     Master ist.  Kein Raten mehr, dafuer eine Angabe mehr in der net.rc.
+  c) LERNEN NUR AUS DEM DIGI-FALL.  Nur ein markierter Rahmen ueber einen
+     wiederholten Digi setzt den Master.  Eindeutig, aber der direkte Poll
+     des Masters lernt nichts.
+
+NACHTRAG DESSELBEN TAGES, UND ER KIPPT c) - Thomas' Gegenbeispiel, keine
+zwei Minuten nachdem ich b)+c) empfohlen hatte:
+
+    userA verbindet sich aus seinem LAN ueber SEINEN EIGENEN
+    WAMPES-DAMA-Client mit userB, den er direkt hoert.  userB sieht dann
+    genau das, was ich als eindeutig ausgegeben hatte: einen markierten
+    Rahmen ueber einen wiederholten Digi.  Nur ist dieser Digi userAs
+    Client und nicht der Master.
+
+EIN VIA-DIGI ZU SEIN HEISST NICHT, DER MASTER ZU SEIN - so wenig, wie das
+Bit zu setzen es heisst.  Damit ist c) unbrauchbar.
+
+DIE ALLGEMEINE AUSSAGE, die daraus folgt und die man sich merken sollte:
+
+    DER MASTER IST AUF DER LEITUNG NICHT ERKENNBAR.
+
+Es gibt kein Signal in AX.25, das ihn von einer Station unterscheidet, die
+DAMA spricht und gerade sendet oder wiederholt.  Das Bit ist eine
+FAEHIGKEIT, keine Rolle.  Ein wiederholter Digi ist eine FUNKTION, keine
+Rolle.  Und ein Kommando mit P sendet jede AX.25-Station, wenn T1 ablaeuft.
+Alle drei Kandidaten fallen aus demselben Grund: sie beschreiben, was eine
+Station TUT, nicht was sie IST.
+
+UEBRIG BLEIBT b): der Sysop sagt, wer der Master ist.  Und a) bleibt
+richtig, aber als eigene Sache - "wer gesendet hat" korrekt zu bestimmen
+ist unabhaengig davon geboten.
+
+WAS AUS "learn" DANN WIRD: es bleibt das heutige Verhalten (den Absender
+eines markierten Rahmens uebernehmen), also das, was TNN und Linux auch
+tun.  Es traegt im gewoehnlichen Fall, weil auf einem echten DAMA-Kanal
+der Master die einzige Station ist, die mit allen spricht - aber es ist
+eine Bequemlichkeit mit bekannten Fehlerfaellen und darf deshalb NICHT die
+Vorgabe sein, sobald es die Konfiguration gibt.
+
+TNN UND LINUX HELFEN HIER NICHT: beide pruefen nur "markiert + Kommando mit
+P" (rxfDA + rxfPF/rxfCR bzw. AX25_COMMAND && pf) und haben dieselbe Luecke.
+
+------------------------------------------------------------------------
 C.8 GEMESSEN: VERSTOSS WAEHREND FREMDEM ZUG (2026-08-31)
 ------------------------------------------------------------------------
 Moeglich geworden durch den uhnp-Umbau desselben Tages - zwei Stationen
