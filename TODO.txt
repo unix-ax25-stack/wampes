@@ -8172,6 +8172,31 @@ weiss nichts, heute faellt der Rahmen weg.  Ein Ethernet-Switch wuerde auf
 alle Ports FLUTEN - und genau das Fluten ist die Stelle, an der Schleifen
 entstehen.
 
+WAS "UNBEKANNTES ZIEL" HEISST, praezisiert von Thomas - und es ist der
+NEXT HOP, nicht das Endziel:
+
+    A>B            B unbekannt          -> verwerfen
+    A>B,C          C bekannt            -> annehmen
+    A>B,D*,C       C bekannt            -> annehmen
+    A>B,D*,C,F,..  C bekannt            -> annehmen
+
+Bekannt sein muss also der, an den wir als NAECHSTES senden wuerden: der
+erste Digi nach dem letzten wiederholten, sonst der erste Digi, sonst das
+Endziel.  Ob wir B kennen, ist gleichgueltig - dafuer ist C zustaendig.
+
+DAS IST GENAU idest, und der Empfangsweg hat es an der Verwerfen-Zeile
+ohnehin schon in der Hand (ax25.c:633):
+
+    if(hdr.ndigis != 0 && hdr.nextdigi != hdr.ndigis)
+      idest = hdr.digis[hdr.nextdigi];
+    else
+      idest = hdr.dest;
+
+nextdigi ist der Index des ERSTEN NOCH NICHT wiederholten Digis.  Thomas'
+Definition, die vorhandene Variable und die Entscheidungsstelle fallen
+also zusammen - die Bruecke waere ein Nachschlag von idest an genau der
+Stelle, an der heute free_p() steht.
+
 ENTSCHIEDEN (Thomas): GAR NICHT FLUTEN, das Paket faellt weg.  "Direkt
 sehen" gilt damit nur fuer Stationen, die wir kennen - im db0fhn-Fall
 reicht das, denn DB0FHN auf dem xnet-Port ist eine konfigurierte Route und
