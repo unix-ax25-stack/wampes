@@ -205,7 +205,12 @@ struct cmds Attab[] = {
 	"  <call> <host> [<port>]\", one per station.  <dstport> is only the\n"
 	"  port for routes that name none, which is worth having when the node\n"
 	"  may not bind 93 but every peer expects to be called there.\n"
-	"  A source port learned from the peer beats both." },
+	"  A source port learned from the peer beats both.  It is remembered\n"
+	"  PER CALLSIGN, so two stations behind one address - two nodes on one\n"
+	"  machine, two peers behind one NAT - each keep their own; \"axip\n"
+	"  route\" shows it.  A callsign never heard yet falls back on what the\n"
+	"  host was last seen using, which is right for a partner running\n"
+	"  several callsigns on one ax25ipd." },
 
 	{ "ipip", ipip_attach, 0, 1,
 	"attach ipip [<label> [<ip|udp> [<number>|<srcport>:<dstport>]]]\n"

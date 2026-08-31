@@ -6706,6 +6706,73 @@ oder eben der Fix oben.  ZU ENTSCHEIDEN, siehe auch die Frage darunter,
 ob ein DAMA-Labor ueberhaupt ein gemeinsames Medium braucht: auf einem
 echten Kanal HOERT B den Poll an A, ueber UDP-Unicast nicht.
 
+GEBAUT AM 2026-08-31, und die Vorarbeit oben lag in EINEM Punkt daneben.
+
+Der Plan war, den gelernten Endpunkt neben die MAC an die ax_route zu
+haengen, "statt eine zweite eigene Liste zu fuehren".  Beim Hinsehen
+stellte sich heraus: DIE TABELLE JE RUFZEICHEN GAB ES SCHON, und zwar
+axips eigene -
+
+    struct axip_route { uint8 call[AXALEN]; struct sockaddr_storage dest; };
+
+gefuettert bei JEDEM empfangenen Rahmen aus dem Absenderfeld
+(axip_route_add(src, &addr, 0) am Ende von axip_recv()).  Sie kannte den
+Partner also die ganze Zeit beim Rufzeichen.  Sie warf nur den PORT weg:
+das letzte Argument ist keepport, und mit 0 setzt route_add den Port im
+gespeicherten Ziel ausdruecklich auf null.  Genau diese eine Zeile machte
+uhnp noetig.
+
+Der Umbau ist deshalb kleiner als geplant und braucht weder ax_route noch
+eine neue Liste - nur drei Felder an der vorhandenen Route, in der Form,
+die Thomas von bpqether genannt hat:
+
+    int lport;                      /* 0: nichts gelernt */
+    struct edv_t *ledv;             /* auf welchem Interface gehoert */
+    time_t ltime;                   /* dieselbe Frist wie uhnp: 1 h */
+
+Reihenfolge beim Senden: Rufzeichen zuerst, Host als Rueckfall.  Der
+Rueckfall bleibt mit Absicht - ein Partner, der MEHRERE Rufzeichen auf
+einem ax25ipd fuehrt, ist ueber den Host erreichbar, bevor wir das zweite
+Rufzeichen je gehoert haben.  Und uhnp selbst bleibt ohnehin: ipip kennt
+gar keine Rufzeichen, dort ist der Host der einzige Schluessel, den es
+gibt.  DAS WAR DER GRUND FUER DIE URSPRUENGLICHE FORM - sie stammt von
+ipip her und wurde fuer axip mitbenutzt.
+
+Die CAVE-Bedingung steht: das ganze Nachschlagen liegt weiter innerhalb
+von "if (edv->type == USE_UDP)", rohes axip faellt nicht hinein.
+
+EIN FEHLER, DEN DER ERSTE ENTWURF GEHABT HAETTE: der gelernte Port muss
+mit der ADRESSE sterben, zu der er gehoerte.  route_add ueberschreibt das
+Ziel, wenn eine Station umzieht; bliebe lport stehen, truege sie den Port
+ihres Vorgaengers weiter.  Jetzt wird er dort geloescht, sobald sich die
+Adresse aendert - und der Empfangsweg lernt ihn unmittelbar danach neu.
+
+GEMESSEN (testtools/uhnppair.py, zwei Stationen auf 127.0.0.1):
+
+    ALT   TEST-1 1 eigener, 0 fremde / TEST-2 4 eigene, 3 FREMDE
+          alle drei Leerlauf-Polls an TEST-1 landeten bei TEST-2,
+          TEST-1 hoerte nach seinem UA nichts mehr
+    NEU   TEST-1 4 eigene, 0 fremde / TEST-2 4 eigene, 0 fremde
+
+DER ERSTE TESTAUFBAU TAUGTE NICHT, und das ist der Merksatz daran: zwei
+Stationen bloss connecten zu lassen zeigt gar nichts.  Beim SABM lernt der
+Knoten den Quellport UNMITTELBAR VOR seiner Antwort, also trifft sie auch
+mit der Tabelle je Host immer.  Der Fehler braucht einen Rahmen, den der
+Knoten VON SICH AUS schickt, waehrend die andere Station zuletzt gehoert
+wurde - im Test der Leerlauf-Poll aus "ax25 t3 4000".  Das ist zugleich
+der Grund, warum es im Betrieb gerade den Master trifft: sein Reihum-Poll
+ist genau so ein Rahmen.
+
+(Und ein zweiter Merksatz: der erste Gegenlauf gegen den ALTEN Stand ging
+scheinbar durch, weil der Knoten des vorigen Laufs noch lebte und den Port
+hielt.  Erst ein Laeufer, der vor jedem Lauf aufraeumt, gab beide Befunde
+sauber her.)
+
+WAS DAMIT AUFGEHT: C.7 bis C.10 sind nicht mehr blockiert, und die
+Testwerkzeuge brauchen ihre Umwege nicht mehr - flexmulti.py musste alle
+Gegenueber auf EINEN Socket legen, nrpeer/eaxpeer --zielstation einen
+eigenen aufmachen.  Beides steht im testtools/README richtiggestellt.
+
 ------------------------------------------------------------------------
 DAMA-MASTER: DREI VERHALTEN, KONFIGURIERBAR (Thomas, 2026-08-30)
 ------------------------------------------------------------------------
@@ -7801,9 +7868,11 @@ OFFEN, UND WAS ES BRAUCHT
         ueberhaupt erst greift.  Braucht den gemeinsamen Kanal.
      9. persist/slottime auf einem Porttyp MIT Kanalzugriff (kiss, 6pack).
         Ueber axip nicht pruefbar.
-    10. Der gemeinsame Kanal haengt an uhnp: der gelernte UDP-Quellport
-        haengt an der Adresse statt am Rufzeichen, drei Knoten auf
-        127.0.0.1 stehlen einander die Bytes.
+    10. Der gemeinsame Kanal hing an uhnp: der gelernte UDP-Quellport
+        haengte an der Adresse statt am Rufzeichen, drei Knoten auf
+        127.0.0.1 stahlen einander die Bytes.  ERLEDIGT am 2026-08-31,
+        siehe "GEBAUT" im Abschnitt oben - der Port wird jetzt je
+        Rufzeichen gelernt.  Damit sind 7 bis 10 aufgeschlossen.
 
   D. DOKUMENTATION
     11. doc/DAMA-SLAVE.md: der Abschnitt "Two slaves that connect to each
@@ -7827,8 +7896,9 @@ Praezisierung nach einer zu weiten Verallgemeinerung von mir (Thomas):
 
   * NUR DER GEMEINSAME KANAL braucht eine Broadcast-Domaene: mehrere
     Stationen auf EINER Frequenz, die einander hoeren oder eben nicht.
-    Dort scheitert ein Buendel von axudp-Strecken, und dort hakt es an
-    uhnp.  Betroffen sind die Punkte C.7 bis C.10 der Uebersicht.
+    Dort scheiterte ein Buendel von axudp-Strecken bisher an uhnp.
+    Betroffen waren die Punkte C.7 bis C.10 der Uebersicht; seit dem
+    Umbau vom 2026-08-31 sind sie machbar.
 
 Also nicht "axudp taugt nicht fuers DAMA-Labor", sondern: es taugt fuer
 alles, was Punkt zu Punkt IST, und nicht fuer das, was eine geteilte
@@ -8040,7 +8110,8 @@ BLEIBT
   C.7  mehrere Sitzungen desselben Rufzeichens: EINE Verwarnung.
   C.8  Verstoss waehrend fremdem Zug.
   C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
-  C.10 der gemeinsame Kanal, und damit uhnp.
+  C.10 der gemeinsame Kanal - uhnp ist seit 2026-08-31 kein Hindernis
+       mehr, C.7 bis C.10 koennen gemacht werden.
 
 ------------------------------------------------------------------------
 "forward" IST KEINE BRUECKE - UND DER HILFETEXT STAND VERKEHRT HERUM
@@ -8114,6 +8185,8 @@ DAMIT IST DER uhnp-UMBAU DIE VORAUSSETZUNG DIESER BRUECKE und nicht bloss
 eine Nachbarbaustelle: ohne "welcher UDP-Endpunkt gehoert zu welchem
 Rufzeichen" findet die Antwort nicht zurueck.  Es ist genau das, was
 Thomas' gepatchtes ax25ipd als "ax25-to-udp-session-learning" schon tut.
+ERLEDIGT am 2026-08-31 - die Voraussetzung steht, die Bruecke selbst
+nicht.
 
 WAS VORHER ZU KLAEREN WAERE - und es ist nicht die Technik:
 

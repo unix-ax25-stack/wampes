@@ -49,6 +49,24 @@ struct edv_t {
 struct axip_route {
   uint8 call[AXALEN];
   struct sockaddr_storage dest;         /* outer peer, port filled in at send */
+  /* DER GELERNTE QUELLPORT, JE RUFZEICHEN - nach dem Vorbild der
+   * bpqether-Route (mac/mac_ifp/mactime): der Wert, das Interface, auf dem er
+   * gehoert wurde, und wann.
+   *
+   * Bis hierher lernte allein uhnp, und zwar JE HOST.  Das geht auf, solange
+   * hinter einer Adresse ein Knoten steht - und verwechselt zwei, sobald dort
+   * zwei unabhaengige stehen, denn dann teilen sich beide Rufzeichen einen
+   * Port und die Antwort an das eine landet beim anderen.  Die Tabelle je
+   * Rufzeichen gab es dabei die ganze Zeit; sie warf den Port nur weg
+   * (axip_route_add() mit keepport 0).  Sie behaelt ihn jetzt.
+   *
+   * uhnp bleibt: fuer ipip, das gar keine Rufzeichen kennt, und hier als
+   * Rueckfall fuer ein Rufzeichen, das wir noch nie gehoert haben - etwa das
+   * zweite eines Partners, der mehrere auf einem ax25ipd fuehrt.
+   */
+  int lport;
+  struct edv_t *ledv;
+  time_t ltime;
   struct axip_route *next;
 };
 
@@ -57,6 +75,8 @@ static struct axip_route *Axip_routes;
 static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
 static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keepport);
+static void axip_learn_port(uint8 *call, const struct sockaddr *addr, struct edv_t *edv);
+static int axip_learned_port(struct axip_route *rp, struct edv_t *edv);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
@@ -134,8 +154,17 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
 
       to = rp->dest;
       if (edv->type == USE_UDP) {
-        struct sockaddr *sa = search_udp_host_nat_port((struct sockaddr *) &to, edv);
-        if (sa) port = sockaddr_port(sa);
+        /* Das Rufzeichen zuerst, der Host als Rueckfall: nur so bekommen zwei
+         * Stationen hinter einer Adresse ihre eigene Antwort.  Fuer den einen
+         * Knoten hinter einer Adresse sagen beide dasselbe.
+         */
+        int lp = axip_learned_port(rp, edv);
+        if (lp) {
+          port = lp;
+        } else {
+          struct sockaddr *sa = search_udp_host_nat_port((struct sockaddr *) &to, edv);
+          if (sa) port = sockaddr_port(sa);
+        }
         uhnp_cleanup(edv);
       }
       sockaddr_set_port((struct sockaddr *) &to, port);
@@ -164,6 +193,7 @@ static void axip_recv(void *argp)
   uint8 *bufptr;
   uint8 *p;
   uint8 *src;
+  int trust_port;
 
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
@@ -183,11 +213,16 @@ static void axip_recv(void *argp)
   if (!check_crc_ccitt((char *) bufptr, l)) goto Fail;
   l -= 2;
 
-  if (edv->type == USE_UDP &&
-        (edv->port >= 1024 || sockaddr_port((struct sockaddr *) &addr) < 1024)) {
-        /* secure-port model of trust: src address adaption, but only
-           - if my listen port >= 1024,
-           - or if my listen port < 1024 and src port is also < 1024 */
+  /* secure-port model of trust: src address adaption, but only
+     - if my listen port >= 1024,
+     - or if my listen port < 1024 and src port is also < 1024
+   * Der Merker haelt das Ergebnis fest, weil dasselbe Vertrauen auch fuer den
+   * Port je Rufzeichen gilt - das Rufzeichen steht aber erst nach dem
+   * Adressfeld fest, die Bedingung gehoert hierher.
+   */
+  trust_port = (edv->type == USE_UDP &&
+        (edv->port >= 1024 || sockaddr_port((struct sockaddr *) &addr) < 1024));
+  if (trust_port) {
     learn_udp_host_nat_port((struct sockaddr *) &addr, edv);
     uhnp_cleanup(edv);
   }
@@ -209,6 +244,8 @@ static void axip_recv(void *argp)
       break;
   }
   axip_route_add(src, (struct sockaddr *) &addr, 0);
+  if (trust_port)
+    axip_learn_port(src, (struct sockaddr *) &addr, edv);
 
   bp = qdata(bufptr, l);
   net_route(ifp, &bp);
@@ -452,8 +489,19 @@ static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keeppor
     if (!(rp = (struct axip_route *) malloc(sizeof(struct axip_route))))
       return;
     addrcp(rp->call, call);
+    rp->lport = 0;
+    rp->ledv = 0;
+    rp->ltime = 0;
     rp->next = Axip_routes;
     Axip_routes = rp;
+  } else if (!sockaddr_addr_eq((struct sockaddr *) &rp->dest, dest)) {
+    /* Der gelernte Port stirbt mit der Adresse, zu der er gehoerte - sonst
+     * traegt eine umgezogene Station den Port ihres Vorgaengers weiter.  Der
+     * Empfangsweg lernt ihn unmittelbar danach neu.
+     */
+    rp->lport = 0;
+    rp->ledv = 0;
+    rp->ltime = 0;
   }
   memset(&rp->dest, 0, sizeof(rp->dest));
   memcpy(&rp->dest, dest, (size_t) len);
@@ -464,6 +512,41 @@ static void axip_route_add(uint8 *call, const struct sockaddr *dest, int keeppor
    * last seen using.  A port given here is for a partner that listens
    * somewhere else, which ax25ipd can express and this could not.
    */
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Den Quellport auf dem Rufzeichen merken.  Gerufen nur direkt hinter
+ * axip_route_add(), das die Adresse eben erst gesetzt hat - deshalb steht
+ * hier keine zweite Adresspruefung.
+ */
+static void axip_learn_port(uint8 *call, const struct sockaddr *addr,
+	struct edv_t *edv)
+{
+  struct axip_route *rp;
+
+  for (rp = Axip_routes; rp && !addreq(rp->call, call); rp = rp->next) ;
+  if (!rp) return;
+  rp->lport = sockaddr_port(addr);
+  rp->ledv = edv;
+  rp->ltime = secclock();
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Der gelernte Port, oder 0.  Nur auf dem Interface, auf dem er gehoert
+ * wurde: uhnp haengt am edv und war damit schon immer je Interface, und mit
+ * zwei axudp-Ports auf einer Kiste ist die Unterscheidung auch noetig.
+ * Dieselbe Frist wie uhnp - was dort altert, altert auch hier.
+ */
+static int axip_learned_port(struct axip_route *rp, struct edv_t *edv)
+{
+  if (!rp->lport || rp->ledv != edv) return 0;
+  if (rp->ltime + UHNP_LEASETIME < secclock()) {
+    rp->lport = 0;
+    return 0;
+  }
+  return rp->lport;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -510,6 +593,9 @@ static int doaxiproute(int argc, char *argv[], void *p)
            sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
     if (sockaddr_port((struct sockaddr *) &rp->dest))
       printf("  port %d", sockaddr_port((struct sockaddr *) &rp->dest));
+    if (rp->lport)
+      printf("  learned %d (%ld s ago)", rp->lport,
+             (long) (secclock() - rp->ltime));
     putchar('\n');
   }
   return 0;
