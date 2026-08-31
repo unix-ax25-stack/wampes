@@ -6976,6 +6976,58 @@ ENTSCHEIDUNGSLOGIK des Masters, nicht die Physik des Kanals.  Der Aufbau
 ist fuer das eine getreu und fuer das andere blind.
 
 ------------------------------------------------------------------------
+libax25: DAS WIEDERHOLT-BIT DURCHREICHEN, BEIDE RICHTUNGEN
+------------------------------------------------------------------------
+Thomas' Vorhaben, 2026-08-31 notiert.  GEHOERT IN EINE libax25-SITZUNG,
+nicht hierher - hier steht es, damit es nicht verloren geht, denn die
+WAMPES-Seite ist der halbe Weg.
+
+DER GEDANKE DAHINTER, und er gibt die Richtung vor:
+
+    "In Richtung libax25 koennen wir das signalisieren und sind da
+     transparent, also sollte das fuer den Weg von Linux (das Daten von
+     vielleicht einem anderen Programm weiterleitet) auch sein koennen."
+
+Also: was wir nach oben zeigen koennen, muessen wir von oben auch
+annehmen koennen.  Sonst ist die Schnittstelle in einer Richtung
+durchlaessig und in der anderen nicht, und ein Programm, das einen
+fertigen Pfad WEITERREICHT, kann ihn nicht weiterreichen.
+
+ZWEI STUECKE, und das zweite ist das schwere:
+
+  1. DATAGRAMM.  Kommt auf der socket/ax25-Sitzung ein Datagramm mit
+     einem Pfad herein, dessen Elemente ein "*" tragen, dann ist das zu
+     ehren: das Wiederholt-Bit gehoert an die richtige Stelle in den
+     echten AX.25-Kopf, nicht weggeworfen.
+  2. VERBUNDENER BETRIEB.  Dasselbe fuer einen Verbindungsaufbau und
+     I-Rahmen - "SABM A>B,C*,D" von libax25 herein, Kopf und Bit richtig
+     gesetzt.  Das Schwere daran ist nicht der Kopf, sondern die
+     EINGLIEDERUNG INS SITZUNGSMANAGEMENT: ein Link ist bei uns ein Paar,
+     und ein Pfad mit schon wiederholten Elementen beschreibt einen
+     Zustand mitten im Weg.
+
+WAS ES SCHON GIBT (nachgesehen 2026-08-31):
+
+  * Die EMPFANGSRICHTUNG des Datagram-Dienstes setzt das "*" bereits, und
+    zwar an der einzig richtigen Stelle - am Vergleich mit nextdigi:
+
+        axserver.c:1148   i < hdr->nextdigi ? "*" : ""
+
+    Nach oben sind wir hier also schon transparent.
+
+WAS FEHLT ODER UNGEPRUEFT IST:
+
+  * Die Pfade im VERBUNDENEN Betrieb tragen kein "*" - axserver.c:1705,
+    2191 und 2209 haengen die Digis ohne Marke aneinander.  Das ist
+    Stueck 2, und zwar schon in der Richtung nach OBEN.
+  * Ob die SENDESEITE ein "*" im Pfad ueberhaupt einliest oder still
+    verwirft, ist NICHT geprueft.  Das waere der erste Handgriff einer
+    solchen Sitzung.
+
+BETRIFFT BEIDE SEITEN: WAMPES (axserver.c, Sitzungsverwaltung) und
+libax25 (was der Shim durchreicht).  Siehe auch axsock(7).
+
+------------------------------------------------------------------------
 C.7 GEMESSEN: EIN RUFZEICHEN, ZWEI SITZUNGEN, EINE VERWARNUNG (2026-08-31)
 ------------------------------------------------------------------------
 Moeglich geworden durch den uhnp-Umbau (drei Gegenstellen auf 127.0.0.1),
