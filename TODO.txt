@@ -6774,6 +6774,73 @@ Gegenueber auf EINEN Socket legen, nrpeer/eaxpeer --zielstation einen
 eigenen aufmachen.  Beides steht im testtools/README richtiggestellt.
 
 ------------------------------------------------------------------------
+C.8 GEMESSEN: VERSTOSS WAEHREND FREMDEM ZUG (2026-08-31)
+------------------------------------------------------------------------
+Moeglich geworden durch den uhnp-Umbau desselben Tages - zwei Stationen
+auf 127.0.0.1 an EINEM Masterport, was vorher nicht ging.
+
+AUFBAU.  Master permissive, hf-datarate 1200, digipeat 2.  GOOD-1 ist ein
+braver Slave (DAMA-Bit, antwortet auf Poll) und HAELT SEINEN ZUG 4 s
+OFFEN: I-Rahmen sofort, das abschliessende RR(F) erst spaeter - so wie
+eine Station, die einen laengeren Block sendet (damaviol.py --slow, dafuer
+gebaut).  BAD-1 pollt jede Sekunde, faellt also mitten in GOODs Zug.
+
+    GOOD  0.0 I-Rahmen, Zug offen ....................... 4.1 RR(F)
+    BAD           1.0    2.0    3.0    4.0   je RR(P)
+                   ^ alle vier innerhalb von GOODs Zug
+
+WAS STIMMT:
+
+  * ZUGERECHNET WIRD BAD-1, nicht GOOD-1.  Eine Zeile im Log, Zaehler 1;
+    die weiteren werden gezaehlt, aber nicht gedruckt (n==1 || n%10).
+  * GOODS ZUG BLEIBT UNBESCHAEDIGT.  Der Master pollt ihn waehrenddessen
+    nicht nach und faengt nach seinem RR(F) sauber den naechsten Umlauf an
+    - gleichmaessig 6,1 s (4 s Zug + Luecke + BADs Fenster).  Dafuer sorgt
+    die Zeile nach der Zaehlung:
+
+        if (!addreq(dama_station(axp), mp->turn)) return;
+
+    ein Rahmen einer Station, die den Zug NICHT hat, kann ihn also weder
+    beenden noch den Zugtimer neu setzen.  Genau das war die Sorge.
+  * Die Verwarnung geht an BAD und nur einmal.
+
+WAS ICH ZUERST FALSCH VERMUTET HABE.  Ich hielt es fuer moeglich, dass die
+Antwort an BAD ueber dama_holds() zurueckgehalten wird, sobald dessen Link
+das DAMA-Bit traegt.  GEGENPROBE MIT --dama: sie geht genauso sofort
+hinaus.  Die vier dama_holds()-Tore in lapb.c sind SAMT UND SONDERS
+SLAVE-SEITE - DISC, Sendequeue, verzoegerte Quittung, Leerlauf-Disconnect,
+also was WIR unaufgefordert senden wuerden.  Die Antwort auf einen Poll
+laeuft durch keines: ein Kommando mit P ist nach AX.25 mit F zu
+beantworten, und das ist keine DAMA-Entscheidung.
+
+    BAD    1.0 RR(P) ->
+           1.0 <- UI "DAMA Notice (1): ..."
+           1.0 <- RR(F) [Antwort]        mitten in GOODs Zug
+
+OFFEN, UND NICHT AUF VERDACHT ZU AENDERN:
+
+  a) Soll ein Master diese Antwort bis zum Zug des Stoerers aufheben?
+     DAFUER: auf einem echten Halbduplex-Kanal faellt sie in GOODs Block,
+     und GOOD kann nichts dafuer.  DAGEGEN: ohne Antwort wiederholt BAD
+     seinen Poll N2-mal und setzt dann den Link zurueck - mehr Kanal, nicht
+     weniger; und der Zusammenstoss war ohnehin schon da, als BAD sendete.
+     WIE MACHT ES TNN?  Das ist die Frage, die das entscheidet, nicht
+     unsere Herleitung.
+  b) DIE VERWARNUNG DAGEGEN IST GANZ UNSERE SACHE.  Sie ist ein UI, den
+     niemand von uns verlangt, und sie ging hier mitten in GOODs Zug
+     hinaus.  Fuer den Slave gibt es dafuer schon dama_defer_ui() ("kurz
+     halten, ob ein Poll-Fenster kommt, und dort mitsenden"); dem Master
+     fehlt das Gegenstueck - er koennte sie in die naechste LUECKE legen.
+     Das waere zu haben, ohne AX.25-Pflichten anzuruehren.
+
+WAS DER LOOPBACK NICHT ZEIGT, und das gehoert zu jedem Satz oben dazu:
+DORT GIBT ES KEINE ZUSAMMENSTOESSE.  Auf der Luft wuerde BADs Poll
+waehrend GOODs Aussendung beim Master meist gar nicht ankommen - er haette
+nichts zu zaehlen und nichts zu beantworten.  Gemessen ist hier die
+ENTSCHEIDUNGSLOGIK des Masters, nicht die Physik des Kanals.  Der Aufbau
+ist fuer das eine getreu und fuer das andere blind.
+
+------------------------------------------------------------------------
 DAMA-MASTER: DREI VERHALTEN, KONFIGURIERBAR (Thomas, 2026-08-30)
 ------------------------------------------------------------------------
 Wie streng der Master ist, soll der Sysop entscheiden, nicht wir:
@@ -7865,7 +7932,7 @@ OFFEN, UND WAS ES BRAUCHT
         wiederholten Sitzung.  (Der Zaehler je Station sollte es koennen;
         gemessen ist es nicht.)
      8. Verstoss WAEHREND FREMDEM ZUG - der Fall, in dem unser Kriterium
-        ueberhaupt erst greift.  Braucht den gemeinsamen Kanal.
+        ueberhaupt erst greift.  GEMESSEN am 2026-08-31, siehe unten.
      9. persist/slottime auf einem Porttyp MIT Kanalzugriff (kiss, 6pack).
         Ueber axip nicht pruefbar.
     10. Der gemeinsame Kanal hing an uhnp: der gelernte UDP-Quellport
@@ -8108,7 +8175,9 @@ BLEIBT
 
        Vertagt, bis jemand diesen Notbehelf wirklich braucht.
   C.7  mehrere Sitzungen desselben Rufzeichens: EINE Verwarnung.
-  C.8  Verstoss waehrend fremdem Zug.
+  C.8  Verstoss waehrend fremdem Zug - GEMESSEN 2026-08-31, Zurechnung und
+       Zugschutz stimmen; zwei Fragen blieben offen (Antwort aufheben? -
+       TNN fragen; Verwarnung in die Luecke legen? - waere unsere Sache).
   C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
   C.10 der gemeinsame Kanal - uhnp ist seit 2026-08-31 kein Hindernis
        mehr, C.7 bis C.10 koennen gemacht werden.
