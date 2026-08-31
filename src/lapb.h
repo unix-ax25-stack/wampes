@@ -176,6 +176,14 @@ struct ax25_cb {
 	 */
 	int dama_link;
 
+	/* Als Master: dieser Link hatte in der laufenden Runde seiner Station
+	 * schon seinen Zug.  TNN fuehrt dafuer L2FDAMA1 und waehlt den Link
+	 * mit "zael == indx"; eine MARKE und kein Zeiger, denn ein Zeiger
+	 * haengt in der Luft, sobald eine Verbindung endet - und das ist das
+	 * normale Ende jeder Verbindung.
+	 */
+	int dama_served;
+
 	/* Set when T1 expired under DAMA with frames still outstanding: the
 	 * master never acknowledged them, so they have to go again - but not
 	 * now, only in the window the next poll opens.  See dama.c.

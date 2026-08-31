@@ -770,7 +770,19 @@ static int dama_next_station(struct iface *ifp, const uint8 *after, uint8 *out)
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
 		const uint8 *st;
 
-		if (axp->iface != ifp || axp->peer != NULL)
+		/* KEIN peer-FILTER HIER, und das war ein Fehler: er schloss
+		 * jede store-and-forwardete Verbindung aus - also genau den
+		 * Hauptfall, einen Nutzer der ueber eine Linkstrecke
+		 * hereinkommt und zu einem lokalen Nutzer weitergereicht
+		 * wird.  Gemessen: zwei stehende Verbindungen auf dem Kanal,
+		 * polls 0 in 38 Sekunden, Runde idle.
+		 *
+		 * Die aeussere Haelfte eines weitergereichten Paares IST eine
+		 * echte Verbindung auf diesem Kanal und gehoert gepollt; die
+		 * innere haelt einen anderen Port oder gar keinen, und die
+		 * grenzt schon "axp->iface != ifp" aus.
+		 */
+		if (axp->iface != ifp)
 			continue;
 		if (axp->state != LAPB_CONNECTED && axp->state != LAPB_RECOVERY)
 			continue;
@@ -879,15 +891,52 @@ static void dama_master_turn(struct dama_m *mp)
 	struct ax25_cb *axp;
 	struct ax25_cb *last = NULL;
 
-	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
-		if (axp->iface != mp->ifp || axp->peer != NULL)
-			continue;
-		if (axp->state != LAPB_CONNECTED && axp->state != LAPB_RECOVERY)
-			continue;
-		if (!addreq(dama_station(axp), mp->turn))
-			continue;
-		lapb_output(axp);
-		last = axp;
+	/* EIN LINK JE ZUG, NICHT ALLE EINER STATION.
+	 *
+	 * Vorher wurde jeder Link der Station in einem Zug geleert.  Das gab
+	 * einem Benutzer mit Multiconnect je Zug mehr Airtime als einem mit
+	 * einer Verbindung - und genau das verspricht TNNs Handbuch NICHT:
+	 * "USER mit Multiconnect kommen gegenueber USERN mit nur einer
+	 * Verbindung zum Knoten nicht oefters an die Reihe."
+	 *
+	 * Reihum geht es ueber eine MARKE je Link (axp->dama_served), so wie
+	 * TNN es mit L2FDAMA1 macht.  Hat kein Link der Station die Marke
+	 * mehr frei, ist ihre Runde herum: alle zuruecksetzen und von vorn.
+	 * Ein Zeiger auf den "naechsten" Link waere die naheliegende Loesung
+	 * und die falsche - er haengt in der Luft, sobald eine Verbindung
+	 * endet, und das ist das normale Ende jeder Verbindung.
+	 *
+	 * (Beim SLAVE ist das Gegenteil richtig und so gebaut: einmal
+	 * gepollt, alles hinaus.  Die Fairness ist Sache des Masters; ein
+	 * Slave, der sich selbst rationiert, rationiert eine bereits
+	 * rationierte Zeitscheibe.)
+	 */
+	for (;;) {
+		int any = 0;
+
+		for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
+			if (axp->iface != mp->ifp)
+				continue;
+			if (axp->state != LAPB_CONNECTED &&
+			    axp->state != LAPB_RECOVERY)
+				continue;
+			if (!addreq(dama_station(axp), mp->turn))
+				continue;
+			any = 1;
+			if (axp->dama_served)
+				continue;
+			axp->dama_served = 1;
+			lapb_output(axp);
+			last = axp;
+			break;
+		}
+		if (last != NULL || !any)
+			break;
+		/* Alle waren schon dran: Runde dieser Station herum. */
+		for (axp = Ax25_cb; axp != NULL; axp = axp->next)
+			if (axp->iface == mp->ifp &&
+			    addreq(dama_station(axp), mp->turn))
+				axp->dama_served = 0;
 	}
 	if (last == NULL) {             /* zwischendurch weggegangen */
 		mp->busy = 0;
@@ -1018,7 +1067,7 @@ static int dama_station_linked(struct iface *ifp, const uint8 *call)
 	struct ax25_cb *axp;
 
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next)
-		if (axp->iface == ifp && axp->peer == NULL &&
+		if (axp->iface == ifp &&
 		    (axp->state == LAPB_CONNECTED ||
 		     axp->state == LAPB_RECOVERY) &&
 		    addreq(dama_station(axp), call))
@@ -1110,7 +1159,7 @@ static void dama_kick_marked(struct iface *ifp)
 		vp->kick = 0;
 		for (axp = Ax25_cb; axp != NULL; axp = next) {
 			next = axp->next;
-			if (axp->iface != ifp || axp->peer != NULL)
+			if (axp->iface != ifp)
 				continue;
 			if (axp->state != LAPB_CONNECTED &&
 			    axp->state != LAPB_RECOVERY)
