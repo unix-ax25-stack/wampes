@@ -7087,6 +7087,72 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+DER FESTE SEKUNDENABSTAND SKALIERT NICHT - UND DIE SPEC SAGT DAS AUCH
+------------------------------------------------------------------------
+Thomas' Frage beim Mitlesen einer Messung, 2026-08-31: "Poll im
+Sekundentakt?  Veraendert sich das, wenn wir 16 User haben?  16 Polls
+passen nicht in 1s.  Hatte die Original-Spec 1s Intervall vorgesehen?"
+
+DER BEFUND: ja, es ist der Sekundentakt, und er steht NACH JEDEM ZUG.
+
+    #define DAMA_GAP_DEFAULT   1000L        /* ms */
+
+dama_master_gap() wird am Ende jedes Zuges gerufen (durch das F des
+Gepollten oder durch die Zeitscheibe) und startet ihn neu.  Bei 16
+Nutzern dauert eine Runde damit mindestens 16 s reine Totzeit, ganz
+gleich wie leer der Kanal ist.  Der letzte in der Runde wartet so lange
+auf seine Sendeerlaubnis.
+
+DIE SPEZIFIKATION SIEHT DAS GEGENTEIL VOR (CNC1989, Abschnitt "Idle
+State"), und sie sagt es ausdruecklich:
+
+    "If the response by the user is just an RR#, then the time until the
+     next poll to this user will be lengthened to avoid unnecessary
+     channel load.  The exact amount of time added is determined by
+     TOTAL CHANNEL ACTIVITY. ...  Thus when the frequency is basically
+     clear, THE WAITING TIMES ARE REDUCED TO A MINIMUM so that no
+     decrease in channel throughput takes place.  This is the principle
+     of the SELF-ALIGNMENT MECHANISM of DAMA, where a channel is always
+     regulated to insure its maximum possible throughput."
+
+Also: kein festes Intervall, sondern eine Frist, die sich nach der
+Kanalauslastung richtet und bei freiem Kanal gegen ein Minimum geht.
+
+WAS WIR DAVON SCHON HABEN: den STATIONSBEZOGENEN Teil.  dama_prio /
+dama_hold setzt genau das um - wer auf einen Poll nur leer antwortet,
+wird eine Stufe heruntergesetzt und beim naechsten Mal uebersprungen,
+und die Wartezeit waechst mit der Stufe.  Das ist der erste Satz des
+Zitats.
+
+WAS FEHLT: der zweite.  Der Abstand ZWISCHEN zwei Zuegen ist bei uns
+fest und haengt an nichts - weder an der Zahl der Stationen noch an der
+Auslastung.  Er ist auch nicht einstellbar; TNN fuehrt dieselbe Sekunde
+als PARAMETER (dama_init = 100 in Einheiten von 10 ms, Bereich 0..1000,
+Anzeigename "DAMA-Tout" - src/config.c, src/global.c).
+
+WOZU DER ABSTAND UEBERHAUPT DA IST, damit er nicht auf null faellt: ohne
+ihn rast die Runde (gemessen, als der erste echte Slave gegenueberstand:
+221794 Polls in 25 Sekunden bei EINER Station), und er laesst dem Kanal
+Luft fuer das, was NICHT gepollt wird - der Verbindungsaufbau naemlich,
+der nach der Spezifikation in CSMA laeuft.  Er darf also klein werden,
+aber nicht verschwinden.
+
+ZU ENTSCHEIDEN (Thomas), drei Stufen, die aufeinander aufbauen:
+
+  a) EINSTELLBAR MACHEN, wie TNN.  Der kleinste Schritt, und er nimmt
+     dem Sysop nichts ab.
+  b) MIT DER RUNDE TEILEN.  Der Abstand gilt der Runde, nicht dem
+     einzelnen Zug: bei n Stationen also Gap/n zwischen zwei Zuegen.
+     Dann bleibt die Runde bei 16 Nutzern so lang wie bei einem.
+  c) NACH AUSLASTUNG, wie die Spec es beschreibt.  Braucht ein Mass fuer
+     "channel activity" - naheliegend die Zahl der I-Rahmen je Runde,
+     die TNN mit dama_max = 15 ("Maximaler Aktivitaetszaehlerstand")
+     ebenfalls fuehrt.  Das waere die getreue Umsetzung.
+
+NICHT GEAENDERT.  Es ist Kanaldisziplin und damit Sache des Sysops und
+der Messung, nicht eine Zahl, die ich still austausche.
+
+------------------------------------------------------------------------
 DAMA-MASTER: DREI VERHALTEN, KONFIGURIERBAR (Thomas, 2026-08-30)
 ------------------------------------------------------------------------
 Wie streng der Master ist, soll der Sysop entscheiden, nicht wir:
