@@ -7986,8 +7986,33 @@ DREI FEHLER, DIE DABEI AUFFIELEN UND BEHOBEN SIND
     weg, weil die gebannte Station ja keine Verbindung mehr hat.
 
 BLEIBT
-  B.4  "dama slave learn" - zur Diskussion, ob wir es nach den neuen
-       Erkenntnissen ueberhaupt noch brauchen (Thomas).
+  B.4  "dama slave learn" - VERTAGT, und die Begruendung kehrt die
+       urspruengliche Idee UM.
+
+       Angefangen hatte es als Hilfe fuer den REGELFALL: ein Client
+       sollte selbst herausfinden, ob auf dieser Frequenz DAMA
+       gesprochen wird, damit der Nutzer es nicht wissen muss.  Die
+       Dringlichkeit kam daher, dass ein falsch geratener Master
+       schadet - deshalb die lange Suche nach einem tragfaehigen
+       Kriterium (Bit, Digi-Rolle, Kommando mit P, zuletzt "wer reihum
+       mit mehreren spricht").
+
+       Nach dem 2026-08-31 bleibt davon wenig:
+         * Wir markieren selbst nicht mehr, und niemand sonst liest das
+           Bit eines Slaves.  Ein falsch geratener Master schadet also
+           kaum noch jemandem ausser uns.
+         * Wer auf einem DAMA-Einstieg arbeitet, schreibt "dama slave"
+           in seine net.rc.  Wer es nicht tut, faehrt CSMA und stoert
+           damit vor allem sich selbst.
+
+       UEBRIG BLEIBT GENAU EINE AUSNAHMESITUATION, und es ist Thomas'
+       eigene: der DAMA-Digi faellt aus, jemand mit gutem Standort
+       erklaert sich zum Master, und die anderen sollen ihm OHNE
+       Umkonfiguration folgen.  Dafuer waere "learn" das richtige
+       Werkzeug - aber fuer den Regelfall, fuer den wir es gedacht
+       hatten, ist es keines mehr.
+
+       Vertagt, bis jemand diesen Notbehelf wirklich braucht.
   C.7  mehrere Sitzungen desselben Rufzeichens: EINE Verwarnung.
   C.8  Verstoss waehrend fremdem Zug.
   C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
