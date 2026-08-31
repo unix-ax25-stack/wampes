@@ -7020,9 +7020,17 @@ WAS FEHLT ODER UNGEPRUEFT IST:
   * Die Pfade im VERBUNDENEN Betrieb tragen kein "*" - axserver.c:1705,
     2191 und 2209 haengen die Digis ohne Marke aneinander.  Das ist
     Stueck 2, und zwar schon in der Richtung nach OBEN.
+
+    THOMAS' URTEIL DAZU: "da haben wir schlecht designt."  Es ist also
+    kein Versehen an drei Stellen, sondern eine Entscheidung, die so
+    nicht haette fallen sollen - im Datagramm-Weg haben wir das Bit
+    gefuehrt, im verbundenen Weg fallengelassen, und damit ist dieselbe
+    Schnittstelle in sich uneinheitlich.
   * Ob die SENDESEITE ein "*" im Pfad ueberhaupt einliest oder still
-    verwirft, ist NICHT geprueft.  Das waere der erste Handgriff einer
-    solchen Sitzung.
+    verwirft, ist NICHT geprueft.  Thomas vermutet, es wird verworfen -
+    "das werden wir dann aber beim Einbauen feststellen".  Also kein
+    eigener Pruefauftrag vorweg, sondern der erste Handgriff der
+    Sitzung selbst.
 
 BETRIFFT BEIDE SEITEN: WAMPES (axserver.c, Sitzungsverwaltung) und
 libax25 (was der Shim durchreicht).  Siehe auch axsock(7).
