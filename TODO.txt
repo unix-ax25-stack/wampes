@@ -6674,6 +6674,30 @@ NICHT GEAENDERT.  Das ist ein Eingriff in den NAT-Weg, der Fremdstationen
 betrifft, und er will fuer sich geprueft werden - nicht nebenbei, waehrend
 ein Labor aufgebaut wird.
 
+DIE FORM DAFUER STEHT ABER SCHON IM HAUS (Thomas, 2026-08-31): es ist
+dieselbe Sache wie das MAC-Lernen fuer bpqether von zwei Tagen vorher, und
+dort haben wir sie richtig geloest.
+
+    /* struct ax_route */
+    uint8 mac[6];
+    struct iface *mac_ifp;          /* 0: nothing known */
+    long mactime;
+
+Je RUFZEICHEN, am Routeneintrag, mit Port und Alterungszeit (eine Stunde).
+axroute_mac_get() verlangt ausdruecklich, dass der Port uebereinstimmt -
+genau die Disziplin, die uhnp fehlt.
+
+DER SATZ DAHINTER GILT FUER BEIDE: unterhalb der AX.25-Schicht liegt eine
+Adresse, die man JE RUFZEICHEN lernen muss, weil das Rufzeichen das Einzige
+ist, was den Partner identifiziert.  Bei bpqether ist das gelernt, bei
+axudp steht es aus.
+
+Der Umbau sollte deshalb der bpqether-Form folgen - den gelernten
+UDP-Endpunkt neben die MAC an die ax_route haengen, statt eine zweite
+eigene Liste zu fuehren.  Das gibt ihm eine im selben Baum erprobte Gestalt
+und erspart die Frage, wie lange so ein Eintrag lebt: sie ist dort schon
+beantwortet.
+
 FOLGE FUERS LABOR: drei Knoten auf 127.0.0.1 gehen so nicht.  Zur Wahl
 stehen eigene Loopback-Adressen (127.0.0.2/3, braucht "ifconfig lo0 alias"
 und damit root), ein anderer Transport (KISS ueber UDP wie in
