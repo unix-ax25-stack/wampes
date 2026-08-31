@@ -7021,11 +7021,31 @@ WAS FEHLT ODER UNGEPRUEFT IST:
     2191 und 2209 haengen die Digis ohne Marke aneinander.  Das ist
     Stueck 2, und zwar schon in der Richtung nach OBEN.
 
-    THOMAS' URTEIL DAZU: "da haben wir schlecht designt."  Es ist also
-    kein Versehen an drei Stellen, sondern eine Entscheidung, die so
-    nicht haette fallen sollen - im Datagramm-Weg haben wir das Bit
-    gefuehrt, im verbundenen Weg fallengelassen, und damit ist dieselbe
-    Schnittstelle in sich uneinheitlich.
+    THOMAS' URTEIL DAZU, und er hat es zweimal gefasst: "da haben wir
+    schlecht designt" - und praeziser: "'*' im Pfad ist wichtige
+    Information.  Sowas einfach wegzulassen bei I, aber bei DG zu
+    setzen, ist inkonsequent GEDACHT."
+
+    Nicht uneinheitlich programmiert also, sondern uneinheitlich
+    beurteilt: dieselbe Angabe einmal fuer wichtig genommen und einmal
+    weggelassen.
+
+    UND DIE ANGABE LAG UEBERALL SCHON VOR.  Alle drei Stellen laufen
+    ueber axp->hdr.digis[i]; axp->hdr.nextdigi steht in derselben
+    Struktur daneben.  Im ganzen axserver.c kommt nextdigi GENAU EINMAL
+    vor - in Zeile 1148, dem Datagramm-Weg.  Es fehlte uns also nichts,
+    wir haben es an einer Stelle gerendert und an dreien fallenlassen.
+    Nach OBEN ist die Sache damit dreimal derselbe Ausdruck, den 1148
+    schon fuehrt:
+
+        strcat(buf, pax25(call, axp->hdr.digis[i]));
+        if (i < axp->hdr.nextdigi) strcat(buf, "*");
+
+    CAVE, und deshalb gehoert es doch in eine gemeinsame Sitzung: diese
+    drei Zeilen sind PROTOKOLLTEXT, den die Gegenseite liest - die
+    "*** incoming"-Zeile und die Uebergabezeile an axspawn.  Ein "*"
+    mehr darin muss der Leser vertragen.  Das ist eine abgestimmte
+    Aenderung ueber beide Baeume und keine, die man einseitig macht.
   * Ob die SENDESEITE ein "*" im Pfad ueberhaupt einliest oder still
     verwirft, ist NICHT geprueft.  Thomas vermutet, es wird verworfen -
     "das werden wir dann aber beim Einbauen feststellen".  Also kein
