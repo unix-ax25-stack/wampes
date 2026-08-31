@@ -6976,6 +6976,86 @@ ENTSCHEIDUNGSLOGIK des Masters, nicht die Physik des Kanals.  Der Aufbau
 ist fuer das eine getreu und fuer das andere blind.
 
 ------------------------------------------------------------------------
+WIE TNN ES MACHT - BEIDE C.8-FRAGEN BEANTWORTET (2026-08-31)
+------------------------------------------------------------------------
+Nachgesehen in TheNetNode 1.79 (/Users/thomas/direwolf-libax25-agwpe/tnn,
+src/l2dama.c, src/l2tx.c, src/l2timer.c).  Die Antwort ist eindeutig und
+faellt gegen unser heutiges Verhalten aus.
+
+TNNS MASTER SENDET AUF EINEM DAMA-PORT GAR NICHTS DIREKT.  sdl2fr() ist
+die eine Funktion, die Level-2-Rahmen in die Sendeliste haengt, und dort
+steht:
+
+    if (dama(port))                 /* DAMA-Frames werden in timDAMA gesendet */
+    {
+      if (send_immediately == FALSE)
+        relink(fbp, lnkpoi->damail.tail);   /* Liste DIESES LINKS */
+      else
+        relink(fbp, &damarl[port]);         /* "DAMA random list" */
+      return;                               /* kein kicktx()!     */
+    }
+
+Zwei Klassen also, und beide warten:
+
+  damail   die Liste des LINKS, gesendet in DESSEN Zug
+           - sendS(): RR, RNR, REJ  <== DIE ANTWORT AUF EINEN POLL
+           - SABM/DISC, I-Rahmen
+  damarl   die Liste "ausserhalb des Umlaufs", je PORT
+           - DM (xdm), UA (xua), FRMR (xfrmr), UI (sdui)
+           - die T2-getriebene Quittung (l2timer.c:256)
+
+timDAMA() leert damarl nur, wenn dama_dcd() den Kanal FREI meldet und der
+DAMA-Timer abgelaufen ist - und zwar VOR dem naechsten Poll; ging dort
+etwas hinaus (txflag), pollt er in dieser Runde niemanden.
+
+    if (!dcd && !txflag) { ... naechsten Link pollen ... }
+
+DARAUS FOLGT FUER UNSERE BEIDEN FRAGEN:
+
+  a) SOLL DIE ANTWORT AUF EINEN POLL AUSSER DER REIHE WARTEN?  JA.  Bei
+     TNN geht sie ueber sendS() auf damail, also in den Zug DIESER
+     Station.  Sie faellt nie in einen fremden Zug.  Wir antworten heute
+     sofort - das ist der Unterschied, und TNN entscheidet ihn.
+  b) UND DIE VERWARNUNG?  Auch die wartet.  UI geht bei TNN auf damarl,
+     und damarl wird nur bei freiem Kanal am Anfang eines Umlaufs
+     geleert.  Ein UI faellt also ebenfalls nie in einen laufenden Zug.
+
+ZWEI WEITERE UNTERSCHIEDE, DIE DABEI AUFFIELEN - beide bewusst und nicht
+zu aendern:
+
+  * TNN VERWARNT IM LINK, NICHT PER UI.  polDAMA() baut einen Textrahmen
+    auf der Verbindung des Stoerers:
+
+        *** from DAMA-Master DB0XYZ> WARNING: non-DAMA Poll #1,
+                                     Disconnect after 5 !!
+        *** from DAMA-Master DB0XYZ> DISCONNECT: Too many non-DAMA
+                                     Polls (5) !!   -> dsclnk()
+
+    Wir schicken bewusst ein UI, weil ein Nutzer bei Abbruechen den
+    Monitor einschaltet und die Meldung dann sieht (Thomas' Vorgabe, und
+    ausdruecklich NICHT in PID=Text).  Die Eskalation selbst ist
+    dieselbe: zaehlen, verwarnen, bei MaxPollCnt trennen, Vorgabe 5.
+  * TNN ZAEHLT JE LINK, WIR JE STATION.  Fuer den Zwangsdisconnect
+    zaehlt lnkpoi->pollcnt, also die einzelne Verbindung; je Station
+    fuehrt TNN nur eine Statistik im mheard (mhp->damawarn++).  Bei einem
+    Multiconnect-Nutzer verwarnt TNN also je Verbindung.  Unser Zaehler
+    haengt an (ifp, call) - so von Thomas vorgegeben ("nicht pro Port
+    sondern die verstossenden Nutzer jeweils").  Das ist die Erwartung
+    fuer C.7 und bleibt.
+
+ZU BAUEN WAERE ALSO (noch nicht gebaut, weil es die Kanaldisziplin des
+Masters aendert und das eine Entscheidung ist):
+
+  1. Die Antwort auf einen Poll ausser der Reihe in den Zug des Stoerers
+     legen statt sofort zu senden.
+  2. Die Verwarnung in die naechste LUECKE legen - fuer den Slave gibt es
+     dafuer schon dama_defer_ui(), dem Master fehlt das Gegenstueck.
+
+Beides zusammen ist eine Sache: der Master braucht dieselbe Disziplin,
+die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
+richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
+
+------------------------------------------------------------------------
 DAMA-MASTER: DREI VERHALTEN, KONFIGURIERBAR (Thomas, 2026-08-30)
 ------------------------------------------------------------------------
 Wie streng der Master ist, soll der Sysop entscheiden, nicht wir:
