@@ -7938,6 +7938,24 @@ GEMESSEN im Bruecken-Labor, Abstaende zwischen zwei Polls:
 Ruhende Verbindungen werden also immer seltener gepollt, genau wie
 beabsichtigt.
 
-NICHT GEMESSEN: die RUECKKEHR auf volle Prioritaet nach einem I-Rahmen - in
-diesem Labor sendet nach dem NET/ROM-Aufbau niemand mehr Daten.  Der Zweig
-steht (isi -> prio = 0, hold = 0), vorgefuehrt ist er nicht.
+JETZT AUCH DIE RUECKKEHR GEMESSEN, mit "damaviol.py --obey [--data]" -
+einer Station, die sich RICHTIG verhaelt und Polls beantwortet, wahlweise
+mit einem I-Rahmen davor:
+
+    --obey          Polls bei 0  1  3  6  10  15  21  28  36  45 s
+                    Abstaende also 1, 2, 3, 4, 5, 6, 7, 8, 9 Sekunden
+    --obey --data   jede Sekunde, fuenfzig Polls in fuenfzig Sekunden
+
+Die Abstaende wachsen EXAKT LINEAR mit der Stufe - genau TNNs
+"damapc = damapm * 100".  Und ein I-Rahmen haelt den Rang.
+
+DABEI EIN ENDLOSDURCHLAUF VON MIR GEFUNDEN UND BEHOBEN, und er haette den
+Knoten aufgehaengt: die Auswahlschleife war ein "for (;;)", das nach dem
+Zuruecksetzen der Marken einfach noch einmal ansetzte.  Ruhte der einzige
+Link noch, kam sie nie heraus - WAMPES ist EINFAEDIG, Secclock wird in der
+Hauptschleife fortgeschrieben, also bleibt die Zeit INNERHALB der Schleife
+stehen und "hold > secclock()" bleibt fuer immer wahr.
+
+Der erste Messlauf zeigte es als "zwei Polls und dann 54 Sekunden Stille" -
+was ich zuerst fuer ein zu strenges Schema hielt.  Es war der Stillstand
+des Knotens.  Jetzt zwei begrenzte Durchgaenge statt einer Schleife.

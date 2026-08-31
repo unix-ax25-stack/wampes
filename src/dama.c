@@ -891,6 +891,7 @@ static void dama_master_turn(struct dama_m *mp)
 {
 	struct ax25_cb *axp;
 	struct ax25_cb *last = NULL;
+	int pass;
 
 	/* EIN LINK JE ZUG, NICHT ALLE EINER STATION.
 	 *
@@ -912,8 +913,22 @@ static void dama_master_turn(struct dama_m *mp)
 	 * Slave, der sich selbst rationiert, rationiert eine bereits
 	 * rationierte Zeitscheibe.)
 	 */
-	for (;;) {
+	/* ZWEI DURCHGAENGE, NIEMALS EINE SCHLEIFE.  Der erste Entwurf war ein
+	 * "for (;;)", das nach dem Zuruecksetzen der Marken einfach noch
+	 * einmal ansetzte - und er hat den Knoten aufgehaengt, sobald der
+	 * einzige Link noch ruhte: WAMPES ist einfaedig, Secclock wird in der
+	 * Hauptschleife fortgeschrieben, also bleibt die Zeit INNERHALB der
+	 * Schleife stehen und "hold > secclock()" bleibt fuer immer wahr.
+	 *
+	 * Erster Durchgang: einen Link suchen, der weder schon dran war noch
+	 * ruht.  Findet sich keiner, WEIL alle schon dran waren, dann ist die
+	 * Runde dieser Station herum - Marken zuruecksetzen und genau EINMAL
+	 * wiederholen.  Findet sich dann immer noch keiner, ruhen sie alle,
+	 * und der Zug faellt aus.
+	 */
+	for (pass = 0; pass < 2; pass++) {
 		int any = 0;
+		int served_all = 1;
 
 		for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
 			if (axp->iface != mp->ifp)
@@ -924,23 +939,23 @@ static void dama_master_turn(struct dama_m *mp)
 			if (!addreq(dama_station(axp), mp->turn))
 				continue;
 			any = 1;
-			if (axp->dama_served)
+			if (!axp->dama_served)
+				served_all = 0;
+			if (axp->dama_served || axp->dama_hold > secclock())
 				continue;
-			if (axp->dama_hold > secclock())
-				continue;       /* ruht noch */
 			axp->dama_served = 1;
 			lapb_output(axp);
 			last = axp;
 			break;
 		}
-		if (last != NULL || !any)
-			break;
-		/* Alle waren schon dran: Runde dieser Station herum. */
+		if (last != NULL || !any || !served_all)
+			break;          /* bedient, weg, oder alle ruhen noch */
 		for (axp = Ax25_cb; axp != NULL; axp = axp->next)
 			if (axp->iface == mp->ifp &&
 			    addreq(dama_station(axp), mp->turn))
 				axp->dama_served = 0;
 	}
+
 	if (last == NULL) {
 		/* Niemand zu bedienen - weggegangen, oder alle Links dieser
 		 * Station ruhen noch.  NICHT einfach aufhoeren: ohne
