@@ -8603,6 +8603,16 @@ BLEIBT
        Zugschutz stimmen; zwei Fragen blieben offen (Antwort aufheben? -
        TNN fragen; Verwarnung in die Luecke legen? - waere unsere Sache).
   C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
+       VERTAGT AUF DEN ECHTEN BETRIEB (Thomas, 2026-08-31): "kiss ueber
+       pty verschalten bringt nichts.  Man braeuchte einen simulierten
+       Funkkanal und eine Art TNC der wuerfelt (p-persist, slottime).
+       Das ist zu aufwaendig."  Und das trifft es: was hier zu pruefen
+       waere - dass ein anderer Wert von PERSIST/SLOTTIME das
+       Sendeverhalten aendert - entsteht erst aus dem Zufall des
+       Kanalzugriffs.  Ein KISS-Gegenueber am pty nimmt die Parameter
+       entgegen und tut nichts damit; man misst dann die eigene
+       Attrappe.  Also ein Real-Life-Test bei Gelegenheit, kein
+       Laborpunkt.
   C.10 der gemeinsame Kanal - uhnp ist seit 2026-08-31 kein Hindernis
        mehr, C.7 bis C.10 koennen gemacht werden.
 
