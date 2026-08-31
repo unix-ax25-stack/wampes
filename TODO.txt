@@ -8041,3 +8041,56 @@ BLEIBT
   C.8  Verstoss waehrend fremdem Zug.
   C.9  persist/slottime auf einem Porttyp MIT Kanalzugriff.
   C.10 der gemeinsame Kanal, und damit uhnp.
+
+------------------------------------------------------------------------
+"forward" IST KEINE BRUECKE - UND DER HILFETEXT STAND VERKEHRT HERUM
+------------------------------------------------------------------------
+Thomas' Beobachtung im Betrieb, hier nachgeprueft und bestaetigt: forwardet
+man einen Port auf einen anderen, geht alles, was WIR antworten wuerden,
+auf dem anderen hinaus - der Empfang bleibt.
+
+Im Code wirkt "forw" an genau zwei Stellen, beide auf der SENDESEITE:
+
+    lapb.c:1127   in sendframe():   if (ifp->forw) ifp = ifp->forw;
+    ax25.c:378    in ax_send_ui():  (*iface->forw->raw)(...)
+
+Am Empfang ruehrt es nichts.  Also RECEIVE HERE, SEND THERE - der
+Hilfetext sagte das Gegenteil und widersprach damit sogar der eigenen
+verbose-Ausgabe ("output forward to <iface>").  Berichtigt, und um den
+Zweck ergaenzt: es ist der DUPLEX-EINSTIEG, Eingabe und Ausgabe auf
+getrennten Frequenzen.  KEINE Bruecke - fremde Rahmen werden nicht
+weitergereicht, nur unsere eigenen anders hinausgelegt.
+
+KOENNEN ZWEI axip-NUTZER EINANDER OHNE UNSER RUFZEICHEN ERREICHEN?  NEIN.
+Der Empfangsweg in ax25.c entscheidet es in einer Zeile:
+
+    if(!mcast && !ax_answers_to(iface,idest)){
+      /* Not a broadcast, and not for any callsign we answer to. */
+      free_p(bpp); return;
+    }
+
+idest ist das UNMITTELBARE Ziel - der naechste unwiederholte Digi, sonst
+das Endziel.  Ein Rahmen von A nach B hat idest = B, gehoert uns nicht und
+faellt dort weg.  Genau dort muesste jede Bruecke ansetzen.
+
+THOMAS' DREI IDEEN DAZU (db0fhn: "vpn"-Nutzer mit gepatchtem ax25ipd, das
+ax25-to-udp-Sessions lernt und auf xnets axudp-Port weiterleitet):
+
+  a) DIREKTVERKEHR UNTEREINANDER ERLAUBEN, also eine Bruecke mit Filter.
+     AUF axip WAERE DAS UEBERRASCHEND BILLIG, und das ist der Punkt: axip
+     routet ohnehin NACH RUFZEICHEN (axip_raw() schlaegt dest in
+     Axip_routes nach).  Die Bruecke waere also "idest gehoert nicht uns,
+     steht aber in unseren axip-Routen -> dorthin senden" - eine Handvoll
+     Zeilen, kein neues Konzept.
+     ABER es ist eine Betriebsentscheidung, keine technische: wir wuerden
+     Verkehr weiterreichen, an dem wir nicht beteiligt sind, und dessen
+     Last tragen.  Und es braucht einen Schutz gegen Schleifen.
+  b) MIRRORPORT - Thomas haelt die Konfiguration selbst fuer zu
+     aufwaendig.  Nicht weiterverfolgt.
+  c) AX.25-BRUECKE zwischen zwei Ports (Nutzer-axip und xnets axudp).  Der
+     allgemeine Fall; braucht denselben Wiederaussendepfad wie (a) plus
+     Schleifenschutz plus die Frage, welche Rufzeichen wohin duerfen.
+     "forward" ist es NICHT.
+
+NICHTS DAVON GEBAUT - Ueberlegungen, festgehalten damit sie nicht verloren
+gehen.

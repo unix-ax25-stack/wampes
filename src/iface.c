@@ -173,7 +173,12 @@ struct cmds Ifcmds[] = {
 	{ "paclen",               ifpaclen,       0,      2,
 	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "forward",              ifforw,         0,      2,
-	  "ifconfig <iface> forward <iface>   (send here, receive there)\n  The current value is in \"ifconfig <iface> verbose\"." },
+	  "ifconfig <iface> forward <iface>   (receive here, send there)\n"
+	  "  Der Empfang auf diesem Port bleibt, nur das SENDEN geht auf den\n"
+	  "  anderen - der Duplex-Einstieg, Eingabe und Ausgabe auf getrennten\n"
+	  "  Frequenzen.  Es ist KEINE Bruecke: fremde Rahmen werden nicht\n"
+	  "  weitergereicht, nur unsere eigenen anders hinausgelegt.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "ipaddress",            ifipaddr,       0,      2,
 	  "ifconfig <iface> ipaddress <ip address>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "linkaddress",          iflinkadr,      0,      2,
