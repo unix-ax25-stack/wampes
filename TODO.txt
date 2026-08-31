@@ -8172,10 +8172,26 @@ weiss nichts, heute faellt der Rahmen weg.  Ein Ethernet-Switch wuerde auf
 alle Ports FLUTEN - und genau das Fluten ist die Stelle, an der Schleifen
 entstehen.
 
-    Moeglichkeiten, falls es je gebaut wird:
-      - gar nicht fluten (heutiges Verhalten): der Nutzer muss die Station
-        einmal gehoert haben, oder eine konfigurierte Route muss sie
-        nennen.  Sicher, aber "direkt sehen" gilt dann nur fuer bekannte.
-      - nur auf Ports fluten, die ausdruecklich als Brueckenpaar benannt
-        sind, und nur zu KONFIGURIERTEN Routen.  Dann ist eine Schleife ein
-        Konfigurationsfehler statt eines Verhaltens, das entsteht.
+ENTSCHIEDEN (Thomas): GAR NICHT FLUTEN, das Paket faellt weg.  "Direkt
+sehen" gilt damit nur fuer Stationen, die wir kennen - im db0fhn-Fall
+reicht das, denn DB0FHN auf dem xnet-Port ist eine konfigurierte Route und
+keine geratene.
+
+ZWEITE SCHLEIFENQUELLE, von ihm gefunden: BROADCASTS.  Bruecken zwei Seiten,
+so kreist ein Rahmen an QST oder NODES ueber die Strecken.  Also:
+BROADCAST-ZIELE WERDEN NIE GEBRUECKT.
+
+    Das kostet nichts, denn das Merkmal liegt im Empfangsweg schon vor:
+    Ax25multi[] enthaelt genau diese beiden (ax25.c:31), und "mcast" wird
+    daraus berechnet, BEVOR ueber das Verwerfen entschieden wird.
+
+WIE LANGE FESTGEKLOPFT WIRD - und seine Begruendung ist besser als mein
+Anker: DIE FESTKLOPFUNG MUSS NUR EINE SCHLEIFE UEBERLEBEN, NICHT EINE
+SITZUNG.  Ein kreisendes Paket ist ueber das Internet in unter einer
+Sekunde wieder da, auf HF vielleicht in dreissig.  ZWEI BIS FUENF MINUTEN
+genuegen also.
+
+    Die Alterung gelernter Routen (24 Tage) ist dafuer voellig ungeeignet,
+    und die Stunde des MAC-Lernens ist mehr als noetig - zumal Thomas beim
+    Testen SSIDs und Ports wechselt und dann nicht minutenlang auf die
+    falsche Seite geschickt werden will.
