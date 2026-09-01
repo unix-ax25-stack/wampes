@@ -7329,6 +7329,40 @@ Damit es nicht vergessen wird (Thomas): drei Sachen sind gebaut oder
 entschieden, aber NICHT GEMESSEN, und alle drei brauchen dasselbe - einen
 Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
 
+  0. ERLEDIGT AM 2026-09-01: DIE DOPPELSCHLAG-SPERRE IST GEMESSEN.
+     Thomas' pty-Aufbau, und er war weniger Aufwand als gedacht:
+     testtools/bridgeloop.py macht zwei pty-Paare, WAMPES haengt mit
+     "attach asy ... kissui" an den beiden SLAVES - der Interfacename IST
+     der Geraetename, weil asy_up() schlicht /dev/<name> oeffnet -, und
+     das Programm schaltet die beiden MASTER kreuzweise zusammen.  Damit
+     ist jede Aussendung sofort wieder Empfang, wie auf einem geteilten
+     Segment.
+
+         mit Bruecke     Pruefrahmen 1 Mal ueber die Leitung
+         ohne Bruecke    0 Mal
+
+     Der Knoten reicht den Rahmen genau einmal weiter und erkennt ihn bei
+     der Rueckkehr:  fwd len=15 hash=7340f1e6 dup=0, dann dup=1.
+
+     ZWEI FALLEN IM PRUEFSTAND, beide meine und beide lehrreich:
+
+       * EIN pty-SLAVE HAT ECHO AN.  Was man in den Master schreibt,
+         wirft die Leitungsdisziplin zurueck; man liest die eigene
+         Einspeisung als vermeintlichen Ausgang des Knotens.  tty.setraw()
+         auf den Slave.
+       * DAS KISS-TYPBYTE MUSS ERHALTEN BLEIBEN.  Es traegt die
+         CRC-Markierung (0x80 SMACK, 0x20 RMNC), und kiss_recv() prueft
+         und ENTFERNT die Pruefsumme nur daran (check_crc_16() kuerzt die
+         Kette).  Mein Kreuz warf das Byte weg und setzte ein neues 0x00
+         davor - dann bleibt die Pruefsumme als zwei Nutzlastbytes
+         stehen, der Rahmen ist bei der Rueckkehr 17 statt 15 Byte lang,
+         hat einen anderen Fingerabdruck und laeuft eine Runde extra.
+         Das sah wie ein Fehler der Sperre aus und war der des
+         Pruefstands.  (Thomas' Verdacht auf die
+         CRC-SMACK/RMNC-Autoerkennung war goldrichtig - kiss_attach()
+         setzt CRC_TEST_16, der Port erkennt sich also erst ein.  Wer das
+         nicht will: "ifconfig <if> crc off" fuer klassisches KISS.)
+
   1. DER SCHREIBSCHUTZ DER ROUTE (AXROUTE_PIN).  Sein Fall ist NICHT das
      Echo der eigenen Aussendung - das ist weder an uns adressiert noch
      Broadcast und faellt vor der Lernzeile weg (ich hatte den Pin
