@@ -787,12 +787,44 @@ static struct dama_m *dama_m_port(struct iface *ifp, int create)
  * bedient.  <after> leer heisst "fang vorne an".
  */
 
-static int dama_next_station(struct iface *ifp, const uint8 *after, uint8 *out)
+static int dama_call_cmp(const uint8 *a, const uint8 *b)
 {
-	const uint8 *first = NULL;
-	const uint8 *next = NULL;
-	int seen_after = 0;
+	int i;
+
+	for (i = 0; i < ALEN; i++)
+		if (a[i] != b[i])
+			return a[i] < b[i] ? -1 : 1;
+	i = ((a[ALEN] >> 1) & 0xf) - ((b[ALEN] >> 1) & 0xf);
+	return i < 0 ? -1 : (i > 0 ? 1 : 0);
+}
+
+/* WER ALS NAECHSTER DRAN IST, und die Ordnung ist das Rufzeichen.
+ *
+ * Der erste Entwurf nahm dafuer die Reihenfolge der Ax25_cb-LISTE - "der
+ * naechste hinter dem, der eben dran war".  DAS GEHT NICHT, und es hat eine
+ * Station verhungern lassen: find_ax25() zieht den getroffenen
+ * Kontrollblock an den Listenanfang (eine alte KA9Q-Optimierung,
+ * lapb.c: "axp->next = Ax25_cb; Ax25_cb = axp").  Die Liste ordnet also
+ * nach VERKEHR, und "der naechste hinter X" ist damit immer der, der davor
+ * dran war.
+ *
+ * GEMESSEN, mit drei Stationen: STA-1 bekam EINEN Poll, danach wechselten
+ * sich STA-2 und STA-3 endlos ab.  Mit zweien faellt es nicht auf - und
+ * mit zweien haben wir bis dahin immer gemessen.
+ *
+ * Die Ordnung nach dem Rufzeichen haengt an nichts, was sich bewegt.  Sie
+ * ist ausserdem die einzige, die einen ECHTEN Reihum-Zyklus ergibt: nimm
+ * den kleinsten, der groesser ist als der eben Bediente, und wenn es
+ * keinen gibt, den kleinsten ueberhaupt - das ist dann die neue Runde.
+ */
+
+static int dama_next_station(struct iface *ifp, const uint8 *after,
+			     uint8 *out, int *wrapped)
+{
+	const uint8 *best = NULL;       /* kleinster, der groesser ist */
+	const uint8 *least = NULL;      /* kleinster ueberhaupt */
 	struct ax25_cb *axp;
+	int have_after = (after != NULL && after[0] != '\0');
 
 	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
 		const uint8 *st;
@@ -801,37 +833,27 @@ static int dama_next_station(struct iface *ifp, const uint8 *after, uint8 *out)
 		 * jede store-and-forwardete Verbindung aus - also genau den
 		 * Hauptfall, einen Nutzer der ueber eine Linkstrecke
 		 * hereinkommt und zu einem lokalen Nutzer weitergereicht
-		 * wird.  Gemessen: zwei stehende Verbindungen auf dem Kanal,
-		 * polls 0 in 38 Sekunden, Runde idle.
-		 *
-		 * Die aeussere Haelfte eines weitergereichten Paares IST eine
-		 * echte Verbindung auf diesem Kanal und gehoert gepollt; die
-		 * innere haelt einen anderen Port oder gar keinen, und die
-		 * grenzt schon "axp->iface != ifp" aus.
+		 * wird.
 		 */
 		if (axp->iface != ifp)
 			continue;
 		if (axp->state != LAPB_CONNECTED && axp->state != LAPB_RECOVERY)
 			continue;
 		st = dama_station(axp);
-		if (first == NULL)
-			first = st;
-		if (after == NULL || after[0] == '\0') {
-			next = st;
-			break;
-		}
-		if (seen_after && !addreq(st, after)) {
-			next = st;
-			break;
-		}
-		if (addreq(st, after))
-			seen_after = 1;
+		if (least == NULL || dama_call_cmp(st, least) < 0)
+			least = st;
+		if (have_after && dama_call_cmp(st, after) > 0 &&
+		    (best == NULL || dama_call_cmp(st, best) < 0))
+			best = st;
 	}
-	if (next == NULL)
-		next = first;           /* einmal herum, oder nur einer */
-	if (next == NULL)
+	if (best == NULL) {
+		best = least;           /* einmal herum, oder nur einer */
+		if (wrapped != NULL && least != NULL)
+			*wrapped = 1;
+	}
+	if (best == NULL)
 		return 0;               /* niemand da */
-	addrcp(out, next);
+	addrcp(out, best);
 	return 1;
 }
 
@@ -1240,6 +1262,28 @@ int32 dama_gap_time(struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
+/* DIE KURZE PAUSE ZWISCHEN ZWEI ZUEGEN INNERHALB EINER RUNDE.
+ *
+ * Sie hat einen ganz anderen Zweck als die Luecke am Rundenende und
+ * deshalb eine ganz andere Groesse.  Die Luecke muss einen fremden
+ * VERBINDUNGSAUFBAU fassen - TX-Delay, CSMA-Wuerfeln, SABM.  Hier ist
+ * nichts davon noetig: wir pollen bloss den naechsten, und unser eigenes
+ * TX-Delay laeuft beim Tasten ohnehin.
+ *
+ * WOZU SIE DANN UEBERHAUPT DA IST: auf einer Strecke ohne Sendezeit -
+ * Loopback, axip im LAN - raste die Runde sonst.  Gemessen war das
+ * einmal, mit einem echten Slave gegenueber: 221794 Polls in 25 Sekunden.
+ * Auf der Luft bremsen die Aussendungen selbst, dort ist sie fast
+ * bedeutungslos.
+ *
+ * WAS SIE SPART, und das war Thomas' Frage: bei 16 Nutzern kostete die
+ * volle Luecke nach JEDEM Zug 16 mal 0,66 s = 10,6 s Totzeit je Runde.
+ * Jetzt sind es 16 mal 0,1 s plus EINMAL die Luecke - 2,3 s.
+ */
+#define DAMA_TURN_PAUSE         100L    /* ms */
+
+/*---------------------------------------------------------------------------*/
+
 static void dama_master_gap(struct dama_m *mp)
 {
 	stop_timer(&mp->t);
@@ -1295,6 +1339,7 @@ static int dama_carrier(struct iface *ifp)
  */
 #define DAMA_CARRIER_POLL       100L    /* ms */
 
+
 /*---------------------------------------------------------------------------*/
 
 /* Der Zeitgeber, und er hat zwei Bedeutungen - welche, sagt mp->busy:
@@ -1334,7 +1379,7 @@ static void dama_master_next(void *arg)
 		start_timer(&mp->t);
 		return;
 	}
-	if (!dama_next_station(mp->ifp, mp->turn, who)) {
+	if (!dama_next_station(mp->ifp, mp->turn, who, NULL)) {
 		memset(mp->turn, 0, AXALEN);  /* niemand verbunden: Runde ruht */
 		return;
 	}
