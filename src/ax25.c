@@ -1004,11 +1004,34 @@ const uint8 *call)
  * dessen, was wir weitergereicht haben; kommt derselbe Rahmen binnen
  * DUPWINDOW zurueck, geht er nicht noch einmal hinaus.
  *
- * DIE FRIST IST KURZ MIT ABSICHT.  Eine Schleife laeuft in Millisekunden,
- * eine ehrliche Wiederholung kommt fruehestens nach T1, also Sekunden.  Und
- * selbst wenn wir eine echte Wiederholung binnen einer Sekunde
- * unterdrueckten: identische Bytes zweimal in einer Sekunde sind auch fuer
- * den Empfaenger ein Duplikat.
+ * DIE DREI ZAHLEN, und wodurch sie begrenzt sind (Thomas' Fragen):
+ *
+ * 64 EINTRAEGE, weil mehrere Rahmen gleichzeitig unterwegs sein koennen -
+ * auf den ersten zu achten liesse den zweiten durch.  Faellt einer durch
+ * Verdraengung heraus, laeuft er HOECHSTENS EINE RUNDE MEHR: beim
+ * Weiterreichen wird er neu gemerkt und bei der naechsten Rueckkehr
+ * gefangen.  Fuer eine Verdraengung binnen einer Ethernet-Umlaufzeit
+ * braeuchte es rund 64000 weitergereichte Rahmen je Sekunde.
+ *
+ * EINE SEKUNDE, und sie ist NACH OBEN durch fremdes T1 begrenzt: die
+ * Rahmen, die wir weiterreichen, gehoeren anderen Links, und suchte das
+ * Fenster laenger als deren Wiederholungsfrist, unterdrueckten wir eine
+ * EHRLICHE Wiederholung.  T1init ist 5000 ms, eine Sekunde laesst also
+ * Luft, auch wenn jemand seinen Wert herunterdreht.  Nach unten begrenzt
+ * sie die Umlaufzeit einer schnellen Schleife, die in Millisekunden
+ * geschlossen ist.
+ *
+ * KEIN ERNEUERN BEI EINEM TREFFER, und das ist wichtig: das Fenster laeuft
+ * ab dem ERSTEN Weiterreichen und nicht ab der letzten Rueckkehr, eine
+ * Unterdrueckung kann sich also nicht selbst verlaengern.  Bei einem
+ * fremden T1 von 500 ms waeren die Wiederholungen der ersten Sekunde
+ * unterdrueckt und die danach kaeme durch - der Link verliert ein T1, er
+ * bleibt nicht stehen.
+ *
+ * WAS SIE NICHT FAENGT: eine LANGSAME Schleife.  Thomas' eigene Schaetzung
+ * war "auf HF vielleicht 30s" Umlaufzeit; so etwas liegt ausserhalb des
+ * Fensters.  Es erzeugt dann aber auch keinen Sturm, sondern einen Rahmen
+ * alle 30 s, und N2 beendet die Sitzung von selbst.
  */
 
 #define AXDUP_SLOTS     64
