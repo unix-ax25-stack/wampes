@@ -7239,6 +7239,9 @@ PID-FILTER: VIER SACHEN AUS DEM BETRIEB (Thomas, 2026-09-01)
 Sein Befund beim Benutzen des neuen "ifconfig <iface> pid".  Nicht
 dringend, aber beisammen aufgeschrieben, weil sie zusammengehoeren.
 
+NICHTS DAVON IST GEBAUT - nur aufgeschrieben.  (Thomas vermutete, eines
+sei schon gefixt; ist es nicht.)
+
 1. ER TAUCHT IN "verbose" NICHT AUF.  Nachgemessen:
 
      damamaster> ifconfig ax0 pid
@@ -7413,8 +7416,15 @@ Slave-Namen ablesen (/dev/ttysNNN) und den Port danach benennen:
 
     attach asy 0 0 6packi ttys004 <buffers> <mtu> <speed>
 
-Deshalb gibt es testtools/slowpty.py ueberhaupt.  fake6pack_dcd.py auf pty
-umzustellen waere klein.
+fake6pack_dcd.py auf pty umzustellen waere klein.  (slowpty.py ist NICHT
+dafuer entstanden - Thomas' Korrektur: es kam aus den FlexNet-Timingtests
+zwischen RMNC und XNET, wo eine Verzoegerung gebraucht wurde.  Es zeigt
+hier nur, dass der pty-Weg gangbar ist.)
+
+AUF DIE WUNSCHLISTE (Thomas): AXTCP, also AX.25 ueber TCP als
+Client/Server.  Reizvoll, und die Rahmung waere die Frage - bei UDP ist
+ein Datagramm ein Rahmen, bei TCP braucht es FEND/FESC wie KISS oder
+SEOF wie 6pack.  Nicht beauftragt, nur vorgemerkt.
 
 WAS ES TROTZDEM AUFWENDIG MACHT: der gespielte TNC muesste dann nicht nur
 den Traeger melden, sondern den KANAL fuer zwei Stationen spielen - also
