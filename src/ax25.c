@@ -985,6 +985,86 @@ const uint8 *call)
  * Anfang einer Schleife.
  */
 
+/* WAS WIR GERADE WEITERGEREICHT HABEN - gegen die Schleife.
+ *
+ * Ein Digipeater ist gegen Schleifen dadurch geschuetzt, dass er das
+ * WIEDERHOLT-Bit setzt: ein markierter Rahmen wird nicht noch einmal
+ * wiederholt.  Wir setzen es mit Absicht NICHT, denn wir sollen ja nicht im
+ * Pfad stehen - und damit fehlt uns genau dieser Schutz.
+ *
+ * WANN ES SCHLIESST (Thomas): sobald wir unsere eigene Aussendung
+ * zurueckhoeren.  Auf axip nie, auf einem Duplex-Einstieg nie, an eine
+ * gelernte MAC nie - aber auf einem Simplex-Funkkanal immer, im
+ * Ethernet-Broadcast immer, und vor allem: SOBALD ZWEI GEBRUECKTE PORTS AUF
+ * DEMSELBEN SEGMENT LIEGEN.  Der letzte Fall ist der, den keine
+ * Porteigenschaft fassen kann - jeder Port fuer sich sieht harmlos aus,
+ * erst das Paar schliesst den Kreis.
+ *
+ * ALSO WIEDERERKENNEN STATT MARKIEREN.  Ein kurzer Ring von Fingerabdruecken
+ * dessen, was wir weitergereicht haben; kommt derselbe Rahmen binnen
+ * DUPWINDOW zurueck, geht er nicht noch einmal hinaus.
+ *
+ * DIE FRIST IST KURZ MIT ABSICHT.  Eine Schleife laeuft in Millisekunden,
+ * eine ehrliche Wiederholung kommt fruehestens nach T1, also Sekunden.  Und
+ * selbst wenn wir eine echte Wiederholung binnen einer Sekunde
+ * unterdrueckten: identische Bytes zweimal in einer Sekunde sind auch fuer
+ * den Empfaenger ein Duplikat.
+ */
+
+#define AXDUP_SLOTS     64
+#define AXDUP_WINDOW    1000L           /* ms */
+
+static struct {
+	uint32 hash;
+	int32 when;
+} Axdup[AXDUP_SLOTS];
+static int Axdup_next;
+
+/* Ueber die ersten Bytes des fertigen Rahmens, samt Gesamtlaenge.  Der Kopf
+ * allein genuegt NICHT: zwei I-Rahmen desselben Links haben denselben Kopf
+ * und unterscheiden sich erst im Kontrollbyte dahinter.
+ */
+
+static uint32 ax_fingerprint(struct mbuf *bp)
+{
+	uint32 h = 2166136261UL;        /* FNV-1a */
+	struct mbuf *p;
+	int n = 0;
+	uint i;
+
+	for (p = bp; p != NULL && n < 64; p = p->next)
+		for (i = 0; i < p->cnt && n < 64; i++, n++) {
+			h ^= p->data[i];
+			h *= 16777619UL;
+		}
+	/* Die Laenge gehoert dazu - bp und nicht p, das der Schleife zum
+	 * Opfer gefallen ist.
+	 */
+	h ^= (uint32) len_p(bp);
+	return h;
+}
+
+static int ax_dup_recent(uint32 h)
+{
+	int32 now = msclock();
+	int i;
+
+	for (i = 0; i < AXDUP_SLOTS; i++)
+		if (Axdup[i].hash == h && Axdup[i].when &&
+		    (int32)(now - Axdup[i].when) < AXDUP_WINDOW)
+			return 1;
+	return 0;
+}
+
+static void ax_dup_remember(uint32 h)
+{
+	Axdup[Axdup_next].hash = h;
+	Axdup[Axdup_next].when = msclock();
+	Axdup_next = (Axdup_next + 1) % AXDUP_SLOTS;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int
 ax_user_to_user(
 struct iface *iface,
@@ -1015,6 +1095,17 @@ struct mbuf **bpp
 	if(out->raw == NULL)
 		return 0;
 	htonax25(hdr,bpp);
+	{
+		uint32 h = ax_fingerprint(*bpp);
+
+		/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
+		 * weiterreichen waere die Schleife.  Der Rahmen wird
+		 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
+		 */
+		if(ax_dup_recent(h))
+			return 0;
+		ax_dup_remember(h);
+	}
 	logsrc(out,out->hwaddr);
 	logdest(out,idest);
 	(*out->raw)(out,bpp);
