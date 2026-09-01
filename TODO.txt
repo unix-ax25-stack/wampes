@@ -7234,6 +7234,76 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+DIE AX.25-BRUECKE - GEBAUT (2026-09-01)
+------------------------------------------------------------------------
+ifconfig <iface> bridge <iface>|off.  Die Spezifikation stand seit
+Wochen; hier steht, was daraus geworden ist.
+
+DER SCHLUESSEL IST DER NAECHSTE HOP, nicht das Endziel - Thomas'
+Praezisierung:
+
+    A>B            B unbekannt          -> verwerfen
+    A>B,C          C bekannt            -> annehmen
+    A>B,D*,C       C bekannt            -> annehmen
+
+Und das ist genau idest, das der Empfangsweg ohnehin schon berechnet.  Der
+Nachschlag steht damit an derselben Zeile, an der der Rahmen frueher
+wegfiel.
+
+EIN NACHSCHLAG, ZWEI SCHALTER: dieselbe Funktion bedient user-to-user
+(Ziel auf DIESEM Port) und die Bruecke (Ziel auf dem Partner).  Der
+Unterschied ist eine Zeile, und beide Male geht der Rahmen UNVERAENDERT
+hinaus - ohne uns im Digipfad.
+
+WAS DIE SPEZIFIKATION VERLANGTE, UND WO ES STEHT:
+
+  * unbekanntes Ziel VERWERFEN, nicht fluten - ax_routeptr() liefert NULL,
+    wir geben 0 zurueck und der Aufrufer verwirft.
+  * Broadcasts NIE bruecken - der Aufrufer sortiert sie schon aus
+    (!mcast), und Ax25multi[] enthaelt genau QST und NODES.
+  * nicht umlernen, 2-5 min - AXROUTE_PIN 300 s in axroute_add(), und
+    zwar NUR gegen den Brueckenpartner (siehe unten).
+  * beide Enden zugleich - eine Bruecke mit einer Richtung liesse die
+    Antwort nicht zurueck, und niemand erkennt das als
+    Konfigurationsfehler.
+
+DER SCHREIBSCHUTZ IST CHIRURGISCH, und das war eine bewusste Entscheidung:
+er greift nur, wenn der neue Port der BRUECKENPARTNER des alten ist.
+Jedes andere Umlernen bleibt unberuehrt - wohin wir senden, wenn ein
+Nutzer auf 2 m UND 70 cm auftaucht, ist eine eigene offene Frage, und
+diese Frist darf sie nicht nebenbei entscheiden.
+
+"ax25 route add permanent" IST DIE DAUERHAFTE FORM DESSELBEN GEDANKENS
+(Thomas) und war schon da: axroute_add() lernt an einem permanenten
+Eintrag gar nichts um.  Der Pin ist die fluechtige Fassung fuer gelernte
+Eintraege - er steht NUR IM RAM und geht nicht nach axroute_data, dessen
+Record Call, Digi, Zeit und vjcomp kennt und sonst nichts.
+
+UND DIE LEBENSDAUER IST DAVON UNBERUEHRT, was Thomas ausdruecklich
+verlangt hat ("was nicht sein darf ist, dass wenn fuer 10min kein traffic
+mehr ist, keine Daten mehr zum user gebridged werden").  Nachgesehen:
+AX.25-Routen altern UEBERHAUPT NICHT - es gibt kein free(), keine
+Verfallspruefung, rp->time wird nur geschrieben und angezeigt.  Die 24
+Tage, die anderswo im TODO stehen, betreffen gelernte IP-Routen
+(0x7fffffff/1000).  Der Pin ist also reiner Schreibschutz und muss sich
+mit keiner Frist abstimmen.
+
+GEMESSEN (testtools/directpair.py, zwei axip-Ports, je ein Nutzer):
+
+    ohne Bruecke   B hoert nichts, der Rahmen faellt weg
+    mit Bruecke    B empfaengt "SABM von USRA-1 an USRB-1" - unveraendert
+
+Dazu die Konfigurationsseite: "bridge ax0" auf ax0 wird abgelehnt und
+verweist auf user-to-user; "bridge ax1" setzt beide Enden ("ax1: bridge
+ax0"); "bridge off" loest beide; verbose nennt es.
+
+NICHT GEMESSEN: der Schreibschutz selbst.  Dafuer braeuchte es ein Medium,
+das die Aussendung zurueckwirft - auf axip gibt es kein Echo, jeder
+Partner ist eine eigene Punkt-zu-Punkt-Strecke.  Der Fall entsteht auf
+bpqether (geteiltes Segment) und auf einem Funkkanal.  Das ist derselbe
+Laborbedarf wie bei C.9 und beim Traeger.
+
+------------------------------------------------------------------------
 NUTZER ZU NUTZER AUF EINEM PORT - GEBAUT (2026-09-01)
 ------------------------------------------------------------------------
 Thomas' Schalter: "ob user sich direkt (ohne mich als via-Digi)

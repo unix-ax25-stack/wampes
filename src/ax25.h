@@ -69,6 +69,11 @@ struct ax_route {
 	int perm;
 	int jumpstart;
 	long time;
+	/* WANN DAS INTERFACE ZULETZT BESTAETIGT WURDE - nicht dasselbe wie
+	 * "time", das jeder Rahmen erneuert.  Nur hieran haengt der
+	 * Schreibschutz der Bruecke, siehe AXROUTE_PIN.
+	 */
+	long iftime;
 	int vjcomp;                     /* MW: can do TCP compression */
 	/* What we learned about modulo-128 with this station, from our own
 	 * traffic and nothing else: 0 not tried, 1 it worked, -1 it did not.
@@ -140,6 +145,22 @@ struct ax_route {
  * the same afternoon.
  */
 #define AXROUTE_MACHOLD  3600L
+
+/* WIE LANGE EINE GEBRUECKTE ROUTE FESTGEKLOPFT IST (Sekunden).
+ *
+ * Bruecken wir einen Rahmen von A nach B, kann er auf B zurueckkommen - auf
+ * einem geteilten Segment ist das der Normalfall.  Wuerden wir daraus
+ * lernen, wanderte die Route des ABSENDERS auf B, und die naechste Antwort
+ * ginge im Kreis.  Thomas' Mass dafuer: "ein loop Paket ist via inet < 1s
+ * unterwegs, auf HF vielleicht 30s.  Ein loop Schutz von 2-5min sollte
+ * eigentlich genuegen."
+ *
+ * NUR GEGEN DAS ECHO DER EIGENEN BRUECKE, nicht gegen jedes Umlernen: sonst
+ * entschiede diese Zeile nebenbei die offene Frage, wohin wir senden, wenn
+ * ein Nutzer auf 2 m UND auf 70 cm auftaucht.  Das ist eine eigene
+ * Entscheidung und nicht die dieser Frist.
+ */
+#define AXROUTE_PIN      300L
 
 #define AXR_EAX25_UNKNOWN        0
 #define AXR_EAX25_YES            1

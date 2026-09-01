@@ -39,6 +39,7 @@ static int ifarp(int argc,char *argv[],void *p);
 static int ifhfdatarate(int argc,char *argv[],void *p);
 static int ifdamagap(int argc,char *argv[],void *p);
 static int ifusertouser(int argc,char *argv[],void *p);
+static int ifbridge(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
@@ -211,6 +212,15 @@ struct cmds Ifcmds[] = {
 	{ "netmask",              ifnetmsk,       0,      2,
 	  "ifconfig <iface> netmask <ip netmask>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "pid",                  ifpid,          0,      1,      Pid_usage },
+	{ "bridge",               ifbridge,       0,      1,
+	  "ifconfig <iface> bridge <iface>|off\n"
+	  "  Zwei Ports zusammenschliessen.  Ein Rahmen, dessen NAECHSTER HOP\n"
+	  "  auf dem anderen Port zuhause ist, geht dort hinaus - unveraendert\n"
+	  "  und ohne uns im Digipfad.  Beide Enden werden zugleich gesetzt.\n"
+	  "  Etwas anderes als \"forward\": das lenkt UNSERE eigenen\n"
+	  "  Aussendungen um und traegt fremden Verkehr gar nicht.\n"
+	  "  Unbekanntes Ziel faellt weg und wird nicht geflutet; Broadcasts\n"
+	  "  (QST, NODES) werden nie gebrueckt." },
 	{ "user-to-user",         ifusertouser,   0,      1,
 	  "ifconfig <iface> user-to-user on|off   (Vorgabe off)\n"
 	  "  Duerfen sich zwei Nutzer DIESES Ports direkt erreichen, ohne uns\n"
@@ -594,6 +604,58 @@ ifdamagap(int argc,char *argv[],void *p)
 		       "Verbindungsaufbau, der in CSMA laeuft, findet keine "
 		       "Luecke.\n", ifp->name);
 	ifp->dama_gap = (int32) n;
+	return 0;
+}
+
+static int
+ifbridge(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	struct iface *other;
+
+	if(!is_ax25(ifp)){
+		printf("%s carries no AX.25 - there is nothing here to "
+		       "bridge.\n", ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		if(ifp->bridge)
+			printf("%s: bridge %s\n", ifp->name, ifp->bridge->name);
+		else
+			printf("%s: bridge off\n", ifp->name);
+		return 0;
+	}
+	if(!strcmp(argv[1],"off") || !strcmp(argv[1],"none")){
+		if(ifp->bridge)
+			ifp->bridge->bridge = NULL;
+		ifp->bridge = NULL;
+		return 0;
+	}
+	if((other = if_lookup(argv[1])) == NULL){
+		printf("Interface \"%s\" does not exist\n", argv[1]);
+		return 1;
+	}
+	if(other == ifp){
+		printf("%s: a port cannot bridge to itself.  For two users of "
+		       "ONE port\n  there is \"ifconfig %s user-to-user "
+		       "on\".\n", ifp->name, ifp->name);
+		return 1;
+	}
+	if(!is_ax25(other)){
+		printf("%s carries no AX.25 - there is nothing to bridge to.\n",
+		       other->name);
+		return 1;
+	}
+	/* BEIDE ENDEN, und das ist Absicht: eine Bruecke mit nur einer
+	 * Richtung liesse die Antwort nicht zurueck, und niemand erkaeme das
+	 * als Konfigurationsfehler - er saehe nur, dass es nicht geht.
+	 */
+	if(ifp->bridge && ifp->bridge != other)
+		ifp->bridge->bridge = NULL;
+	if(other->bridge && other->bridge != ifp)
+		other->bridge->bridge = NULL;
+	ifp->bridge = other;
+	other->bridge = ifp;
 	return 0;
 }
 
@@ -1120,6 +1182,11 @@ showiface(struct iface *ifp, int verbose)
 	if(ifp->noarp)
 		printf("           noarp (\"ifconfig %s arp\" says more)\n",
 		 ifp->name);
+	if(ifp->bridge)
+		printf("           ax25: bridged with %s - frames whose next "
+		       "hop lives there\n                 go out there, "
+		       "unchanged and without us in the path\n",
+		       ifp->bridge->name);
 	if(ifp->user_to_user)
 		printf("           ax25: user-to-user on - two users of this "
 		       "port reach each other\n                 directly, "

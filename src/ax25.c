@@ -850,7 +850,37 @@ int perm)
 				rp->ifp = 0;
 			} else {
 				rp->digi = 0;
-				rp->ifp = iface;
+				/* DAS ECHO DER EIGENEN BRUECKE LEHRT NICHTS.
+				 *
+				 * Was wir von A nach B gebrueckt haben, kann
+				 * auf B zurueckkommen; wuerden wir daraus
+				 * lernen, wanderte die Route des ABSENDERS auf
+				 * B und die naechste Antwort ginge im Kreis.
+				 * Deshalb bleibt sie fuer AXROUTE_PIN stehen -
+				 * aber NUR, wenn der neue Port der
+				 * Brueckenpartner des alten ist.  Jedes andere
+				 * Umlernen bleibt unberuehrt: wohin wir senden,
+				 * wenn ein Nutzer auf 2 m UND 70 cm auftaucht,
+				 * ist eine eigene Frage und nicht die dieser
+				 * Frist.
+				 *
+				 * "ax25 route add permanent" ist die dauerhafte
+				 * Form desselben Gedankens (Thomas) und schon
+				 * eine Zeile hoeher wirksam - dort wird gar
+				 * nichts umgelernt.  Dieser Pin ist die
+				 * fluechtige Fassung fuer gelernte Eintraege;
+				 * er steht nur im RAM und geht nicht in
+				 * axroute_data, dessen Record Call, Digi, Zeit
+				 * und vjcomp kennt und sonst nichts.
+				 */
+				if (rp->ifp != NULL && rp->ifp != iface &&
+				    rp->ifp->bridge == iface &&
+				    secclock() - rp->iftime < AXROUTE_PIN) {
+					/* festgeklopft */
+				} else {
+					rp->ifp = iface;
+					rp->iftime = secclock();
+				}
 			}
 			rp->perm = perm;
 		}
@@ -964,17 +994,30 @@ const uint8 *isrc,
 struct mbuf **bpp
 ){
 	struct ax_route *rp;
+	struct iface *out;
 
-	if(iface == NULL || !iface->user_to_user || iface->raw == NULL)
+	if(iface == NULL)
 		return 0;
 	if(addreq(isrc,iface->hwaddr))
 		return 0;               /* unsere eigene Aussendung */
-	if((rp = ax_routeptr(idest,0)) == NULL || rp->ifp != iface)
-		return 0;               /* unbekannt, oder woanders zuhause */
+	/* WO DER NAECHSTE HOP ZUHAUSE IST, und nur das entscheidet.  Nicht
+	 * das Endziel: bei "A>B,C" ist C der, an den wir als naechstes
+	 * senden wuerden, und ob wir B kennen, ist gleichgueltig (Thomas).
+	 * idest ist genau dieser Wert und liegt hier ohnehin vor.
+	 */
+	if((rp = ax_routeptr(idest,0)) == NULL || (out = rp->ifp) == NULL)
+		return 0;               /* unbekanntes Ziel - verwerfen, nicht fluten */
+	if(out == iface){
+		if(!iface->user_to_user)
+			return 0;
+	} else if(iface->bridge != out)
+		return 0;               /* woanders zuhause, und keine Bruecke dorthin */
+	if(out->raw == NULL)
+		return 0;
 	htonax25(hdr,bpp);
-	logsrc(iface,iface->hwaddr);
-	logdest(iface,idest);
-	(*iface->raw)(iface,bpp);
+	logsrc(out,out->hwaddr);
+	logdest(out,idest);
+	(*out->raw)(out,bpp);
 	return 1;
 }
 

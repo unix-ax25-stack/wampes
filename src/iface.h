@@ -167,6 +167,18 @@ struct iface {
 				 * fuehrt dieselbe Groesse als Parameter
 				 * (dama_init, "DAMA-Tout"), bei uns war sie
 				 * bis 2026-09-01 ein festes #define. */
+	/* DER BRUECKENPARTNER DIESES PORTS, oder NULL.
+	 *
+	 * Ein Rahmen, der hier hereinkommt und dessen NAECHSTER HOP auf dem
+	 * Partner zuhause ist, geht dort hinaus - unveraendert, ohne uns im
+	 * Digipfad.  Das ist etwas anderes als "forward", das UNSERE eigenen
+	 * Aussendungen umlenkt und fremden Verkehr gar nicht traegt.
+	 *
+	 * Beide Enden werden zugleich gesetzt: eine Bruecke mit nur einer
+	 * Richtung liesse die Antwort nicht zurueck und waere ein Fehler, den
+	 * niemand als Konfiguration erkennt.
+	 */
+	struct iface *bridge;
 	/* DUERFEN SICH ZWEI NUTZER DIESES PORTS DIREKT ERREICHEN?
 	 *
 	 * Vorgabe AUS, wie ueberall hier.  Eingeschaltet reichen wir einen
