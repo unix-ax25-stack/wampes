@@ -7234,6 +7234,56 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
+------------------------------------------------------------------------
+Gefunden am 2026-09-01 beim Messen von "dama-gap", und zwar als
+Stoerung: der eingestellte Abstand von 200 ms zeigte sich nur beim ERSTEN
+Zug, danach stand die Taktung bei 1,00 s.
+
+DIE URSACHE liegt in dama_master_input():
+
+    if (isi)        { prio = 0; hold = 0; }
+    else if (!isu)  { prio++; hold = secclock() + prio; }
+
+Gezaehlt wird JE RAHMEN.  Damit entscheidet die REIHENFOLGE innerhalb
+eines Zuges ueber die Prioritaet:
+
+    RR(F), dann I-Rahmen   ->  prio 1, dann 0    Ergebnis 0  (kein Halt)
+    I-Rahmen, dann RR(F)   ->  prio 0, dann 1    Ergebnis 1  (1 s Halt)
+
+Dieselbe Station, dieselben Daten, verschiedenes Ergebnis.
+
+UNSER EIGENER SLAVE IST NICHT BETROFFEN, und das steht auch schon so im
+Code (dama.c, dama_serve_others): "Die Antwort auf den Poll selbst ist
+trotzdem zuerst auf der Leitung ... Gemessen sieht ein Master also RR,
+dann UI, dann die uebrigen Verbindungen."  Er sendet RR zuerst, endet
+also bei prio 0.  GEMESSEN, beide Reihenfolgen gegen dieselbe
+Einstellung dama-gap 200:
+
+    RR zuerst (wie unser Slave)   50 Polls in 10s, Abstand 0,20s
+    Daten zuerst                  11 Polls in 10s, Abstand 0,92s
+
+Die zweite Zeile ist nicht der Abstand, sondern der Halt aus prio 1.
+
+WARUM ES TROTZDEM EIN BEFUND IST: eine fremde Station darf beides tun.
+Beide Reihenfolgen sind nach AX.25 zulaessig - das F muss auf der Antwort
+sitzen, aber ob eine Station ihre I-Rahmen davor oder dahinter legt,
+steht ihr frei.  Wer die Daten zuerst schickt, wird bei uns behandelt wie
+einer, der NICHTS zu senden hatte.  Das ist genau das Gegenteil dessen,
+was der Kommentar an der Stelle verspricht ("wer auf einen Poll nur eine
+LEERE Antwort schickt, hatte nichts zu senden").
+
+ZU ENTSCHEIDEN, nicht auf Verdacht geaendert: die Bewertung gehoert an
+den ZUG und nicht an den Rahmen.  Also am Zugende fragen "kam in diesem
+Zug ein I-Rahmen?" - ja: prio 0, nein: prio++.  Das ist
+reihenfolgeunabhaengig und trifft das, was dasteht.  Es ist auch naeher
+an TNN, das die Entscheidung einmal je Zug faellt (damatx() liefert, ob
+es etwas zu senden gab; clrDAMA/incDAMA daraufhin) und nicht je Rahmen.
+
+Der Zugkontext dafuer ist vorhanden: mp->answered markiert schon, dass
+der Gepollte sich gemeldet hat, und mp->turn sagt, wer es ist.
+
+------------------------------------------------------------------------
 DER FESTE SEKUNDENABSTAND SKALIERT NICHT - UND DIE SPEC SAGT DAS AUCH
 ------------------------------------------------------------------------
 Thomas' Frage beim Mitlesen einer Messung, 2026-08-31: "Poll im
