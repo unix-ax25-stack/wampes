@@ -214,7 +214,11 @@ struct cmds Ifcmds[] = {
 	{ "pid",                  ifpid,          0,      1,      Pid_usage },
 	{ "bridge",               ifbridge,       0,      1,
 	  "ifconfig <iface> bridge <iface>|off\n"
-	  "  Zwei Ports zusammenschliessen.  Ein Rahmen, dessen NAECHSTER HOP\n"
+	  "  Ports zusammenschliessen - beliebig viele, nicht nur zwei: der\n"
+	  "  genannte Port bestimmt die Gruppe, und wer einem beitritt, ist\n"
+	  "  mit allen darin verbunden.  Mehrere Bruecken nebeneinander gehen\n"
+	  "  auch; ein Port ist immer in hoechstens einer.  \"off\" nimmt nur\n"
+	  "  diesen Port heraus und loest die Gruppe nicht auf.  Ein Rahmen, dessen NAECHSTER HOP\n"
 	  "  auf dem anderen Port zuhause ist, geht dort hinaus - unveraendert\n"
 	  "  und ohne uns im Digipfad.  Beide Enden werden zugleich gesetzt.\n"
 	  "  Etwas anderes als \"forward\": das lenkt UNSERE eigenen\n"
@@ -607,11 +611,35 @@ ifdamagap(int argc,char *argv[],void *p)
 	return 0;
 }
 
+/* Wer sonst noch in dieser Gruppe ist - fuer die Anzeige. */
+
+static void bridge_members(const struct iface *ifp, char *buf, size_t len)
+{
+	const struct iface *p;
+	int n = 0;
+
+	*buf = '\0';
+	for (p = Ifaces; p != NULL; p = p->next) {
+		if (p == ifp || p->bridgegroup != ifp->bridgegroup)
+			continue;
+		if (strlen(buf) + strlen(p->name) + 3 >= len)
+			break;
+		if (n++)
+			strcat(buf, ", ");
+		strcat(buf, p->name);
+	}
+	if (!n)
+		strcpy(buf, "(allein)");
+}
+
 static int
 ifbridge(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 	struct iface *other;
+	struct iface *q;
+	char buf[256];
+	int group;
 
 	if(!is_ax25(ifp)){
 		printf("%s carries no AX.25 - there is nothing here to "
@@ -619,16 +647,21 @@ ifbridge(int argc,char *argv[],void *p)
 		return 1;
 	}
 	if(argc < 2){
-		if(ifp->bridge)
-			printf("%s: bridge %s\n", ifp->name, ifp->bridge->name);
-		else
+		if(ifp->bridgegroup){
+			bridge_members(ifp, buf, sizeof(buf));
+			printf("%s: bridge group %d, together with %s\n",
+			       ifp->name, ifp->bridgegroup, buf);
+		} else
 			printf("%s: bridge off\n", ifp->name);
 		return 0;
 	}
 	if(!strcmp(argv[1],"off") || !strcmp(argv[1],"none")){
-		if(ifp->bridge)
-			ifp->bridge->bridge = NULL;
-		ifp->bridge = NULL;
+		/* NUR DIESEN PORT HERAUSNEHMEN, nicht die Gruppe aufloesen -
+		 * bei mehr als zwei Ports waere das Zweite eine Ueberraschung.
+		 * Bleibt einer allein zurueck, ist seine Gruppe wirkungslos,
+		 * aber nicht falsch; die Anzeige sagt "(allein)".
+		 */
+		ifp->bridgegroup = 0;
 		return 0;
 	}
 	if((other = if_lookup(argv[1])) == NULL){
@@ -646,16 +679,26 @@ ifbridge(int argc,char *argv[],void *p)
 		       other->name);
 		return 1;
 	}
-	/* BEIDE ENDEN, und das ist Absicht: eine Bruecke mit nur einer
-	 * Richtung liesse die Antwort nicht zurueck, und niemand erkaeme das
-	 * als Konfigurationsfehler - er saehe nur, dass es nicht geht.
+	/* DER GENANNTE PORT BESTIMMT DIE GRUPPE.  Hat er schon eine, treten
+	 * wir ihr bei - so wachsen Bruecken ueber zwei Ports hinaus, ohne
+	 * dass es einen eigenen Befehl braucht.  Hat er keine, wird eine neue
+	 * aufgemacht, und beide kommen hinein.
 	 */
-	if(ifp->bridge && ifp->bridge != other)
-		ifp->bridge->bridge = NULL;
-	if(other->bridge && other->bridge != ifp)
-		other->bridge->bridge = NULL;
-	ifp->bridge = other;
-	other->bridge = ifp;
+	if(other->bridgegroup)
+		group = other->bridgegroup;
+	else {
+		group = 1;
+		for(q = Ifaces; q != NULL; q = q->next)
+			if(q->bridgegroup >= group)
+				group = q->bridgegroup + 1;
+		other->bridgegroup = group;
+	}
+	if(ifp->bridgegroup && ifp->bridgegroup != group){
+		bridge_members(ifp, buf, sizeof(buf));
+		printf("%s: leaving bridge group %d (was with %s)\n",
+		       ifp->name, ifp->bridgegroup, buf);
+	}
+	ifp->bridgegroup = group;
 	return 0;
 }
 
@@ -1182,11 +1225,15 @@ showiface(struct iface *ifp, int verbose)
 	if(ifp->noarp)
 		printf("           noarp (\"ifconfig %s arp\" says more)\n",
 		 ifp->name);
-	if(ifp->bridge)
-		printf("           ax25: bridged with %s - frames whose next "
-		       "hop lives there\n                 go out there, "
-		       "unchanged and without us in the path\n",
-		       ifp->bridge->name);
+	if(ifp->bridgegroup){
+		char bm[256];
+
+		bridge_members(ifp, bm, sizeof(bm));
+		printf("           ax25: bridge group %d, together with %s\n"
+		       "                 frames whose next hop lives there go "
+		       "out there,\n                 unchanged and without us "
+		       "in the path\n", ifp->bridgegroup, bm);
+	}
 	if(ifp->user_to_user)
 		printf("           ax25: user-to-user on - two users of this "
 		       "port reach each other\n                 directly, "

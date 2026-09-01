@@ -896,7 +896,8 @@ int perm)
 				 * und vjcomp kennt und sonst nichts.
 				 */
 				if (rp->ifp != NULL && rp->ifp != iface &&
-				    rp->ifp->bridge == iface &&
+				    rp->ifp->bridgegroup &&
+				    rp->ifp->bridgegroup == iface->bridgegroup &&
 				    secclock() - rp->iftime < AXROUTE_PIN) {
 					/* festgeklopft */
 				} else {
@@ -1135,7 +1136,7 @@ struct mbuf **bpp
 	if(out == iface){
 		if(!iface->user_to_user)
 			return 0;
-	} else if(iface->bridge != out)
+	} else if(!iface->bridgegroup || iface->bridgegroup != out->bridgegroup)
 		return 0;               /* woanders zuhause, und keine Bruecke dorthin */
 	if(out->raw == NULL)
 		return 0;

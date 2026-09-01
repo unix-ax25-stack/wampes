@@ -7404,11 +7404,22 @@ Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
       keine Verbindung auf, die beim zweiten Mal eine Wiederaufnahme
       waere.
 
-          mit Bruecke     Route bleibt auf dem zuerst gehoerten Port
-          ohne Bruecke    Route zieht auf den zuletzt gehoerten um
+          mit Bruecke, sofort        Route bleibt auf dem zuerst
+                                     gehoerten Port
+          mit Bruecke, nach der      Route zieht um - er haelt fest,
+          Frist                      er friert nicht ein (Thomas)
+          ohne Bruecke               Route zieht auf den zuletzt
+                                     gehoerten um
 
-      Damit ist beides belegt: dass er wirkt, und dass er ENG GENUG ist -
-      zwei ungebrueckte Einstiege lernen weiter um.
+      Damit sind alle drei Richtungen belegt: dass er wirkt, dass er
+      wieder FREIGIBT, und dass er ENG GENUG ist.  Die dritte Zeile
+      gemessen mit einem Testbau, in dem AXROUTE_PIN auf 30 s stand
+      (--wait 32); danach zurueckgestellt.
+
+      EINE FALLE DABEI, fuer den naechsten, der es nachstellt: mit einem
+      Testwert von 3 s schlug der ERSTE Fall fehl.  Der Pruefstand
+      braucht selbst rund 2,5 s bis zur zweiten Einspeisung, und
+      secclock() zaehlt in Sekunden - das war die Grenze, nicht der Code.
 
   0c. OFFEN GEBLIEBEN DABEI: ARP UEBER EINE BRUECKE (Thomas).  "Wenn ich
       ip route auf bridge gelegt habe, ist die Frage schon relevant."
