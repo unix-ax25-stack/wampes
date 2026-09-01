@@ -7410,6 +7410,54 @@ ZU ENTSCHEIDEN, zwei Wege, und sie schliessen sich nicht aus:
      wo der Port ihn melden kann (6pack).  Das steht ohnehin als Punkt 3
      auf der Liste und beantwortet die Duplex-Frage gleich mit.
 
+  c) EINE GRACE-TIME NACH DEM F (Thomas, 2026-09-01): "Wo ist das Problem,
+     den Zug fuer User A erst zu beenden, wenn alle nachfolgenden Pakete
+     nach seinem F empfangen wurden - grace time, weil ggf. ein Paket
+     verloren ging oder vom SABM eines anderen Users unterbrochen wurde
+     und somit unsere rx buffer list ist UserA,UserB,UserA,UserA?"
+
+     (NICHT ZU VERWECHSELN mit der Grace-Time weiter unten - die betrifft
+     den Wiederaufbau nach einem Zwangsdisconnect und ist erledigt.
+     Gleiches Wort, anderer Ort.)
+
+     KONZEPTIONELL IST DARAN NICHTS FALSCH - es ist der richtige Ersatz
+     fuer den Traeger, den wir nicht haben.  Und der Verschachtelungsfall
+     ist schon heute gedeckt: ein Rahmen von B kann A's Zug nicht
+     beenden, dafuer sorgt
+
+         if (!addreq(dama_station(axp), mp->turn)) return;
+
+     Ein SABM von B mitten in A's Zug ist ausserdem LEGITIM - der Aufbau
+     laeuft in CSMA, wir zaehlen ihn ausdruecklich nicht als Verstoss.
+     A,B,A,A ist also der erwartete Fall und nicht die Ausnahme.
+
+     DIE KOSTEN SIND DAS PROBLEM, und zwei davon wiegen:
+
+       1. Die Grace kostet auf JEDEM Zug, nicht nur dort, wo sie gebraucht
+          wird - wir erfahren erst durch Stille, dass A fertig ist.  Die
+          Runde waechst um Grace mal n, also genau die Skalierung, die bei
+          der Luecke schon stoerte.
+       2. UEBER KISS SEHEN WIR EINEN RAHMEN ERST, WENN ER VOLLSTAENDIG
+          IST.  "Stille" ist damit mehrdeutig: A's naechster Rahmen kann
+          laengst auf der Luft sein.  Sicher waere die Grace erst, wenn
+          sie einen ganzen maximalen Rahmen abdeckt:
+
+              1200 bit/s   (256+20)*8/1200 = 1,84 s   (Luecke 0,66 s)
+              9600 bit/s                     0,23 s   (Luecke 0,56 s)
+
+          Bei 1k2 kostet die Versicherung fast das Dreifache dessen, was
+          sie versichert.
+       3. Sie kann "A ist fertig" nicht von "A's naechster Rahmen ging
+          verloren" unterscheiden - unschaedlich, weitergehen ist in
+          beiden Faellen richtig.
+
+     DARAUS DIE REIHENFOLGE: erst a), dann messen, ob ueberhaupt noch
+     etwas uebrigbleibt.  Mit a) braucht UNSERE Paarung gar keine Grace;
+     sie waere dann nur noch Versicherung gegen FREMDE Slaves, die nach
+     ihrem F weitersenden - und dafuer sind 1,8 s auf jedem Zug viel.
+     Abschaltbar und hergeleitet wie die anderen Fristen waere sie
+     dagegen billig.
+
 ------------------------------------------------------------------------
 BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
 ------------------------------------------------------------------------
