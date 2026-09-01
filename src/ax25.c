@@ -850,13 +850,35 @@ int perm)
 				rp->ifp = 0;
 			} else {
 				rp->digi = 0;
-				/* DAS ECHO DER EIGENEN BRUECKE LEHRT NICHTS.
+				/* DIESELBE STATION AUF BEIDEN GEBRUECKTEN
+				 * PORTS - und das ist etwas anderes als die
+				 * Schleife, auch wenn beides "Schutz" heisst
+				 * (Thomas hat nach dem Unterschied gefragt):
 				 *
-				 * Was wir von A nach B gebrueckt haben, kann
-				 * auf B zurueckkommen; wuerden wir daraus
-				 * lernen, wanderte die Route des ABSENDERS auf
-				 * B und die naechste Antwort ginge im Kreis.
-				 * Deshalb bleibt sie fuer AXROUTE_PIN stehen -
+				 *   Doppelschlag-Sperre   je RAHMEN, 1 s.
+				 *     Derselbe Rahmen darf nicht zweimal
+				 *     hinausgehen.  Siehe ax_dup_recent().
+				 *   dieser Pin            je ROUTE, 300 s.
+				 *     Das Rufzeichen darf nicht auf dem
+				 *     falschen Pfad gelernt werden.  Eine
+				 *     falsch gelernte Route wirkt lange nach,
+				 *     auch wenn die Ursache weg ist - deshalb
+				 *     Minuten und nicht Sekunden.
+				 *
+				 * DER FALL, DEN ER FAENGT: zwei gebrueckte
+				 * Ports auf EINEM Segment.  Eine Station
+				 * schickt UNS etwas - der Rahmen passiert also
+				 * die Verwerfen-Zeile -, und wir hoeren ihn auf
+				 * beiden Ports.  Der zweite Aufruf wollte die
+				 * Route auf den anderen Port ziehen.
+				 *
+				 * NICHT ER FAENGT das Echo unseres eigenen
+				 * gebrueckten Rahmens: das ist weder an uns
+				 * adressiert noch Broadcast und faellt schon
+				 * vorher weg, erreicht diese Stelle also nie.
+				 * Dafuer ist die Doppelschlag-Sperre da.
+				 *
+				 * Die Route bleibt fuer AXROUTE_PIN stehen -
 				 * aber NUR, wenn der neue Port der
 				 * Brueckenpartner des alten ist.  Jedes andere
 				 * Umlernen bleibt unberuehrt: wohin wir senden,
