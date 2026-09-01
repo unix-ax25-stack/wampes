@@ -37,10 +37,22 @@ WAS GEKLAERT IST:
     eigenen Zuschlags, sondern eine unabhaengige Messung.
 
   * DIE ANZEIGE DER PARTNER IST NICHT DER MESSWERT.  RMNC und
-    PC-FlexNet32 mitteln ARITHMETISCH ueber alles seit Verbindungsaufbau,
-    mit DEFAULTDELAY 600 als erstem Wert - also 600/n + wahr.  Drei
-    Anzeigen, drei Treffer.  Wer die Anzeige vor dem Einschwingen deutet,
-    deutet den Startwert.
+    PC-FlexNet32 glaetten mit einem GLEITENDEN FENSTER ueber die letzten
+    Werte, das mit DEFAULTDELAY 600 beginnt - nicht mit einem Mittel ueber
+    die ganze Vorgeschichte.  Beleg: nach 5h20m stand dort
+
+        DB0BLO  4-15   1/1   5h,20m P 8
+                       1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+    sechzehn Einsen und keine 600.  Ein Mittel ueber alles gaebe bei rund
+    64 Polls (600+63)/64 = 10,4; angezeigt ist 1.  Die Anzeige zeigt 16
+    Werte, streng belegt ist W = 14..63.
+
+    DIE FOLGE IST WICHTIGER ALS DIE ZAHL: ein gleitendes Fenster vergisst
+    VOLLSTAENDIG und ABRUPT.  Solange die 600 darin liegt, steht dort
+    38 bis 40; in dem Moment, wo sie hinausfaellt, springt der Wert auf
+    den wahren - n=15 -> 40,9, n=16 -> 38,4, n=17 -> 1,0.  Wer die Anzeige
+    vor diesem Sprung deutet, deutet den Startwert.
 
 WAS DARAUFHIN GEAENDERT WURDE:
 
@@ -58,10 +70,16 @@ WAS DARAUFHIN GEAENDERT WURDE:
 WAS OFFEN BLEIBT, und es sind Punkte fuer das Gespraech mit dem
 TNN-Entwickler, nicht fuer unseren Code:
 
-  * TNN HAT KEINEN SENTINEL.  Wo wir und die anderen 600 als "keine
-    Ahnung" erkennen und verwerfen, sieht TNNs Schaetzwert aus wie eine
-    Messung - und er steht stundenlang, weil TNNs SRTT nur 1/16 je
-    Messung faellt und es auf reinem FlexNet kaum Messgelegenheiten gibt.
+  * TNN KENNT DEN SENTINEL, SENDET UND ERKENNT IHN ABER NICHT.  Die 600
+    steckt auch dort, nur an anderer Stelle (l3tab.c,
+    update_peer_quality: "pp->his_quality ? pp->his_quality : 6000" -
+    6000 in TNNs 10-ms-Einheiten sind dieselben 60 s).  Damit ist sie in
+    ALLEN VIER Implementierungen nachgewiesen, noch ein
+    Abstammungsnachweis.  Was fehlt, ist zweierlei: TNN SENDET statt
+    ihrer eine SRTT-Schaetzung, die nicht als Schaetzung erkennbar ist
+    und stundenlang steht (SRTT faellt nur 1/16 je Messung, und auf
+    reinem FlexNet gibt es kaum Messgelegenheiten), und es PRUEFT beim
+    Empfang nicht auf 600 (l3vc.c, case '1' - keine Pruefung).
   * DER WIDERSPRUCH UM IRTT/10 ist ungeklaert: nach l2timer.c kann TNNs
     SRTT nicht unter IRTT/10 fallen, gemeldet wird aber 1.
   * Die Gegenprobe dazu braeuchte IRTT am Laborport - das ist ein AUTOPAR
