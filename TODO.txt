@@ -7392,13 +7392,36 @@ als dasteht:
              vorher), und verbose sagt dort "no carrier sense".  Der
              Rueckfall auf das bisherige Verhalten stimmt also.
   NICHT      der Traegerpfad selbst.  Dafuer braeuchte es einen
-  GEMESSEN   6pack-Port im Labor; testtools/fake6pack_dcd.py spielt einen
-             TNC, der den Kanal erst belegt und dann freigibt, haengt aber
-             an einem TCP-Port, und "attach asy" kennt keinen
-             TCP-Anschluss - da lag damals vermutlich ein socat
-             dazwischen.  Das gehoert in dieselbe Ecke wie C.9 (Porttyp
-             MIT Kanalzugriff), und die ist auf den echten Betrieb
-             vertagt.
+  GEMESSEN   6pack-Port im Labor.
+
+WIE MAN IHN BEKAEME, damit die Suche nicht noch einmal anfaengt.  Nicht
+ueber TCP - Thomas dazu: "ax25 ueber tcp geht schlecht.  Oft gewuenscht,
+aber bei udp ist ein UDP-Paket ein AX25-Paket.  Bei tcp haben wir einen
+Datenstrom.  Wenn, dann muesste man KISS ueber TCP fahren, der die
+FrameStart/End/KissEsc Characters benutzt."  6pack braechte seine eigene
+Rahmung (SEOF) mit, aber "attach asy" kennt gar keinen TCP-Anschluss.
+
+SONDERN UEBER EIN PSEUDOTERMINAL, und der Weg steht in n8250.c, asy_up():
+
+    char filename[80];
+    strcpy(filename, "/dev/");
+    strcat(filename, ap->iface->name);
+    ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644);
+
+DER INTERFACENAME IST DER GERAETENAME.  Ein pty-Paar aufmachen, den
+Slave-Namen ablesen (/dev/ttysNNN) und den Port danach benennen:
+
+    attach asy 0 0 6packi ttys004 <buffers> <mtu> <speed>
+
+Deshalb gibt es testtools/slowpty.py ueberhaupt.  fake6pack_dcd.py auf pty
+umzustellen waere klein.
+
+WAS ES TROTZDEM AUFWENDIG MACHT: der gespielte TNC muesste dann nicht nur
+den Traeger melden, sondern den KANAL fuer zwei Stationen spielen - also
+genau der simulierte Funkkanal, den Thomas bei C.9 als zu aufwendig
+eingestuft hat ("man braeuchte einen simulierten Funkkanal und eine Art
+TNC der wuerfelt").  Es ist dieselbe Baustelle und mit ihr auf den echten
+Betrieb vertagt.
 
 WAS DAMIT AUCH BEANTWORTET IST: die Duplex-Frage.  Der Traeger ist das
 EMPFANGENE Signal (bei TNN ausdruecklich "nicht busy(), iscd() !"), misst
