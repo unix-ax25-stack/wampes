@@ -1080,13 +1080,59 @@ static void dama_master_turn(struct dama_m *mp)
  * Zeitscheibe.  Jetzt die Pause, nicht sofort der naechste Poll.
  */
 
-/* Der geltende Abstand: was der Sysop gesagt hat, sonst die Vorgabe. */
+/* DIE LUECKE ZWISCHEN ZWEI ZUEGEN, und sie hat genau EINE Aufgabe.
+ *
+ * Auf einem DAMA-Kanal sendet niemand ungefragt; alles Geregelte passiert
+ * INNERHALB der Zuege.  Was NICHT gepollt wird, muss in die Luecke passen -
+ * und das ist vor allem der VERBINDUNGSAUFBAU: eine Station ohne Link steht
+ * in keiner Poll-Liste und kann nach der Spezifikation nur in CSMA
+ * hereinkommen.  Solange Stationen verbunden sind, ist die Luecke das
+ * einzige Stueck Funkstille auf dem Kanal.  Auf null gesetzt kommt kein
+ * Fremder mehr herein.
+ *
+ * TNN sagt dasselbe im Klartext, an seiner Zusatzpause (l2dama.c): "Diese
+ * Zusatzpause gibt die Frequenz fuer neue Stationen frei."
+ *
+ * WORAUS SIE BESTEHT, und damit ist auch die Zahl beantwortet - es ist
+ * dasselbe Muster wie bei dama_answer_time():
+ *
+ *   TX-Delay des Fremden   seine Einschwingzeit, haengt NICHT an der Bitrate
+ *   CSMA-Wuerfeln          slottime mal ein paar Slots, bis er drankommt
+ *   sein SABM              17 Oktette, und die haengen an der Bitrate
+ *
+ * Bei 1200 Baud mit angenommenem TX-Delay: 250 + 300 + 113 = 663 ms.  TNNs
+ * Vorgabe von einer Sekunde (dama_init 100 in 10-ms-Einheiten) ist dieselbe
+ * Rechnung, grosszuegig aufgerundet.
+ *
+ * DER SYSOP MUSS DIE ZAHL DAMIT NICHT KENNEN.  Er setzt hf-datarate, wie
+ * fuer die beiden anderen Fristen auch; "dama-gap" bleibt fuer den, der es
+ * besser weiss - ein Duplex-Einstieg etwa, oder ein Kanal mit auffallend
+ * vielen Neuankoemmlingen.
+ *
+ * DAS CSMA-WUERFELN IST HIER EINE ZAHL UND KEINE RECHNUNG, mit Absicht:
+ * genau waere slottime * 256/persist, und diese beiden Werte kennen wir nur
+ * auf einem Port MIT Kanalzugriff (dama_slot_save/dama_persist_save, gesetzt
+ * wenn dama_ca_set).  Das ist derselbe Porttyp, den wir hier nicht pruefen
+ * koennen - siehe C.9, vertagt auf den echten Betrieb.  Eine Rechnung, die
+ * niemand nachmessen kann, ist schlechter als eine benannte Zahl.
+ */
+#define DAMA_GAP_CSMA   300L    /* ms, Wuerfelzeit des Fremden */
 
-static int32 dama_gap_time(const struct iface *ifp)
+int32 dama_gap_time(struct iface *ifp)
 {
+	int32 txd = 250;                /* ms, wenn der Port nichts sagt */
+	int32 v;
+
 	if (ifp == NULL)
 		return DAMA_GAP_DEFAULT;
-	return ifp->dama_gap > 0 ? ifp->dama_gap : DAMA_GAP_DEFAULT;
+	if (ifp->dama_gap > 0)
+		return ifp->dama_gap;   /* der Sysop hat es gesagt */
+	if (ifp->hf_datarate <= 0)
+		return DAMA_GAP_DEFAULT;
+	if (ifp->ioctl != NULL &&
+	    (v = (*ifp->ioctl)(ifp, PARAM_TXDELAY, 0, 0)) > 0)
+		txd = v * 10;           /* KISS zaehlt in 10 ms */
+	return txd + DAMA_GAP_CSMA + (17 * 8 * 1000) / ifp->hf_datarate;
 }
 
 /*---------------------------------------------------------------------------*/

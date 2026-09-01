@@ -86,6 +86,10 @@ int  dama_master_holds(struct ax25_cb *axp);
 void dama_master_owe(struct ax25_cb *axp);
 
 const char *dama_master_port(void);
+/* Die geltende Luecke zwischen zwei Zuegen: was der Sysop gesetzt hat,
+ * sonst berechnet aus hf-datarate und TX-Delay.  Auch iface.c zeigt sie an.
+ */
+int32 dama_gap_time(struct iface *ifp);
 
 int  ifdama(int argc, char *argv[], void *p);
 void dama_show(struct iface *ifp);

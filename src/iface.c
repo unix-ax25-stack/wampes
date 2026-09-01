@@ -173,12 +173,17 @@ struct cmds Ifcmds[] = {
 	 * Polls haben es gezeigt.
 	 */
 	{ "dama-gap",             ifdamagap,      0,      1,
-	  "ifconfig <iface> dama-gap <ms>         (0 = Vorgabe 1000)\n"
-	  "  Als DAMA-MASTER die Pause zwischen zwei Zuegen.  Sie macht aus\n"
-	  "  \"so schnell wie die Leitung kann\" erst eine Runde und laesst dem\n"
-	  "  Kanal Luft fuer den Verbindungsaufbau, der nach der Spezifikation\n"
-	  "  in CSMA laeuft.  Achtung: sie gilt nach JEDEM Zug, eine Runde mit\n"
-	  "  n Stationen dauert also mindestens n mal so lang." },
+	  "ifconfig <iface> dama-gap <ms>         (0 = aus hf-datarate)\n"
+	  "  Als DAMA-MASTER die Pause zwischen zwei Zuegen.  IN DER REGEL\n"
+	  "  NICHTS ZU SETZEN: ohne Angabe wird sie aus hf-datarate und dem\n"
+	  "  TX-Delay des Ports berechnet, so wie \"answer\" und \"turn\" auch\n"
+	  "  (\"ifconfig <iface> verbose\" zeigt alle drei).\n"
+	  "  Wozu sie da ist: auf einem DAMA-Kanal sendet niemand ungefragt,\n"
+	  "  und ein Verbindungsaufbau wird nicht gepollt - er laeuft in CSMA.\n"
+	  "  Die Luecke ist das einzige Stueck Funkstille, in dem ein Fremder\n"
+	  "  hereinkommen kann; sie muss sein TX-Delay, sein CSMA-Wuerfeln und\n"
+	  "  sein SABM fassen.  Achtung: sie gilt nach JEDEM Zug, eine Runde\n"
+	  "  mit n Stationen dauert also mindestens n mal so lang." },
 	{ "eax25",                ifeax25,        0,      2,
 	  "ifconfig <iface> eax25 off|accept|caller|always\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "emaxframe",            ifemaxframe,    0,      2,
@@ -554,11 +559,12 @@ ifdamagap(int argc,char *argv[],void *p)
 	}
 	if(argc < 2){
 		if(ifp->dama_gap)
-			printf("%s: dama-gap %ldms\n", ifp->name,
+			printf("%s: dama-gap %ldms (gesetzt)\n", ifp->name,
 			       (long) ifp->dama_gap);
 		else
-			printf("%s: dama-gap %ldms (Vorgabe)\n", ifp->name,
-			       (long) DAMA_GAP_DEFAULT);
+			printf("%s: dama-gap %ldms, berechnet aus hf-datarate "
+			       "und TX-Delay\n", ifp->name,
+			       (long) dama_gap_time(ifp));
 		return 0;
 	}
 	n = atol(argv[1]);

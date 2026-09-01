@@ -7234,6 +7234,79 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+WIE TNN DIE LUECKE MACHT - UND DIE FRAGE NACH DUPLEX (2026-09-01)
+------------------------------------------------------------------------
+Thomas: "Die Luecke hat aber Einfluss auf die effektive Datenrate.  Machte
+TNN auch diese Luecke, oder sagte es sich, neue Clients sollen einfach so
+ihr SABM schicken?"  Nachgesehen in src/l2dama.c, und die Antwort ist:
+BEIDES, und zwar auf zwei verschiedenen Ebenen.
+
+1. DIE LAUFENDE PAUSE HAENGT AM TRAEGER, NICHT AN DER UHR.
+
+    if (!dcd && (dama_timer[k] > 0))   /* Frequenz (DCD) frei und */
+      ... herunterzaehlen ...
+
+   dama_timer wird nach jeder Aussendung auf dama_init gesetzt
+   (xmit_damail), laeuft aber NUR, solange der Kanal still ist.  TNNs
+   Luecke ist also "eine Sekunde BEOBACHTETE STILLE", unsere ist "eine
+   Sekunde nach Zugende".  Der Unterschied ist genau der Zweck: faengt ein
+   Fremder waehrend der Luecke an zu senden, haelt TNNs Uhr an und
+   verlaengert sie - wir wuerden ihm in die Aussendung hineinpollen.
+
+   dama_dcd() prueft dabei ausdruecklich den EMPFANG und nicht die eigene
+   Aussendung: "if (iscd(port))  /* nicht busy(), iscd() ! */".
+
+2. DAZU EINE AUSDRUECKLICHE ZUSATZPAUSE FUER NEUANKOEMMLINGE, und ihr
+   Kommentar beantwortet Thomas' Frage woertlich:
+
+     "Nach jeder DAMA-Runde pruefen, ob eine zusaetzliche Pause eingefuegt
+      werden soll.  Diese Zusatzpause gibt die Frequenz fuer neue
+      Stationen frei, auch wenn die DCD-Pausen sonst zu kurz sind.  Nach
+      solch einer Zusatzpause wird allerdings (MIN_DELAY * 10ms) keine
+      weitere Pause eingefuegt."
+
+   Sie sitzt am ENDE EINER RUNDE, nicht nach jedem Zug, und sie ist
+   ratenbegrenzt: pause_delay = MIN_DELAY + dama_init, mit MIN_DELAY 3000
+   in 10-ms-Einheiten - also hoechstens EINMAL ALLE 31 SEKUNDEN.
+
+WAS DAS FUER UNS HEISST:
+
+  * Unsere Vorgabe wird jetzt berechnet (siehe unten), das war der erste
+    Schritt.  Die zwei ECHTEN Unterschiede zu TNN bleiben:
+  * a) Wir zaehlen die Luecke auf der Uhr, TNN am Traeger.  Wir HABEN den
+    Traeger inzwischen - aber nur auf 6pack (sixpack.h: "int dcd;
+    carrier, as the TNC reports it").  Der Kommentar in dama.c, wir
+    haetten ihn nicht, stimmt fuer axip, bpqether und KISS und ist fuer
+    6pack ueberholt.
+  * b) Die Neuankoemmlings-Pause gehoert der RUNDE und ist selten.  Das
+    ist TNNs Antwort auf die 16-Nutzer-Frage, und es ist eine bessere
+    Begruendung als unser Vorschlag b) ("Gap/n"): nicht eine Division,
+    sondern die Einsicht, dass der Zweck der Pause EINMAL JE RUNDE
+    erfuellt ist und nicht je Zug.
+
+DIE DUPLEX-FRAGE (Thomas, im selben Atemzug): "mache ich DAMA auf einem
+Fullduplex-Einstieg als Master: waehrend ich sende, koennen Clients
+senden.  Ich kann sie also in meiner Aussendung fuer Pakete anderer
+zuweisen, dass jetzt A oder B senden soll ... Hier waere dann wieder die
+Frage nach dieser dama-gap, die mein RX-Interface betrifft."
+
+Das trifft zu, und TNNs Bau passt genau dazu, ohne dass er etwas
+Besonderes tun muesste: weil seine Pause am EMPFANGENEN Traeger haengt,
+misst sie auf einem Duplex-Einstieg von selbst den UPLINK.  Was der
+eigene Sender tut, geht sie nichts an.
+
+UNSERE Uhr kann das nicht: auf Duplex warten wir eine Luecke lang, in der
+der Uplink die ganze Zeit frei war - verschenkte Zeit auf beiden Wegen.
+Der Poll fuer B koennte dort in die laufende Aussendung an A eingebettet
+werden, wie Thomas beschreibt.
+
+ZU ENTSCHEIDEN, und das ist die eigentliche Fortsetzung dieses Themas:
+die Luecke am Traeger zaehlen statt an der Uhr, wo der Port ihn melden
+kann (6pack), und die Neuankoemmlings-Pause der Runde geben statt dem
+Zug.  Beides zusammen ist TNNs Verhalten und beantwortet die
+Duplex-Frage gleich mit.
+
+------------------------------------------------------------------------
 BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
 ------------------------------------------------------------------------
 Gefunden am 2026-09-01 beim Messen von "dama-gap", und zwar als
