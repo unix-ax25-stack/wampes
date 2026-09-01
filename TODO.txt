@@ -7359,6 +7359,53 @@ Zug.  Beides zusammen ist TNNs Verhalten und beantwortet die
 Duplex-Frage gleich mit.
 
 ------------------------------------------------------------------------
+BEI DREI STATIONEN VERHUNGERTE EINE - UND ZWAR VON ANFANG AN
+------------------------------------------------------------------------
+Gefunden am 2026-09-01 beim Messen der Rundenpause, und es ist der
+schwerste Fehler dieser Reihe.  GEMESSEN, drei Stationen, neun Sekunden:
+
+    vorher    STA-1: 1 Poll     STA-2: 6      STA-3: 7
+    nachher   STA-1: 9 Polls    STA-2: 10     STA-3: 10
+
+STA-1 bekam EINEN Poll, danach wechselten sich die anderen beiden endlos
+ab.  Die Gegenprobe gegen den Stand vor der heutigen Arbeit zeigt
+dasselbe - der Fehler ist alt.
+
+WARUM ER NIE AUFFIEL: mit ZWEI Stationen gibt es ihn nicht, und mit zweien
+haben wir bis dahin immer gemessen.  Er braucht drei.
+
+DIE URSACHE, und sie ist lehrreich: dama_next_station() nahm die
+Reihenfolge der Ax25_cb-LISTE - "der naechste hinter dem, der eben dran
+war".  find_ax25() zieht den getroffenen Kontrollblock aber an den
+Listenanfang:
+
+    axlast->next = axp->next;
+    axp->next = Ax25_cb;
+    Ax25_cb = axp;
+
+Eine alte KA9Q-Optimierung (haeufiger Verkehr vorn).  Damit ordnet die
+Liste nach VERKEHR, und "der naechste hinter X" ist immer der, der davor
+dran war.  Sichtbar wurde es erst in der Spur:
+
+    [next] STA-2                    -> turn STA-2
+    [peek] STA-2, STA-1             -> STA-1
+    [next] STA-3, STA-2, STA-1      -> turn STA-1
+    [peek] STA-1, STA-3             -> STA-3
+
+Dieselbe Liste, drei verschiedene Reihenfolgen in drei Aufrufen.
+
+BEHOBEN, indem die Runde nach dem RUFZEICHEN ordnet - das haengt an
+nichts, was sich bewegt.  Und es ist ohnehin die einzige Ordnung, die
+einen echten Zyklus ergibt.
+
+WAS MAN DARAUS MITNEHMEN SOLLTE: eine Reihum-Ordnung darf sich nicht auf
+eine Liste stuetzen, die jemand anders nach Nutzung umsortiert.  Der
+Kommentar in dama_master_turn() warnte schon vor dem verwandten Fehler
+("ein Zeiger auf den naechsten Link haengt in der Luft, sobald eine
+Verbindung endet") - die Listenreihenfolge ist dieselbe Falle eine Stufe
+tiefer.
+
+------------------------------------------------------------------------
 DER TRAEGER IST JETZT ABFRAGBAR - PARAM_DCD (2026-09-01)
 ------------------------------------------------------------------------
 Punkt 3 der Kette: den Zug nicht am F beenden, sondern am Traeger.

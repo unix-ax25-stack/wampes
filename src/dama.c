@@ -1298,7 +1298,31 @@ static void dama_master_gap(struct dama_m *mp)
 	 * naechsten Poll.
 	 */
 	dama_ui_flush(mp->ifp);
-	set_timer(&mp->t, dama_gap_time(mp->ifp));
+	/* DIE GROSSE LUECKE NUR AM RUNDENENDE, dazwischen die kurze Pause.
+	 *
+	 * Der Zweck der Luecke - einem Fremden den Verbindungsaufbau
+	 * ermoeglichen - ist EINMAL JE RUNDE erfuellt und nicht einmal je
+	 * Zug; TNN legt seine Zusatzpause aus demselben Grund ans Rundenende
+	 * ("Diese Zusatzpause gibt die Frequenz fuer neue Stationen frei").
+	 * Ein Blick voraus, wen es als naechsten traefe, sagt uns, ob die
+	 * Runde herum ist - das kostet nur einen Durchlauf der Linkliste und
+	 * hat keine Nebenwirkung.
+	 *
+	 * Eine Ratenbegrenzung wie TNNs MIN_DELAY (hoechstens alle 31 s)
+	 * uebernehmen wir NICHT: bei TNN ist sie ein Notnagel neben den
+	 * DCD-Pausen, die dort die eigentliche Gelegenheit bieten.  Wir haben
+	 * den Traeger nur auf 6pack, also ist diese Luecke fuer einen
+	 * Neuankoemmling die einzige Gelegenheit - sie darf nicht selten
+	 * sein.
+	 */
+	{
+		uint8 who[AXALEN];
+		int wrapped = 0;
+
+		(void) dama_next_station(mp->ifp, mp->turn, who, &wrapped);
+		set_timer(&mp->t, wrapped ? dama_gap_time(mp->ifp)
+					  : DAMA_TURN_PAUSE);
+	}
 	start_timer(&mp->t);
 }
 
