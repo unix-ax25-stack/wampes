@@ -7356,6 +7356,59 @@ keine Entscheidung mehr, sondern eine Eigenschaft des Modus - und unser
 DAMA-Master verlangt digipeat 2 ohnehin.
 
 ------------------------------------------------------------------------
+AXTCP - ZU BESPRECHEN (Thomas, 2026-09-01 abends)
+------------------------------------------------------------------------
+Sein Gedankengang, hier festgehalten fuer das Gespraech; nichts davon ist
+beauftragt oder gebaut.
+
+    "axtcp.  Also aehnlich ax25ipd / ax25udp.  Das allerdings ist ein
+     Datenstrom.  KISS innerhalb des Datenstroms boete sich an.  Da
+     braeuchte es natuerlich config wie: was ist, wenn wir ausgehend
+     sind, die Gegenseite / Gegenseiten, und auf welchem Port hoeren
+     wir.  Ausgehend optional, hoerend optional (keins von beiden ==
+     error ;).  Freilich kann es auch mehrere axtcp ifaces geben
+     (unterschiedliche dest config, anderer listenport, jeweils wenn
+     benoetigt).  Und dank unserer bridge koennen wir die sogar
+     zusammenschalten, also zu axip, axudp, kiss zu xnet, oder anderem
+     axtcp port."
+
+WAS DAFUER SCHON DA IST:
+
+  * DIE RAHMUNG.  KISS mit FEND/FESC gibt es im Knoten (kiss.c ueber
+     slip.c), samt der CRC-Erweiterungen SMACK und RMNC und deren
+     Autoerkennung.  Ein axtcp koennte denselben Dekoder benutzen -
+     genau das, was der pty-Pruefstand heute schon tut.
+  * DIE BRUECKE, seit heute mit GRUPPEN: sie traegt beliebig viele Ports
+     beliebigen Typs, ein axtcp-Port kaeme also ohne weiteres dazu.
+     Thomas' Zusammenschalten ist damit schon vorbereitet.
+  * DIE ATTACH-FORM.  axip macht es vor: eigener attach mit Label, Typ
+     und Portnummer, statt der asy-Kruecke, bei der der INTERFACENAME der
+     GERAETENAME sein muss (asy_up oeffnet /dev/<name>).
+
+WAS ZU BESPRECHEN IST, und es sind die Punkte, an denen TCP sich von UDP
+unterscheidet:
+
+  1. DER STROM HAT KEINE RAHMENGRENZEN, deshalb KISS - so weit klar.  Was
+     aber, wenn der Strom mitten in einem Rahmen abreisst?  Bei UDP ist
+     ein verlorenes Datagramm ein verlorener Rahmen und fertig.
+  2. WAS PASSIERT MIT DEN LINKS, wenn die TCP-Verbindung faellt?  Bei
+     axudp merkt es niemand, die Rahmen versickern und AX.25 raeumt mit
+     T1/N2 auf.  Bei TCP gibt es ein Ereignis - soll es die Links auf dem
+     Port abraeumen, oder soll man es ignorieren und AX.25 machen lassen?
+  3. WIEDERAUFBAU: wer verbindet neu, wie oft, mit welchem Abstand?  Und
+     was, wenn beide Seiten "ausgehend" konfiguriert sind - zwei
+     Verbindungen oder eine?
+  4. DIE DOPPELTE WIEDERHOLUNG.  TCP wiederholt selbst, AX.25 wiederholt
+     darueber.  Auf einer schlechten Strecke sitzen dann zwei Uhren
+     uebereinander, und die untere haelt die obere auf (head of line).
+     Das ist das Argument, das gegen AX.25 ueber TCP im Allgemeinen
+     spricht, und es gehoert benannt, bevor jemand es im Betrieb findet.
+  5. MEHRERE GEGENSTELLEN AN EINEM PORT: bei axudp unterscheidet der
+     Quellport, bei TCP ist jede Gegenstelle eine eigene Verbindung.  Die
+     Zuordnung Rufzeichen -> Verbindung ist dann dasselbe Problem, das
+     uhnp geloest hat, nur mit Sockets statt Ports.
+
+------------------------------------------------------------------------
 WAS AUF EIN LABOR WARTET - DREI DINGE, EIN BEDARF
 ------------------------------------------------------------------------
 Damit es nicht vergessen wird (Thomas): drei Sachen sind gebaut oder
@@ -7848,10 +7901,8 @@ dafuer entstanden - Thomas' Korrektur: es kam aus den FlexNet-Timingtests
 zwischen RMNC und XNET, wo eine Verzoegerung gebraucht wurde.  Es zeigt
 hier nur, dass der pty-Weg gangbar ist.)
 
-AUF DIE WUNSCHLISTE (Thomas): AXTCP, also AX.25 ueber TCP als
-Client/Server.  Reizvoll, und die Rahmung waere die Frage - bei UDP ist
-ein Datagramm ein Rahmen, bei TCP braucht es FEND/FESC wie KISS oder
-SEOF wie 6pack.  Nicht beauftragt, nur vorgemerkt.
+AUF DIE WUNSCHLISTE (Thomas): AXTCP - siehe den eigenen Abschnitt
+"AXTCP" weiter unten.
 
 WAS ES TROTZDEM AUFWENDIG MACHT: der gespielte TNC muesste dann nicht nur
 den Traeger melden, sondern den KANAL fuer zwei Stationen spielen - also
