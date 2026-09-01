@@ -1512,7 +1512,23 @@ static void recv_rprt(struct peer *pp, struct mbuf **bpp)
 			pp->delay = pp->remdelay;
 	}
 	if (pp->lastpolltime) {
-		pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
+		/* DER GEMESSENE WERT IST DER GANZE UMLAUF, NICHT SEINE HAELFTE.
+		 *
+		 * Bis hierher stand hier /200.0, also die halbe Umlaufzeit -
+		 * die Annahme, FlexNet melde eine Einweg-Laufzeit.  Das ist
+		 * falsch, und es ist an vier Implementierungen gemessen
+		 * (doc/Kompatibiltaets-Test--flexnet-Protokoll-WAMPES-TNN.txt):
+		 * ein RMNC auf db0blo meldete 6 fuer 606 ms Umlauf und 1 fuer
+		 * 4 ms - beides passt nur zur GANZEN Zeit in Einheiten von
+		 * 100 ms.  Fuer die Haelfte gibt es keine Glaettungsstufe n,
+		 * die das ergaebe.  TNNs eigene Kommentare sagen dasselbe.
+		 *
+		 * Alte Zeile absichtlich stehengelassen, damit die Aenderung
+		 * beim Lesen erkennbar bleibt:
+		 *
+		 *   pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 200.0);
+		 */
+		pp->locdelay = iround(TDIFF(msclock(), pp->lastpolltime) / 100.0);
 		if (pp->locdelay < 1)
 			pp->locdelay = 1;
 		/*
