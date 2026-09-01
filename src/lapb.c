@@ -1506,7 +1506,6 @@ ax_t2_timeout(
 void *p)
 {
 	struct ax25_cb *axp;
-	int i;
 
 	axp = (struct ax25_cb *)p;
 
@@ -1520,6 +1519,32 @@ void *p)
 		dama_wait(axp);
 		return;
 	}
+	/* UND ALS MASTER QUITTIEREN WIR NICHT AUSSER DER REIHE.
+	 *
+	 * Gemessen war: ein Dauersender schickt I-Rahmen ohne Poll, wir
+	 * quittieren jeden binnen 0,3 s - und weil die Quittung sein Fenster
+	 * wieder oeffnet, kann er endlos senden, ohne je einen Verstoss zu
+	 * begehen (Thomas: "dann gilt fuer den Dauersender quasi kein DAMA
+	 * mehr").  Das Kriterium "Kommando mit P" fasst ihn nicht, denn er
+	 * pollt ja nicht.
+	 *
+	 * Die Quittung ist das einzige Mittel, das greift, und TNN benutzt
+	 * genau dieses: dort geht auch sie durch sdl2fr() und wartet auf den
+	 * Zug.  Ohne Quittung ist nach maxframe unquittierten Rahmen Schluss.
+	 * Der Master muss sein "Ende" also gar nicht kennen - er fuettert ihn
+	 * einfach nicht.
+	 */
+	if (dama_master_holds(axp)) {
+		axp->dama_ackpend = 1;
+		return;
+	}
+	lapb_ack_now(axp);
+}
+
+void
+lapb_ack_now(struct ax25_cb *axp)
+{
+	int i;
 
 	if (!axp->flags.rejsent) {
 		for (i = 0; i <= EMMASK; i++) {

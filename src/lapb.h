@@ -205,6 +205,12 @@ struct ax25_cb {
 	 */
 	int dama_polled;
 	int dama_sawi;
+	/* WIR SCHULDEN IHM EINE QUITTUNG.  Als Master quittieren wir nicht
+	 * ausser der Reihe - die Quittung ist es, die sein Fenster wieder
+	 * oeffnet, und damit das einzige Mittel, mit dem wir einen
+	 * Dauersender ueberhaupt bremsen koennen.  Siehe dama_ack_station().
+	 */
+	int dama_ackpend;
 	/* WIR SCHULDEN IHM EIN F.  Gesetzt, wenn als Master eine Antwort auf
 	 * einen Poll ausser der Reihe faellig waere: die geht nicht sofort
 	 * hinaus, sondern im Zug DIESER Station.  Siehe dama_master_holds().
@@ -399,6 +405,11 @@ void ax25_apply_iface_limits(struct ax25_cb *axp);
 void eax25_fallback(struct ax25_cb *axp);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
 int busy(struct ax25_cb *cp);
+/* Die faellige Quittung jetzt senden - REJ, wenn etwas fehlt, sonst
+ * RR/RNR.  Aus ax_t2_timeout() herausgezogen, weil der DAMA-Master sie zu
+ * einem eigenen Zeitpunkt braucht.
+ */
+void lapb_ack_now(struct ax25_cb *axp);
 void ax_t2_timeout(void *p);
 void ax_t5_timeout(void *p);
 void build_path(struct ax25_cb *cp,struct iface *ifp,struct ax25 *hdr,int reverse,

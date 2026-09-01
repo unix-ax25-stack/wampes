@@ -7356,6 +7356,75 @@ Zug.  Beides zusammen ist TNNs Verhalten und beantwortet die
 Duplex-Frage gleich mit.
 
 ------------------------------------------------------------------------
+DER DAUERSENDER, UND WARUM DIE QUITTUNG DIE EINZIGE BREMSE IST
+------------------------------------------------------------------------
+Thomas, 2026-09-01: "A darf senden.  A tut das auch.  Sendet aber immer
+weiter und weiter, obwohl wir B schon laengst Senderecht gegeben haben.
+Irgendwann muss auch das Senden von A sanktioniert werden.  Wir kennen
+sein 'Ende' ja nicht, weil er das RR zu Anfang sendet."
+
+DAS KRITERIUM FASST IHN NICHT, und das ist kein Versehen: gezaehlt wird
+ein KOMMANDO MIT P, also "sich den Kanal ausser der Reihe nehmen".  Ein
+Dauersender pollt aber gar nicht - er sendet einfach.  "Den Kanal nicht
+zurueckgeben" ist ein anderer Vorwurf.
+
+GEMESSEN, VORHER (damaviol.py --flood):
+
+    0.0s I-Rahmen OHNE Poll (1 unquittiert)
+    0.3s RR NR=1 von DL9SAU-1 [Antwort]      <- wir quittieren
+    0.5s I-Rahmen OHNE Poll (1 unquittiert)
+    0.8s RR NR=2 von DL9SAU-1 [Antwort]      <- und wieder ...
+
+WIR SELBST HABEN ES IHM ERMOEGLICHT.  Jede Quittung oeffnet sein Fenster
+wieder; er kam nie an maxframe heran.  Verstoesse in 16 Sekunden: einer,
+und der kam von einem RR(P), nicht vom Fluten.
+
+TNNS BREMSE IST GENAU DIESE STELLE, und sie ist keine Sanktion, sondern
+eine Struktur: auch die Quittung geht dort durch sdl2fr() auf die Liste
+des Links und wartet auf dessen Zug.  Ohne Quittung ist nach maxframe
+unquittierten Rahmen Schluss.  TNN muss das "Ende" des Dauersenders gar
+nicht kennen - er fuettert ihn einfach nicht.
+
+GEBAUT: der Master quittiert nicht mehr ausser der Reihe.  ax_t2_timeout()
+merkt die faellige Quittung nur vor (dama_ackpend), und dama_ack_station()
+schickt sie, wenn die Station dran ist.  GEMESSEN, NACHHER:
+
+    0.0s I-Rahmen OHNE Poll (1 unquittiert)
+    ... sieben ...
+    2.8s FENSTER ZU - 7 unquittiert, ich muss warten
+    4.8s RR(F) NR=7 von DL9SAU-1              <- die Quittung, in SEINEM Zug
+    5.0s I-Rahmen OHNE Poll (1 unquittiert)   <- und weiter, ein Fenster lang
+
+Ein Fenster je Zug, mehr nicht.  Die brave Station merkt nichts davon: sie
+wird gepollt, sendet, und ihre Quittung kommt nach 0,3 s - sie IST ja dran.
+
+ALLE SITZUNGEN AUF EINMAL, und das war Thomas' Zusatz: "sonst sendet er
+die nicht quittierte in seinem naechsten Slot ja wieder, weil er davon
+ausgeht, dass sie verloren ging."  dama_ack_station() geht deshalb ALLE
+Links der Station durch.  Das ist kein Widerspruch zur Fairnessregel:
+UNSERE DATEN gehen weiter mit einem Link je Zug hinaus, damit ein
+Multiconnect-Nutzer nicht mehr Kanal bekommt - eine Quittung ist aber kein
+Senderecht, sondern das Wiederoeffnen SEINES Fensters.
+
+WAS DAS FUER EIN RELAIS HEISST (Thomas' Fall: X>Y via A*,UNS und mehrere
+davon): es wird NICHT gedrosselt.  A darf in seinem Zug auf JEDEM seiner
+Links bis zu maxframe Rahmen loswerden - bei fuenf Sitzungen also 35, mit
+eax25 und maxframe 63 sogar 315.  Der Deckel waechst mit der Zahl seiner
+Sitzungen; er wird nicht dafuer bestraft, ein Relais zu sein.
+
+TNN DROSSELT HIER MEHR ALS WIR: sein xmit_damail() leert nur die Liste des
+BEDIENTEN Links, ein Multiconnect-Nutzer bekommt also je Runde eine
+Sitzung quittiert.  Dafuer fuehrt er den DamaSpeedFactor ("DAMA-Speedf",
+dsf = (DamaSpeedFactor/100)/speed) als Gegenmittel, mit dem eine Station
+auf einem schnellen Port mehr Zuege bekommt.  Wir brauchen den nicht,
+weil wir die Quittungen an die Station binden statt an den Link.
+
+OFFEN BLEIBT DIE SANKTION SELBST: wer trotz geschlossenen Fensters weiter
+sendet - etwa mit UI-Rahmen, die kein Fenster kennen -, wird noch immer
+nicht gezaehlt.  Ob das noetig ist, laesst sich jetzt erst beurteilen: die
+Moeglichkeit ist ihm genommen, es bliebe die Straflosigkeit.
+
+------------------------------------------------------------------------
 GROESSER ALS DER PRIORITAETSFEHLER: UNSER SLAVE SENDET NACH SEINEM F
 ------------------------------------------------------------------------
 Beim Beheben des Rahmenfolge-Befunds (unten) herausgekommen, 2026-09-01,

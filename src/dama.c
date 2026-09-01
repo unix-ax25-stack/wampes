@@ -948,7 +948,11 @@ int dama_master_holds(struct ax25_cb *axp)
 		return 0;
 	if ((mp = dama_m_port(ifp, 0)) == NULL)
 		return 0;
-	if (addreq(dama_station(axp), mp->turn))
+	/* NUR WER GERADE WIRKLICH DRAN IST.  mp->turn behaelt seinen Wert
+	 * auch in der Luecke; ohne mp->busy waere die Luecke ein Schlupfloch,
+	 * durch das der zuletzt Bediente weiter Quittungen bekaeme.
+	 */
+	if (mp->busy && addreq(dama_station(axp), mp->turn))
 		return 0;       /* er ist dran - also jetzt */
 	return 1;
 }
@@ -965,6 +969,42 @@ void dama_master_owe(struct ax25_cb *axp)
 {
 	if (axp != NULL)
 		axp->dama_fpend = 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* ALLE LINKS DIESER STATION QUITTIEREN, und zwar in EINEM Zug.
+ *
+ * Nicht einen je Zug (Thomas): eine Sitzung, die wir nicht quittieren,
+ * schickt er im naechsten Slot noch einmal, weil er sie fuer verloren
+ * haelt.  Wir wuerden also genau den Verkehr erzeugen, den DAMA sparen
+ * soll - und das bei einer Station, die sich richtig verhaelt.
+ *
+ * Das ist die andere Haelfte der Fairnessregel und kein Widerspruch dazu:
+ * UNSERE DATEN gehen weiter mit einem Link je Zug hinaus, damit ein
+ * Multiconnect-Nutzer nicht mehr Kanal bekommt.  Eine Quittung ist aber
+ * kein Senderecht, sondern das Wiederoeffnen SEINES Fensters - sie gehoert
+ * der Station, so wie der Zug der Station gehoert.
+ *
+ * Der gepollte Link braucht keine eigene: der Poll ist ein RR mit N(R) und
+ * quittiert ihn schon.
+ */
+
+static void dama_ack_station(struct iface *ifp, const uint8 *who,
+			     struct ax25_cb *polled)
+{
+	struct ax25_cb *axp;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
+		if (axp->iface != ifp || !axp->dama_ackpend)
+			continue;
+		if (!addreq(dama_station(axp), who))
+			continue;
+		axp->dama_ackpend = 0;
+		if (axp == polled)
+			continue;       /* der Poll traegt seine Quittung */
+		lapb_ack_now(axp);
+	}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1056,6 +1096,10 @@ static void dama_master_turn(struct dama_m *mp)
 	 * pollen"), ein vorgemerkter Rahmen verdraengt ihn also.  Gepollt
 	 * wird sie in der naechsten Runde.
 	 */
+	/* SEIN ZUG BEGINNT - also zuerst, was wir ihm schulden.  Danach erst
+	 * das, was wir selbst wollen.
+	 */
+	dama_ack_station(mp->ifp, mp->turn, last);
 	if (last->dama_fpend) {
 		last->dama_fpend = 0;
 		sendctl(last, LAPB_RESPONSE, (busy(last) ? RNR : RR) | PF);
