@@ -7380,9 +7380,34 @@ sendet.  Auf dem Loopback faellt das nicht auf; auf einem
 Halbduplex-Kanal ist es ein Zusammenstoss zwischen den Daten des einen und
 der Antwort des naechsten.
 
-DAS F GEHOERT AUF DEN LETZTEN RAHMEN.  Genau das bedeutet es in AX.25, und
-genau darauf verlaesst sich unser Master.  Wer zuerst F sagt und dann
-weitersendet, sagt etwas Falsches.
+DAS F BEDEUTET NICHT "ICH HABE AUFGEHOERT ZU SENDEN" - UND DAS WAR MEIN
+FEHLSCHLUSS.  Thomas hat widersprochen ("unser Slave tut das aber nicht von
+ungefaehr"), und er hat recht; es steht ausdruecklich in doc/DAMA-SLAVE.md:
+
+    "In AX.25 an I frame is ALWAYS a command.  Only supervisory and U
+     frames can be responses, so only they can carry F. ... A slave
+     RESPONDS, and no I frame can be a response.  The supervisory frame is
+     the only thing that can close the poll; THE I FRAMES GO OUT BESIDE IT
+     as commands.
+     Both references do it that way round.  Linux's
+     ax25_ds_enquiry_response() calls ax25_std_enquiry_response() first
+     and only then ax25_kick()."
+
+Unser Slave ist also RICHTIG und deckt sich mit Linux.  Das F heisst "das
+ist meine Antwort auf deinen Poll" und nicht "ich bin fertig mit Senden" -
+die Daten laufen daneben, weil sie Kommandos sind und gar nicht anders
+koennen.
+
+DER FEHLER LIEGT BEIM MASTER, also bei mir: er nimmt das F als Zugende.
+Genau deshalb misst TNN den TRAEGER und nicht das F.  Und genau das stand
+auch schon im Abschnitt "Not built" desselben Dokuments, bevor der Master
+gebaut wurde:
+
+    "The master. ... it needs to know when its own transmission ended,
+     which is carrier detect - 6pack reports it, KISS does not - or, on a
+     full duplex port, a bit rate to compute it from."
+
+Es war also angekuendigt und ich habe es beim Bauen uebergangen.
 
 WARUM ES BISHER NIEMAND GEMERKT HAT: gegen TNN faellt es nicht auf, denn
 TNNs Master beendet den Zug NICHT am F, sondern am TRAEGER (dama_dcd(),
@@ -7400,12 +7425,11 @@ jeden Poll mit einem leeren RR(F).  Die Aussage oben stuetzt sich also auf
 den Codeweg und auf den frueher gemessenen Kommentar, nicht auf einen
 eigenen Mitschnitt von heute.
 
-ZU ENTSCHEIDEN, zwei Wege, und sie schliessen sich nicht aus:
+ZU ENTSCHEIDEN.  ES BLEIBEN ZWEI WEGE, UND BEIDE SIND MASTER-SEITE - der
+Weg ueber den Slave ist mit dem obigen Befund weggefallen:
 
-  a) SLAVE-SEITE: das F auf den letzten Rahmen des Blocks legen statt
-     sofort zu antworten.  Das ist die AX.25-richtige Bedeutung und
-     behebt es an der Wurzel - auch gegenueber fremden Mastern, die es
-     wie wir halten.
+  a) ENTFALLEN.  "Das F auf den letzten Rahmen legen" geht in AX.25 nicht
+     (I-Rahmen sind Kommandos) und waere ausserdem gegen Linux.
   b) MASTER-SEITE: den Zug nicht am F allein beenden, sondern am Traeger,
      wo der Port ihn melden kann (6pack).  Das steht ohnehin als Punkt 3
      auf der Liste und beantwortet die Duplex-Frage gleich mit.
@@ -7446,11 +7470,14 @@ ZU ENTSCHEIDEN, zwei Wege, und sie schliessen sich nicht aus:
      (Interface, Station) und kennt mit vp->at_poll bereits eine
      Fenstergrenze - dieselbe Ecke.
 
-     LOHNT SICH ABER ERST NACH a) ZU ENTSCHEIDEN: ist das F wieder das
-     letzte, was ein Slave sendet, entsteht der Fall bei uns gar nicht
-     mehr.  Er bliebe Versicherung gegen FREMDE Slaves, die es anders
-     halten - und als solche ist sie diesmal billig, weil sie nichts
-     verzoegert.
+     UND SIE IST KEINE VERSICHERUNG FUER DEN AUSNAHMEFALL, sondern fuer
+     den NORMALFALL - das hat sich mit dem Befund oben gedreht: JEDER
+     richtige DAMA-Slave sendet nach seinem F weiter, unserer wie der von
+     Linux, weil I-Rahmen keine Antworten sein koennen.  Damit ist sie
+     nicht mehr das Nachrangige von b), sondern der billige Teil
+     derselben Sache: b) sorgt dafuer, dass wir nicht zu frueh
+     weiterpollen, c) dafuer, dass wir dem, der noch sendet, daraus
+     keinen Strick drehen.
 
 ------------------------------------------------------------------------
 BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
