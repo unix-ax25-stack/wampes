@@ -7372,6 +7372,56 @@ beauftragt oder gebaut.
      zusammenschalten, also zu axip, axudp, kiss zu xnet, oder anderem
      axtcp port."
 
+WARUM ES SICH LOHNT - Thomas' zwei Gruende, und der zweite ist der
+schwerere:
+
+  1. KEINE NAT-ZEITFENSTER.  Bei UDP laeuft die Abbildung im
+     NAT-Router schnell ab, und der Partner kommt mit anderem Quellport
+     wieder - genau das, wofuer wir gestern uhnp umgebaut haben.  Eine
+     stehende TCP-Verbindung hat das Problem nicht.
+  2. DIE PAKETREIHENFOLGE.  "Eines der groessten Probleme bei axip /
+     axudp: die Paketreihenfolge wird nicht gewahrt.  Bei db0blo haben
+     wir den Effekt, dass axudp zu igateb problemlos geht, axudp zu
+     igate wird HAEUFIG mit FRMR unterbrochen, weil sich Pakete
+     ueberholten und das zu einer AX25-Protokollverletzung fuehrte."
+
+     Das ist der stichhaltigste Grund, der bisher gefallen ist, und er
+     ist im Betrieb belegt.  AX.25 hat kein Mittel gegen Vertauschung:
+     ein I-Rahmen ausser der Reihe ist ein Sequenzfehler, und der endet
+     in FRMR.  UDP darf vertauschen, TCP nicht.
+
+     (Die andere Seite davon steht als Punkt 4 unten: dieselbe Ordnung,
+     die das behebt, bringt Head-of-Line-Blocking mit.)
+
+RECHERCHE, 2026-09-02: ES GIBT DAS SCHON, UND ZWAR IN BPQ32.
+
+  BPQAXIP.DLL kann AXIP, AXUDP UND AXTCP.  Die Konfiguration:
+
+      MAP G8BPQ-6  0.0.0.0     TCP-Slave  10093 B
+      MAP AE5E-14  example.com TCP-Master 10093
+
+  TCP-Slave lauscht, TCP-Master ruft; die Portnummer im Beispiel ist
+  10093, also dieselbe, die axudp per Konvention benutzt.  Die Abbildung
+  ist JE RUFZEICHEN und ausdruecklich konfiguriert - kein Lernen.  Grenze
+  128 Eintraege.  Als Zweck nennt die Doku "difficult cases", wo der
+  Betreiber keine Kontrolle ueber das Netz hat: genau Thomas' NAT-Fall.
+
+  WAS DIE DOKU NICHT SAGT: die RAHMUNG im Strom.  Ob KISS mit FEND/FESC,
+  eine Laengenangabe oder etwas anderes, steht dort nicht.
+
+  DAVON ZU UNTERSCHEIDEN ist "KISS ueber TCP" auf Port 8001 - das ist die
+  verbreitete Konvention fuer den ZUGANG ZU EINEM TNC (Direwolf, die
+  Soundmodems, diverse Clients), also Rechner-zu-Modem und nicht
+  Knoten-zu-Knoten.  Beides heisst umgangssprachlich "KISS ueber TCP" und
+  ist nicht dasselbe; das sollte man beim Reden auseinanderhalten.
+
+  FOLGE FUER DIE NAMENSFRAGE: "axtcp" trifft BPQs Wort.  Thomas'
+  "axkisstcp" waere ueber die Rahmung ehrlicher - aber nur, wenn BPQs
+  AXTCP wirklich etwas anderes rahmt.  ERST NACHSEHEN, DANN BENENNEN:
+  was BPQ auf die Leitung legt, steht in der LinBPQ-Quelle oder in einem
+  Mitschnitt.  Eine verbreitete Gegenstelle ist mehr wert als eine
+  elegante eigene Rahmung.
+
 WAS DAFUER SCHON DA IST:
 
   * DIE RAHMUNG.  KISS mit FEND/FESC gibt es im Knoten (kiss.c ueber
