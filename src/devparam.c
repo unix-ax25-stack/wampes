@@ -29,6 +29,7 @@ static struct param Parms[] = {
 	{ PARAM_DOWN,     "Down" },
 	{ PARAM_UP,       "Up" },
 	{ PARAM_BLIND,    "Blind" },
+	{ PARAM_DCD,      "DCD" },
 	{ PARAM_RETURN,   "Return" },
 	{ -1,             NULL }
 };

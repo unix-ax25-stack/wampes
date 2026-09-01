@@ -219,6 +219,12 @@ int32 sixpack_ioctl(struct iface *ifp, int cmd, int set, int32 val)
 	case PARAM_FULLDUP:
 		if (set) sp->duplex = val ? 1 : 0;
 		return sp->duplex;
+	case PARAM_DCD:
+		/* Nur lesen.  Der TNC meldet den Traeger im Statusbyte, siehe
+		 * SIXP_STATE_DCD im Empfangsweg - damit ist 6pack der einzige
+		 * Porttyp bei uns, der die Frage ueberhaupt beantworten kann.
+		 */
+		return sp->dcd;
 	}
 	return -1;
 }

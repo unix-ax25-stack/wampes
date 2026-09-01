@@ -29,6 +29,12 @@ enum devparam {
 	PARAM_DOWN=0x81,
 	PARAM_UP=0x82,
 	PARAM_BLIND=0x83,       /* should be vertigo, can't tell down/up? */
+	/* NUR EINE ABFRAGE, kein KISS-Kommando - deshalb hier oben bei den
+	 * anderen Werten ausserhalb der KISS-Nummerierung.  1 = Traeger da,
+	 * 0 = frei, -1 = der Port weiss es nicht (das ist der Normalfall:
+	 * KISS meldet es nicht, 6pack schon).
+	 */
+	PARAM_DCD=0x84,
 	PARAM_RETURN=0xff
 };
 

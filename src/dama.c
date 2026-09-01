@@ -1260,6 +1260,43 @@ static void dama_master_gap(struct dama_m *mp)
 
 /*---------------------------------------------------------------------------*/
 
+/* DER TRAEGER, WENN DER PORT IHN KENNT.  1 belegt, 0 frei, -1 weiss nicht.
+ *
+ * Das ist die Groesse, die dem Master die ganze Zeit gefehlt hat, und
+ * doc/DAMA-SLAVE.md hat es vorausgesagt, bevor er gebaut wurde: "it needs
+ * to know when its own transmission ended, which is carrier detect - 6pack
+ * reports it, KISS does not".
+ *
+ * Gebraucht wird er, weil das F NICHT bedeutet "ich habe aufgehoert zu
+ * senden": ein Slave antwortet mit dem Supervisory-Rahmen und schickt
+ * seine Daten daneben, denn I-Rahmen sind Kommandos und koennen kein F
+ * tragen.  Wer den Zug am F beendet, pollt den naechsten also womoeglich
+ * mitten in die Aussendung des vorigen hinein.
+ *
+ * -1 ist der Normalfall und aendert nichts: axip, bpqether und KISS
+ * antworten auf diese Frage nicht, und dann bleibt es beim bisherigen
+ * Verhalten.
+ */
+
+static int dama_carrier(struct iface *ifp)
+{
+	int32 v;
+
+	if (ifp == NULL || ifp->ioctl == NULL)
+		return -1;
+	v = (*ifp->ioctl)(ifp, PARAM_DCD, 0, 0);
+	if (v < 0)
+		return -1;
+	return v ? 1 : 0;
+}
+
+/* Wie oft nachgesehen wird, solange der Kanal belegt ist.  Kurz, denn es
+ * ist nur ein Zeitgeber und kein Verkehr.
+ */
+#define DAMA_CARRIER_POLL       100L    /* ms */
+
+/*---------------------------------------------------------------------------*/
+
 /* Der Zeitgeber, und er hat zwei Bedeutungen - welche, sagt mp->busy:
  * laeuft ein Zug, ist die Zeitscheibe abgelaufen (der Gepollte schweigt);
  * laeuft keiner, ist die Pause vorbei und die naechste Station ist dran.
@@ -1283,6 +1320,18 @@ static void dama_master_next(void *arg)
 		 * Zugdauer, und der Block war zu lang.  Beides endet den Zug.
 		 */
 		dama_master_gap(mp);
+		return;
+	}
+	/* DER KANAL MUSS FREI SEIN, bevor der naechste drankommt.  Bei TNN
+	 * ist es dieselbe Bedingung, nur als herunterzaehlender Zaehler
+	 * geschrieben: "if (!dcd && dama_timer[k] > 0) ... herunterzaehlen"
+	 * und dann "DAMA nur weiter, wenn letztes Frame gesendet wurde".
+	 *
+	 * Kennt der Port den Traeger nicht (-1), bleibt alles wie bisher.
+	 */
+	if (dama_carrier(mp->ifp) > 0) {
+		set_timer(&mp->t, DAMA_CARRIER_POLL);
+		start_timer(&mp->t);
 		return;
 	}
 	if (!dama_next_station(mp->ifp, mp->turn, who)) {
@@ -2108,6 +2157,11 @@ void dama_show(struct iface *ifp)
 			printf("serving %s", pax25(buf, mp->turn));
 		else
 			printf("idle");
+		switch (dama_carrier(ifp)) {
+		case 1:  printf(", carrier busy"); break;
+		case 0:  printf(", carrier clear"); break;
+		default: printf(", no carrier sense"); break;
+		}
 		printf(", polls %ld, non-dama polls heard %ld\n",
 		       (long) ifp->dama_polls, (long) ifp->dama_violations);
 		return;

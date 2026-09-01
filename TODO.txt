@@ -7356,6 +7356,56 @@ Zug.  Beides zusammen ist TNNs Verhalten und beantwortet die
 Duplex-Frage gleich mit.
 
 ------------------------------------------------------------------------
+DER TRAEGER IST JETZT ABFRAGBAR - PARAM_DCD (2026-09-01)
+------------------------------------------------------------------------
+Punkt 3 der Kette: den Zug nicht am F beenden, sondern am Traeger.
+
+WARUM ER GEBRAUCHT WIRD, steht im Abschnitt darueber: das F heisst "das
+ist meine Antwort" und nicht "ich habe aufgehoert zu senden".  Wer den Zug
+am F beendet, pollt den naechsten womoeglich mitten in die Aussendung des
+vorigen hinein.  doc/DAMA-SLAVE.md hat das vorausgesagt, bevor der Master
+gebaut wurde ("it needs to know when its own transmission ended, which is
+carrier detect - 6pack reports it, KISS does not").
+
+GEBAUT:
+
+  * PARAM_DCD=0x84 in devparam.h, bei den anderen Werten AUSSERHALB der
+    KISS-Nummerierung (PARAM_DOWN/UP/BLIND) - es ist eine Abfrage und kein
+    KISS-Kommando.  1 = Traeger da, 0 = frei, -1 = der Port weiss es
+    nicht.
+  * sixpack_ioctl() beantwortet sie aus sp->dcd, dem Statusbyte des TNC.
+    6pack ist der einzige Porttyp bei uns, der es kann; kiss_ioctl() und
+    krnlif_ioctl() liefern fuer Unbekanntes -1, axip und bpqether haben
+    gar kein ioctl.
+  * dama_carrier() in dama.c, und in dama_master_next() die Bedingung: ist
+    der Kanal belegt, wird nicht die naechste Station gepollt, sondern in
+    100 ms noch einmal nachgesehen.  Das ist TNNs "DAMA nur weiter, wenn
+    letztes Frame gesendet wurde", nur als Nachschau statt als
+    herunterzaehlender Zaehler.
+  * "ifconfig <if> verbose" sagt es jetzt: "carrier busy", "carrier clear"
+    oder "no carrier sense".
+
+WAS GEMESSEN IST UND WAS NICHT - wichtig, damit niemand mehr hineinliest
+als dasteht:
+
+  GEMESSEN   auf axip aendert sich nichts (13 Polls, Abstand 0,67s wie
+             vorher), und verbose sagt dort "no carrier sense".  Der
+             Rueckfall auf das bisherige Verhalten stimmt also.
+  NICHT      der Traegerpfad selbst.  Dafuer braeuchte es einen
+  GEMESSEN   6pack-Port im Labor; testtools/fake6pack_dcd.py spielt einen
+             TNC, der den Kanal erst belegt und dann freigibt, haengt aber
+             an einem TCP-Port, und "attach asy" kennt keinen
+             TCP-Anschluss - da lag damals vermutlich ein socat
+             dazwischen.  Das gehoert in dieselbe Ecke wie C.9 (Porttyp
+             MIT Kanalzugriff), und die ist auf den echten Betrieb
+             vertagt.
+
+WAS DAMIT AUCH BEANTWORTET IST: die Duplex-Frage.  Der Traeger ist das
+EMPFANGENE Signal (bei TNN ausdruecklich "nicht busy(), iscd() !"), misst
+auf einem Duplex-Einstieg also von selbst den Uplink - und was der eigene
+Sender tut, geht ihn nichts an.
+
+------------------------------------------------------------------------
 DER DAUERSENDER, UND WARUM DIE QUITTUNG DIE EINZIGE BREMSE IST
 ------------------------------------------------------------------------
 Thomas, 2026-09-01: "A darf senden.  A tut das auch.  Sendet aber immer
@@ -7419,10 +7469,13 @@ dsf = (DamaSpeedFactor/100)/speed) als Gegenmittel, mit dem eine Station
 auf einem schnellen Port mehr Zuege bekommt.  Wir brauchen den nicht,
 weil wir die Quittungen an die Station binden statt an den Link.
 
-OFFEN BLEIBT DIE SANKTION SELBST: wer trotz geschlossenen Fensters weiter
-sendet - etwa mit UI-Rahmen, die kein Fenster kennen -, wird noch immer
-nicht gezaehlt.  Ob das noetig ist, laesst sich jetzt erst beurteilen: die
-Moeglichkeit ist ihm genommen, es bliebe die Straflosigkeit.
+DIE SANKTION SELBST IST ERLEDIGT, und zwar durch Entscheidung (Thomas,
+2026-09-01): "Ich halte es da mit der Spec: DAMA ist fuer I-Pakete.  UI
+(datagram) ist nicht im Fokus des Dokuments."  Das deckt sich mit dem
+Papier, das Datagramme ausdruecklich aus der Poll-Disziplin herausnimmt
+("UI-frames originated by the node are no problem since all stations
+receive these frames").  Wer mit UI flutet, ist also kein DAMA-Fall - und
+das Fenster nimmt ihm fuer I-Rahmen die Moeglichkeit ohnehin.
 
 ------------------------------------------------------------------------
 GROESSER ALS DER PRIORITAETSFEHLER: UNSER SLAVE SENDET NACH SEINEM F
