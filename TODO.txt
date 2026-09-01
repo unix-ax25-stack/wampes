@@ -7449,6 +7449,11 @@ RECHERCHE, 2026-09-02: ES GIBT DAS SCHON, UND ZWAR IN BPQ32.
   "axtcp" vorzuziehen, weil eine verbreitete Gegenstelle mehr wert ist
   als ein genauerer eigener Name.
 
+  ENTSCHIEDEN (Thomas, 2026-09-02): WIR WOLLEN ZU BPQ KOMPATIBEL SEIN.
+  Damit ist die Rahmung keine Entwurfsfrage mehr, sondern eine
+  Nachbaufrage - und das trifft sich gut, weil unser kiss.c den Bau schon
+  hat.
+
   WAS NOCH ZU KLAEREN WAERE, WENN INTEROP DAS ZIEL IST: welche Pruefsumme
   BPQ rechnet (wir koennen SMACK und RMNC), ob das KISS-Typbyte dieselbe
   Bedeutung hat, und ob die 128er-Grenze der MAP-Tabelle uns beruehrt.
