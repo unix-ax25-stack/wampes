@@ -7410,53 +7410,47 @@ ZU ENTSCHEIDEN, zwei Wege, und sie schliessen sich nicht aus:
      wo der Port ihn melden kann (6pack).  Das steht ohnehin als Punkt 3
      auf der Liste und beantwortet die Duplex-Frage gleich mit.
 
-  c) EINE GRACE-TIME NACH DEM F (Thomas, 2026-09-01): "Wo ist das Problem,
-     den Zug fuer User A erst zu beenden, wenn alle nachfolgenden Pakete
-     nach seinem F empfangen wurden - grace time, weil ggf. ein Paket
-     verloren ging oder vom SABM eines anderen Users unterbrochen wurde
-     und somit unsere rx buffer list ist UserA,UserB,UserA,UserA?"
+  c) EINE GRACE-TIME FUER VERSPAETETE RAHMEN (Thomas, 2026-09-01).
 
-     (NICHT ZU VERWECHSELN mit der Grace-Time weiter unten - die betrifft
-     den Wiederaufbau nach einem Zwangsdisconnect und ist erledigt.
-     Gleiches Wort, anderer Ort.)
+     ICH HATTE IHN ZUERST FALSCH VERSTANDEN und eine ganze Kostenrechnung
+     fuer die falsche Sache aufgemacht - naemlich dafuer, A's ZUG
+     hinauszuzoegern, bis nichts mehr kommt.  Darum geht es nicht.  Seine
+     Fassung:
 
-     KONZEPTIONELL IST DARAN NICHTS FALSCH - es ist der richtige Ersatz
-     fuer den Traeger, den wir nicht haben.  Und der Verschachtelungsfall
-     ist schon heute gedeckt: ein Rahmen von B kann A's Zug nicht
-     beenden, dafuer sorgt
+         "A sendet noch, obwohl schon B dran ist.  A durfte senden, und
+          wir akzeptieren noch eine gewisse Zeit Pakete von A (der ja mit
+          F-Bit anfing zu senden), ohne dies als Protokollverstoss zu
+          werten, auch wenn B schon dran ist im Zeitfenster."
 
-         if (!addreq(dama_station(axp), mp->turn)) return;
+     Es wird also NICHTS VERZOEGERT.  Der Zug endet wie bisher, B kommt
+     dran wie bisher; nur der VERSTOSSZAEHLER ist fuer eine kurze Frist
+     nachsichtig gegenueber der Station, die eben noch dran war.  Damit
+     entfaellt die ganze Kostenrechnung von oben - keine Grace mal n, kein
+     Warten auf Stille, kein Problem mit dem KISS-Rahmenende.
 
-     Ein SABM von B mitten in A's Zug ist ausserdem LEGITIM - der Aufbau
-     laeuft in CSMA, wir zaehlen ihn ausdruecklich nicht als Verstoss.
-     A,B,A,A ist also der erwartete Fall und nicht die Ausnahme.
+     WARUM ES GEBRAUCHT WIRD, und das ist genau unser eigener Fall: wer
+     "mit dem F-Bit anfaengt zu senden" - unser Slave schickt das RR(F)
+     zuerst und seine Daten danach -, dessen Rahmen kommen an, wenn der
+     Zug nach unserer Rechnung schon vorbei ist.
 
-     DIE KOSTEN SIND DAS PROBLEM, und zwei davon wiegen:
+     WAS HEUTE SCHON GUT GEHT: als Verstoss zaehlt nur ein KOMMANDO MIT P
+     auf einer stehenden Verbindung.  Verspaetete I-Rahmen (Kommandos ohne
+     P) und ein RR(F) (Antwort) fallen also ohnehin nicht darunter.  Der
+     Fall, den die Grace faengt, ist der schmale: eine Station, die ihrem
+     Block ein P mitgibt - etwa weil ihr T1 mitten im eigenen Zug ablaeuft
+     -, und deren Rahmen uns erreicht, nachdem wir schon weiter sind.
 
-       1. Die Grace kostet auf JEDEM Zug, nicht nur dort, wo sie gebraucht
-          wird - wir erfahren erst durch Stille, dass A fertig ist.  Die
-          Runde waechst um Grace mal n, also genau die Skalierung, die bei
-          der Luecke schon stoerte.
-       2. UEBER KISS SEHEN WIR EINEN RAHMEN ERST, WENN ER VOLLSTAENDIG
-          IST.  "Stille" ist damit mehrdeutig: A's naechster Rahmen kann
-          laengst auf der Luft sein.  Sicher waere die Grace erst, wenn
-          sie einen ganzen maximalen Rahmen abdeckt:
+     UMSETZUNG waere klein: den Zeitpunkt des Zugendes je Station merken
+     und im Verstosszweig von dama_master_input() pruefen, ob er noch
+     innerhalb der Frist liegt.  Die Zaehlung haengt ohnehin schon an
+     (Interface, Station) und kennt mit vp->at_poll bereits eine
+     Fenstergrenze - dieselbe Ecke.
 
-              1200 bit/s   (256+20)*8/1200 = 1,84 s   (Luecke 0,66 s)
-              9600 bit/s                     0,23 s   (Luecke 0,56 s)
-
-          Bei 1k2 kostet die Versicherung fast das Dreifache dessen, was
-          sie versichert.
-       3. Sie kann "A ist fertig" nicht von "A's naechster Rahmen ging
-          verloren" unterscheiden - unschaedlich, weitergehen ist in
-          beiden Faellen richtig.
-
-     DARAUS DIE REIHENFOLGE: erst a), dann messen, ob ueberhaupt noch
-     etwas uebrigbleibt.  Mit a) braucht UNSERE Paarung gar keine Grace;
-     sie waere dann nur noch Versicherung gegen FREMDE Slaves, die nach
-     ihrem F weitersenden - und dafuer sind 1,8 s auf jedem Zug viel.
-     Abschaltbar und hergeleitet wie die anderen Fristen waere sie
-     dagegen billig.
+     LOHNT SICH ABER ERST NACH a) ZU ENTSCHEIDEN: ist das F wieder das
+     letzte, was ein Slave sendet, entsteht der Fall bei uns gar nicht
+     mehr.  Er bliebe Versicherung gegen FREMDE Slaves, die es anders
+     halten - und als solche ist sie diesmal billig, weil sie nichts
+     verzoegert.
 
 ------------------------------------------------------------------------
 BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
