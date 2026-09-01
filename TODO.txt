@@ -7323,6 +7323,39 @@ verworfen.  Der Schreibschutz stoert dabei nicht: er sitzt auf der
 AX.25-Route (WELCHES INTERFACE), nicht auf dem UDP-Port.
 
 ------------------------------------------------------------------------
+2 m UND 70 cm: DIE FRAGE IST KLEINER ALS GEDACHT (2026-09-01)
+------------------------------------------------------------------------
+Sie stand mehrfach als offene Entscheidung im Weg ("wohin senden wir, wenn
+ein Nutzer auf beiden Einstiegen auftaucht").  Thomas hat sie mit einer
+Gegenthese aufgeloest: "warum sollten wir nicht auf dem Port antworten,
+auf dem wir angesprochen werden?"  Nachgesehen - GENAU DAS TUN WIR SCHON.
+
+    sendframe()            if ((ifp = axp->iface)) ... (*ifp->raw)(ifp,bpp)
+    eingehender Aufbau     axp->iface = ifp;   samt umgedrehtem Pfad
+
+Eine stehende Sitzung haengt an IHREM Port, nicht an der Routentabelle.
+Deren Flattern schadet ihr also gar nicht - und der AXROUTE_PIN muss die
+Frage auch nicht entscheiden (er ist ohnehin auf Brueckenpartner
+beschraenkt und tut bei zwei ungebrueckten Einstiegen nichts).
+
+WAS BLEIBT, HAENGT AM DIGIPEAT-MODUS:
+
+    digipeat 2   Jeder Hop wird terminiert, es gibt je Bein einen
+                 Kontrollblock mit eigenem axp->iface.  Verbindet der
+                 Nutzer auf 2 m zu DB0AAA und auf 70 cm zu DB0BBB, dann
+                 lebt jedes Bein auf seinem Port und antwortet dort.
+                 GELOEST, ohne dass wir etwas tun.
+    digipeat 1   Kein Zustand.  Die Antwort "DB0AAA > USER via UNS*" geht
+                 ueber axroute(), also ueber die Routentabelle, und dort
+                 gibt es EINEN Eintrag je Rufzeichen.  Genau Thomas' Fall,
+                 und er ist dort ohne Zustand nicht loesbar - ein Pin
+                 machte ihn nur stabil falsch statt wechselnd falsch.
+
+Zustand ist aber genau das, was digipeat 2 einfuehrt.  Die Frage ist damit
+keine Entscheidung mehr, sondern eine Eigenschaft des Modus - und unser
+DAMA-Master verlangt digipeat 2 ohnehin.
+
+------------------------------------------------------------------------
 WAS AUF EIN LABOR WARTET - DREI DINGE, EIN BEDARF
 ------------------------------------------------------------------------
 Damit es nicht vergessen wird (Thomas): drei Sachen sind gebaut oder
