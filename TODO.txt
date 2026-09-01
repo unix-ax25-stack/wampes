@@ -7460,12 +7460,41 @@ DIE REGEL BLEIBT, UND IHR GRUND IST JETZT BESSER (Thomas, 2026-09-01).
           iface1 auf iface2 an: eine falsche Aussage darueber, wo der
           Knoten erreichbar ist.
 
-      DAMIT IST AUCH DIE ARP-FRAGE ENTSCHIEDEN, und zwar dagegen: ARP
-      folgt der IP-Route und ist kein Fall fuer die Bruecke.  Wer die
-      Anfrage weiter tragen will, nimmt "ifconfig <iface> digiarp add
-      <digi>" - dafuer ist es da - oder traegt den Partner mit "arp add"
-      ein.  Die Regel "Broadcasts werden nie gebrueckt" gilt also
-      unveraendert, jetzt aber nicht mehr nur wegen der Schleife.
+      Die Regel "Broadcasts werden nie gebrueckt" gilt also unveraendert,
+      jetzt aber nicht mehr nur wegen der Schleife.
+
+      DIE ARP-FRAGE IST DAMIT ABER NICHT ERLEDIGT - ich hatte sie zu
+      schnell zugemacht.  Thomas' Fall steht weiter offen:
+
+          "Route ist auf die Bruecke gelegt, wir haben 1 Subnet aber 2 hf
+           ports, also wird sich hoffentlich auf einem der beiden jemand
+           melden, der fuer die IP zustaendig ist."
+
+      Er braucht ZWEI Dinge, und keines davon ist ein gebrueckter
+      Broadcast - der NODES-Einwand trifft also nicht:
+
+        1. DIE FRAGE.  arp_output() schreibt iface->hwaddr sowohl in
+           arp.shwaddr als auch als AX.25-Absender; eine Anfrage sagt
+           also "ich bin unter DIESEM Rufzeichen auf DIESEM Port
+           erreichbar".  Verbatim gebrueckt waere sie dieselbe
+           Falschaussage wie NODES.  NEU ERZEUGT auf jedem Port der
+           Gruppe, je mit eigenem Absender, ist sie richtig.
+        2. DIE DATEN.  axui_send() loest mit res_arp(iface,...) auf und
+           sendet auf dem Interface, das die IP-ROUTE nennt - die
+           AX.25-Routentabelle wird fuer die Portwahl gar nicht gefragt.
+           Ohne diesen zweiten Teil antwortet zwar jemand, aber das
+           Datagramm ginge weiter auf den falschen Port.
+
+           Der Weg dafuer liegt bereit: nach der Aufloesung ist das
+           Zielrufzeichen bekannt, und ax_routeptr(call)->ifp sagt, wo es
+           gehoert wurde.  "Eine IP-Route darf eine Bruecken-GRUPPE
+           nennen, der Port kommt von dort, wo die Station war."
+
+      NICHT GEBAUT.  Es ist ein Eingriff im IP-Weg und eine Entscheidung
+      fuer sich.  "ifconfig <iface> digiarp" und "arp add" sind das, was
+      es heute dafuer gibt, loesen aber Thomas' Fall nicht: das eine traegt
+      die Anfrage ueber Digipeater desselben Ports, das andere verlangt,
+      dass man den Partner schon kennt.
 
   1. DER SCHREIBSCHUTZ DER ROUTE (AXROUTE_PIN).  Sein Fall ist NICHT das
      Echo der eigenen Aussendung - das ist weder an uns adressiert noch
