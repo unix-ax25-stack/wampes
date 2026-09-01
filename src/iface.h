@@ -162,6 +162,11 @@ struct iface {
 				 * FSK ueber eine 38400er Leitung waere die
 				 * falsch (Thomas).  DAMA rechnet daraus seine
 				 * Fristen. */
+	int32 dama_gap;         /* als Master: Pause zwischen zwei Zuegen in
+				 * ms.  0: Vorgabe (DAMA_GAP_DEFAULT).  TNN
+				 * fuehrt dieselbe Groesse als Parameter
+				 * (dama_init, "DAMA-Tout"), bei uns war sie
+				 * bis 2026-09-01 ein festes #define. */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_mark_own;      /* als Slave: eigene Rahmen markieren.  Vorgabe
 				 * AUS - das Bit ist das des Masters. */

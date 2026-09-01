@@ -15,6 +15,25 @@
 #include "lapb.h"
 #endif
 
+/* EIN MINDESTABSTAND ZWISCHEN ZWEI POLLS, ohne den die Runde rast.
+ *
+ * Gemessen, als der erste echte Slave gegenueberstand: er beantwortet den
+ * Poll, das beendet den Zug, der naechste begann sofort - 221794 Polls in
+ * 25 Sekunden, bei EINER Station.  Mit mehreren waere es dasselbe, nur
+ * abwechselnd.
+ *
+ * TNN fuehrt dafuer dama_init, Vorgabe 100 in Einheiten von 10 ms, also eine
+ * Sekunde (config.c; einstellbar bis 1000, das waeren zehn).  Dieselbe Zahl
+ * hier, und aus demselben Grund: der Abstand ist es, der aus "so schnell wie
+ * die Leitung kann" eine Runde macht - und er laesst dem Kanal Luft fuer
+ * das, was NICHT gepollt wird, den Verbindungsaufbau naemlich, der nach der
+ * Spezifikation in CSMA laeuft.
+ *
+ * NUR NOCH DIE VORGABE, seit "ifconfig <iface> dama-gap <ms>" den Wert je
+ * Port setzen kann - so wie TNN ihn seit jeher setzen laesst.
+ */
+#define DAMA_GAP_DEFAULT        1000L   /* ms */
+
 /* Roles. */
 #define DAMA_OFF        0
 #define DAMA_SLAVE      1

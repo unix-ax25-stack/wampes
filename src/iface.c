@@ -37,6 +37,7 @@ int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
 static int ifarp(int argc,char *argv[],void *p);
 static int ifhfdatarate(int argc,char *argv[],void *p);
+static int ifdamagap(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
@@ -162,6 +163,22 @@ struct cmds Ifcmds[] = {
 	  "  timeout: how long a master may be silent before we stop\n"
 	  "  following him.  Default 120, and 0 means that default.\n"
 	  "  The current value is in \"ifconfig <iface> verbose\"." },
+	/* MUSS HINTER "dama" STEHEN, und das ist keine Kosmetik: cmdparse
+	 * vergleicht mit strncmp(argv[0], name, strlen(argv[0])) und nimmt den
+	 * ERSTEN Treffer.  "dama" ist ein Praefix von "dama-gap" - stuende der
+	 * laengere Name vorn, landete "ifconfig <if> dama master permissive"
+	 * in ifdamagap(), das atol("master") als 0 liest und STILL den Abstand
+	 * auf 0 setzt.  Genau so ist es mir passiert: der Port wurde nie
+	 * Master, ohne eine einzige Fehlermeldung, und erst die ausbleibenden
+	 * Polls haben es gezeigt.
+	 */
+	{ "dama-gap",             ifdamagap,      0,      1,
+	  "ifconfig <iface> dama-gap <ms>         (0 = Vorgabe 1000)\n"
+	  "  Als DAMA-MASTER die Pause zwischen zwei Zuegen.  Sie macht aus\n"
+	  "  \"so schnell wie die Leitung kann\" erst eine Runde und laesst dem\n"
+	  "  Kanal Luft fuer den Verbindungsaufbau, der nach der Spezifikation\n"
+	  "  in CSMA laeuft.  Achtung: sie gilt nach JEDEM Zug, eine Runde mit\n"
+	  "  n Stationen dauert also mindestens n mal so lang." },
 	{ "eax25",                ifeax25,        0,      2,
 	  "ifconfig <iface> eax25 off|accept|caller|always\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "emaxframe",            ifemaxframe,    0,      2,
@@ -505,6 +522,62 @@ ifhfdatarate(int argc,char *argv[],void *p)
 		return 1;
 	}
 	ifp->hf_datarate = (int32) n;
+	return 0;
+}
+
+/* DIE PAUSE ZWISCHEN ZWEI ZUEGEN, und sie war bis hierher ein festes
+ * #define.  Thomas beim Mitlesen einer Messung: "Poll im Sekundentakt?
+ * Veraendert sich das, wenn wir 16 User haben?  16 Polls passen nicht in 1s."
+ *
+ * Nein, veraendert sich nicht - und die Spezifikation will das Gegenteil
+ * ("the waiting times are reduced to a minimum ... self-alignment
+ * mechanism").  Das einstellbar zu machen ist der kleinste Schritt dorthin
+ * und der einzige, der unter jeder der drei erwogenen Loesungen gebraucht
+ * wird; TNN fuehrt dieselbe Groesse laengst als Parameter.
+ *
+ * In MILLISEKUNDEN, nicht in Sekunden: sobald der Abstand einmal von der
+ * Zahl der Stationen oder der Auslastung abhaengt, sind Werte unterhalb
+ * einer Sekunde der Normalfall.
+ */
+
+static int
+ifdamagap(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	long n;
+
+	if(!is_ax25(ifp)){
+		printf("%s has no radio path, so there is no channel to share "
+		       "and nothing\n  for \"dama-gap\" to space out.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		if(ifp->dama_gap)
+			printf("%s: dama-gap %ldms\n", ifp->name,
+			       (long) ifp->dama_gap);
+		else
+			printf("%s: dama-gap %ldms (Vorgabe)\n", ifp->name,
+			       (long) DAMA_GAP_DEFAULT);
+		return 0;
+	}
+	n = atol(argv[1]);
+	if(n < 0 || n > 30000L){
+		printf("dama-gap wants milliseconds, 0 to 30000 "
+		       "(0 = Vorgabe %ld)\n", (long) DAMA_GAP_DEFAULT);
+		return 1;
+	}
+	/* NULL IST ERLAUBT, aber gemessen: ohne Pause rast die Runde - mit
+	 * EINEM Slave am Loopback 221794 Polls in 25 Sekunden.  Auf der Luft
+	 * bremst die Sendezeit, aber der Verbindungsaufbau in CSMA findet
+	 * dann keine Luecke mehr.  Wer es einstellt, soll wissen warum.
+	 */
+	if(n == 0 && argv[1][0] == '0')
+		printf("%s: dama-gap 0 - kein Abstand zwischen zwei Zuegen.  "
+		       "Gemessen rast die\n  Runde dann; und der "
+		       "Verbindungsaufbau, der in CSMA laeuft, findet keine "
+		       "Luecke.\n", ifp->name);
+	ifp->dama_gap = (int32) n;
 	return 0;
 }
 

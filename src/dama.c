@@ -731,21 +731,6 @@ static const uint8 *dama_station(const struct ax25_cb *axp)
  */
 #define DAMA_SLOT_DEFAULT       5000L   /* ms */
 
-/* UND EIN MINDESTABSTAND ZWISCHEN ZWEI POLLS, ohne den die Runde rast.
- *
- * Gemessen, als der erste echte Slave gegenueberstand: er beantwortet den
- * Poll, das beendet den Zug, der naechste begann sofort - 221794 Polls in
- * 25 Sekunden, bei EINER Station.  Mit mehreren waere es dasselbe, nur
- * abwechselnd.
- *
- * TNN fuehrt dafuer dama_init, Vorgabe 100 in Einheiten von 10 ms, also eine
- * Sekunde (config.c; einstellbar bis 1000, das waeren zehn).  Dieselbe Zahl
- * hier, und aus demselben Grund: der Abstand ist es, der aus "so schnell wie
- * die Leitung kann" eine Runde macht - und er laesst dem Kanal Luft fuer
- * das, was NICHT gepollt wird, den Verbindungsaufbau naemlich, der nach der
- * Spezifikation in CSMA laeuft.
- */
-#define DAMA_GAP_DEFAULT        1000L   /* ms */
 
 struct dama_m {
 	struct dama_m *next;
@@ -1095,6 +1080,17 @@ static void dama_master_turn(struct dama_m *mp)
  * Zeitscheibe.  Jetzt die Pause, nicht sofort der naechste Poll.
  */
 
+/* Der geltende Abstand: was der Sysop gesagt hat, sonst die Vorgabe. */
+
+static int32 dama_gap_time(const struct iface *ifp)
+{
+	if (ifp == NULL)
+		return DAMA_GAP_DEFAULT;
+	return ifp->dama_gap > 0 ? ifp->dama_gap : DAMA_GAP_DEFAULT;
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void dama_master_gap(struct dama_m *mp)
 {
 	stop_timer(&mp->t);
@@ -1105,7 +1101,7 @@ static void dama_master_gap(struct dama_m *mp)
 	 * naechsten Poll.
 	 */
 	dama_ui_flush(mp->ifp);
-	set_timer(&mp->t, DAMA_GAP_DEFAULT);
+	set_timer(&mp->t, dama_gap_time(mp->ifp));
 	start_timer(&mp->t);
 }
 
@@ -1933,13 +1929,13 @@ void dama_show(struct iface *ifp)
 		struct dama_m *mp = dama_m_port(ifp, 0);
 
 		printf("           dama master (%s), answer %ldms turn %ldms "
-		       "gap %lds, ",
+		       "gap %ldms, ",
 		       ifp->dama_policy == DAMA_LAZY ? "lazy" :
 		       ifp->dama_policy == DAMA_ENFORCE ? "enforce" :
 		       "permissive",
 		       (long) dama_answer_time(ifp),
 		       (long) dama_turn_time(ifp),
-		       DAMA_GAP_DEFAULT / 1000L);
+		       (long) dama_gap_time(ifp));
 		/* "serving" und nicht noch einmal "turn": die Zeile nennt
 		 * schon eine Zugdauer, und dasselbe Wort fuer zwei Dinge in
 		 * einer Zeile liest sich als Fehler.
