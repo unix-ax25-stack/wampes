@@ -7329,10 +7329,26 @@ Damit es nicht vergessen wird (Thomas): drei Sachen sind gebaut oder
 entschieden, aber NICHT GEMESSEN, und alle drei brauchen dasselbe - einen
 Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
 
-  1. DER SCHREIBSCHUTZ DER BRUECKE (AXROUTE_PIN).  Er greift gegen das
-     Echo der eigenen Aussendung; auf axip gibt es keines, jeder Partner
-     ist eine eigene Strecke.  Der Fall entsteht auf bpqether (geteiltes
-     Segment) und auf einem Funkkanal.
+  1. DER SCHREIBSCHUTZ DER ROUTE (AXROUTE_PIN).  Sein Fall ist NICHT das
+     Echo der eigenen Aussendung - das ist weder an uns adressiert noch
+     Broadcast und faellt vor der Lernzeile weg (ich hatte den Pin
+     deshalb erst faelschlich fuer toten Code gehalten).  Sein Fall ist
+     DIESELBE STATION AUF BEIDEN GEBRUECKTEN PORTS, also zwei Ports auf
+     einem Segment: sie schickt UNS etwas, wir hoeren es zweimal, und der
+     zweite Empfang wollte die Route umziehen.
+
+     ZWEI VERSCHIEDENE SCHUTZMASSNAHMEN, und Thomas hat zu Recht nach dem
+     Unterschied gefragt:
+
+         Doppelschlag-Sperre   je RAHMEN, 1 s   derselbe Rahmen nicht
+                                                zweimal hinaus
+         AXROUTE_PIN           je ROUTE, 300 s  das Rufzeichen nicht auf
+                                                dem falschen Pfad lernen
+
+     Die Sekunde ist nach oben durch FREMDES T1 begrenzt (die Rahmen
+     gehoeren anderen Links, T1init 5000 ms); die Minuten dagegen muessen
+     lang sein, weil eine falsch gelernte Route weiterwirkt, wenn die
+     Ursache laengst weg ist.  Beides braucht dasselbe Labor.
   2. DER TRAEGER (PARAM_DCD, dama_carrier()).  Gemessen ist nur der
      Rueckfall "no carrier sense"; den Traegerpfad selbst kann nur ein
      6pack-Port zeigen.  Der Weg dorthin steht oben: ueber ein pty, weil
