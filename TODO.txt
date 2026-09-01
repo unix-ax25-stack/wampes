@@ -7281,11 +7281,36 @@ Rahmen wegfiel, der weder an uns geht noch uns im Digipfad nennt.
     (auf Duplex der Normalfall), waere Weiterreichen der Anfang einer
     Schleife.
 
-EINE FOLGE, DIE MAN KENNEN MUSS: beide Nutzer muessen dem Knoten BEKANNT
-sein.  Ein Rahmen, der nicht an uns geht, lehrt keine Route -
-axroute_add() steht hinter der Verwerfen-Zeile.  In der Praxis meldet sich
-ein Nutzer ohnehin erst beim Knoten an; im Labor muss der Test es
-ausdruecklich tun (testtools/directpair.py).
+EINE FOLGE, DIE MAN KENNEN MUSS (Thomas' Rueckfrage: "muss ein axip user,
+um gelernt zu werden, erstmal uns oder via uns connecten?").  JA - und es
+sind zwei verschiedene Tabellen im Spiel:
+
+    Axip_routes   axips eigene, Call -> IP/Port.  Lernt aus JEDEM
+                  empfangenen Datagramm (axip_route_add in axip_recv).
+                  axip kennt den Nutzer also, sobald er irgendetwas sendet.
+    ax_route      die AX.25-Routentabelle ("ax25 route list").  Lernt nur
+                  ueber axroute_add(), und das steht HINTER der
+                  Verwerfen-Zeile - also nur aus Rahmen an uns oder an QST.
+
+Der Schalter fragt die AX.25-Tabelle, verlangt also vorherigen Kontakt.
+
+DAS IST ABSICHT UND NICHT VERSEHEN: bpqether flutet sonst.  Sein
+Sendeweg sagt es selbst (bpqether.c:704) - "the card we learned for that
+station, OR THE BROADCAST WHEN WE HAVE NONE".  Ein Rahmen mit unbekanntem
+Ziel, einfach an iface->raw gegeben, ginge dort an das ganze Segment.  Die
+strenge Pruefung ist es, die "unbekanntes Ziel faellt weg, wird nicht
+geflutet" durchsetzt - dieselbe Regel wie fuer die Bruecke.
+
+FUER axip ALLEIN LIESSE SICH LOCKERN: dessen axip_raw() verwirft ein
+unbekanntes Ziel still, dort waere die Pruefung entbehrlich.  Dann haenge
+die Regel aber wieder am PORTTYP, und genau das haben wir beim Schalter
+selbst bewusst vermieden.  Wer es doch will, braeuchte eine ehrliche
+Eigenschaft am Port ("flutet dieser Port unbekannte Ziele?") statt einer
+Typabfrage.
+
+In der Praxis kostet es fast nichts: ein Nutzer meldet sich ohnehin erst
+beim Knoten an.  Im Labor muss der Test es ausdruecklich tun
+(testtools/directpair.py).
 
 GEMESSEN:  ohne Schalter faellt das SABM von A an B weg, mit Schalter
 kommt es bei B an - als "SABM von USRA-1 an USRB-1", also unveraendert.
