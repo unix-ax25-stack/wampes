@@ -7297,11 +7297,54 @@ Dazu die Konfigurationsseite: "bridge ax0" auf ax0 wird abgelehnt und
 verweist auf user-to-user; "bridge ax1" setzt beide Enden ("ax1: bridge
 ax0"); "bridge off" loest beide; verbose nennt es.
 
-NICHT GEMESSEN: der Schreibschutz selbst.  Dafuer braeuchte es ein Medium,
-das die Aussendung zurueckwirft - auf axip gibt es kein Echo, jeder
-Partner ist eine eigene Punkt-zu-Punkt-Strecke.  Der Fall entsteht auf
-bpqether (geteiltes Segment) und auf einem Funkkanal.  Das ist derselbe
-Laborbedarf wie bei C.9 und beim Traeger.
+WAS WIR EIGENTLICH LERNEN (Thomas' Praezisierung): den QUELLCALL, und
+wenn ueber jemanden wiederholt wurde, auch den - axroute_add() laeuft ueber
+hdr->source UND alle schon wiederholten Digis (hdr->digis[0..nextdigi-1]).
+Wir lernen also die ganze Kette derer, die den Rahmen angefasst haben.
+
+UNBEKANNTES ENDZIEL IST KEIN HINDERNIS, und Thomas hat zu Recht darauf
+bestanden, das zu pruefen: "userA kommt von axip, xnet ist in der bridge,
+db0fhn ist auf xnet Seite.  Natuerlich muss userA via db0fhn ein
+unbekanntes Ziel connecten koennen."  Genau dafuer ist der Schluessel der
+NEXT HOP.  GEMESSEN:
+
+    USRA-1 -> NOSUCH-9 via USRB-1     Endziel unbekannt, Hop bekannt
+    USRB-1 empfaengt: SABM von USRA-1 an NOSUCH-9 v USRB-1
+
+Und der Digi kommt OHNE "*" an - wir haben das Wiederholt-Bit nicht
+gesetzt und stehen nicht im Pfad.
+
+axudp UND DAS NAT-ZEITFENSTER (Thomas): "hat sein NAT-Router einen
+timeout (geht bei udp schnell..) dann kommt er mit anderem Sourceport."
+Das faengt der uhnp-Umbau von gestern ab - der Port wird je RUFZEICHEN aus
+jedem empfangenen Datagramm neu gelernt, und die Adresse bleibt beim
+NAT-Rebinding dieselbe, also wird lport nur aktualisiert und nicht
+verworfen.  Der Schreibschutz stoert dabei nicht: er sitzt auf der
+AX.25-Route (WELCHES INTERFACE), nicht auf dem UDP-Port.
+
+------------------------------------------------------------------------
+WAS AUF EIN LABOR WARTET - DREI DINGE, EIN BEDARF
+------------------------------------------------------------------------
+Damit es nicht vergessen wird (Thomas): drei Sachen sind gebaut oder
+entschieden, aber NICHT GEMESSEN, und alle drei brauchen dasselbe - einen
+Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
+
+  1. DER SCHREIBSCHUTZ DER BRUECKE (AXROUTE_PIN).  Er greift gegen das
+     Echo der eigenen Aussendung; auf axip gibt es keines, jeder Partner
+     ist eine eigene Strecke.  Der Fall entsteht auf bpqether (geteiltes
+     Segment) und auf einem Funkkanal.
+  2. DER TRAEGER (PARAM_DCD, dama_carrier()).  Gemessen ist nur der
+     Rueckfall "no carrier sense"; den Traegerpfad selbst kann nur ein
+     6pack-Port zeigen.  Der Weg dorthin steht oben: ueber ein pty, weil
+     asy_up() schlicht /dev/<interfacename> oeffnet.
+  3. C.9, persist/slottime auf einem Porttyp MIT Kanalzugriff.  Von
+     Thomas auf den echten Betrieb vertagt, weil ein simulierter
+     Funkkanal und ein wuerfelnder TNC zu aufwendig sind.
+
+WER EINES DAVON ANGEHT, HAT DIE ANDEREN BEIDEN FAST GESCHENKT: es ist
+dieselbe Attrappe.  Ein 6pack-TNC am pty, der DCD meldet und die
+Aussendung an alle angeschlossenen Simulanten zurueckgibt, deckt 1 und 2
+sofort ab und 3, sobald er wuerfelt.
 
 ------------------------------------------------------------------------
 NUTZER ZU NUTZER AUF EINEM PORT - GEBAUT (2026-09-01)
