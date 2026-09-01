@@ -25,6 +25,11 @@
 extern char Pid_usage[];
 
 int pid_blocked(const struct iface *ifp, int dir, int pid);
+/* Fuer "ifconfig <iface> verbose": eine Zeile, aber nur wenn etwas gesetzt
+ * ist.  Ein Gatter, das vor dem Parsen verwirft, darf nicht ausgerechnet
+ * dort unsichtbar sein, wo man nachsieht, was ein Port tut (Thomas).
+ */
+void pid_show_verbose(const struct iface *ifp);
 
 /* The mapping, and the only one in the node.  pid_number() takes a name or a
  * number and answers -1 for neither; pid_name() answers a name or writes the

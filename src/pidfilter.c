@@ -196,35 +196,66 @@ int pid_blocked(const struct iface *ifp, int dir, int pid)
 
 /*---------------------------------------------------------------------------*/
 
-static void pid_set(struct iface *ifp, int dir, int pid, int block)
+/* 1, wenn sich wirklich etwas geaendert hat.  Der Aufrufer sagt es dem
+ * Sysop: ein "allow" auf einen PID, der gar nicht gesperrt war, tat bisher
+ * nichts und SAGTE nichts - und wer das eingibt, glaubt danach, es sei
+ * etwas passiert (Thomas).
+ */
+
+static int pid_set(struct iface *ifp, int dir, int pid, int block)
 {
 	uint32 bit = ((uint32) 1) << (pid & 31);
 	uint32 *word = &ifp->pidblock[dir][pid >> 5];
 
 	if (block) {
 		if (*word & bit)
-			return;
+			return 0;
 		*word |= bit;
 		ifp->pidblocked[dir]++;
+		return 1;
 	} else {
 		if (!(*word & bit))
-			return;
+			return 0;
 		*word &= ~bit;
 		ifp->pidblocked[dir]--;
+		return 1;
 	}
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void pid_show(const struct iface *ifp, int dir)
+static void pid_show(const struct iface *ifp, int dir, int indent)
 {
 	char buf[16];
 	int n = 0;
 	int pid;
 
-	printf("%s pid %-3s ", ifp->name, dir == PF_IN ? "in" : "out");
+	/* In "verbose" gehoert die Zeile in den Block und nicht an den Rand -
+	 * und der Portname steht dort schon in der Ueberschrift.
+	 */
+	if (indent)
+		printf("           pid %-3s ", dir == PF_IN ? "in" : "out");
+	else
+		printf("%s pid %-3s ", ifp->name, dir == PF_IN ? "in" : "out");
 	if (!ifp->pidblocked[dir]) {
 		printf("blocked: (nothing)\n");
+		return;
+	}
+	/* ANDERSHERUM AUFZAEHLEN, SOBALD MEHR GESPERRT ALS ERLAUBT IST.
+	 * Nach "block any, allow text" waeren es sonst 255 Namen, und der
+	 * eine, auf den es ankommt, stuende irgendwo darin.
+	 */
+	if (ifp->pidblocked[dir] > 128) {
+		if (ifp->pidblocked[dir] >= 256) {
+			printf("blocked: EVERYTHING\n");
+			return;
+		}
+		printf("blocked: everything except");
+		for (pid = 0; pid < 256; pid++)
+			if (!pid_blocked(ifp, dir, pid))
+				printf("%s %s", n++ ? "," : "",
+				       pid_name(pid, buf, sizeof(buf)));
+		putchar('\n');
 		return;
 	}
 	printf("blocked:");
@@ -237,14 +268,33 @@ static void pid_show(const struct iface *ifp, int dir)
 
 /*---------------------------------------------------------------------------*/
 
+void pid_show_verbose(const struct iface *ifp)
+{
+	if (ifp == NULL)
+		return;
+	if (ifp->pidblocked[PF_IN])
+		pid_show(ifp, PF_IN, 1);
+	if (ifp->pidblocked[PF_OUT])
+		pid_show(ifp, PF_OUT, 1);
+}
+
+/*---------------------------------------------------------------------------*/
+
 char Pid_usage[] =
 	"ifconfig <iface> pid                       what is blocked here\n"
 	"       ifconfig <iface> pid in|out block <protocol>...\n"
 	"       ifconfig <iface> pid in|out allow <protocol>...\n"
-	"       ifconfig <iface> pid in|out none            allow everything again\n"
+	"       ifconfig <iface> pid in|out clear           allow everything again\n"
 	"\n"
 	"  <protocol> is a name or a number: ip arp netrom flexnet text vjcomp\n"
-	"  vjuncomp segment x25 flextalk texnet lq appletalk applearp, or 0xcf.\n"
+	"  vjuncomp segment x25 flextalk texnet lq appletalk applearp, or 0xcf,\n"
+	"  or \"any\" for all 256.  \"block any\" then \"allow <protocol>\" is how\n"
+	"  one says \"nothing but this\":\n"
+	"\n"
+	"       ifconfig xnet pid in block any\n"
+	"       ifconfig xnet pid in allow text\n"
+	"\n"
+	"  \"reset\", \"defaults\" and the older \"none\" all mean \"clear\".\n"
 	"\n"
 	"  \"in\" is what may reach a protocol here, \"out\" what we may send here.\n"
 	"  Both are about frames that are ours - traffic we merely digipeat is\n"
@@ -264,6 +314,7 @@ int ifpid(int argc, char *argv[], void *p)
 	int block;
 	int dir;
 	int i;
+	int n;
 	int pid;
 	struct iface *ifp = (struct iface *) p;
 
@@ -272,8 +323,8 @@ int ifpid(int argc, char *argv[], void *p)
 			printf("Usage: %s\n", Pid_usage);
 			return 0;
 		}
-		pid_show(ifp, PF_IN);
-		pid_show(ifp, PF_OUT);
+		pid_show(ifp, PF_IN, 0);
+		pid_show(ifp, PF_OUT, 0);
 		return 0;
 	}
 
@@ -288,13 +339,23 @@ int ifpid(int argc, char *argv[], void *p)
 	}
 
 	if (argc < 3) {
-		pid_show(ifp, dir);
+		pid_show(ifp, dir, 0);
 		return 0;
 	}
 
-	if (!strcmp(argv[2], "none")) {
+	/* ZURUECKSETZEN.  "none" las sich wie das Gegenteil dessen, was es tut
+	 * - "keine PID herein" statt "alles wieder erlauben" (Thomas).  Die
+	 * sprechenden Namen sind jetzt clear/reset/defaults; "none" bleibt
+	 * als stiller Zweitname, damit bestehende net.rc nicht brechen.
+	 */
+	if (!strcmp(argv[2], "clear") || !strcmp(argv[2], "reset") ||
+	    !strcmp(argv[2], "defaults") || !strcmp(argv[2], "none")) {
+		int n = 0;
+
 		for (pid = 0; pid < 256; pid++)
-			pid_set(ifp, dir, pid, 0);
+			n += pid_set(ifp, dir, pid, 0);
+		printf("%s pid %s: %d protocol%s unblocked\n", ifp->name,
+		       dir == PF_IN ? "in" : "out", n, n == 1 ? "" : "s");
 		return 0;
 	}
 	if (!strcmp(argv[2], "block"))
@@ -317,13 +378,42 @@ int ifpid(int argc, char *argv[], void *p)
 	 * changed, so a line with one bad word in it does not half apply.
 	 */
 	for (i = 3; i < argc; i++)
-		if (pid_number(argv[i]) < 0) {
+		if (strcmp(argv[i], "any") && pid_number(argv[i]) < 0) {
 			printf("\"%s\" is not a protocol name and not a "
 			       "number 0..255\n", argv[i]);
 			printf("Usage: %s\n", Pid_usage);
 			return 1;
 		}
-	for (i = 3; i < argc; i++)
-		pid_set(ifp, dir, pid_number(argv[i]), block);
+	/* "any" MEINT ALLE 256, und mehr braucht es dafuer nicht: gespeichert
+	 * ist eine Bitkarte, nicht eine Liste.  Damit faellt
+	 * "erst alles verbieten, dann Ausnahmen" von selbst heraus -
+	 *
+	 *     ifconfig xnet pid in block any
+	 *     ifconfig xnet pid in allow text
+	 *
+	 * denn "allow" heisst ohnehin schon "Bit loeschen".  (Ich hatte im
+	 * TODO vermutet, das aendere die Bedeutung von allow und verlange
+	 * eine andere Datenstruktur - das war falsch, weil ich eine Liste
+	 * angenommen hatte.)
+	 *
+	 * Der Reihenfolge nach abgearbeitet, nicht als Sonderfall vorweg: so
+	 * tut "block any allow" nichts Ueberraschendes, und wer "allow any
+	 * block netrom" schreibt, bekommt genau das.
+	 */
+	n = 0;
+	for (i = 3; i < argc; i++) {
+		if (!strcmp(argv[i], "any")) {
+			for (pid = 0; pid < 256; pid++)
+				n += pid_set(ifp, dir, pid, block);
+		} else
+			n += pid_set(ifp, dir, pid_number(argv[i]), block);
+	}
+	/* WAS SICH GEAENDERT HAT, UND WENN NICHTS, DANN DAS.  Ein "allow" auf
+	 * etwas, das gar nicht gesperrt war, sah bisher wie ein Erfolg aus.
+	 */
+	if (!n)
+		printf("%s pid %s: nothing changed - %s\n", ifp->name,
+		       dir == PF_IN ? "in" : "out",
+		       block ? "already blocked" : "was not blocked");
 	return 0;
 }

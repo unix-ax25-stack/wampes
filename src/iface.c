@@ -970,6 +970,7 @@ showiface(struct iface *ifp, int verbose)
 		printf("           output forward to %s\n",ifp->forw->name);
 	if(verbose && is_ax25(ifp))
 		dama_show(ifp);
+		pid_show_verbose(ifp);
 	/* "never" where nothing has gone yet.  The counter starts at zero, so
 	 * the difference to now is the time since 1970 - which came out as
 	 * "20686:12:19:36" on a loopback nobody had used, and reads as though

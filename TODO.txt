@@ -7239,8 +7239,8 @@ PID-FILTER: VIER SACHEN AUS DEM BETRIEB (Thomas, 2026-09-01)
 Sein Befund beim Benutzen des neuen "ifconfig <iface> pid".  Nicht
 dringend, aber beisammen aufgeschrieben, weil sie zusammengehoeren.
 
-NICHTS DAVON IST GEBAUT - nur aufgeschrieben.  (Thomas vermutete, eines
-sei schon gefixt; ist es nicht.)
+ALLE VIER GEBAUT am 2026-09-01.  (Davor stand hier, dass nichts davon
+gebaut sei - das galt bis dahin.)
 
 1. ER TAUCHT IN "verbose" NICHT AUF.  Nachgemessen:
 
@@ -7268,13 +7268,15 @@ sei schon gefixt; ist es nicht.)
      ifconfig xnet pid in block any
      ifconfig xnet pid in allow text
 
-   CAVE, und deshalb ist es nicht bloss eine Tabellenzeile: damit
-   aendert sich die SEMANTIK von allow.  Heute heisst allow "nimm aus
-   der Sperrliste"; mit einem gesperrten "any" muesste es "trage eine
-   Ausnahme ein" heissen.  Das ist der Unterschied zwischen einer
-   Sperrliste und "erst alles verbieten, dann Ausnahmen" - die
-   Datenstruktur muss beides koennen, und die Anzeige muss beides
-   unterscheidbar zeigen ("blocked: any except text").
+   MEIN CAVE DAZU WAR FALSCH.  Ich hatte vermutet, das aendere die
+   Semantik von allow und verlange eine andere Datenstruktur - weil ich
+   eine SPERRLISTE angenommen hatte.  Gespeichert ist aber eine
+   256-Bit-KARTE je Richtung (iface.h: pidblock[dir][8]).  Damit ist
+   "any" nur "alle Bits", allow heisst weiterhin "Bit loeschen", und
+   "erst alles verbieten, dann Ausnahmen" faellt von selbst heraus.
+   Noetig war allein, die ANZEIGE umzudrehen, sobald mehr gesperrt als
+   erlaubt ist - sonst stuenden dort 255 Namen und der eine, auf den es
+   ankommt, irgendwo darin.
 
 4. "none" IST MISSVERSTAENDLICH.  Der Hilfetext sagt:
 
