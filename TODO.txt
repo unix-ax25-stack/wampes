@@ -7434,14 +7434,38 @@ Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
       ueber eine erweiterte Broadcast-Domaene.  Das ist WAMPES' bisherige
       Antwort auf dieselbe Frage.  Daneben natuerlich "arp add" von Hand.
 
-      WAS SICH GEAENDERT HAT, seit die Regel "keine Broadcasts bruecken"
-      aufgestellt wurde: der GRUND dafuer war die Schleife (Thomas:
-      "wenn sowas zwei Seiten machen und ein Paket mit QST geschickt
-      wird").  Den faengt jetzt die Doppelschlag-Sperre, und zwar auch
-      bei mehreren bruckenden Knoten - jeder reicht einen Rahmen genau
-      einmal weiter und erkennt ihn bei der Rueckkehr.  Die Regel liesse
-      sich also neu bewerten.  NICHT GEAENDERT: sie ist Thomas'
-      Entscheidung, und eine Lockerung will fuer sich gemessen werden.
+DIE REGEL BLEIBT, UND IHR GRUND IST JETZT BESSER (Thomas, 2026-09-01).
+
+      Ich hatte sie zur Neubewertung gestellt, weil ihr urspruenglicher
+      Grund - die Schleife - inzwischen von der Doppelschlag-Sperre
+      gefangen wird.  Thomas hat die Regel praezisiert und damit die
+      Frage entschieden: gemeint war "keine Broadcasts VON ANDEREN ueber
+      die Bruecke"; unsere eigenen koennte man ja senden.  Aber:
+
+          "Spezielle Broadcasts (NODES ist ja auch eine Broadcast-
+           Adresse) muessen interface-spezifisch sein.  Sonst senden wir
+           NODES auf iface1 (weil dort enabled), NODES auf iface2 (weil
+           dort enabled) und ggf. noch 1-2 mal, weil wir ja das Paket
+           duplizieren."
+
+      NACHGESEHEN, UND ES IST SOGAR ZWEIFACH FALSCH:
+
+        * "netrom broadcast <iface> <dest> [via <digi>...]" wird JE
+          INTERFACE konfiguriert, mit eigenem Ziel und eigenem Digipfad.
+          Eine gebrueckte Kopie waere ein Duplikat dessen, was der Sysop
+          dort ohnehin schon eingerichtet hat.
+        * broadcast_to() stempelt "addrcp(p->hdr.source,
+          p->iface->hwaddr)" - der Absender ist das Rufzeichen DIESES
+          Ports.  Eine gebrueckte Kopie kuendigte also das Rufzeichen von
+          iface1 auf iface2 an: eine falsche Aussage darueber, wo der
+          Knoten erreichbar ist.
+
+      DAMIT IST AUCH DIE ARP-FRAGE ENTSCHIEDEN, und zwar dagegen: ARP
+      folgt der IP-Route und ist kein Fall fuer die Bruecke.  Wer die
+      Anfrage weiter tragen will, nimmt "ifconfig <iface> digiarp add
+      <digi>" - dafuer ist es da - oder traegt den Partner mit "arp add"
+      ein.  Die Regel "Broadcasts werden nie gebrueckt" gilt also
+      unveraendert, jetzt aber nicht mehr nur wegen der Schleife.
 
   1. DER SCHREIBSCHUTZ DER ROUTE (AXROUTE_PIN).  Sein Fall ist NICHT das
      Echo der eigenen Aussendung - das ist weder an uns adressiert noch
