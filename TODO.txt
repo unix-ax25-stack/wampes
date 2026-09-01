@@ -7234,6 +7234,55 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+PID-FILTER: VIER SACHEN AUS DEM BETRIEB (Thomas, 2026-09-01)
+------------------------------------------------------------------------
+Sein Befund beim Benutzen des neuen "ifconfig <iface> pid".  Nicht
+dringend, aber beisammen aufgeschrieben, weil sie zusammengehoeren.
+
+1. ER TAUCHT IN "verbose" NICHT AUF.  Nachgemessen:
+
+     damamaster> ifconfig ax0 pid
+     ax0 pid in  blocked: netrom
+     damamaster> ifconfig ax0 verbose
+     ... keine Zeile darueber ...
+
+   Das ist mehr als Kosmetik: der Filter verwirft VOR dem Parsen, ein
+   vergessener Eintrag ist also genau dort unsichtbar, wo man nachsieht,
+   was ein Port eigentlich tut.  Er gehoert in dieselbe Uebersicht wie
+   dama, eax25 und crc - und zwar nur, wenn etwas gesetzt ist.
+
+2. "allow" AUF EINEN NICHT GESPERRTEN PID TUT NICHTS, UND SAGT ES NICHT.
+   Thomas: "Dann testete ich 'if xnet pid in allow text'.  Nichts
+   passierte.  War frueher erlaubt, da nichts blocked."  Das Verhalten
+   ist richtig - allow nimmt aus der Sperrliste -, aber die Stille ist
+   falsch.  Eine Zeile "war nicht gesperrt, nichts geaendert" haette die
+   Frage gar nicht erst entstehen lassen.
+
+3. ES FEHLT EIN "any", UND DAS IST DER EIGENTLICHE PUNKT.  Wer alles
+   sperren will ausser pid=Text, muss heute jeden einzelnen PID von Hand
+   eintragen.  Thomas' Vorschlag: ein Eintrag "any" in Pidnames, dann
+
+     ifconfig xnet pid in block any
+     ifconfig xnet pid in allow text
+
+   CAVE, und deshalb ist es nicht bloss eine Tabellenzeile: damit
+   aendert sich die SEMANTIK von allow.  Heute heisst allow "nimm aus
+   der Sperrliste"; mit einem gesperrten "any" muesste es "trage eine
+   Ausnahme ein" heissen.  Das ist der Unterschied zwischen einer
+   Sperrliste und "erst alles verbieten, dann Ausnahmen" - die
+   Datenstruktur muss beides koennen, und die Anzeige muss beides
+   unterscheidbar zeigen ("blocked: any except text").
+
+4. "none" IST MISSVERSTAENDLICH.  Der Hilfetext sagt:
+
+     ifconfig <iface> pid in|out none            allow everything again
+
+   "keine PID in" liest sich wie "gar nichts hereinlassen" und bedeutet
+   das Gegenteil.  Besser waere "clear", "reset" oder "defaults"
+   (Thomas).  Der alte Name kann als stiller Zweitname bleiben, damit
+   bestehende net.rc nicht brechen.
+
+------------------------------------------------------------------------
 WIE TNN DIE LUECKE MACHT - UND DIE FRAGE NACH DUPLEX (2026-09-01)
 ------------------------------------------------------------------------
 Thomas: "Die Luecke hat aber Einfluss auf die effektive Datenrate.  Machte
