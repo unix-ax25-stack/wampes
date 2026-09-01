@@ -7434,7 +7434,40 @@ Weg ueber den Slave ist mit dem obigen Befund weggefallen:
      wo der Port ihn melden kann (6pack).  Das steht ohnehin als Punkt 3
      auf der Liste und beantwortet die Duplex-Frage gleich mit.
 
-  c) EINE GRACE-TIME FUER VERSPAETETE RAHMEN (Thomas, 2026-09-01).
+  c) EINE GRACE-TIME FUER VERSPAETETE RAHMEN - GEBAUT UND WIEDER
+     ZURUECKGENOMMEN, weil Thomas' naechste Frage sie erledigt hat:
+     "I-Rahmen mit Poll, ist das nicht ein Verstoss gegen das
+     DAMA-Protokoll?"
+
+     JA, UND TNN SIEHT ES GENAUSO.  src/l2rx.c:244, der Empfangsweg fuer
+     I-Rahmen:
+
+         if (dama(rxfprt))        /* I-Frame auf DAMA-Port ? */
+         {
+           if (rxfPF & L2CPF)     /* Wenn I-Poll.. */
+           {
+             polDAMA();           /* anmeckern.. */
+
+     und daneben fuer S-Rahmen (l2rx.c:341): "if (rxfCR && rxfPF)
+     polDAMA()".  TNNs Kriterium ist also dasselbe wie unseres - JEDES
+     Kommando mit P, I wie S.
+
+     DAMIT LOEST SICH DIE SORGE AUF: die verspaeteten I-Rahmen eines
+     konformen Slave tragen KEIN P (unser lapb_output() setzt keines,
+     "no poll on this one"), und ohne P werden sie ohnehin nicht
+     gezaehlt.  Traegt einer doch ein P, dann ist es ein Verstoss und
+     gehoert gezaehlt - nicht entschuldigt.  Ich hatte also Nachsicht
+     fuer genau das gebaut, was zu zaehlen ist; zurueckgenommen, ohne
+     Commit.
+
+     WAS BLEIBT, ist allein die TERMINIERUNG: wir pollen B, waehrend A
+     noch sendet.  Das ist keine Frage der Zaehlung, sondern von b).
+
+     (Die urspruengliche Fassung dieses Punktes, mit meiner falschen
+     Lesart und der Kostenrechnung fuer eine verzoegerte Zugende-
+     Erkennung, steht in der Historie - 707c862 und ee6354a.)
+
+  c-alt) DIE URSPRUENGLICHE FASSUNG, zur Nachvollziehbarkeit:
 
      ICH HATTE IHN ZUERST FALSCH VERSTANDEN und eine ganze Kostenrechnung
      fuer die falsche Sache aufgemacht - naemlich dafuer, A's ZUG
