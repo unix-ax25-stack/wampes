@@ -1062,6 +1062,11 @@ static void dama_master_turn(struct dama_m *mp)
 		dama_master_gap(mp);
 		return;
 	}
+	/* Ab hier laeuft SEIN Zug: was darin an I-Rahmen kommt, entscheidet
+	 * am Ende ueber seine Prioritaet.
+	 */
+	last->dama_polled = 1;
+	last->dama_sawi = 0;
 	sendctl(last, LAPB_COMMAND, RR | PF);
 	mp->ifp->dama_polls++;
 	mp->busy = 1;
@@ -1079,6 +1084,60 @@ static void dama_master_turn(struct dama_m *mp)
 /* Der Zug ist zu Ende - durch das F-Bit des Gepollten oder durch die
  * Zeitscheibe.  Jetzt die Pause, nicht sofort der naechste Poll.
  */
+
+/* WIE WEIT DIE PRIORITAET SINKEN KANN.  TNN fuehrt dasselbe als Parameter
+ * "DAMA-MaxPri" (0..30, empfohlen 10); zehn Stufen heissen bei uns bis zu
+ * zehn Sekunden Wartezeit, bevor eine ruhende Verbindung wieder drankommt.
+ */
+#define DAMA_MAXPRI     10
+
+/*---------------------------------------------------------------------------*/
+
+/* DIE PRIORITAET AM ZUGENDE ABRECHNEN, nicht bei jedem Rahmen.
+ *
+ * Die erste Fassung zaehlte je RAHMEN: ein I-Rahmen setzte zurueck, jeder
+ * andere Nicht-U-Rahmen zaehlte hoch.  Damit entschied die REIHENFOLGE
+ * innerhalb eines Zuges - RR(F) dann Daten endete bei 0, Daten dann RR(F)
+ * bei 1.  Dieselbe Station, dieselben Daten, verschiedenes Ergebnis; und
+ * beide Reihenfolgen sind nach AX.25 zulaessig.  Unser eigener Slave
+ * schickt das RR zuerst und war deshalb nicht betroffen, eine fremde
+ * Station darf es andersherum machen und wurde dann behandelt wie eine,
+ * die NICHTS zu senden hatte (gemessen: 0,20s gegen 0,92s Poll-Abstand bei
+ * gleicher Einstellung).
+ *
+ * Jetzt wird gemerkt und am Zugende entschieden - das ist es auch, was der
+ * Kommentar immer schon versprach ("wer auf einen Poll nur eine LEERE
+ * Antwort schickt"), und es ist TNNs Ebene: dort faellt die Entscheidung
+ * einmal je Zug (damatx() sagt, ob es etwas zu senden gab), nicht je
+ * Rahmen.
+ *
+ * OHNE ZEIGER AUF DEN LINK, und das ist Absicht: ein gemerkter Zeiger
+ * haengt in der Luft, sobald die Verbindung endet - dieselbe Falle, vor
+ * der der Kommentar in dama_master_turn() schon warnt.  Stattdessen eine
+ * Marke am Link und ein kurzer Durchlauf; die Portliste ist kurz.
+ */
+
+static void dama_settle_turn(struct iface *ifp)
+{
+	struct ax25_cb *axp;
+
+	for (axp = Ax25_cb; axp != NULL; axp = axp->next) {
+		if (axp->iface != ifp || !axp->dama_polled)
+			continue;
+		axp->dama_polled = 0;
+		if (axp->dama_sawi) {
+			axp->dama_prio = 0;
+			axp->dama_hold = 0;
+		} else {
+			if (axp->dama_prio < DAMA_MAXPRI)
+				axp->dama_prio++;
+			axp->dama_hold = secclock() + axp->dama_prio;
+		}
+		axp->dama_sawi = 0;
+	}
+}
+
+/*---------------------------------------------------------------------------*/
 
 /* DIE LUECKE ZWISCHEN ZWEI ZUEGEN, und sie hat genau EINE Aufgabe.
  *
@@ -1141,6 +1200,10 @@ static void dama_master_gap(struct dama_m *mp)
 {
 	stop_timer(&mp->t);
 	mp->busy = 0;
+	/* Der Zug ist vorbei - jetzt und nur jetzt wird seine Prioritaet
+	 * abgerechnet.
+	 */
+	dama_settle_turn(mp->ifp);
 	/* JETZT ist die Luecke, also geht jetzt hinaus, was auf sie gewartet
 	 * hat - die Verwarnung vor allem.  TNN leert seine damarl an genau
 	 * dieser Stelle: bei freiem Kanal am Anfang eines Umlaufs, VOR dem
@@ -1368,12 +1431,6 @@ static void dama_kick_marked(struct iface *ifp)
  * par 6 (DAMA-MaxPol).  Noch fest; einstellbar zu machen lohnt erst, wenn
  * jemand einen Grund hat, es zu aendern.
  */
-/* WIE WEIT DIE PRIORITAET SINKEN KANN.  TNN fuehrt dasselbe als Parameter
- * "DAMA-MaxPri" (0..30, empfohlen 10); zehn Stufen heissen bei uns bis zu
- * zehn Sekunden Wartezeit, bevor eine ruhende Verbindung wieder drankommt.
- */
-#define DAMA_MAXPRI     10
-
 #define DAMA_MAXVIOL    5
 
 /* WIE LANGE NACH EINEM ZWANGSDISCONNECT NICHTS MEHR ANGENOMMEN WIRD.
@@ -1607,9 +1664,16 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	 * incDAMA()/clrDAMA(): wer auf einen Poll nur eine LEERE Antwort
 	 * schickt, hatte nichts zu senden - er wird eine Stufe
 	 * heruntergesetzt und beim naechsten Mal uebersprungen.  Wer ein
-	 * I-Frame schickt, bekommt seinen Rang sofort zurueck.
+	 * I-Frame schickt, bekommt seinen Rang zurueck.
 	 *
-	 * Gezaehlt wird je LINK und nicht je Station, denn es beschreibt,
+	 * HIER WIRD NUR GEMERKT.  Entschieden wird am ZUGENDE, in
+	 * dama_settle_turn() - denn "eine leere Antwort" ist eine Aussage
+	 * ueber den ganzen Zug und nicht ueber einen Rahmen.  Wer es je
+	 * Rahmen entscheidet, laesst die REIHENFOLGE entscheiden, und die
+	 * steht der Gegenstelle frei; das war der erste Entwurf und dort
+	 * steht auch, was es gekostet hat.
+	 *
+	 * Gemerkt wird je LINK und nicht je Station, denn es beschreibt,
 	 * ob DIESE Verbindung etwas zu tun hat - eine Station kann eine
 	 * ruhende und eine lebhafte zugleich haben.
 	 *
@@ -1617,12 +1681,22 @@ void dama_master_input(struct iface *ifp, struct ax25_cb *axp,
 	 * TNN "damapc = damapm * 100" in Hundertsteln.
 	 */
 	if (isi) {
-		axp->dama_prio = 0;
-		axp->dama_hold = 0;
-	} else if (!isu) {
-		if (axp->dama_prio < DAMA_MAXPRI)
-			axp->dama_prio++;
-		axp->dama_hold = secclock() + axp->dama_prio;
+		axp->dama_sawi = 1;     /* abgerechnet wird am Zugende */
+		/* AUSSER ER KOMMT ZU SPAET.  Unser eigener Slave schickt das
+		 * RR auf den Poll ZUERST und seine Daten danach (dama.c,
+		 * dama_serve_others) - das F beendet bei uns aber den Zug,
+		 * also waere er schon abgerechnet, wenn die Daten eintreffen,
+		 * und stuende als "hatte nichts zu senden" da.  Ein I-Rahmen
+		 * ausserhalb eines Zuges ist deshalb sofort der Beweis des
+		 * Gegenteils: Rang zurueck, Halt weg.
+		 *
+		 * Damit ist die Bewertung in JEDER Reihenfolge dieselbe -
+		 * Daten vor dem F ueber dama_sawi, Daten nach dem F hier.
+		 */
+		if (!axp->dama_polled) {
+			axp->dama_prio = 0;
+			axp->dama_hold = 0;
+		}
 	}
 	/* EIN VERBINDUNGSAUFBAU IST KEIN VERSTOSS, und das war der erste
 	 * Messfehler: ein SABM ist ein Kommando mit P, also sah es aus wie ein

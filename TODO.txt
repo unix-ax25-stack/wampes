@@ -7356,6 +7356,61 @@ Zug.  Beides zusammen ist TNNs Verhalten und beantwortet die
 Duplex-Frage gleich mit.
 
 ------------------------------------------------------------------------
+GROESSER ALS DER PRIORITAETSFEHLER: UNSER SLAVE SENDET NACH SEINEM F
+------------------------------------------------------------------------
+Beim Beheben des Rahmenfolge-Befunds (unten) herausgekommen, 2026-09-01,
+und es ist die eigentliche Sache dahinter.
+
+WAS UNSER SLAVE TUT: auf einen Poll antwortet die Zustandsmaschine ZUERST
+mit dem RR(F) - enq_resp() laeuft in lapb_input() -, und erst danach gehen
+seine I-Rahmen hinaus (lapb_output am Ende von lapb_input, siehe den
+Kommentar dort: "die Rahmen bleiben auf axp->txq, und lapb_input() ruft
+das am Ende jedes empfangenen Rahmens wieder auf").  Der Kommentar in
+dama_serve_others() sagt dasselbe und nennt es gemessen: "Gemessen sieht
+ein Master also RR, dann UI, dann die uebrigen Verbindungen."
+
+WAS UNSER MASTER TUT: er beendet den Zug beim F.
+
+    if (isfinal)
+            dama_master_gap(mp);
+
+BEIDES ZUSAMMEN heisst: der Master haelt den Zug fuer beendet, oeffnet die
+Luecke und darf die naechste Station pollen - waehrend der Slave noch
+sendet.  Auf dem Loopback faellt das nicht auf; auf einem
+Halbduplex-Kanal ist es ein Zusammenstoss zwischen den Daten des einen und
+der Antwort des naechsten.
+
+DAS F GEHOERT AUF DEN LETZTEN RAHMEN.  Genau das bedeutet es in AX.25, und
+genau darauf verlaesst sich unser Master.  Wer zuerst F sagt und dann
+weitersendet, sagt etwas Falsches.
+
+WARUM ES BISHER NIEMAND GEMERKT HAT: gegen TNN faellt es nicht auf, denn
+TNNs Master beendet den Zug NICHT am F, sondern am TRAEGER (dama_dcd(),
+"if (iscd(port)) /* nicht busy(), iscd() ! */").  Solange unser Slave noch
+sendet, ist DCD aktiv und TNN wartet.  Unser Master hat den Traeger nicht
+und nimmt deshalb das F - und stolpert damit ueber das eigene Verhalten
+der anderen Haelfte.
+
+GEMESSEN IST HEUTE NUR DIE FOLGE, nicht die Ursache: die Abrechnung der
+Prioritaet fiel bei "RR zuerst" auf 1,67s statt 0,67s, weil zum Zeitpunkt
+des F noch keine Daten da waren.  Das ist behoben (unten).  EIN LIVE-MITSCHNITT
+UNSERES SLAVE MIT DATEN STEHT AUS - dazu braeuchte er eine Anwendung, die
+etwas zu senden hat; im Labor (kein Mailbox-Listener) antwortet er auf
+jeden Poll mit einem leeren RR(F).  Die Aussage oben stuetzt sich also auf
+den Codeweg und auf den frueher gemessenen Kommentar, nicht auf einen
+eigenen Mitschnitt von heute.
+
+ZU ENTSCHEIDEN, zwei Wege, und sie schliessen sich nicht aus:
+
+  a) SLAVE-SEITE: das F auf den letzten Rahmen des Blocks legen statt
+     sofort zu antworten.  Das ist die AX.25-richtige Bedeutung und
+     behebt es an der Wurzel - auch gegenueber fremden Mastern, die es
+     wie wir halten.
+  b) MASTER-SEITE: den Zug nicht am F allein beenden, sondern am Traeger,
+     wo der Port ihn melden kann (6pack).  Das steht ohnehin als Punkt 3
+     auf der Liste und beantwortet die Duplex-Frage gleich mit.
+
+------------------------------------------------------------------------
 BEFUND NEBENBEI: DAS PRIORITAETSSCHEMA HAENGT AN DER RAHMENFOLGE
 ------------------------------------------------------------------------
 Gefunden am 2026-09-01 beim Messen von "dama-gap", und zwar als
