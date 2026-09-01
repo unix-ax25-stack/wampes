@@ -38,6 +38,7 @@ static int ifautoroute(int argc,char *argv[],void *p);
 static int ifarp(int argc,char *argv[],void *p);
 static int ifhfdatarate(int argc,char *argv[],void *p);
 static int ifdamagap(int argc,char *argv[],void *p);
+static int ifusertouser(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
@@ -210,6 +211,15 @@ struct cmds Ifcmds[] = {
 	{ "netmask",              ifnetmsk,       0,      2,
 	  "ifconfig <iface> netmask <ip netmask>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "pid",                  ifpid,          0,      1,      Pid_usage },
+	{ "user-to-user",         ifusertouser,   0,      1,
+	  "ifconfig <iface> user-to-user on|off   (Vorgabe off)\n"
+	  "  Duerfen sich zwei Nutzer DIESES Ports direkt erreichen, ohne uns\n"
+	  "  als Digipeater im Pfad?  Ohne den Schalter faellt ein Rahmen weg,\n"
+	  "  der weder an uns geht noch uns im Digipfad nennt.\n"
+	  "  Sinnvoll, wo die Nutzer einander NICHT hoeren: axip/axudp und\n"
+	  "  bpqether sind Punkt zu Punkt je Partner, und ein Duplex-Einstieg\n"
+	  "  ist es auch.  Auf einem Simplex-Funkkanal hoeren sie einander\n"
+	  "  ohnehin - dort waere es eine Verdopplung." },
 	{ "tncinit",              iftncinit,      0,      1,
 	  "ifconfig <iface> tncinit tapr|kenwood|kantronics|\"<sequence>\"|none" },
 	{ "txqlen",               iftxqlen,       0,      2,
@@ -585,6 +595,24 @@ ifdamagap(int argc,char *argv[],void *p)
 		       "Luecke.\n", ifp->name);
 	ifp->dama_gap = (int32) n;
 	return 0;
+}
+
+static int
+ifusertouser(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(!is_ax25(ifp)){
+		printf("%s carries no AX.25, so it has no users that could "
+		       "reach each other.\n", ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		printf("%s: user-to-user %s\n", ifp->name,
+		       ifp->user_to_user ? "on" : "off");
+		return 0;
+	}
+	return setbool(&ifp->user_to_user, "user-to-user", argc, argv);
 }
 
 static int
@@ -1092,6 +1120,10 @@ showiface(struct iface *ifp, int verbose)
 	if(ifp->noarp)
 		printf("           noarp (\"ifconfig %s arp\" says more)\n",
 		 ifp->name);
+	if(ifp->user_to_user)
+		printf("           ax25: user-to-user on - two users of this "
+		       "port reach each other\n                 directly, "
+		       "without us in the digipeater path\n");
 	printf("           ax25: eax25 %s\n",
 	 ifp->eax25 == EAX25_OFF ? "off" :
 	 ifp->eax25 == EAX25_ALWAYS ? "always" :

@@ -7234,6 +7234,63 @@ die wir dem Slave schon beigebracht haben - nichts geht hinaus, ausser zur
 richtigen Zeit.  TNN hat genau das, und zwar an EINER Stelle (sdl2fr).
 
 ------------------------------------------------------------------------
+NUTZER ZU NUTZER AUF EINEM PORT - GEBAUT (2026-09-01)
+------------------------------------------------------------------------
+Thomas' Schalter: "ob user sich direkt (ohne mich als via-Digi)
+unterhalten koennen sollen".  ifconfig <iface> user-to-user on|off,
+Vorgabe off.
+
+DIE ABGRENZUNG ZU DEN ZWEI ANDEREN IDEEN, weil alle drei zwei Enden
+verbinden und trotzdem verschiedene Dinge sind - entscheidend ist, WESSEN
+Verkehr fliesst:
+
+    forward          UNSER eigener      wir empfangen auf A, senden auf B
+    user-to-user     der der NUTZER     innerhalb A, Nutzer zu Nutzer
+    Bruecke          der der NUTZER     A <-> B
+
+forward fasst iface->forw nur in SENDEwegen an (ax25.c:378/487, ARP,
+iproute) - es kann fremden Verkehr gar nicht tragen und ist deshalb keine
+schwaechere Bruecke, sondern etwas anderes.  Die verbose-Zeile nennt es
+auch so: "output forward to <name>".
+
+WO DER SCHALTER NOETIG IST, und das haengt NICHT am Porttyp (Thomas'
+Frage): es haengt daran, ob die Nutzer einander hoeren.
+
+    axip/axudp        Punkt zu Punkt je Partner        -> noetig
+    bpqether, ethertap  Rahmen an eine MAC, mit unserem
+                      Lernen je Rufzeichen auch P-z-P  -> noetig
+    asy/KISS/6pack    ein Simplex-Funkkanal, sie hoeren
+                      einander ohnehin                 -> Verdopplung
+    ABER: ein DUPLEX-Einstieg ist genau der Fall, wo sie einander NICHT
+    hoeren - und der laeuft ueber KISS oder 6pack.  Eine Ablehnung nach
+    Typ waere also falsch; es entscheidet der Sysop.
+
+WIE ES GEBAUT IST: an der Verwerfen-Zeile in ax_recv(), dort wo ein
+Rahmen wegfiel, der weder an uns geht noch uns im Digipfad nennt.
+
+  * DER RAHMEN GEHT UNVERAENDERT HINAUS.  Kein Digipfad, kein
+    Wiederholt-Bit, wir setzen uns nicht hinein - htonax25() schreibt den
+    Kopf zurueck, wie er hereinkam, weil nextdigi unberuehrt bleibt.
+  * NICHT ueber axroute(): das entfernt Digipeater vor uns, fuegt neue aus
+    der Routentabelle ein und faellt notfalls auf ein Default-Interface
+    zurueck.  Gefragt wird nur ax_routeptr(), und geantwortet nur, wenn
+    das Ziel auf DIESEN Port zeigt.
+  * UNBEKANNTES ZIEL FAELLT WEG, nicht geflutet - dieselbe Regel wie fuer
+    die Bruecke.  Broadcasts hat der Aufrufer schon aussortiert.
+  * NICHTS VON UNS SELBST: hoeren wir unsere eigene Aussendung zurueck
+    (auf Duplex der Normalfall), waere Weiterreichen der Anfang einer
+    Schleife.
+
+EINE FOLGE, DIE MAN KENNEN MUSS: beide Nutzer muessen dem Knoten BEKANNT
+sein.  Ein Rahmen, der nicht an uns geht, lehrt keine Route -
+axroute_add() steht hinter der Verwerfen-Zeile.  In der Praxis meldet sich
+ein Nutzer ohnehin erst beim Knoten an; im Labor muss der Test es
+ausdruecklich tun (testtools/directpair.py).
+
+GEMESSEN:  ohne Schalter faellt das SABM von A an B weg, mit Schalter
+kommt es bei B an - als "SABM von USRA-1 an USRB-1", also unveraendert.
+
+------------------------------------------------------------------------
 PID-FILTER: VIER SACHEN AUS DEM BETRIEB (Thomas, 2026-09-01)
 ------------------------------------------------------------------------
 Sein Befund beim Benutzen des neuen "ifconfig <iface> pid".  Nicht

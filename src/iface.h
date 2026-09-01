@@ -167,6 +167,20 @@ struct iface {
 				 * fuehrt dieselbe Groesse als Parameter
 				 * (dama_init, "DAMA-Tout"), bei uns war sie
 				 * bis 2026-09-01 ein festes #define. */
+	/* DUERFEN SICH ZWEI NUTZER DIESES PORTS DIREKT ERREICHEN?
+	 *
+	 * Vorgabe AUS, wie ueberall hier.  Eingeschaltet reichen wir einen
+	 * Rahmen, der weder an uns geht noch uns im Digipfad nennt, an den
+	 * Partner desselben Ports weiter - ohne uns in den Pfad zu setzen.
+	 *
+	 * NOETIG IST DAS, WO DIE NUTZER EINANDER NICHT HOEREN: axip/axudp und
+	 * bpqether sind Punkt zu Punkt je Partner, und ein DUPLEX-Einstieg
+	 * ist es auch (dort senden die Nutzer auf der Eingabe und hoeren die
+	 * Ausgabe).  Auf einem gewoehnlichen Simplex-Funkkanal hoeren sie
+	 * einander ohnehin, und Weiterreichen waere eine Verdopplung -
+	 * deshalb entscheidet der Sysop und nicht der Porttyp.
+	 */
+	int user_to_user;
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_mark_own;      /* als Slave: eigene Rahmen markieren.  Vorgabe
 				 * AUS - das Bit ist das des Masters. */

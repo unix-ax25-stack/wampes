@@ -40,6 +40,13 @@ struct ax_route *Ax_routes[AXROUTESIZE];
 struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
 
+/* Weiter unten, bei axroute() - dort steht auch, warum es NICHT axroute()
+ * benutzt.
+ */
+static int ax_user_to_user(struct iface *iface, struct ax25 *hdr,
+			   const uint8 *idest, const uint8 *isrc,
+			   struct mbuf **bpp);
+
 /*---------------------------------------------------------------------------*/
 
 int
@@ -652,6 +659,8 @@ struct mbuf **bpp
 	}
 	if(!mcast && !ax_answers_to(iface,idest)){
 		/* Not a broadcast, and not for any callsign we answer to. */
+		if(ax_user_to_user(iface,&hdr,idest,isrc,bpp))
+			return;
 		free_p(bpp);
 		return;
 	}
@@ -916,6 +925,57 @@ const uint8 *call)
 		return NULL;
 	}
 	return rp->mac;
+}
+
+/* NUTZER ZU NUTZER AUF DEMSELBEN PORT (ifconfig <iface> user-to-user on).
+ *
+ * Ein Rahmen, der weder an uns geht noch uns im Digipfad nennt, faellt sonst
+ * weg - richtig auf einem Funkkanal, wo die Nutzer einander ohnehin hoeren.
+ * Wo sie das NICHT tun, ist es der Grund, warum zwei Nutzer desselben Ports
+ * sich nicht erreichen: axip/axudp und bpqether sind Punkt zu Punkt je
+ * Partner, und ein Duplex-Einstieg ist es auch.
+ *
+ * DER RAHMEN GEHT UNVERAENDERT HINAUS.  Kein Digipfad, kein Wiederholt-Bit,
+ * wir setzen uns NICHT hinein - das ist der Unterschied zum Digipeaten und
+ * genau das, was Thomas wollte ("ob user sich direkt, ohne mich als
+ * via-Digi, unterhalten koennen").  htonax25() schreibt den Kopf zurueck,
+ * wie er hereinkam, weil nextdigi unberuehrt bleibt.
+ *
+ * NICHT axroute() DAFUER: das entfernt Digipeater vor uns, fuegt neue aus
+ * der Routentabelle ein und faellt notfalls auf ein Default-Interface
+ * zurueck.  Hier wird nur GEFRAGT, wohin das Ziel gehoert, und geantwortet
+ * wird nur, wenn es auf DIESEN Port zeigt.
+ *
+ * UNBEKANNTES ZIEL FAELLT WEG und wird nicht geflutet - dieselbe Regel, die
+ * fuer die Bruecke im TODO steht.  Ebenso alles, was an alle geht: der
+ * Aufrufer hat Broadcasts schon aussortiert (mcast).
+ *
+ * UND NICHTS VON UNS SELBST.  Hoeren wir unsere eigene Aussendung zurueck -
+ * auf einem Duplex-Einstieg der Normalfall -, waere ein Weiterreichen der
+ * Anfang einer Schleife.
+ */
+
+static int
+ax_user_to_user(
+struct iface *iface,
+struct ax25 *hdr,
+const uint8 *idest,
+const uint8 *isrc,
+struct mbuf **bpp
+){
+	struct ax_route *rp;
+
+	if(iface == NULL || !iface->user_to_user || iface->raw == NULL)
+		return 0;
+	if(addreq(isrc,iface->hwaddr))
+		return 0;               /* unsere eigene Aussendung */
+	if((rp = ax_routeptr(idest,0)) == NULL || rp->ifp != iface)
+		return 0;               /* unbekannt, oder woanders zuhause */
+	htonax25(hdr,bpp);
+	logsrc(iface,iface->hwaddr);
+	logdest(iface,idest);
+	(*iface->raw)(iface,bpp);
+	return 1;
 }
 
 void
