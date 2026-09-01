@@ -7406,21 +7406,52 @@ RECHERCHE, 2026-09-02: ES GIBT DAS SCHON, UND ZWAR IN BPQ32.
   128 Eintraege.  Als Zweck nennt die Doku "difficult cases", wo der
   Betreiber keine Kontrolle ueber das Netz hat: genau Thomas' NAT-Fall.
 
-  WAS DIE DOKU NICHT SAGT: die RAHMUNG im Strom.  Ob KISS mit FEND/FESC,
-  eine Laengenangabe oder etwas anderes, steht dort nicht.
+  WAS DIE DOKU NICHT SAGT, DIE QUELLE ABER SCHON (LinBPQ, bpqaxip.c):
+  ES IST KISS - also genau Thomas' Idee, unabhaengig zum selben Schluss
+  gekommen.
 
-  DAVON ZU UNTERSCHEIDEN ist "KISS ueber TCP" auf Port 8001 - das ist die
-  verbreitete Konvention fuer den ZUGANG ZU EINEM TNC (Direwolf, die
-  Soundmodems, diverse Clients), also Rechner-zu-Modem und nicht
-  Knoten-zu-Knoten.  Beides heisst umgangssprachlich "KISS ueber TCP" und
-  ist nicht dasselbe; das sollte man beim Reden auseinanderhalten.
+      newlen = KissEncode(buff, outbuff, txlen);
+      send(arp_table->TCPSock, outbuff, newlen, 0);
+      ...
+      len = KissDecode(rxbuff, len-1);   // FEND weg
+      len -= 2;                          // Pruefsumme ignoriert
 
-  FOLGE FUER DIE NAMENSFRAGE: "axtcp" trifft BPQs Wort.  Thomas'
-  "axkisstcp" waere ueber die Rahmung ehrlicher - aber nur, wenn BPQs
-  AXTCP wirklich etwas anderes rahmt.  ERST NACHSEHEN, DANN BENENNEN:
-  was BPQ auf die Leitung legt, steht in der LinBPQ-Quelle oder in einem
-  Mitschnitt.  Eine verbreitete Gegenstelle ist mehr wert als eine
-  elegante eigene Rahmung.
+  FEND/FESC, keine Laengenangabe, und ZWEI BYTES PRUEFSUMME hinten dran,
+  die der Empfaenger abschneidet.  Das ist derselbe Bau, den unser
+  kiss.c schon hat - samt SMACK/RMNC und deren Autoerkennung.  Welche
+  der beiden BPQ rechnet, waere noch zu klaeren.
+
+  UND ES BEANTWORTET DREI OFFENE FRAGEN VON OBEN MIT VORBILD:
+
+      Wiederaufbau      TCP-Master ruft in einem eigenen Thread und
+                        wiederholt nach einem Fehlschlag alle ~2 Minuten.
+      Idlende Session   BPQ setzt eine Verbindung nach 60 Minuten ohne
+                        Verkehr zurueck ("if (sockptr->TCPOK > 36000)").
+                        Das ist Thomas' Punkt, und BPQ loest ihn mit
+                        einer schlichten Frist.
+      Beide rufen       Die MAP-Zeile traegt JE RUFZEICHEN genau EINE
+      einander         Rolle, TCP-Master ODER TCP-Slave.  BPQ umgeht den
+                        Fall also durch die Form der Konfiguration - die
+                        Rolle haengt am Partner, nicht am Port.
+                        (Geschlossen aus der Konfigurationsform, nicht
+                        aus dem Code gelesen.)
+
+  DAVON ZU UNTERSCHEIDEN ist "KISS ueber TCP" auf Port 8001 - das ist der
+  ZUGANG ZU EINEM TNC (Direwolf, die Soundmodems, diverse Clients), also
+  Rechner-zu-Modem und nicht Knoten-zu-Knoten.  Beides heisst
+  umgangssprachlich "KISS ueber TCP" und ist nicht dasselbe; das sollte
+  man beim Reden auseinanderhalten.  (Thomas: die 8001 war ihre eigene
+  Erfindung - was heute als Konvention gilt, hat dort seinen Ursprung,
+  und eine Websuche darueber gibt entsprechend wenig her.)
+
+  FOLGE FUER DIE NAMENSFRAGE: "axtcp" trifft BPQs Wort UND dessen
+  Rahmung ist KISS - beide Namen beschreiben also dasselbe.  Dann ist
+  "axtcp" vorzuziehen, weil eine verbreitete Gegenstelle mehr wert ist
+  als ein genauerer eigener Name.
+
+  WAS NOCH ZU KLAEREN WAERE, WENN INTEROP DAS ZIEL IST: welche Pruefsumme
+  BPQ rechnet (wir koennen SMACK und RMNC), ob das KISS-Typbyte dieselbe
+  Bedeutung hat, und ob die 128er-Grenze der MAP-Tabelle uns beruehrt.
 
 WAS DAFUER SCHON DA IST:
 
