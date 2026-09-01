@@ -7396,6 +7396,42 @@ Porttyp mit echtem Kanal statt einer Punkt-zu-Punkt-Strecke.
          setzt CRC_TEST_16, der Port erkennt sich also erst ein.  Wer das
          nicht will: "ifconfig <if> crc off" fuer klassisches KISS.)
 
+  0b. ERLEDIGT AM 2026-09-01: AUCH DER PIN IST GEMESSEN
+      (testtools/pinlab.py).  Zwei KISS-Ports auf pty, KEIN Kreuz -
+      stattdessen derselbe Rahmen nacheinander in beide Master, so wie
+      zwei Ports auf einem Segment ihn hoeren wuerden.  Gesendet wird ein
+      UI mit pid=NET/ROM und kein SABM: es lehrt eine Route, baut aber
+      keine Verbindung auf, die beim zweiten Mal eine Wiederaufnahme
+      waere.
+
+          mit Bruecke     Route bleibt auf dem zuerst gehoerten Port
+          ohne Bruecke    Route zieht auf den zuletzt gehoerten um
+
+      Damit ist beides belegt: dass er wirkt, und dass er ENG GENUG ist -
+      zwei ungebrueckte Einstiege lernen weiter um.
+
+  0c. OFFEN GEBLIEBEN DABEI: ARP UEBER EINE BRUECKE (Thomas).  "Wenn ich
+      ip route auf bridge gelegt habe, ist die Frage schon relevant."
+
+      Sie ist es.  Eine ARP-Anfrage geht ueber res_arp(iface,...) ->
+      arp_output(iface,...) auf GENAU DEM Port hinaus, den die IP-Route
+      nennt - und Broadcasts werden nie gebrueckt.  Liegt die gesuchte
+      Station auf der anderen Seite, hoert sie die Anfrage nie.
+
+      WAS ES HEUTE DAFUER GIBT: "ifconfig <iface> digiarp add <digi>" -
+      die ARP-Anfrage an QST laeuft dann ueber genannte Digipeater, also
+      ueber eine erweiterte Broadcast-Domaene.  Das ist WAMPES' bisherige
+      Antwort auf dieselbe Frage.  Daneben natuerlich "arp add" von Hand.
+
+      WAS SICH GEAENDERT HAT, seit die Regel "keine Broadcasts bruecken"
+      aufgestellt wurde: der GRUND dafuer war die Schleife (Thomas:
+      "wenn sowas zwei Seiten machen und ein Paket mit QST geschickt
+      wird").  Den faengt jetzt die Doppelschlag-Sperre, und zwar auch
+      bei mehreren bruckenden Knoten - jeder reicht einen Rahmen genau
+      einmal weiter und erkennt ihn bei der Rueckkehr.  Die Regel liesse
+      sich also neu bewerten.  NICHT GEAENDERT: sie ist Thomas'
+      Entscheidung, und eine Lockerung will fuer sich gemessen werden.
+
   1. DER SCHREIBSCHUTZ DER ROUTE (AXROUTE_PIN).  Sein Fall ist NICHT das
      Echo der eigenen Aussendung - das ist weder an uns adressiert noch
      Broadcast und faellt vor der Lernzeile weg (ich hatte den Pin
