@@ -7408,6 +7408,63 @@ unterscheidet:
      Zuordnung Rufzeichen -> Verbindung ist dann dasselbe Problem, das
      uhnp geloest hat, nur mit Sockets statt Ports.
 
+  6. EIN LAUSCHENDER TCP-PORT IST EIN SERVER, mit allem was dazugehoert
+     (Thomas' Nachtrag):
+
+       * TIMEOUT AUF DEN ERSTEN RAHMEN.  Ohne ihn haelt ein Portscan
+         tausend offene Verbindungen.  Wer sich verbindet und nichts
+         sagt, fliegt nach n Sekunden.
+       * EINGRENZUNG AUF SUBNETZE.  Eine Whitelist; im Hamnet ist die
+         Menge der zulaessigen Partner ohnehin bekannt.
+       * AUTHENTIFIZIERUNG (login user pass, danach "kiss on") - und
+         Thomas' Zusatz: ggf. NICHT noetig fuer Partner aus einem
+         Whitelist-Subnetz.  Zwei Stufen also, nicht eine.
+
+     PRAEZEDENZ IM HAUS: axip hat schon ein "secure port model of trust"
+     (uhnp lernt einen Quellport nur, wenn der eigene Lauschport >= 1024
+     ist oder der fremde < 1024).  Die Frage "wem glauben wir was" ist
+     dort also schon einmal gestellt und beantwortet worden.
+
+  7. BEIDE SEITEN RUFEN EINANDER, und da sind wir wieder bei der
+     Schleife (Thomas): "Host A baut axtcp zu Host B auf.  Host B aber
+     auch zu Host A.  Beide sind gegenseitig konfiguriert mit Ziel-IP
+     ausgehend und hoerend eingehend.  Was passiert dann?  Umlernen?  Was
+     passiert mit der idlenden Session?  Oder entsteht Asymmetrie, ggf.
+     sogar loops?"
+
+     ERSTE DURCHSICHT, ohne Anspruch - das ist genau der Punkt, der
+     besprochen gehoert:
+
+       * EINE SCHLEIFE ENTSTEHT DARAUS NICHT von selbst.  Zwei
+         Verbindungen zwischen denselben zwei Hosts sind zwei Rohre zum
+         selben Ziel; ein Rahmen kehrt nur zurueck, wenn die Gegenseite
+         ihn zurueckwirft, und das tut ein axtcp nicht.  Anders als bei
+         der Bruecke, wo das Medium selbst zurueckwirft.
+       * ASYMMETRIE SCHON: wenn jeder auf SEINER ausgehenden Verbindung
+         sendet, dann traegt unsere eingehende nur Empfang und unsere
+         ausgehende nur Senden.  Jede ist in einer Richtung still - und
+         still heisst bei TCP irgendwann "weg", je nach Keepalive.  Das
+         ist Thomas' "idlende Session", und sie ist der eigentliche
+         Fallstrick.
+       * UMLERNEN: die Zuordnung Rufzeichen -> Verbindung wuerde
+         zwischen den beiden Sockets wandern, je nachdem wo zuletzt
+         etwas herkam.  Schaedlich ist das hier NICHT, weil beide zum
+         selben Host fuehren - aber es ist dieselbe Mechanik wie bei
+         uhnp, und sie sollte bewusst entschieden und nicht zufaellig
+         sein.
+
+     ZWEI WEGE, die zu besprechen waeren:
+
+       a) VORFAHRTSREGEL.  Wer die kleinere IP (oder das kleinere
+          Rufzeichen) hat, ruft; der andere laesst seinen ausgehenden
+          Versuch fallen, sobald eine eingehende Verbindung desselben
+          Partners steht.  Ergibt genau EINE Verbindung.  Dieselbe Form
+          wie "wer ruft wen" bei FlexNet- und NET/ROM-Links.
+       b) BEIDE STEHENLASSEN und als EIN logisches Rohr behandeln:
+          senden auf der, ueber die zuletzt etwas kam.  Loest die
+          Asymmetrie, kostet aber die doppelte Verbindung und verlangt
+          eine Antwort auf "was, wenn eine faellt".
+
 ------------------------------------------------------------------------
 WAS AUF EIN LABOR WARTET - DREI DINGE, EIN BEDARF
 ------------------------------------------------------------------------
