@@ -1153,7 +1153,7 @@ struct mbuf **bpp
 		ax_dup_remember(h);
 	}
 	logsrc(out,out->hwaddr);
-	logdest(out,idest);
+	logdest(out,(uint8 *)idest);
 	(*out->raw)(out,bpp);
 	return 1;
 }
