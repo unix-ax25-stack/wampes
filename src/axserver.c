@@ -12,6 +12,7 @@
 #include <sys/uio.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include "global.h"
 #include "mbuf.h"
@@ -1540,6 +1541,10 @@ static void axpipe_state_upcall(struct axservice *sp, enum lapb_state oldstate, 
 
   (void) oldstate;
   if (newstate == LAPB_DISCONNECTED && pp) {
+    /* syslog(LOG_NOTICE,
+	   "axpipe: session fd %d closed - LAPB disconnect (RF/peer side)",
+	   pp->fd);
+     */
     sp->user = 0;
     pp->sp = 0;
     axpipe_close(pp);
@@ -1593,6 +1598,11 @@ static void axpipe_readable(void *arg)
     return;
   }
   if (n < 0 && (errno == EAGAIN || errno == EINTR)) return;
+  if (n < 0) { // log only if n > 0; comment out if you like to log normal sessin termintion
+	syslog(n == 0 ? LOG_NOTICE : LOG_ERR,
+		"axpipe: session fd %d ended via read: %s", pp->fd,
+		n == 0 ? "EOF (far end closed)" : "error (errno = %m)");
+  }
   axpipe_hangup(pp);                    /* end of file: let the link go */
   off_read(pp->fd);
 }
@@ -1609,6 +1619,8 @@ static void axpipe_writable(void *arg)
 
     off_write(pp->fd);
     if (getsockopt(pp->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) || err) {
+      syslog(LOG_ERR, "axpipe: session fd %d connect failed (errno = %m)",
+	     pp->fd);
       axpipe_hangup(pp);
       axpipe_close(pp);
       return;
@@ -1658,6 +1670,8 @@ static void axpipe_pump(struct axpipe *pp)
       on_write(pp->fd, axpipe_writable, pp);
       return;
     }
+    syslog(LOG_ERR, "axpipe: session fd %d write failed (errno = %m)",
+	   pp->fd);
     axpipe_hangup(pp);
     return;
   }
@@ -2122,24 +2136,77 @@ static int axserv_handover(struct axlisten *lp, const char *line, int *fdp)
    * that is not calling accept() must not be able to stop the node.  A full
    * buffer is refused like any other failure to hand the call on.
    *
-   * A SHORT SEND IS ALSO A FAILURE, and that one is not obvious.  This is a
-   * stream socket, so sendmsg() may write fewer bytes than asked - and with
-   * MSG_DONTWAIT on a buffer that is nearly full, which is precisely the case
-   * above, it is not a remote possibility.  The descriptor travels with the
-   * FIRST byte, so the client would end up holding a live session together
-   * with half a name line, and wampes_accept() reads two callsigns out of
-   * that line.  The rest cannot be sent afterwards either: ancillary data
-   * does not repeat, and a second write would look like the next handover.
-   * So it is refused like any other, and our end of the pair is closed - the
-   * client's copy then reports end of file at once instead of waiting on a
-   * session nobody is serving.
+   * A SHORT SEND, however, is NOT a failure.  This is a stream socket, so
+   * sendmsg() may write fewer bytes than asked - and with MSG_DONTWAIT on a
+   * buffer that is nearly full, which is precisely the case above, it is not
+   * a remote possibility.  The descriptor travels with the FIRST byte, so a
+   * single short send would hand the client a live session together with half
+   * a name line, and wampes_accept() reads two callsigns out of that line.
+   * Annex data cannot be sent again - a second write carrying the descriptor
+   * would look like the next handover - so the rest of the line is followed
+   * up as plain bytes, cooperatively and within a bounded time, until the
+   * whole line has gone out.  Only a real failure (the client is gone, or it
+   * refuses to drain the channel) is treated as a refusal; anything else
+   * would make an otherwise good session vanish without a word.
    */
-  n = sendmsg(lp->clientfd, &msg, MSG_DONTWAIT);
-  if (n < 0 || (size_t) n != iov.iov_len) {
-    if (n >= 0) errno = EIO;            /* the caller logs strerror(errno) */
-    close(sv[0]);
-    close(sv[1]);
-    return -1;
+  {
+    size_t tot = iov.iov_len;
+    size_t off = 0;
+    int real_err = 0;
+
+    n = sendmsg(lp->clientfd, &msg, MSG_DONTWAIT);
+    if (n > 0)
+      off = (size_t) n;
+    else if (n == 0)
+      real_err = 1;
+    else if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+      real_err = 1;
+
+    /* Never block the cooperative scheduler for long while draining a short
+     * send: the control channel is almost empty in normal operation and the
+     * client is reading it, so a short wait is all it takes.  Up to about
+     * 100ms in 10ms rounds drains a nearly-full buffer without making a
+     * noticeable stutter on the node; a stubborn buffer - a client that is
+     * not draining - is refused rather than held up polling for it. */
+    {
+      int tries = 0;
+
+      while (!real_err && off < tot && tries < 10) {
+        struct pollfd pfd;
+        int r;
+
+        tries++;
+        pfd.fd = lp->clientfd;
+        pfd.events = POLLOUT;
+        pfd.revents = 0;
+        r = poll(&pfd, 1, 10);          /* 10ms per round, <=100ms in total */
+        if (r < 0 && errno == EINTR)
+          continue;
+        if (r <= 0) {
+          real_err = 1;                 /* timed out: client is not draining */
+          break;
+        }
+        n = send(lp->clientfd, buf + off, tot - off,
+                 MSG_NOSIGNAL | MSG_DONTWAIT);
+        if (n > 0) {
+          off += (size_t) n;
+        } else if (n == 0) {
+          real_err = 1;
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+          real_err = 1;
+        }
+      }
+    }
+
+    if (real_err || off < tot) {
+      /* either a genuine error, or the channel refused to drain in time:
+       * refuse the call, and close our end so the client's copy sees EOF
+       * at once rather than waiting on a session nobody is serving. */
+      if (!real_err) errno = EIO;       /* the caller logs strerror(errno) */
+      close(sv[0]);
+      close(sv[1]);
+      return -1;
+    }
   }
   close(sv[1]);                         /* the client owns it now */
   *fdp = sv[0];
