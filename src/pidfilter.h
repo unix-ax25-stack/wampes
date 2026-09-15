@@ -22,7 +22,7 @@
  * <iface> pid ?" prints - and the command's own error messages say the same
  * thing.
  */
-extern char Pid_usage[];
+extern char Pid_filter_usage[];
 
 int pid_blocked(const struct iface *ifp, int dir, int pid);
 /* Fuer "ifconfig <iface> verbose": eine Zeile, aber nur wenn etwas gesetzt
@@ -40,6 +40,6 @@ int pid_number(const char *word);
 const char *pid_name(int pid, char *buf, size_t buflen);
 
 int pid_info(int argc, char *argv[], void *p);
-int ifpid(int argc, char *argv[], void *p);
+int if_pid_filter(int argc, char *argv[], void *p);
 
 #endif /* _PIDFILTER_H */

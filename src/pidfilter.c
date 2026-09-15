@@ -156,7 +156,7 @@ int pid_info(int argc, char *argv[], void *p)
 		printf("\nAny other value with bits 5-4 set to 01 or 10 means "
 		       "\"AX.25 layer 3\nimplemented\"; the rest are not "
 		       "assigned.  These names are what \"pid=\" and\n"
-		       "\"ifconfig <iface> pid\" accept.\n");
+		       "\"ifconfig <iface> pid-filter\" accept.\n");
 		return 0;
 	}
 
@@ -280,19 +280,19 @@ void pid_show_verbose(const struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
-char Pid_usage[] =
-	"ifconfig <iface> pid                       what is blocked here\n"
-	"       ifconfig <iface> pid in|out block <protocol>...\n"
-	"       ifconfig <iface> pid in|out allow <protocol>...\n"
-	"       ifconfig <iface> pid in|out clear           allow everything again\n"
+char Pid_filter_usage[] =
+	"ifconfig <iface> pid-filter               what is blocked here\n"
+	"       ifconfig <iface> pid-filter in|out block <protocol>...\n"
+	"       ifconfig <iface> pid-filter in|out allow <protocol>...\n"
+	"       ifconfig <iface> pid-filter in|out clear       allow everything again\n"
 	"\n"
 	"  <protocol> is a name or a number: ip arp netrom flexnet text vjcomp\n"
 	"  vjuncomp segment x25 flextalk texnet lq appletalk applearp, or 0xcf,\n"
 	"  or \"any\" for all 256.  \"block any\" then \"allow <protocol>\" is how\n"
 	"  one says \"nothing but this\":\n"
 	"\n"
-	"       ifconfig xnet pid in block any\n"
-	"       ifconfig xnet pid in allow text\n"
+	"       ifconfig xnet pid-filter in block any\n"
+	"       ifconfig xnet pid-filter in allow text\n"
 	"\n"
 	"  \"reset\", \"defaults\" and the older \"none\" all mean \"clear\".\n"
 	"\n"
@@ -303,13 +303,13 @@ char Pid_usage[] =
 
 /*---------------------------------------------------------------------------*/
 
-/* ifconfig <iface> pid [in|out [block|allow <protocol>...]]
+/* ifconfig <iface> pid-filter [in|out [block|allow <protocol>...]]
  *
  * This one takes a list, so doifconfig() hands it the rest of the line
  * instead of the usual name/value pair - see the note there.
  */
 
-int ifpid(int argc, char *argv[], void *p)
+int if_pid_filter(int argc, char *argv[], void *p)
 {
 	int block;
 	int dir;
@@ -320,7 +320,7 @@ int ifpid(int argc, char *argv[], void *p)
 
 	if (argc < 2 || !strcmp(argv[1], "?") || !strcmp(argv[1], "help")) {
 		if (argc >= 2) {
-			printf("Usage: %s\n", Pid_usage);
+			printf("Usage: %s\n", Pid_filter_usage);
 			return 0;
 		}
 		pid_show(ifp, PF_IN, 0);
@@ -334,7 +334,7 @@ int ifpid(int argc, char *argv[], void *p)
 		dir = PF_OUT;
 	else {
 		printf("\"%s\": the direction is \"in\" or \"out\"\n", argv[1]);
-		printf("Usage: %s\n", Pid_usage);
+		printf("Usage: %s\n", Pid_filter_usage);
 		return 1;
 	}
 
@@ -364,13 +364,13 @@ int ifpid(int argc, char *argv[], void *p)
 		block = 0;
 	else {
 		printf("\"%s\": say \"block\", \"allow\" or \"none\"\n", argv[2]);
-		printf("Usage: %s\n", Pid_usage);
+		printf("Usage: %s\n", Pid_filter_usage);
 		return 1;
 	}
 
 	if (argc < 4) {
 		printf("Which protocol?\n");
-		printf("Usage: %s\n", Pid_usage);
+		printf("Usage: %s\n", Pid_filter_usage);
 		return 1;
 	}
 
@@ -381,7 +381,7 @@ int ifpid(int argc, char *argv[], void *p)
 		if (strcmp(argv[i], "any") && pid_number(argv[i]) < 0) {
 			printf("\"%s\" is not a protocol name and not a "
 			       "number 0..255\n", argv[i]);
-			printf("Usage: %s\n", Pid_usage);
+			printf("Usage: %s\n", Pid_filter_usage);
 			return 1;
 		}
 	/* "any" MEINT ALLE 256, und mehr braucht es dafuer nicht: gespeichert
