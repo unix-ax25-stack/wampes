@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -24,6 +25,18 @@ typedef long speed_t;
 #endif
 #endif
 
+/* Transmit progress watchdog (see asy_wd() below): how often to check and
+ * how many consecutive checks with a non-empty queue trigger a port reset.
+ * The reset closes the port, holds DTR low for ASY_WD_DELAY ticks and then
+ * reopens it, which is what wakes the device.  It must not be inline: a
+ * freshly closed USB-CDC device that is opened again in the same tick may
+ * still be tearing its pipes down and the reopen would fail.
+ */
+#define ASY_WD_PERIOD   1000            /* ms between progress checks */
+#define ASY_WD_STALLS    2              /* consecutive non-empty-queue checks */
+#define ASY_WD_DELAY     6              /* ticks DTR stays low in a reset */
+#define ASY_WD_FAULT_DELAY 2            /* DTR-low hold after a post-reopen fault */
+
 #ifndef O_NOCTTY
 #define O_NOCTTY        0
 #endif
@@ -45,6 +58,8 @@ typedef long speed_t;
 static int find_speed(long speed);
 static void pasy(struct asy *asyp);
 static void asy_tx(void *arg);
+static void asy_wd(void *arg);
+static long sndq_len(struct mbuf *bp);
 
 struct asy Asy[ASY_MAX];
 
@@ -161,10 +176,32 @@ asy_up(struct asy *ap)
 		ap->speed = speed_table[sp].speed;
 	} else {
 		char filename[80];
-		strcpy(filename, "/dev/");
-		strcat(filename, ap->iface->name);
-		if ((ap->fd = open(filename, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0)
+		const char *path = ap->devfile;
+
+		/* asy_attach() caches the real device node in ap->devfile, so a
+		 * watchdog reopen always finds it, no matter what iface->name
+		 * has become in between.  Fall back to building the path from
+		 * the name for the plain "/dev/xxx" and legacy "xxx" forms.
+		 */
+		if (path == NULL) {
+			*filename = 0;
+			if (*ap->iface->name != '/')
+				strcpy(filename, "/dev/");
+			snprintf(filename + strlen(filename), sizeof(filename),
+				"%s", ap->iface->name);
+			path = filename;
+		}
+		if ((ap->fd = open(path, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0) {
+			fprintf(stderr, "%s: failed to open %s (%s)\n",
+				ap->iface->name, path, strerror(errno));
 			goto Fail;
+		}
+		/* A freshly opened USB-CDC port may carry stale KISS bytes from
+		 * a previous session (left in the device's firmware buffer by a
+		 * re-enumeration that happened while data was in flight).  Flush
+		 * the input side so the TNC's framing parser starts clean.
+		 */
+		tcflush(ap->fd, TCIFLUSH);
 #ifdef ibm032
 		fcntl(ap->fd, F_SETFL, O_NONBLOCK | fcntl(ap->fd, F_GETFL, 0));
 #endif
@@ -193,7 +230,33 @@ asy_up(struct asy *ap)
 #endif
 		}
 	}
+	tncinit_quick(ap->iface);
 	on_read(ap->fd, ap->iface->rxproc, ap->iface);
+	/* A reopen can find a queue parked across the reset - asy_wd(), the
+	 * read-error path and the write-error path all park ap->sndq there.
+	 * Whoever brings the port up, those bytes must go out again, so arm
+	 * the writer HERE, in the one place every reopen passes through.
+	 * Relying on each caller to re-arm on_write() is how a parked tail
+	 * sits in the queue forever - port "UP", txchar stuck, no BUSY burst,
+	 * until the next real asy_send() happens to call on_write.  The
+	 * select side is fine (on_write grows maxfd again), the arm was lost.
+	 */
+	if (ap->sndq != NULL)
+		on_write(ap->fd, asy_tx, ap);
+	if (ap->addr == 0 && ap->vec == 0) {
+		/* A serial device, whose endpoint can wedge, is worth the
+		 * watchdog; a TCP backend has nothing to reopen.
+		 */
+		if (ap->wd.duration == 0)
+			set_timer(&ap->wd, ASY_WD_PERIOD);
+		ap->lasttx = ap->txchar;
+		ap->wdstall = 0;
+		ap->wdreopen = 0;
+		ap->wd.func = asy_wd;
+		ap->wd.arg = ap;
+		start_timer(&ap->wd);
+	}
+	ap->rxenx = 0;          /* frisches Open - alte Restschuld zaehlt nicht */
 	return 0;
 
 Fail:
@@ -206,7 +269,7 @@ Fail:
 
 /*---------------------------------------------------------------------------*/
 
-static int asy_down(struct asy *ap)
+static int asy_down(struct asy *ap, const char *who)
 {
 	if (ap->fd < 0)         /* Already DOWN */
 		return 0;
@@ -258,7 +321,12 @@ struct iface *ifp)
 
 	if(ap->iface == NULL)
 		return -1;      /* Not allocated */
-	asy_down(ap);
+	asy_down(ap,"asy_stop (detach)");
+	stop_timer(&ap->wd);
+	if (ap->devfile != NULL) {
+		free(ap->devfile);
+		ap->devfile = NULL;
+	}
 	ap->iface = NULL;
 	return 0;
 }
@@ -329,7 +397,9 @@ int32 val)
 			asy_speed(ifp->dev,val);
 		return ap->speed;
 	case PARAM_DOWN:
-		return asy_down(ap) ? 0 : 1;
+		ap->wdreopen = 0;        /* manual down beats a pending reopen */
+		asy_down(ap,"asy_ioctl PARAM_DOWN");
+		return 0;
 	case PARAM_UP:
 		return asy_up(ap) ? 0 : 1;
 	}
@@ -351,14 +421,79 @@ int cnt)
 		return 0;
 	cnt = read(ap->fd,buf,cnt);
 	ap->rxints++;
-	if (cnt <= 0) {
-		asy_down(ap);
+	if (cnt > 0) {
+		ap->rxchar += cnt;
+		if (ap->rxhiwat < cnt)
+			ap->rxhiwat = cnt;
+		ap->rxenx = 0;          /* Daten - die Leitung lebt */
+		return cnt;
+	}
+	/* No data this round.  What the caller needs to know is whether the
+	 * line is still alive.
+	 */
+	if (cnt < 0 && (errno == EINTR || errno == EAGAIN)) {
+		ap->rxenx = 0;          /* Transient - nothing to deliver, line lives */
 		return 0;
 	}
-	ap->rxchar += cnt;
-	if (ap->rxhiwat < cnt)
-		ap->rxhiwat = cnt;
-	return cnt;
+	if (ap->addr && ap->vec) {
+		/* TCP backend: EOF (0) or a real error is the peer going away. */
+		asy_down(ap,"get_asy TCP eof/error");
+	} else if (cnt < 0 && errno == ENXIO) {
+		/* USB-CDC transient: the TH-D75 (and similar) accepts write()
+		 * but the next read() returns ENXIO while the chip is still
+		 * busy on the USB bus.  The device is not gone: a subsequent
+		 * write will succeed if it is alive, or fail and bring the
+		 * port down through the write-error path.  ENXIO (6) is the
+		 * signal the TH-D75 uses; ENODEV would be a real disappearance.
+		 *
+		 * Returning 0 alone is not enough: the descriptor stays
+		 * readable for select(), and a chip that keeps answering ENXIO
+		 * would spin this function at full speed, rxints climbing into
+		 * the hundred thousands within seconds.  So every ENXIO
+		 * withdraws read interest again - the one-second watchdog
+		 * (asy_wd()) re-arms it on its next tick, which gives a stubborn
+		 * chip one fresh read per second and nothing more.  Data or
+		 * EAGAIN on the way resets the streak and read interest rides
+		 * along: any new traffic needs no re-arm, on_read is simply
+		 * already armed.  (The withdrawal must happen on EVERY ENXIO,
+		 * not just the first: once the watchdog has re-armed the fd, a
+		 * missed withdrawal would leave it in chkread permanently and
+		 * the spin is back.)
+		 *
+		 * An ENXIO here is deliberately NOT turned into a port reset.
+		 * Measured on the TH-D75: after the first transmission the TNC
+		 * wedges while the device is still on the bus - read() says
+		 * ENXIO forever, the DTR-pulse reopen revives the fd only, the
+		 * radio still does not transmit again.  A reset would therefore
+		 * only add downtime without fixing anything, and enough queued
+		 * data against the wedged 3 kB KISS buffer can even crash the
+		 * whole USB bridge (device node vanishes, ENODEV on reopen).
+		 * So the read side just idles at one probe per second until the
+		 * TNC comes back on its own or the line is taken down for a
+		 * real reason.
+		 */
+		ap->rxenx++;
+		off_read(ap->fd);
+		return 0;
+	} else if (cnt < 0) {
+		/* A local serial device truly vanishing brings it down.  The
+		 * reset cycle this arms reopens the device once the
+		 * re-enumeration has settled.  Like the stall reset, anything
+		 * still queued is parked across the down.
+		 */
+		{
+			struct mbuf *bp = ap->sndq;
+
+			fprintf(stderr, "%s: read error, resetting (fd %d, errno %d, %lu bytes queued)\n",
+				ap->iface->name, ap->fd, errno, sndq_len(bp));
+			ap->sndq = NULL;
+			asy_down(ap,"get_asy serial read error");
+			ap->sndq = bp;
+		}
+		ap->wdreset++;
+		ap->wdreopen = ASY_WD_FAULT_DELAY;
+	}
+	return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -413,13 +548,19 @@ struct asy *asyp)
 
 	printf(" %lu bps\n",asyp->speed);
 
-	printf(" RX: int %lu chars %lu hw hi %lu\n",
-	 asyp->rxints,asyp->rxchar,asyp->rxhiwat);
+	printf(" RX: int %lu chars %lu hw hi %lu enxio %u\n",
+	 asyp->rxints,asyp->rxchar,asyp->rxhiwat,asyp->rxenx);
 	asyp->rxhiwat = 0;
 
-	printf(" TX: int %lu chars %lu%s\n",
+	printf(" TX: int %lu chars %lu%s",
 	 asyp->txints,asyp->txchar,
 	 asyp->sndq ? " BUSY" : "");
+	if(asyp->txqueued > asyp->txchar)
+		printf(" (%lu%% of %lu queued)",
+		 asyp->txchar * 100 / asyp->txqueued,asyp->txqueued);
+	if(asyp->wdreset)
+		printf(" (%lu serial resets)",asyp->wdreset);
+	printf("\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -442,11 +583,31 @@ asy_tx(void *arg)
 		}
 		n = writev(asyp->fd, iov, n);
 		asyp->txints++;
+		if (n < 0 && errno == EAGAIN)
+			/* No room for even a byte right now; leave the queue
+			 * where it is.  select() will call us again when the
+			 * device has drained and it is writeable once more.
+			 */
+			return;
 		if (n <= 0) {
-			asy_down(asyp);
+			/* Hard write error - the device has gone or wedged.
+			 * Drop the queue: the data was never accepted and
+			 * re-sending it after a reopen just re-overflows a
+			 * half-initialized chip.  The stall reset path
+			 * preserves queued data because the device was alive
+			 * but stuck; here it has actively refused the write,
+			 * so the bytes are lost.  Starting clean after the
+			 * reopen gives the TNC time to re-initialize.
+			 */
+			fprintf(stderr, "%s: write error, dropping %lu bytes (fd %d)\n",
+				asyp->iface->name, sndq_len(asyp->sndq), asyp->fd);
+			asy_down(asyp,"asy_tx write error");
+			asyp->wdreset++;
+			asyp->wdreopen = ASY_WD_FAULT_DELAY;
 			return;
 		}
 		asyp->txchar += n;
+		asyp->rxenx = 0;        /* Write klappt - der Chip lebt */
 		while (n > 0) {
 			if (n >= asyp->sndq->cnt) {
 				n -= asyp->sndq->cnt;
@@ -460,6 +621,134 @@ asy_tx(void *arg)
 	}
 	if (asyp->sndq == NULL)
 		off_write(asyp->fd);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Count queued bytes (the head of the packet list, not a queue head) */
+static long
+sndq_len(
+struct mbuf *bp)
+{
+	long n;
+
+	n = 0;
+	for (; bp != NULL; bp = bp->next)
+		n += bp->cnt;
+	return n;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Transmit progress watchdog, ticking once a second while a serial interface
+ * is up.  Wireless TNCs with USB-CDC backends (a Kenwood TH-D75 among them)
+ * can stop draining their endpoint after a burst: select() then never reports
+ * the port as writeable again, sndq grows forever and asystat shows "BUSY" no
+ * matter how long one waits.  If the queue is not empty and not a single byte
+ * has been written for a couple of ticks, that is a wedge beyond any error
+ * handling we could do from here; the only cure is to wake the device with a
+ * fresh open, not just a fresh file descriptor.  The reopen pulls DTR, which
+ * is what resets the hardware, so portdown and - after a short pause, so the
+ * device has time to notice the DTR pulse - portup is the recovery.  The data
+ * still queued is saved and written as soon as the line is alive again.
+ *
+ * A reset is not free: the TH-D75 re-enumerates on the USB bus in response,
+ * and a port reopened while that is still happening dies again a moment later
+ * (writes briefly succeed, then the first read fails with ENXIO).  ASY_WD_DELAY
+ * therefore has to outlast the re-enumeration, and any down caused by a read
+ * or write error arms another reset cycle on its own - with an empty queue the
+ * watchdog would otherwise have nothing to watch and the port would stay down.
+ */
+static void
+asy_wd(void *arg)
+{
+	struct asy *ap = (struct asy *) arg;
+
+	start_timer(&ap->wd);
+
+	if (ap->iface == NULL)
+		return;
+
+	if (ap->wdreopen > 0) {
+		/* A reset is in progress: the port is closed and the queued
+		 * data is parked in ap->sndq.  Count down ASY_WD_DELAY ticks
+		 * with DTR held low, then bring the line up.  If the open
+		 * fails (device unplugged, port busy) keep trying - the
+		 * queue stays put meanwhile.
+		 */
+		if (--ap->wdreopen > 0)
+			return;
+		if (asy_up(ap) < 0) {
+			fprintf(stderr, "%s: reopen failed (errno %d), will retry, %lu bytes queued\n",
+				ap->iface->name, errno, sndq_len(ap->sndq));
+			ap->wdreopen = 1;       /* retry next tick */
+			return;
+		}
+		return;
+	}
+
+	if (ap->fd < 0) {
+		/* The port is down for no reset of ours.  Something tore the
+		 * interface down (a vanished device, an I/O error), and if
+		 * traffic is still waiting a reset is the only way to get it
+		 * out.  The queue head is already right where the reset parks
+		 * it, so there is nothing to save here.
+		 */
+		if (ap->sndq != NULL) {
+			ap->wdreset++;
+			ap->wdreopen = ASY_WD_DELAY;
+		}
+		return;
+	}
+
+	/* ENXIO (see get_asy) withdrew read interest to stop a
+	 * spinning select.  Re-arm it here, once per check, so a chip that
+	 * was merely busy gets exactly one fresh read per second and a
+	 * recovered one is picked up on the first tick - while a permanently
+	 * wedged one keeps the streak visible in asystat ('enxio') instead
+	 * of hammering the USB bus.  The count is preserved on purpose; data
+	 * or EAGAIN reset it elsewhere.
+	 */
+	if (ap->rxenx > 0 && ap->wdreopen == 0)
+		on_read(ap->fd, ap->iface->rxproc, ap->iface);
+
+	if (ap->sndq == NULL) {
+		/* Nothing pending - the line drains, no stall can build up. */
+		ap->lasttx = ap->txchar;
+		ap->wdstall = 0;
+		return;
+	}
+
+	/* A non-empty queue is the situation this watchdog exists for: the
+	 * TH-D75 settles into a trickle after a burst - a byte or two per
+	 * tick, slow enough that the queue never empties, fast enough that a
+	 * "did any byte move?" test never trips.  What matters instead is how
+	 * long the queue stays non-empty: a line that is draining properly
+	 * empties a packet's worth in milliseconds, so two consecutive checks
+	 * with anything still queued is already a reset.  Only real traffic
+	 * that is continuous over seconds gets the same treatment - which, on
+	 * a device that wedges, is the far lesser evil than an endless BUSY.
+	 */
+	if (++ap->wdstall < ASY_WD_STALLS)
+		return;
+
+	ap->lasttx = ap->txchar;
+	ap->wdstall = 0;
+	fprintf(stderr, "%s: serial transmit stalled, resetting the interface (fd %d, %lu bytes queued)\n",
+		ap->iface->name, ap->fd, sndq_len(ap->sndq));
+
+	/* Keep the queue across the reset: asy_down() discards it, so
+	 * save it here and hand it back once the port is back up.
+	 */
+	{
+		struct mbuf *bp = ap->sndq;
+
+		ap->sndq = NULL;
+		asy_down(ap,"asy_wd stall reset");
+		ap->sndq = bp;
+	}
+	ap->wdreset++;
+	ap->wdreopen = ASY_WD_DELAY;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -481,6 +770,7 @@ struct mbuf **bpp)
 	if(asyp->iface == NULL || asyp->fd < 0)
 		free_p(bpp);
 	else {
+		asyp->txqueued += sndq_len(*bpp);
 		append(&asyp->sndq, bpp);
 		on_write(asyp->fd, asy_tx, asyp);
 	}

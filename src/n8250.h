@@ -12,6 +12,10 @@
 #include "iface.h"
 #endif
 
+#ifndef _TIMER_H
+#include "timer.h"
+#endif
+
 /* Asynch controller control block */
 struct asy {
 	struct iface *iface;
@@ -29,6 +33,44 @@ struct asy {
 	long rxchar;            /* Received characters */
 	long txchar;            /* Transmitted characters */
 	long rxhiwat;           /* High water mark on hardware rx fifo */
+
+	/* How much has been handed to this device since it was set up, and how
+	 * much of it went out the door: txqueued counts every byte as asy_send()
+	 * appends it to sndq, txchar counts what write() actually accepted.
+	 * With a queue that survives a reset the two diverge only while data is
+	 * parked, but a device that swallows bytes on the way down (or data
+	 * dropped by PARAM_DOWN/detach) leaves txqueued permanently larger.
+	 */
+	unsigned long txqueued; /* Total bytes ever appended to sndq */
+	unsigned long wdreset;  /* Times the watchdog or an I/O error reset this port */
+
+	/* The serial device node, provided by asy_attach() which splits the
+	 * "device|label" form of the attach argument.  iface->name then holds
+	 * only the label, so a watchdog reopen must open this path instead of
+	 * trying to build one from the name.  Freed on detach.
+	 */
+	char *devfile;
+
+	/* Transmit progress watchdog.  Some USB-CDC equipment (a Kenwood
+	 * TH-D75 among it) stops draining its endpoint after a burst, which
+	 * leaves select() never reporting the port writable again and sndq
+	 * growing forever.  After ASY_WD_RESET checks without a byte moving,
+	 * the port is torn down and reopened - the reopen resets the device.
+	 */
+	struct timer wd;
+	long lasttx;            /* txchar as of the last watchdog check */
+	unsigned wdstall;       /* consecutive checks without any progress */
+	unsigned wdreopen;      /* ticks of DTR-low phase in a port reset */
+
+	/* Consecutive read() answers of ENXIO.  A USB-CDC backend (Kenwood
+	 * TH-D75 and friends) can answer every read with ENXIO while the chip
+	 * is busy on the USB bus; the descriptor then stays readable for
+	 * select() and the line would spin at full speed.  The first ENXIO
+	 * withdraws read interest (off_read) and the one-second watchdog re-arms
+	 * it, so a stubborn chip gets exactly one fresh read per second and the
+	 * streak is visible in asystat as "enxio".
+	 */
+	unsigned rxenx;         /* consecutive ENXIO reads */
 };
 
 extern struct asy Asy[];
