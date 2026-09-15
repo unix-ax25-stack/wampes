@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "global.h"
 #include "mbuf.h"
@@ -53,15 +54,16 @@ static const struct {
   const char *name;
   const char *seq;
 } Known[] = {
-  /* TAPR TNC2 and everything that copied it, the Kenwood built-in TNCs
-   * among them - hence the alias.  Kenwood knows KISS OFF too, which would be
-   * a tidier way out than C0 FF C0; it is not used, because the sequence has
-   * to work on a TNC already in KISS mode, where no text is read.
+  /* TAPR TNC2 and everything that copied it, among them the TH-D72 which
+   * has a real TNC: converse mode, KISS ON, RESTART.
    */
   { "tapr",       "\\xC0\\xFF\\xC0 \\d ^C^C^C \\d - "
 		  "\"KISS ON\\r\" \\p \"RESTART\\r\" \\p -" },
-  { "kenwood",    "\\xC0\\xFF\\xC0 \\d ^C^C^C \\d - "
-		  "\"KISS ON\\r\" \\p \"RESTART\\r\" \\p -" },
+  /* TH-D74 / TH-D75: no command mode, no KISS ON, no RESTART.  After
+   * C0 FF C0 leaves KISS mode, "TN 2,0" re-enters it (Band A).
+   * "TN 2,1" would be Band B.
+   */
+  { "kenwood",    "\\xC0\\xFF\\xC0 \\d \"TN 2,0\\r\" \\p" },
   /* Kantronics says it differently and, unlike the others, remembers KISS
    * across a power cycle.
    */
@@ -286,6 +288,49 @@ void tncinit_run(struct iface *ifp)
   sp = &Slip[ifp->xdev];
   if (sp->initspec == NULL || sp->initialising) return;
   newproc("tncinit", 2048, tncinit_proc, ifp->xdev, NULL, NULL, 0);
+}
+
+/* Quick KISS init, called from asy_up after a reopen: same parsing as
+ * tncinit_proc, but writes raw bytes directly to the fd instead of
+ * through the SLIP encode path.  Delays are kept (the TNC needs time
+ * between leaving KISS and accepting a text command); expect/timeout
+ * and rx discard are skipped; the transmit queue is not touched.
+ */
+
+void tncinit_quick(struct iface *ifp)
+{
+  struct slip *sp;
+  struct asy *ap;
+  char tok[256];
+  const char *p;
+  uint8 buf[256];
+  int fd;
+
+  if (!tncinit_serial(ifp)) return;
+  sp = &Slip[ifp->xdev];
+  if (sp->initspec == NULL) return;
+  ap = &Asy[sp->iface->dev];
+  fd = ap->fd;
+  if (fd < 0) return;
+
+  for (p = sp->initspec; (p = next_token(p, tok, sizeof(tok))) != NULL; ) {
+    if (!strcmp(tok, "-"))                    continue;
+    if (!strcmp(tok, "\\d"))                  { sleep(1); continue; }
+    if (!strcmp(tok, "\\p"))                  { usleep(100000); continue; }
+    if (!strncmp(tok, "\\w", 2))             { usleep((useconds_t)atol(tok + 2) * 1000); continue; }
+    if (tok[0] == '?')                       continue;
+    {                                           /* text and raw bytes */
+      char *unq = tok;
+      int n;
+
+      if (*unq == '"') {
+        unq++;
+        if ((n = (int) strlen(unq)) > 0 && unq[n - 1] == '"') unq[n - 1] = '\0';
+      }
+      n = unescape(unq, buf, (int) sizeof(buf));
+      if (n > 0) write(fd, buf, n);
+    }
+  }
 }
 
 /* ifconfig <iface> tncinit tapr | kenwood | kantronics | "<sequence>"
