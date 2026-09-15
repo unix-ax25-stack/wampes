@@ -54,9 +54,27 @@ void *p)
 	int base;
 	int irq;
 	int chain;
+	char *devpath;
+	char *label;
+	char *pipe;
 
-	if(if_lookup(argv[4]) != NULL){
-		printf("Interface %s already exists\n",argv[4]);
+	/* argv[4] may be given as "device|label": "device" is the serial
+	 * device node ("cu.usbmodem..." or "/dev/cu.usbmodem..."), "label"
+	 * the interface name to show at "interfaces".  Split the two here,
+	 * before the lookup, so that a second attach with the same label is
+	 * caught just like the plain-name case - a full "device|label" string
+	 * would never match an interface that only carries its label.
+	 */
+	devpath = argv[4];
+	label = argv[4];
+	if((pipe = strchr(argv[4],'|')) != NULL){
+		*pipe++ = 0;
+		devpath = argv[4];
+		label = pipe;
+	}
+
+	if(if_lookup(label) != NULL){
+		printf("Interface %s already exists\n",label);
 		return -1;
 	}
 	if(setencap(NULL,argv[3]) == -1){
@@ -77,13 +95,13 @@ void *p)
 
 		irq = atoi(argv[2]);
 
-	if(!mtu_ok(argv[4],atol(argv[6])))
+	if(!mtu_ok(label,atol(argv[6])))
 		return -1;
 
 	/* Create interface structure and fill in details */
 	ifp = (struct iface *)callocw(1,sizeof(struct iface));
 	ifp->addr = Ip_addr;
-	ifp->name = strdup(argv[4]);
+	ifp->name = strdup(label);
 	ifp->mtu = atoi(argv[6]);
 	ifp->dev = dev;
 	ifp->stop = asy_detach;
@@ -103,7 +121,7 @@ void *p)
 		}
 	}
 	if(ap->name == NULL){
-		printf("Mode %s unknown for interface %s\n",argv[3],argv[4]);
+		printf("Mode %s unknown for interface %s\n",argv[3],label);
 		if_detach(ifp);
 		return -1;
 	}
@@ -122,6 +140,19 @@ void *p)
 		chain = 1;
 	else
 		chain = 0;
+	/* Cache the device node for the driver: iface->name carries only the
+	 * label now, and a watchdog reopen must not re-derive the path from
+	 * it.  asy_stop() frees this on detach.
+	 */
+	if(Asy[dev].devfile == NULL){
+		char filename[80];
+
+		*filename = 0;
+		if(*devpath != '/')
+			strcpy(filename,"/dev/");
+		snprintf(filename + strlen(filename),sizeof(filename),"%s",devpath);
+		Asy[dev].devfile = strdup(filename);
+	}
 	asy_init(dev,ifp,base,irq,(uint)atol(argv[5]),
 		trigchar,(uint)atol(argv[7]),cts,rlsd,chain);
 	return 0;

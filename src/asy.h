@@ -35,5 +35,6 @@ int asy_stop(struct iface *ifp);
 int get_rlsd_asy(int dev, int new_rlsd);
 int get_asy(int dev,uint8 *buf,int cnt);
 void fp_stop(void);
+void tncinit_quick(struct iface *ifp);
 
 #endif  /* _ASY_H */
