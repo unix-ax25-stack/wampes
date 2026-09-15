@@ -50,6 +50,7 @@ HDRS          = arp.h \
 		nrs.h \
 		ping.h \
 		pidfilter.h \
+		framefilter.h \
 		pktdrvr.h \
 		proc.h \
 		remote.h \
@@ -147,6 +148,7 @@ OBJS          = adjtime.o \
 		pathname.o \
 		ping.o \
 		pidfilter.o \
+		framefilter.o \
 		remote_net.o \
 		rip.o \
 		ripcmd.o \
@@ -265,6 +267,7 @@ SRCS          = adjtime.c \
 		pathname.c \
 		ping.c \
 		pidfilter.c \
+		framefilter.c \
 		remote_net.c \
 		rip.c \
 		ripcmd.c \
@@ -1488,7 +1491,15 @@ pidfilter.o:\
 	mbuf.h\
 	pidfilter.c\
 	pidfilter.h
-
+framefilter.o:\
+	../lib/configure.h\
+	cmdparse.h\
+	framefilter.c\
+	framefilter.h\
+	global.h\
+	iface.h\
+	mbuf.h\
+	pidfilter.h
 routefilter.o:\
 	../lib/configure.h\
 	ax25.h\
