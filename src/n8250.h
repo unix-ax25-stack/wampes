@@ -16,6 +16,14 @@
 #include "timer.h"
 #endif
 
+/* Modem-flow options for a serial port: the legacy 8250 "c" (CTS handshake)
+ * and "r" (carrier-gated, aka RLSD/CD) attach flags.  Made real by asy_up():
+ * it applies them on every open, so a watchdog reopen restores them - the
+ * plain open()/TCSETS default is that neither is active.
+ */
+#define ASY_F_CTS       0x01    /* c: CRTSCTS, the driver gates the line on CTS */
+#define ASY_F_RLSD      0x02    /* r: clear CLOCAL, receive only with carrier  */
+
 /* Asynch controller control block */
 struct asy {
 	struct iface *iface;
@@ -27,6 +35,8 @@ struct asy {
 	unsigned addr;          /* Base I/O address */
 	int vec;                /* Interrupt vector */
 	long speed;             /* Line speed in bits per second */
+
+	int flow;               /* ASY_F_* bits, set at attach, applied at open */
 
 	long rxints;            /* receive interrupts */
 	long txints;            /* transmit interrupts */
@@ -55,7 +65,9 @@ struct asy {
 	 * TH-D75 among it) stops draining its endpoint after a burst, which
 	 * leaves select() never reporting the port writable again and sndq
 	 * growing forever.  After ASY_WD_RESET checks without a byte moving,
-	 * the port is torn down and reopened - the reopen resets the device.
+	 * the port is torn down and reopened - the reopen resets the device,
+	 * and asy_up() re-asserts DTR and RTS on its way up, which is what
+	 * such a backend needs to start talking again.
 	 */
 	struct timer wd;
 	long lasttx;            /* txchar as of the last watchdog check */

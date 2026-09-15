@@ -65,6 +65,7 @@ struct cmds Cmds[] = {
 	{ "!",            doshell,        0, 0, NULL },
 	{ "arp",          doarp,          0, 0, NULL },
 	{ "asystat",      doasystat,      0, 0, NULL },
+	{ "6pstat",       do6pstat,       0, 0, NULL },
 	{ "attach",       doattach,       0, 2,
 	  "attach <hardware> <hw specific options>\n"
 	  "  \"attach ?\" lists the hardware types - which are not the same in\n"
@@ -136,7 +137,17 @@ struct cmds Cmds[] = {
 	{ "mkdir",        domkd,          0, 2, "mkdir <directory>" },
 	{ "netrom",       donetrom,       0, 0, NULL },
 	{ "nrstat",       donrstat,       0, 0, NULL },
-	{ "param",        doparam,        0, 2, "param <interface>" },
+	{ "param",        doparam,        0, 2,
+	  "param <interface> [<name>|<number> [<value>]]\n"
+	  "  Plain 'param <if>' - or 'param <if> ?' - lists what that port supports.\n"
+	  "  Local, no TNC involved:\n"
+	  "    DTR|RTS toggle the host serial lines - a USB-CDC TNC like the TH-D75\n"
+	  "    keeps its KISS mode only while DTR is high; open asserts DTR already,\n"
+	  "    this is the live switch - and Speed sets the line speed; Up|Down\n"
+	  "    revive or park a port.\n"
+	  "  Sent to the TNC:\n"
+	  "    TxDelay|Persist|SlotTime|TxTail|FullDup KISS parameters.\n"
+	  "  Read-only: DCD (6pack) - the TNC reports the carrier in-band, not a pin." },
 	{ "ping",         doping,         0, 0, NULL },
 	{ "ps",           ps,             0, 0, NULL },
 	{ "record",       dorecord,       0, 0, NULL },
@@ -175,7 +186,16 @@ struct cmds Attab[] = {
 
 	/* Ordinary asynchronous adaptor */
 	{ "asy", asy_attach, 0, 8,
-	"attach asy <address>|0 <vector>|0 slip|vjslip|ax25ui|ax25i|nrs <dev>[|<label>] <buffers> <mtu> <speed> [ip_addr]\n  Stats: type 'asystat'" },
+"attach asy <address>|0 <vector>|0 slip|vjslip|kissui|kissi|6packui|6packi|nrs <dev>[|<label>] <buffers> <mtu> <speed> [c|r]\n"
+	  "  buffers: legacy ring size, unused by the driver, 2048 is the plain default;\n"
+	  "    KISS|SLIP decode unbounded (grows in 220-octet chunks) - only 6pack has a\n"
+	  "    hard cap: one fixed 512-octet frame buffer, and the AX.25 frame is clamped\n"
+	  "    to fit it via paclen (~491 info octets); the interface mtu itself is free,\n"
+	  "    IP and AX.25 between them cut a datagram into frames that size.\n"
+	  "  c: CTS handshake, r: carrier-gated - the legacy 8250 flow options, off by default;\n"
+"  DTR and RTS toggle live, 'param <if> DTR|RTS 0|1', speed via 'param <if> Speed <bps>',\n"
+	  "  all of them listed by plain 'param <if>'\n"
+	  "  Stats: type 'asystat' or '6pstat'" },
 
 	/* fake netrom interface */
 	{ "netrom", nr_attach, 0, 1,
@@ -466,12 +486,14 @@ struct iftype Iftypes[] = {
 	}
 };
 
-/* Asynchronous interface mode table */
+/* Asynchronous interface mode table.  The AX.25 on-the-wire framing words
+ * (ax25ui/ax25i) deliberately live only in Iftypes[]: on a serial line they
+ * would select KISS anyhow, under a name that says otherwise.  asy_attach()
+ * catches the leftovers with a pointed error.
+ */
 struct asymode Asymode[] = {
 	{ "SLIP",         FR_END,         slip_init,      slip_free },
 	{ "VJSLIP",       FR_END,         slip_init,      slip_free },
-	{ "AX25UI",       FR_END,         kiss_init,      kiss_free },
-	{ "AX25I",        FR_END,         kiss_init,      kiss_free },
 	{ "KISSUI",       FR_END,         kiss_init,      kiss_free },
 	{ "KISSI",        FR_END,         kiss_init,      kiss_free },
 	{ "6PACKUI",      SIXP_CMD_SEOF,  sixpack_init,   sixpack_free },

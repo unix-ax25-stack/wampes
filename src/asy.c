@@ -17,28 +17,32 @@
 #include "slip.h"
 #include "commands.h"
 
-static int asy_detach(struct iface *ifp);
-
 /* Attach a serial interface to the system
  * argv[0]: hardware type, must be "asy"
  * argv[1]: I/O address, e.g., "0x3f8"
  * argv[2]: vector, e.g., "4"
- * argv[3]: mode, may be:
+ * argv[3]: mode, the framing on the wire - one of:
  *              "slip" (point-to-point SLIP)
  *              "vjslip" (SLIP with Van Jacobson TCP header compression)
- *              "kissui" (AX.25 UI frame format in SLIP for raw TNC)
- *              "ax25ui" (same as kissui)
- *              "kissi" (AX.25 I frame format in SLIP for raw TNC)
- *              "ax25i" (same as kissi)
- *              "nrs" (NET/ROM format serial protocol)
- *              "ppp" (Point-to-Point Protocol, RFC1171, RFC1172)
- * argv[4]: interface label, e.g., "sl0"
+ *              "kissui" (AX.25 UI frames in KISS)
+ *              "kissi" (AX.25 I frames in KISS)
+ *              "6packui" (AX.25 UI frames in 6PACK)
+ *              "6packi" (AX.25 I frames in 6PACK)
+ *              "nrs" (NET/ROM serial protocol)
+ *            The Iftypes words "ax25ui"/"ax25i" name the same on-the-wire
+ *            formats for ip- and ethernet-style devices; on a serial line
+ *            they are rejected with a pointer to the real names.
+ * argv[4]: "device|label": the serial device node ("/dev/cu.usbmodem...")
+ *          and the interface label it shows as (e.g. "tnc0").  A bare
+ *          label opens under /dev/.
  * argv[5]: receiver ring buffer size in bytes
  * argv[6]: maximum transmission unit, bytes
  * argv[7]: interface speed, e.g, "9600"
- * argv[8]: optional flags,
- *              'c' for cts flow control
- *              'r' for rlsd (cd) detection
+ * argv[8]: optional legacy flow flags,
+ *              'c' for CTS handshake (CRTSCTS)
+ *              'r' for rlsd (carrier) gating
+ *            DTR and RTS are asserted on open regardless of these; toggle
+ *            them live with "param <label> DTR|RTS 0|1".
  */
 int
 asy_attach(
@@ -91,6 +95,28 @@ void *p)
 		return -1;
 	}
 
+	/* Resolve the framing against Asymode before anything is created,
+	 * so a miss leaves the system untouched.  "kiss" and "6pack" need
+	 * their frame type - "kissui"/"kissi", "6packui"/"6packi" - while
+	 * "ax25ui"/"ax25i" are real encapsulations for ip- and ethernet-style
+	 * devices that do not exist on a serial line (Iftypes vs. Asymode).
+	 */
+	for(ap = Asymode;ap->name != NULL;ap++)
+		if(stricmp(argv[3],ap->name) == 0)
+			break;
+	if(ap->name == NULL){
+		if(strnicmp(argv[3],"kiss",strlen("kiss")) == 0)
+			printf("Mode %s needs its frame type - use kissui or kissi\n",argv[3]);
+		else if(strnicmp(argv[3],"6pack",strlen("6pack")) == 0)
+			printf("Mode %s needs its frame type - use 6packui or 6packi\n",argv[3]);
+		else if(strnicmp(argv[3],"ax25",strlen("ax25")) == 0)
+			printf("Mode %s: not a serial framing - use kissui/kissi or, for host/TNC\n"
+			 "       protocols, 6packui/6packi\n",argv[3]);
+		else
+			printf("Mode %s unknown for interface %s\n",argv[3],label);
+		return -1;
+	}
+
 	base = htoi(argv[1]);
 
 		irq = atoi(argv[2]);
@@ -107,21 +133,10 @@ void *p)
 	ifp->stop = asy_detach;
 	setencap(ifp,argv[3]);
 
-	/* Look for the interface mode in the table */
-	for(ap = Asymode;ap->name != NULL;ap++){
-		if(stricmp(argv[3],ap->name) == 0){
-			trigchar = ap->trigchar;
-			if((*ap->init)(ifp) != 0){
-				printf("%s: mode %s Init failed\n",
-				 ifp->name,argv[3]);
-				if_detach(ifp);
-				return -1;
-			}
-			break;
-		}
-	}
-	if(ap->name == NULL){
-		printf("Mode %s unknown for interface %s\n",argv[3],label);
+	trigchar = ap->trigchar;
+	if((*ap->init)(ifp) != 0){
+		printf("%s: mode %s Init failed\n",
+		 ifp->name,argv[3]);
 		if_detach(ifp);
 		return -1;
 	}
@@ -158,7 +173,7 @@ void *p)
 	return 0;
 }
 
-static int
+int
 asy_detach(
 struct iface *ifp)
 {

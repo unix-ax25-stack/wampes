@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -62,6 +63,16 @@ static void asy_wd(void *arg);
 static long sndq_len(struct mbuf *bp);
 
 struct asy Asy[ASY_MAX];
+
+/* Modem-line bits for TIOCMBIS/TIOCMBIC/TIOCMGET/TIOCMSET.  The headers name
+ * them on Linux and macOS; keep the numbers for the strays that do not.
+ */
+#ifndef TIOCM_DTR
+#define TIOCM_DTR 0x002
+#endif
+#ifndef TIOCM_RTS
+#define TIOCM_RTS 0x004
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -158,6 +169,8 @@ static int
 asy_up(struct asy *ap)
 {
 	int sp;
+	int dtr = TIOCM_DTR;
+	int rts = TIOCM_RTS;
 
 	if (ap->fd >= 0)        /* Already UP */
 		return 0;
@@ -191,7 +204,7 @@ asy_up(struct asy *ap)
 				"%s", ap->iface->name);
 			path = filename;
 		}
-		if ((ap->fd = open(path, O_RDWR|O_NONBLOCK|O_NOCTTY, 0644)) < 0) {
+		if ((ap->fd = open(path, O_RDWR|O_NONBLOCK|O_NOCTTY)) < 0) {
 			fprintf(stderr, "%s: failed to open %s (%s)\n",
 				ap->iface->name, path, strerror(errno));
 			goto Fail;
@@ -220,13 +233,71 @@ asy_up(struct asy *ap)
 			struct termios termios;
 			memset(&termios, 0, sizeof(termios));
 			termios.c_iflag = IGNBRK | IGNPAR;
-			termios.c_cflag = CS8 | CREAD | CLOCAL;
+			termios.c_cflag = CS8 | CREAD | CLOCAL | (ap->flow & ASY_F_CTS ? CRTSCTS : 0);
+			if (ap->flow & ASY_F_RLSD)
+				/* "r": carrier-gated, the legacy RLSD/DCD option.
+				 * On a USB-CDC backend the modem lines are usually
+				 * reported asserted, so it lives on without doing
+				 * much there - and opening such a line without
+				 * CLOCAL stays non-blocking here anyway.
+				 */
+				termios.c_cflag &= ~CLOCAL;
 			if (cfsetispeed(&termios, speed_table[sp].flags))
 				goto Fail;
 			if (cfsetospeed(&termios, speed_table[sp].flags))
 				goto Fail;
 			if (tcsetattr(ap->fd, TCSANOW, &termios))
 				goto Fail;
+			if (ap->flow & ASY_F_CTS) {
+				/* The sysop asked for CTS flow - make sure the
+				 * driver really applies it.  Some backends
+				 * accept the request without honoring the bit,
+				 * which would silently run a link without the
+				 * flow control it was brought up with.
+				 */
+				struct termios applied;
+				if (tcgetattr(ap->fd, &applied) < 0) {
+					fprintf(stderr, "%s: tcgetattr after TCSETS failed (%s)\n",
+						ap->iface->name, strerror(errno));
+					goto Fail;
+				}
+				if (!(applied.c_cflag & CRTSCTS)) {
+					fprintf(stderr, "%s: CTS flow requested (c) but "
+						"this device cannot provide it\n",
+						ap->iface->name);
+					goto Fail;
+				}
+			}
+			/* Assert the modem control lines.  A TH-D75-style USB-CDC
+			 * backend activates its KISS TNC only while DTR is high -
+			 * open() alone left one of them deaf after a device
+			 * restart, with the host reply queue backing up (write
+			 * blocked, read had stopped past ~680 bytes).  The done
+			 * thing is to say it here on every open: the watchdog
+			 * reopen then re-asserts DTR as well.  With CTS flow the
+			 * driver owns RTS; without it, raise RTS too, the way
+			 * the AX25Toolkit does (RTS free for PTT).
+			 *
+			 * ENOTTY/EINVAL mean the device has no modem lines at
+			 * all (a pty, or a driver without modem control) - such
+			 * a backend works without them, so tolerate that.
+			 * Anything else is a real failure: a backend that needs
+			 * DTR and cannot raise it must not come up pretending
+			 * otherwise, or it sits there silently deaf again.
+			 */
+			if (ioctl(ap->fd, TIOCMBIS, &dtr) < 0
+			 && errno != ENOTTY && errno != EINVAL) {
+				fprintf(stderr, "%s: failed to assert DTR (%s)\n",
+					ap->iface->name, strerror(errno));
+				goto Fail;
+			}
+			if (!(ap->flow & ASY_F_CTS)
+			 && ioctl(ap->fd, TIOCMBIS, &rts) < 0
+			 && errno != ENOTTY && errno != EINVAL) {
+				fprintf(stderr, "%s: failed to assert RTS (%s)\n",
+					ap->iface->name, strerror(errno));
+				goto Fail;
+			}
 #endif
 		}
 	}
@@ -306,6 +377,10 @@ int chain)              /* Chain interrupts */
 	ap->addr = base;
 	ap->vec = irq;
 	ap->speed = speed;
+	ap->flow = (cts ? ASY_F_CTS : 0) | (rlsd ? ASY_F_RLSD : 0);
+	/* "chain" is the legacy 8250 interrupt-chaining flag; nothing left to
+	 * hook in a descriptor-based driver, deliberately not remembered.
+	 */
 	return asy_up(ap);
 }
 
@@ -381,6 +456,36 @@ long bps)
 
 /*---------------------------------------------------------------------------*/
 
+/* Read, or set/clear, one modem control line.  Both directions report the
+ * bit as the driver sees it, so "param <if> DTR" echoes the line back.
+ */
+static int
+asy_modem(
+struct iface *ifp,
+int bit,
+int set,
+int32 val)
+{
+	struct asy *ap = &Asy[ifp->dev];
+	int modem;
+
+	if (ap->fd < 0 || ap->iface == NULL)
+		return -1;
+	if (ap->addr && ap->vec)
+		return -1;      /* a TCP backend has no modem lines */
+	if (ioctl(ap->fd, TIOCMGET, &modem) < 0)
+		return -1;
+	if (set) {
+		if (ioctl(ap->fd, val ? TIOCMBIS : TIOCMBIC, &bit) < 0)
+			return -1;
+		if (ioctl(ap->fd, TIOCMGET, &modem) < 0)
+			return -1;
+	}
+	return (modem & bit) ? 1 : 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Asynchronous line I/O control */
 int32
 asy_ioctl(
@@ -396,6 +501,10 @@ int32 val)
 		if(set)
 			asy_speed(ifp->dev,val);
 		return ap->speed;
+	case PARAM_DTR:
+		return asy_modem(ifp,TIOCM_DTR,set,val);
+	case PARAM_RTS:
+		return asy_modem(ifp,TIOCM_RTS,set,val);
 	case PARAM_DOWN:
 		ap->wdreopen = 0;        /* manual down beats a pending reopen */
 		asy_down(ap,"asy_ioctl PARAM_DOWN");
@@ -647,8 +756,9 @@ struct mbuf *bp)
  * matter how long one waits.  If the queue is not empty and not a single byte
  * has been written for a couple of ticks, that is a wedge beyond any error
  * handling we could do from here; the only cure is to wake the device with a
- * fresh open, not just a fresh file descriptor.  The reopen pulls DTR, which
- * is what resets the hardware, so portdown and - after a short pause, so the
+ * fresh open, not just a fresh file descriptor.  The reopen pulls DTR - the
+ * close drops it, asy_up() asserts it again on the way up - which is what
+ * resets the hardware, so portdown and - after a short pause, so the
  * device has time to notice the DTR pulse - portup is the recovery.  The data
  * still queued is saved and written as soon as the line is alive again.
  *

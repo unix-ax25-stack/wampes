@@ -2,21 +2,46 @@
 .H 2 "attach" " \fItype\fP [\fItype specific options\fP]"
 Configure and attach an interface to the system. The details are
 highly interface type dependent.
-.H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIname\fP 0 \fImtu\fP \fIspeed\fP"
+.H 3 "attach asy 0" " 0 \fIencapsulation\fP \fIdev\fP[|\fIname\fP] \fIbuffers\fP \fImtu\fP \fIspeed\fP [c|r]"
 Configure and attach an asynchronous communications interface to the
-system. See the \fBifconfig encapsulation\fP command for the list of
-available encapsulations. \fIname\fP specifies the name of the
-interface, and is also used to open the interface device file in the
-directory \fB/dev\fP. \fImtu\fP is the Maximum Transmission Unit size,
-in bytes. Datagrams larger than this limit will be fragmented at the
-IP layer into smaller pieces. For AX.25 UI frames, this limits the
-size of the information field. For AX.25 I frames, however, the
-\fBax25 paclen\fP parameter is also relevant. If the datagram or
-fragment is still larger than \fBpaclen\fP, it is also fragmented at
-the AX.25 level (as opposed to the IP level) before transmission. See
-the \fBSetting Paclen, Maxframe, MTU, MSS and Window\fP chapter for
-more information. \fIspeed\fP is the transmission speed in bits per
-second (eg. 9600).
+system. \fIencapsulation\fP is the framing on the wire and must be one
+of \fBslip\fP, \fBvjslip\fP, \fBkissui\fP, \fBkissi\fP, \fB6packui\fP,
+\fB6packi\fP or \fBnrs\fP: KISS and 6PACK each need their frame type
+(both still carry AX.25). The \fBax25ui\fP/\fBax25i\fP words are the
+same formats for ip- and ethernet-style interfaces; on a serial line
+they are refused with a pointer to the real names. \fIdev\fP is the
+device node to open; give it as \fIdev\fP\fB|\fP\fIname\fP to display a
+short label at \fBinterfaces\fP while opening \fIdev\fP.  Without a
+\fB|\fP the argument is the interface name and is opened in the
+directory \fB/dev\fP. \fIbuffers\fP is the receiver ring buffer size
+in bytes. \fImtu\fP is the Maximum Transmission Unit size, in bytes.
+Datagrams larger than this limit will be fragmented at the IP layer
+into smaller pieces. For AX.25 UI frames, this limits the size of the
+information field. For AX.25 I frames, however, the \fBax25 paclen\fP
+parameter is also relevant. If the datagram or fragment is still larger
+than \fBpaclen\fP, it is also fragmented at the AX.25 level (as opposed
+to the IP level) before transmission. See the \fBSetting Paclen,
+Maxframe, MTU, MSS and Window\fP chapter for more information.
+\fIbuffers\fP is a legacy receiver ring size; the current serial driver
+does not use it, and 2048 is the plain default. KISS and SLIP receive
+into 220-octet chunks and grow as needed - only memory bounds a frame.
+6PACK is different: it decodes into one fixed 512-octet buffer
+(SIXP_MAX_FRAME), so the AX.25 frame is hard-capped there. The
+\fBpaclen\fP of a port is clamped to fit it (~491 octets of information
+once header, control and FCS are counted), so the interface \fImtu\fP
+itself is free: IP and AX.25 segmentation between them cut a datagram
+into frames of that size, and an mtu of 1500 on a 6pack port is
+legitimate. An \fBifconfig mtu\fP restriction only survives on ports
+where one frame on the wire is one datagram, such as BPQ and the
+NET/ROM pseudo-port.
+\fIspeed\fP is the transmission speed in bits per second (eg. 9600).
+DTR and RTS are asserted whenever the line comes up - the reopen that
+resets a wedged USB-CDC backend re-asserts them too - and are toggled
+live with \fBparam\fP \fIname\fP \fBDTR\fP|\fBRTS\fP 0|1. The optional
+trailing \fBc\fP enables the CTS handshake (CRTSCTS) and \fBr\fP gates
+received data on the carrier (RLSD/DCD); both are the legacy 8250 flow
+options, off by default. State it with \fBasystat\fP, and \fB6pstat\fP
+for a 6pack port.
 .P
 If any I/O error is encountered reading or writing the interface
 device file, the interface will be marked \fBDOWN\fP. Use the

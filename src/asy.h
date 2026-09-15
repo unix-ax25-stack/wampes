@@ -37,4 +37,7 @@ int get_asy(int dev,uint8 *buf,int cnt);
 void fp_stop(void);
 void tncinit_quick(struct iface *ifp);
 
+/* In asy.c: */
+int asy_detach(struct iface *ifp);
+
 #endif  /* _ASY_H */

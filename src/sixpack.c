@@ -225,6 +225,12 @@ int32 sixpack_ioctl(struct iface *ifp, int cmd, int set, int32 val)
 		 * Porttyp bei uns, der die Frage ueberhaupt beantworten kann.
 		 */
 		return sp->dcd;
+	case PARAM_SPEED:       /* These go to the serial driver */
+	case PARAM_DTR:
+	case PARAM_RTS:
+	case PARAM_DOWN:
+	case PARAM_UP:
+		return asy_ioctl(ifp, cmd, set, val);
 	}
 	return -1;
 }

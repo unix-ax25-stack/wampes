@@ -554,7 +554,12 @@ void *p
 		printf("Not supported\n");
 		return 1;
 	}
-	if(argc < 3){
+	/* "param <if> ?" is the question the plain "param <if>" answers with
+	 * the list of parameters this port supports - make the question work
+	 * instead of an "Unknown parameter ?".  Both are a read of everything
+	 * the port can be asked about.
+	 */
+	if(argc < 3 || strcmp(argv[2],"?") == 0){
 		for(param=1;param<=16;param++){
 			val = (*ifp->ioctl)(ifp,param,FALSE,0L);
 			if(val != -1)

@@ -22,6 +22,10 @@
 #include "framefilter.h"
 #include "asy.h"
 #include "n8250.h"
+#include "slip.h"
+#include "kiss.h"
+#include "nrs.h"
+#include "sixpack.h"
 
 static void showiface(struct iface *ifp, int verbose);
 static int mask2width(int32 mask);
@@ -35,6 +39,7 @@ static int ifrxbuf(int argc,char *argv[],void *p);
 static int ifmtu(int argc,char *argv[],void *p);
 static int ifforw(int argc,char *argv[],void *p);
 static int ifencap(int argc,char *argv[],void *p);
+static int serial_encap_family(struct iface *ifp,char *mode);
 static int iftxqlen(int argc,char *argv[],void *p);
 int iftncinit(int argc,char *argv[],void *p);
 static int ifautoroute(int argc,char *argv[],void *p);
@@ -1031,11 +1036,84 @@ ifencap(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
+	/* On a serial port the encapsulation word must stay within the
+	 * family of the driver it was attached with (kiss, 6pack, slip,
+	 * nrs).  attach picks the driver from Asymode and the framing from
+	 * Iftypes by the same name; swapping in a word from another family
+	 * here would keep the old driver - kiss framing through a 6pack
+	 * line and friends.  Only the within-family flips make sense:
+	 * kissui<->kissi, 6packui<->6packi, slip<->vjslip.
+	 */
+	if(ifp->stop == asy_detach && serial_encap_family(ifp,argv[1]) != 0)
+		return 1;
+
 	if(setencap(ifp,argv[1]) != 0){
 		printf("Encapsulation mode '%s' unknown\n",argv[1]);
 		return 1;
 	}
 	return 0;
+}
+/* The within-family check behind ifencap(): the word is resolved against
+ * Asymode with the same prefix matching setencap() uses, its init function
+ * names the family it leads to, and that must equal the family the port was
+ * brought up with.  Returns 0 when the flip stays within the family; prints
+ * the reason and returns 1 otherwise.  Only called for asy attached ports.
+ */
+static int
+serial_encap_family(
+struct iface *ifp,
+char *mode)
+{
+	struct asymode *ap;
+	int (*newraw)(struct iface *,struct mbuf **);
+	int (*nowraw)(struct iface *,struct mbuf **);
+	const char *allowed;
+
+	nowraw = ifp->raw;
+
+	for(ap = Asymode;ap->name != NULL;ap++)
+		if(strnicmp(ap->name,mode,strlen(mode)) == 0)
+			break;
+	if(ap->name == NULL){
+		if(strnicmp(mode,"ax25",strlen("ax25")) == 0)
+			printf("Encapsulation mode '%s' is not a serial framing - "
+			 "use a kissui/kissi or 6packui/6packi word\n",mode);
+		else
+			printf("Encapsulation mode '%s' unknown for a serial port\n",mode);
+		return 1;
+	}
+
+	if(ap->init == slip_init)
+		newraw = slip_raw;
+	else if(ap->init == kiss_init)
+		newraw = kiss_raw;
+	else if(ap->init == sixpack_init)
+		newraw = sixpack_raw;
+	else if(ap->init == nrs_init)
+		newraw = nrs_raw;
+	else
+		newraw = NULL;
+
+	if(newraw == nowraw)
+		return 0;
+
+	if(nowraw == slip_raw)
+		allowed = "slip|vjslip";
+	else if(nowraw == kiss_raw)
+		allowed = "kissui|kissi";
+	else if(nowraw == sixpack_raw)
+		allowed = "6packui|6packi";
+	else if(nowraw == nrs_raw)
+		allowed = "nrs";
+	else
+		allowed = NULL;
+
+	if(allowed != NULL)
+		printf("Encapsulation mode '%s' is from another serial family - "
+		 "on this port only %s\n",mode,allowed);
+	else
+		printf("Encapsulation mode '%s' cannot be used on this port\n",mode);
+	return 1;
 }
 /* Function to set encapsulation mode */
 int
@@ -1096,7 +1174,18 @@ ifmtu(int argc,char *argv[],void *p)
 
 	if(!mtu_ok(ifp->name,mtu))
 		return 1;
-	if(ifp->framemax && mtu > ifp->framemax){
+	/* One frame on the wire must still be one datagram for the cap to say
+	 * anything about the interface mtu.  A kiss or 6pack port re-segments
+	 * at the AX.25 level: a datagram travels as several I-frames, each
+	 * held to ifp->framemax by ax25_apply_iface_limits().  There the mtu
+	 * is the IP layer's, and exceeding the single-frame buffer just asks
+	 * IP to send a datagram whole and let AX.25 cut it into small frames -
+	 * which is what attach already accepts, so refusing it here would make
+	 * the two tools disagree.  Where a frame really is the whole datagram
+	 * (BPQ, the NET/ROM pseudo-port) the cap stays.
+	 */
+	if(ifp->framemax && ifp->raw != kiss_raw && ifp->raw != sixpack_raw
+	 && mtu > ifp->framemax){
 		printf("%s: mtu %ld is above the %d octets this port can carry\n",
 		 ifp->name,mtu,ifp->framemax);
 		return 1;

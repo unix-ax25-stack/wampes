@@ -30,6 +30,7 @@ Wait;16;
 Down;129;Drop modem control lines
 Up;130;Raise modem control lines
 Blind;131;
+DCD;132;Read carrier state (6pack only; reported in-band by the TNC)
 Return;255;Return a KISS TNC to command mode
 .TE
 .SP
@@ -37,6 +38,21 @@ Depending on the interface type, some parameters can be read back by
 omitting a new value. This is not possible with KISS TNCs as
 there are no KISS commands for reading back previously sent
 parameters.
+.P
+Plain \fBparam\fP \fIiface\fP, or \fBparam\fP \fIiface\fP \fB?\fP,
+lists the parameters the port supports. \fBDTR\fP and \fBRTS\fP are
+not KISS commands: they toggle the host-side RS-232 modem lines (a
+USB-CDC TNC such as the Kenwood TH-D75 stays in KISS mode only while
+DTR is high), and \fBSpeed\fP sets the local line rate. These three
+never reach the TNC; the KISS parameters in the table above are sent
+as control packets, and they are read on the TNC side, not the host.
+.P
+\fBDCD\fP (only meaningful on a 6pack port) is likewise not a modem
+line on the host side: the TNC reports the carrier in a status byte
+inside the data stream. A channel falling quiet is therefore seen
+only when that byte arrives and is decoded - roughly one serial
+character after the event, plus whatever the TNC delays itself - which
+matters where a DAMA turn depends on grabbing the newly empty channel.
 .P
 On a KISS TNC interface, the \fBparam\fP command generates and sends
 control packets to the TNC. Data bytes are treated as decimal.
