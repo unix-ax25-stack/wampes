@@ -80,6 +80,7 @@ static int axip_learned_port(struct axip_route *rp, struct edv_t *edv);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
+static int doaxipstats(int argc, char *argv[], void *p);
 
 /*---------------------------------------------------------------------------*/
 
@@ -100,6 +101,8 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
   ifp->rawsndcnt++;
   ifp->lastsent = secclock();
 
+  edv = (struct edv_t *) ifp->edv;
+
   append_crc_ccitt(*bpp);
 
   if (ifp->trace & IF_TRACE_RAW)
@@ -111,7 +114,17 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
     return -1;
   }
 
-  edv = (struct edv_t *) ifp->edv;
+  /* Loop-Schutz: eigene UI-Aussendung merken - nur die Bytes ohne CRC,
+   * denn der Empfangspfad verwirft die zwei Pruefbytes erst und prueft
+   * dann.  Ein byte-identischer Rueckkehrer auf demselben Datagramm-Port
+   * ist unser Echo (ein Loopback-Tool oder eine Gegenstelle, die eben
+   * zurueckwirft) und darf nicht als neues Rahmenstueck erscheinen, nicht
+   * getraced und schon gar nicht erneut weitergegeben werden.  Connected-
+   * mode (I/RR+/SABM) wird nie gemerkt: dessen identische Wiederholung ist
+   * Protokoll-Timing.
+   */
+  if (l > 2 && ax25_frame_is_ui(buf, l - 2))
+    ax_dup_remember(ax_fingerprint_data(buf, l - 2));
 
   /* Walk the AX.25 address field to find the immediate destination.  Bound
    * the walk against the end of the frame and against MAXDIGIS: a frame whose
@@ -212,6 +225,22 @@ static void axip_recv(void *argp)
 
   if (!check_crc_ccitt((char *) bufptr, l)) goto Fail;
   l -= 2;
+
+  /* Loop-Schutz: unser eigenes Echo - nur UI, und nur wenn derselbe Rahmen,
+   * den wir selbst gerade auf diesem Datagramm-Port weggegeben haben,
+   * byte-identisch zurueckkommt (ein Loopback-Tool anstelle einer
+   * Gegenstelle, oder eine Gegenstelle, die eben zurueckwirft).  Still
+   * verwerfen - vor dem Trace, vor dem Lernen und vor dem Weitergeben.
+   * Wuerde er durchlaufen, erschiene er als "recv" und (wenn unser
+   * Rufzeichen im Pfad steht) ein zweites Mal gesendet.  Connected-mode
+   * identische Wiederholungen (RR+/I/SABM) sind nie ein Echo, sondern
+   * Protokoll-Timing.
+   */
+  if (ax25_frame_is_ui(bufptr, l) &&
+      ax_dup_recent(ax_fingerprint_data(bufptr, l))) {
+    Ax_echoes++;
+    return;
+  }
 
   /* secure-port model of trust: src address adaption, but only
      - if my listen port >= 1024,
@@ -448,6 +477,7 @@ int axip_attach(int argc, char *argv[], void *p)
   ifp->mtu = 256;
   ifp->crccontrol = CRC_CCITT;
   setencap(ifp, "AX25UI");
+  ifp->user_to_user_ok = 1;
 
   edv = (struct edv_t *) malloc(sizeof(struct edv_t));
   edv->type = type;
@@ -559,6 +589,9 @@ static struct cmds Axipcmds[] = {
     "  <port> is for a partner who listens somewhere other than the port of\n"
     "  the interface; left out it means the interface's, or whatever he was\n"
     "  last seen using." },
+  { "stats",  doaxipstats, 0, 0,
+    "axip stats                      routes, and echoes dropped by the\n"
+    "       loop-protect (see also \"ax25 loop-protect [s]\")" },
   { NULL,     NULL,        0, 0, NULL }
 };
 
@@ -669,5 +702,28 @@ static int doaxiproutedrop(int argc, char *argv[], void *p)
       free(rp);
       break;
     }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int doaxipstats(int argc, char *argv[], void *p)
+{
+
+  struct axip_route *rp;
+  int total = 0;
+  int active = 0;
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    total++;
+    /* "aktiv": in der uhnp-Lease-Frist gehoert, also ein Partner, der
+     * tatsaechlich gerade auf dem Datagramm-Port sitzt.
+     */
+    if (rp->lport && rp->ltime + UHNP_LEASETIME >= secclock())
+      active++;
+  }
+  printf("routes      %d (%d active)\n", total, active);
+  printf("bad echoes  %d   loop-protect window %d s\n",
+         Ax_echoes, Ax_dup_window / 1000);
   return 0;
 }

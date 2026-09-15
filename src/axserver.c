@@ -213,6 +213,7 @@ char Axlisten_usage[] =
 "  Each target says how a line ends where it goes, and that is what an\n"
 "  entry converts to unless --ascii or --binary says otherwise:\n"
 "\n"
+"  [I[UI]                            connected (I) or datagram (UI). I is default\n"
 "  <target>   builtin:login          the node's own login, as it always was\n"
 "                                    ASCII - the login lives on CR\n"
 "             tcp:<host>:<port>      dial it and pipe; unix:<path> likewise\n"
@@ -2258,6 +2259,15 @@ struct axservice *axserv_start(struct ax25_cb *axp, int pid)
       for (i = 0; i < axp->hdr.ndigis; i++) {
 	strcat(line, ",");
 	strcat(line, pax25(call, axp->hdr.digis[i]));
+	/* A "*" marks a digi that has already repeated the frame - the
+	 * has-been-repeated bit build_path(reverse) preserved on the
+	 * turned-round path - shown the way the UI monitor path shows it, so
+	 * the connecting program sees the full path with its repeated marks
+	 * as it would under kernel ax25.
+	 */
+	if ((axp->hdr.digis[i][ALEN] & REPEATED) &&
+	    strlen(line) + 1 < sizeof(line))
+	    strcat(line, "*");
       }
       strcat(line, " > ");
       strcat(line, pax25(call, axp->hdr.source));

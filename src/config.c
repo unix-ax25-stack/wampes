@@ -175,7 +175,7 @@ struct cmds Attab[] = {
 
 	/* Ordinary asynchronous adaptor */
 	{ "asy", asy_attach, 0, 8,
-	"attach asy <address> <vector> slip|vjslip|ax25ui|ax25i|nrs <label> <buffers> <mtu> <speed> [ip_addr]" },
+	"attach asy <address>|0 <vector>|0 slip|vjslip|ax25ui|ax25i|nrs <dev>[|<label>] <buffers> <mtu> <speed> [ip_addr]\n  Stats: type 'asystat'" },
 
 	/* fake netrom interface */
 	{ "netrom", nr_attach, 0, 1,
