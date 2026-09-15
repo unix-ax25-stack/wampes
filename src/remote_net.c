@@ -857,6 +857,9 @@ static void datagram_line(struct controlblock *cp, char *line)
   struct ax25 hdr;
   struct iface *ifp;
   struct mbuf *bp;
+  const uint8 *idest;
+  uint8 (*mpp)[AXALEN];
+  struct ax_route *rp;
 
   if (cp->dgram_fixed) {
     /* The header was given once; this line is payload and nothing else, not
@@ -935,16 +938,36 @@ send:
     ax_send_ui(cp->dgram_iface, &hdr, cp->dgram_pid, &bp);
     return;
   }
-  for (i = 0, ifp = Ifaces; ifp; ifp = ifp->next) {
-    struct ax25 copy = hdr;
+  /* No port was named and the frame has to find its own way.  A broadcast
+   * goes to every AX.25 port - that is what a broadcast is for.  Anything
+   * else goes out where the autorouter puts the next hop, and is dropped
+   * without a word when nobody knows it: one station's unicast shouted back
+   * on every port would be noise on the air.
+   */
+  idest = (hdr.ndigis && hdr.nextdigi != hdr.ndigis) ?
+	  hdr.digis[hdr.nextdigi] : hdr.dest;
+  for (mpp = Ax25multi; (*mpp)[0]; mpp++)
+    if (addreq(idest, *mpp)) {
+      for (i = 0, ifp = Ifaces; ifp; ifp = ifp->next) {
+	struct ax25 copy = hdr;
 
-    if (ifp->output != ax_output) continue;
-    bp = qdata(payload, (uint) (cp->dgram_paylen ? cp->dgram_paylen
-					       : (int) strlen(payload)));
-    ax_send_ui(ifp, &copy, cp->dgram_pid, &bp);
-    i++;
-  }
-  if (!i) say(cp, "*** no AX.25 port to send on");
+	if (ifp->output != ax_output) continue;
+	bp = qdata(payload, (uint) (cp->dgram_paylen ? cp->dgram_paylen
+						   : (int) strlen(payload)));
+	ax_send_ui(ifp, &copy, cp->dgram_pid, &bp);
+	i++;
+      }
+      if (!i) say(cp, "*** no AX.25 port to send on");
+      return;
+    }
+
+  rp = ax_routeptr(idest, 0);
+  ifp = (rp && rp->ifp) ? rp->ifp : Axroute_default_ifp;
+  if (!ifp || ifp->output != ax_output)
+    return;                 /* unbekannter Weg: verwerfen, nicht fluten */
+  bp = qdata(payload, (uint) (cp->dgram_paylen ? cp->dgram_paylen
+					     : (int) strlen(payload)));
+  ax_send_ui(ifp, &hdr, cp->dgram_pid, &bp);
 }
 
 /*---------------------------------------------------------------------------*/
