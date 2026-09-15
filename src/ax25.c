@@ -22,6 +22,7 @@
 #include "devparam.h"
 #include "lapb.h"
 #include "pidfilter.h"
+#include "framefilter.h"
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -39,6 +40,8 @@ uint8 Mycall[AXALEN] = {
 struct ax_route *Ax_routes[AXROUTESIZE];
 struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
+int Digi_keep_path = 0; /* 0 = strip passed digis, 1 = keep the path */
+int Digiout = DIGIOUT_ROUTE;    /* normal or same-iface */
 
 /* Weiter unten, bei axroute() - dort steht auch, warum es NICHT axroute()
  * benutzt.
@@ -367,6 +370,10 @@ struct mbuf **bpp
 		free_p(bpp);
 		return -1;
 	}
+	if(frame_blocks(iface,PF_OUT,FRF_UI)){
+		free_p(bpp);
+		return -1;
+	}
 	if(pid_blocked(iface,PF_OUT,pid)){
 		free_p(bpp);
 		return -1;
@@ -379,6 +386,13 @@ struct mbuf **bpp
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = UI;
 	htonax25(hdr,bpp);
+
+	/* Loop-Schutz: eigene UI-Aussendung merken, damit ein byte-identischer
+	 * Rueckkehrer auf demselben Weg als Echo erkannt und verworfen wird.
+	 * axsend()/ax_output() oben benutzen diesen Codepfad nicht, die merken
+	 * separat - hier geht kein ctl-Parameter an, es ist immer UI.
+	 */
+	ax_dup_remember(ax_fingerprint(*bpp));
 
 	idest = (hdr->ndigis != 0 && hdr->nextdigi != hdr->ndigis) ?
 		hdr->digis[hdr->nextdigi] : hdr->dest;
@@ -410,6 +424,10 @@ uint pid,               /* Protocol ID */
 struct mbuf **bpp       /* Data field (follows PID) */
 ){
 	if(pid_blocked(iface,PF_OUT,(int) pid)){
+		free_p(bpp);
+		return -1;
+	}
+	if(frame_blocks(iface,PF_OUT,FRF_UI)){
 		free_p(bpp);
 		return -1;
 	}
@@ -474,7 +492,7 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	  memcpy(addr.digis[0], ax_via, AXALEN);
 	  addr.ndigis = 1;
 	}
-	axroute(&addr, &ifp);
+	axroute(&addr, &ifp, 0);
 	addr.cmdrsp = cmdrsp;
 
 	if(addr.ndigis != 0 && addr.nextdigi != addr.ndigis){
@@ -488,6 +506,11 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	(*bpp)->data[0] = ctl;
 
 	htonax25(&addr,bpp);
+	/* Loop-Schutz: nur UI merken.  Ein I- oder RR+-Rahmen wird nicht
+	 * gemerkt - dessen identische Wiederholung ist LAPB-Timing, kein Echo.
+	 */
+	if(((*bpp)->data[0] & ~PF) == UI)
+		ax_dup_remember(ax_fingerprint(*bpp));
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
 	 */
@@ -617,6 +640,29 @@ struct mbuf **bpp
 	int mcast;
 	uint8 *isrc,*idest;     /* "immediate" source and destination */
 
+	/* Loop-Schutz: ein UI-Rahmen, den wir selbst gerade byte-identisch
+	 * ausgesendet haben, ist unser Echo (Bruecke, Digi, Datagramm-Loop).
+	 * Erkennen VOR ntohax25: connected-mode (I/RR+/SABM) laeuft nie in
+	 * diese Falle - identische Wiederholungen davon sind Protokoll-Timing.
+	 * Verworfen wird still: der Sender hat die Sendebestaetigung schon
+	 * bekommen, ein "Rueckkehrer" ist fuer niemanden eine Zustellung.
+	 */
+	if(*bpp != NULL){
+		uint8 hdrbuf[80];
+		uint n = 0;
+		struct mbuf *q;
+		uint i;
+
+		for(q = *bpp; q != NULL && n < sizeof(hdrbuf); q = q->next)
+			for(i = 0; i < q->cnt && n < sizeof(hdrbuf); i++)
+				hdrbuf[n++] = q->data[i];
+		if(ax25_frame_is_ui(hdrbuf,(int)n) &&
+		   ax_dup_recent(ax_fingerprint(*bpp))){
+			Ax_echoes++;
+			free_p(bpp);
+			return;
+		}
+	}
 	/* Pull header off packet and convert to host structure */
 	if(ntohax25(&hdr,bpp) < 0){
 		/* Something wrong with the header */
@@ -681,8 +727,70 @@ struct mbuf **bpp
 			   (*bpp && (*(*bpp)->data & ~PF) == UI) ||
 			   addreq(hdr.source, hdr.dest)) {
 				struct iface *ifp;
-				axroute(&hdr, &ifp);
+				struct iface *sel;   /* Repeat-Interface (1. Auswahl) */
+				int kp;         /* keep the path? */
+				int dout;       /* output interface choice */
+
+				/* Per-port or global digiout: normal picks an
+				 * interface from the routing table; same-iface keeps
+				 * the frame on the interface it arrived on (a
+				 * fill-in digi).  0/1 = normal, 2 = same-iface.
+				 */
+				dout = iface->digiout ? iface->digiout : Digiout;
+
+				if (dout == DIGIOUT_SAME) {
+					ifp = iface;            /* no axroute */
+				} else {
+					/* Auswahl zuerst, den Kopf unberuehrt:
+					 * ob der Pfad erhalten bleibt, entscheidet
+					 * der AUSGANGS-port - nicht der, auf dem der
+					 * Rahmen ankam.  axroute() mit keep_path=1
+					 * waehlt nur das Interface und schreibt
+					 * nichts um.
+					 */
+					axroute(&hdr, &ifp, 1);
+				}
+
+				/* Per-port or global digi-keep-path, vom
+				 * Ausgangs-port gelesen: 0 = strip the passed
+				 * digis (normal), else leave them in place so the
+				 * aired frame shows the whole way (APRS).  Was
+				 * aus einem APRS/keep-path-port hinausgeht, bleibt
+				 * transparent - woher es auch kam.
+				 */
+				kp = ifp == NULL ? Digi_keep_path :
+				     ifp->digi_keep_path == DIGI_KEEP_PATH_ON  ||
+				     (ifp->digi_keep_path == 0 && Digi_keep_path);
+
+				if (dout != DIGIOUT_SAME && !kp) {
+					/* Weg verkuerzen und mit der hwaddr des
+					 * Ausgangs stempeln.  keep_path=0 schreibt
+					 * nur den Kopf um (Pfad-Optik); DAS
+					 * REPEAT-INTERFACE kommt aus der ersten
+					 * Auswahl oben (:750 bzw. :740) und darf
+					 * durch die Umschreibung nicht kippen.
+					 * Sonst haengt das Ja/Nein zum Wiederholen
+					 * am keep-path-Knopf - ein listen-Call als
+					 * naechster Repeater hat keine Route und
+					 * der Strip-Walk dahinter wuerde ifp auf
+					 * NULL/Default setzen und den Repeat
+					 * still legen.  Luecke: keep_path=0
+					 * wiederholte bisher nicht, wo keep_path=1
+					 * wiederholte.
+					 */
+					sel = ifp;      /* Repeat-Interface :750/:740 */
+					axroute(&hdr, &ifp, 0);
+					ifp = sel;      /* ... erhaelt es */
+				}
 				htonax25(&hdr,bpp);
+				/* Loop-Schutz: das Wiederholen ist unsere Aussendung -
+				 * merke sie genauso wie jede andere, sonst kaeme ein
+				 * inkarnationstreuer Rueckkehrer des Digis wieder herein.
+				 * Nur UI: ein via-digi leitet auch I-Rahmen weiter und die
+				 * Wiederholung davon ist LAPB-Timing, kein Echo.
+				 */
+				if(*bpp && (*(*bpp)->data & ~PF) == UI)
+					ax_dup_remember(ax_fingerprint(*bpp));
 				if (ifp) {
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
@@ -717,6 +825,13 @@ struct mbuf **bpp
 		int pid;
 		struct axlink *ipp;
 
+		/* A port that admits no UI frames says so before the pid is
+		 * even drawn - see framefilter.c.
+		 */
+		if(frame_blocks(iface,PF_IN,FRF_UI)){
+			free_p(bpp);
+			return;
+		}
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
 			return;         /* No PID */
@@ -855,7 +970,7 @@ int perm)
 				 * Schleife, auch wenn beides "Schutz" heisst
 				 * (Thomas hat nach dem Unterschied gefragt):
 				 *
-				 *   Doppelschlag-Sperre   je RAHMEN, 1 s.
+				 *   Doppelschlag-Sperre   je UI-RAHMEN, Ax_dup_window.
 				 *     Derselbe Rahmen darf nicht zweimal
 				 *     hinausgehen.  Siehe ax_dup_recent().
 				 *   dieser Pin            je ROUTE, 300 s.
@@ -1058,7 +1173,15 @@ const uint8 *call)
  */
 
 #define AXDUP_SLOTS     64
-#define AXDUP_WINDOW    1000L           /* ms */
+
+/* Loop-Schutz-Fenster in Millisekunden: ein UI-Rahmen, dessen Bytes wir
+ * selbst gerade ausgesendet haben und der byte-identisch zurueckkommt, ist
+ * unser Echo (Loopback-Tool, Bruecke, Datagramm-Schleife) und wird
+ * verworfen.  Verstellbar mit "ax25 loop-protect <s>" - 5 s decken auch
+ * Internet-Rueckwege ab; 0 schaltet die Erkennung aus.
+ */
+int Ax_dup_window = 5000;
+int Ax_echoes = 0;              /* verworfene Echos */
 
 static struct {
 	uint32 hash;
@@ -1071,7 +1194,7 @@ static int Axdup_next;
  * und unterscheiden sich erst im Kontrollbyte dahinter.
  */
 
-static uint32 ax_fingerprint(struct mbuf *bp)
+uint32 ax_fingerprint(struct mbuf *bp)
 {
 	uint32 h = 2166136261UL;        /* FNV-1a */
 	struct mbuf *p;
@@ -1090,19 +1213,70 @@ static uint32 ax_fingerprint(struct mbuf *bp)
 	return h;
 }
 
-static int ax_dup_recent(uint32 h)
+/* Dieselbe Pruefsumme ueber einen zusammenhaengenden Rahmen - das Pendant
+ * zu ax_fingerprint() fuer einen Empfangspuffer (axip.c: es stoesst auf den
+ * Rahmen, bevor er zum mbuf geworden ist).  Der Inhalt ist derselbe wie in
+ * der Kette oben und der Algorithmus ebenso, also liefern beide denselben
+ * Wert fuer dieselben Bytes.
+ */
+uint32 ax_fingerprint_data(const uint8 *data, int len)
+{
+	uint32 h = 2166136261UL;        /* FNV-1a */
+	int n;
+
+	for (n = 0; n < len && n < 64; n++) {
+		h ^= data[n];
+		h *= 16777619UL;
+	}
+	h ^= (uint32) len;
+	return h;
+}
+
+/* Ist der Rahmen ein UI (Datagramm)?  Laeuft durch das Adressfeld bis zum
+ * Kontrollbyte und prüft es - den ganzen Kopf zu bauen nur fuer diese Frage
+ * waere verschwendet.  Nur UI wird auf Inhalt verworfen: connected-mode
+ * sendet identische Wiederholungen (RR+/I/SABM) als Protokoll-Timing, die
+ * duerfen nie unter die Inkarnation-Logik fallen.
+ *
+ * Fuer einen zusammenhaengenden Puffer (axip.c); der mbuf-Eingang von
+ * ax_recv() kopiert sich die ersten Bytes zuvor hierher.  Zweifel (zu kurz,
+ * Adressfeld kaputt) antwortet 0 - verwerfen ist die Ausnahme, nicht die
+ * Regel.
+ */
+int ax25_frame_is_ui(const uint8 *data, int len)
+{
+	const uint8 *ap = data;
+	int i;
+
+	if (data == NULL || len <= AXALEN + AXALEN + 1)
+		return 0;
+	for (i = 0; i < MAXDIGIS + 2; i++) {
+		if (ap + AXALEN > data + len)
+			return 0;
+		if (ap[6] & E)
+			break;
+		ap += AXALEN;
+	}
+	if (ap + AXALEN + 1 > data + len)
+		return 0;
+	return (ap[AXALEN] & ~(uint8)PF) == UI;
+}
+
+int ax_dup_recent(uint32 h)
 {
 	int32 now = msclock();
 	int i;
 
+	if (Ax_dup_window <= 0)
+		return 0;
 	for (i = 0; i < AXDUP_SLOTS; i++)
 		if (Axdup[i].hash == h && Axdup[i].when &&
-		    (int32)(now - Axdup[i].when) < AXDUP_WINDOW)
+		    (int32)(now - Axdup[i].when) < Ax_dup_window)
 			return 1;
 	return 0;
 }
 
-static void ax_dup_remember(uint32 h)
+void ax_dup_remember(uint32 h)
 {
 	Axdup[Axdup_next].hash = h;
 	Axdup[Axdup_next].when = msclock();
@@ -1141,12 +1315,14 @@ struct mbuf **bpp
 	if(out->raw == NULL)
 		return 0;
 	htonax25(hdr,bpp);
-	{
+	if(*bpp && (*(*bpp)->data & ~PF) == UI){
 		uint32 h = ax_fingerprint(*bpp);
 
 		/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
 		 * weiterreichen waere die Schleife.  Der Rahmen wird
 		 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
+		 * Nur UI: ein I- oder RR+-Doppelschlag ist Protokoll-Timing
+		 * der LAPB-Endstellen, nicht unsere Schleife.
 		 */
 		if(ax_dup_recent(h))
 			return 0;
@@ -1161,7 +1337,8 @@ struct mbuf **bpp
 void
 axroute(
 struct ax25 *hdr,
-struct iface **ifpp)
+struct iface **ifpp,
+int keep_path)
 {
 	int depth;
 
@@ -1173,17 +1350,31 @@ struct iface **ifpp)
 
 	/*** Find my last address ***/
 
-	hdr->nextdigi = 0;
-	for (i = hdr->ndigis - 1; i >= 0; i--)
-		if (ismyax25addr(hdr->digis[i])) {
-			hdr->nextdigi = i + 1;
-			break;
-		}
+	/* keep_path: ax_recv() hat nextdigi schon richtig gestellt - aus den
+	 * Wiederholt-Bits gerechnet und um uns vorangezaehlt - und der Pfad
+	 * muss unangetastet weiter.  Ein Scan wuerde die Position ueberschreiben
+	 * und treffe, wenn unser Call mehrfach im Pfad steht, daneben.  Er ist
+	 * nur fuer den normalen Weg noetig, wo die Vordigis entfernt werden.
+	 * Unsere Position ist dabei nicht nur ein eigenes Interface-Call,
+	 * sondern auch ein listen-Call, als den das Paket uns anspricht
+	 * (ax_answers_to() sagt ja).  Deshalb hier derselbe Test wie dort:
+	 * ismyax25addr() ODER axlisten_active().
+	 */
+	if (!keep_path) {
+		int pos = -1;
+		for (i = hdr->ndigis - 1; i >= 0; i--)
+			if (ismyax25addr(hdr->digis[i]) ||
+			    axlisten_active(hdr->digis[i])) {
+				pos = i;
+				break;
+			}
+		hdr->nextdigi = pos + 1;
+	}
 
 	/*** Remove all digipeaters before me ***/
 
 	d = hdr->nextdigi - 1;
-	if (d > 0) {
+	if (!keep_path && d > 0) {
 		for (i = d; i < hdr->ndigis; i++)
 			addrcp(hdr->digis[i-d], hdr->digis[i]);
 		hdr->ndigis -= d;
@@ -1200,7 +1391,7 @@ struct iface **ifpp)
 	 */
 	for (rp = ax_routeptr(idest, 0), depth = 0; rp && depth <= MAXDIGIS;
 	     rp = rp->digi, depth++) {
-		if (rp->digi && hdr->ndigis < MAXDIGIS) {
+		if (!keep_path && rp->digi && hdr->ndigis < MAXDIGIS) {
 			for (i = hdr->ndigis - 1; i >= hdr->nextdigi; i--)
 				addrcp(hdr->digis[i+1], hdr->digis[i]);
 			hdr->ndigis++;
@@ -1216,6 +1407,26 @@ struct iface **ifpp)
 
 	/*** Replace my address with hwaddr of interface ***/
 
-	if (ifp)
-		addrcp(hdr->nextdigi ? hdr->digis[0] : hdr->source, ifp->hwaddr);
+	/* Nur fuer den normalen Weg: dort ist digis[0] nach dem Entfernen der
+	 * Vordigis unsere Position - beibehaltenes Call wird durch das des
+	 * Ausgangs-Interfaces ersetzt, damit der Gegner auf dem Rueckweg das
+	 * richtige Port-Call antwortet.
+	 *
+	 * keep_path: digis[0] ist ein fremdes, schon passiertes Digi.  Der
+	 * Pfad bleibt, wie er hereinkam; der Stern auf unserer Position kommt
+	 * von htonax25(), kein Call wird umgeschrieben.
+	 *
+	 * listen-Call unter keep_path=0: digis[0] ist ein Fremdes, das wir
+	 * nur per axlisten hoeren - es gehoert uns nicht, also auch nicht
+	 * durch ifp->hwaddr ersetzen, sonst verloren die Nachbarn, fuer wen
+	 * dieser "Wir"-Stern steht.
+	 */
+	if (ifp && !keep_path) {
+		if (hdr->nextdigi) {
+			if (ismyax25addr(hdr->digis[0]))
+				addrcp(hdr->digis[0], ifp->hwaddr);
+		} else {
+			addrcp(hdr->source, ifp->hwaddr);
+		}
+	}
 }

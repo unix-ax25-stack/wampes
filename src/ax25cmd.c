@@ -32,6 +32,8 @@ static int doaxstat(int argc,char *argv[],void *p);
 static int doaxwindow(int argc,char *argv[],void *p);
 static int doblimit(int argc,char *argv[],void *p);
 static int dodigipeat(int argc,char *argv[],void *p);
+static int dodigikeepad(int argc,char *argv[],void *p);
+static int dodigiout(int argc,char *argv[],void *p);
 static int domaxframe(int argc,char *argv[],void *p);
 static int doemaxframe(int argc,char *argv[],void *p);
 static int domycall(int argc,char *argv[],void *p);
@@ -44,6 +46,7 @@ static int dot3(int argc,char *argv[],void *p);
 static int dot4(int argc,char *argv[],void *p);
 static int dot5(int argc,char *argv[],void *p);
 static int doversion(int argc,char *argv[],void *p);
+static int doaxloop(int argc,char *argv[],void *p);
 static int dorouteadd(int argc,char *argv[],void *p);
 static void doroutelistentry(struct ax_route *rp);
 static int doroutelist(int argc,char *argv[],void *p);
@@ -74,11 +77,39 @@ static struct cmds Axcmds[] = {
 	{ "blimit",       doblimit,       0, 0, NULL },
 	{ "destlist",     doaxdest,       0, 0, NULL },
 	{ "digipeat",     dodigipeat,     0, 0, NULL },
+{ "digi-keep-path", dodigikeepad, 0, 0,
+  "ax digi-keep-path on|off\n"
+  "  on:  keep the whole digi path in header (path transparency, for APRS)\n"
+  "  off: strip passed digis, add next-hop from routing table (classic behaviour)\n"
+          "       in the header (the already-passed digis are NOT stripped) -\n"
+          "       path transparency, for APRS and fill-in digis.\n"
+          "  off: strip the passed digis, add next-hop digis from the routing\n"
+          "       table (the classic behaviour).\n"
+          "  This sets the global default. Defaults to 'normal'. You can fine-tune\n"
+          "  it per interface, i.e. with 'ifconfig <iface> digi-keep-path on'.\n"
+          "  The port the frame ARRIVED on does not matter: the decision is\n"
+          "  taken on the outgoing port, so what leaves an APRS port stays\n"
+          "  transparent wherever it came from.\n" },
+        { "digiout",      dodigiout,      0, 0,
+          "ax25 digiout [normal|same-iface]\n"
+          "  normal:     choose outgoing interface & next-hop digis from routing tables\n"
+          "              (classic behaviour)\n"
+          "  same-iface: keep frame on arrived interface, path untouched - fill-in\n"
+          "              digipeater\n"
+          "  This sets the global default. Defaults to 'normal'. You can fine-tune it per\n"
+          "  interface, i.e. with 'ifconfig <iface> digiout same-iface.'\n"
+        },
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
 	{ "ignoretos",    doaxigntos,     0, 0, NULL },
 	{ "jumpstart",    dojumpstart,    0, 2, "ax25 jumpstart <call> [ON|OFF]" },
 	{ "kick",         doaxkick,       0, 2, "ax25 kick <axcb>" },
+	{ "loop-protect", doaxloop,       0, 1,
+	  "ax25 loop-protect [s]              window to catch our own echoed UI\n"
+	  "       frames, in seconds (0 = off, default 5).  A frame whose bytes\n"
+	  "       we just sent and that comes back identical on the same path is\n"
+	  "       our echo (bridge, digi, datagram loop) and is dropped.  Only UI:\n"
+	  "       connected-mode repeats are protocol timing and never touched." },
 	{ "emaxframe",    doemaxframe,    0, 0,
 	  "ax25 emaxframe [1..63]                the window on modulo-128 links\n"
 	  "       (per port: \"ifconfig <iface> emaxframe\")" },
@@ -88,7 +119,7 @@ static struct cmds Axcmds[] = {
 	{ "pid-info",     pid_info,       0, 0,
 	  "ax25 pid-info [<name>|<number>]       what a protocol id means\n"
 	  "       With no argument the whole table.  These are the names that\n"
-	  "       \"pid=\" and \"ifconfig <iface> pid\" accept." },
+	  "       \"pid=\" and \"ifconfig <iface> pid-filter\" accept." },
 	{ "pthresh",      dopthresh,      0, 0, NULL },
 	{ "reset",        doaxreset,      0, 2, "ax25 reset <axcb>" },
 	{ "retry",        don2,           0, 0, NULL },
@@ -421,6 +452,61 @@ void *p)
 		return 1;
 	}
 	return setintrc(&Digipeat,"Digipeat",argc,argv,0,2);
+}
+
+/* Control whether a digipeated frame keeps the whole digi path (1) or has
+ * the already-passed digipeaters stripped out of it (0, the classic
+ * behaviour).  Per port: "ifconfig <iface> digi-keep-path".
+ */
+static int
+dodigikeepad(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("Digi-keep-path: %s\n",
+		 Digi_keep_path ? "on" : "off");
+		return 0;
+	}
+	if(!stricmp(argv[1],"on")){
+		Digi_keep_path = 1;
+		return 0;
+	}
+	if(!stricmp(argv[1],"off")){
+		Digi_keep_path = 0;
+		return 0;
+	}
+	printf("Valid options: on off\n");
+	return 1;
+}
+
+/* Choose how a digipeated frame finds its way out.  "normal" (the default)
+ * consults the AX.25 routing table for both interface and next-hop digis;
+ * "same-iface" keeps the frame on the interface it arrived on, path untouched
+ * - a fill-in digipeater.  Per port: "ifconfig <iface> digiout".
+ */
+static int
+dodigiout(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("Digiout: %s\n",
+		 Digiout == DIGIOUT_SAME ? "same-iface" : "normal");
+		return 0;
+	}
+	if(!stricmp(argv[1],"normal")){
+		Digiout = DIGIOUT_ROUTE;
+		return 0;
+	}
+	if(!stricmp(argv[1],"same-iface")){
+		Digiout = DIGIOUT_SAME;
+		return 0;
+	}
+	printf("Valid options: normal same-iface\n");
+	return 1;
 }
 /* Set limit on retransmission backoff */
 static int
@@ -894,4 +980,30 @@ void *p)
 		cp++;
 	pax25(cp,tmp);
 	return setbool(&axr->jumpstart,buf,argc - 1,argv + 1);
+}
+/* Loop-Schutz-Fenster anzeigen/setzen (Sekunden).  Ax_dup_window ist in
+ * Millisekunden, die Angabe hier in Sekunden.
+ */
+static int
+doaxloop(
+int argc,
+char *argv[],
+void *p)
+{
+	long val;
+
+	if(argc < 2){
+		printf("Loop protect: %d s", Ax_dup_window / 1000);
+		if(Ax_dup_window % 1000)
+			printf(" (%d ms)", Ax_dup_window);
+		putchar('\n');
+		return 0;
+	}
+	if(cmd_getnum(argv[1],&val) || val < 0 || val > 3600){
+		printf("Bad value %s (seconds, 0 = off)\n",argv[1]);
+		return 1;
+	}
+	Ax_dup_window = (int)(val * 1000L);
+	printf("Loop protect: %d s\n",Ax_dup_window / 1000);
+	return 0;
 }

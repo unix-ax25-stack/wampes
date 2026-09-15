@@ -39,8 +39,25 @@ extern uint8 Mycall[];
 extern uint8 Ax25multi[][AXALEN];
 
 extern int Digipeat;
+extern int Digi_keep_path;
+extern int Digiout;
 extern int Ax25mbox;
 extern int Axigntos;
+
+/* Loop-Schutz: Fingerprint eines fertigen UI-Rahmens merken und ein
+ * byte-identisches Wiederkommen innerhalb Ax_dup_window als Schleife/Echo
+ * verwerfen.  Nur UI: connected-mode identische Wiederholungen (RR+/I/SABM)
+ * sind Protokoll-Timing.  Verstellbar mit "ax25 loop-protect <s>" - das
+ * Fenster in Millisekunden, 0 schaltet die Erkennung aus.  Ax_echoes zaehlt
+ * die verworfene Wiederkunft (siehe "axip stats").
+ */
+extern int Ax_dup_window;
+extern int Ax_echoes;
+int    ax25_frame_is_ui(const uint8 *data, int len);
+uint32 ax_fingerprint(struct mbuf *bp);
+uint32 ax_fingerprint_data(const uint8 *data, int len);
+void   ax_dup_remember(uint32 h);
+int    ax_dup_recent(uint32 h);
 
 enum lapb_cmdrsp {
 	LAPB_UNKNOWN,
@@ -260,7 +277,7 @@ int ax_answers_to(struct iface *iface, const uint8 *addr);
  */
 int ax_send_ui(struct iface *iface, struct ax25 *hdr, int pid,
 	struct mbuf **bpp);
-void axroute(struct ax25 *hdr, struct iface **ifpp);
+void axroute(struct ax25 *hdr, struct iface **ifpp, int keep_path);
 
 #ifdef	AX25_VJCOMP
 /* MW: prototypes for VJ receiver hooks (in ax25.c) */
