@@ -14,6 +14,7 @@
 #include "ip.h"
 #include "slhc.h"
 #include "pidfilter.h"
+#include "framefilter.h"
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
 static void procdata(struct ax25_cb *axp,struct mbuf **bp);
@@ -133,6 +134,29 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF){
 		eax25_hint(iface,hdr);
 		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
+		free_p(bpp);
+		return 0;
+	}
+
+	/* The incoming "conn" gate.  It refuses CALLS, not the traffic of a
+	 * connection that is alive: a SABM/SABME for a pair with no live
+	 * connection is answered with DM, as the two refusals above do, and
+	 * the frames that go with such a call - UA, DM, I, S, DISC - are
+	 * dropped.  But the UA that answers the SABM WE sent arrives on a
+	 * link in SETUP or CONNECTED - it comes home, as does everything on
+	 * an established link, for that link is ours too.  A DISCONNECTED
+	 * leftover counts as no connection: the session is over, so a SABM
+	 * landing on it is a fresh call and is refused, not re-established.
+	 * Digipeated frames are relayed untouched, exactly as the "pid" gate
+	 * leaves digipeating alone (framefilter.c).
+	 */
+	if(frame_blocks(iface,PF_IN,FRF_CONN) && !digipeat
+	   && axp->state == LAPB_DISCONNECTED){
+		if(type == SABM || type == SABME){
+			sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
+			free_p(bpp);
+			return 0;
+		}
 		free_p(bpp);
 		return 0;
 	}
@@ -1606,7 +1630,7 @@ const struct ax25_opts *opts)
 	 * routing itself is unchanged.
 	 */
 	addrcp(wanted, hdr->source);
-	axroute(hdr,&ifp);
+	axroute(hdr,&ifp,0);
 	if (opts) {
 		if (opts->iface) {
 			ifp = opts->iface;
@@ -1823,11 +1847,38 @@ const struct ax25_opts *opts)
 
 	axp->routing_changes++;
 	if(reverse){
+		/* hdr->nextdigi, as ntohax25() set it, is the first digi that had
+		 * not repeated the frame yet - the REPEATED-bit position on the
+		 * wire.  Remember it before the digis are turned round, because
+		 * the inverted path gets the mirrored REPEATED marks, the way
+		 * the kernel's ax25_digi_invert() derives lastrepeat - who a
+		 * listen()/accept() program is to see as already-repeated is
+		 * where the marks sat on the air, not where our own station
+		 * happens to stand in the chain.
+		 */
+		int orig_next = hdr->nextdigi;
+
 		addrcp(axp->hdr.dest,hdr->source);
 		addrcp(axp->hdr.source,hdr->dest);
 		for(i = 0; i < hdr->ndigis; i++)
 			addrcp(axp->hdr.digis[i],hdr->digis[hdr->ndigis-1-i]);
 		axp->hdr.ndigis = hdr->ndigis;
+		/* Mirror of the incoming REPEATED marks: a digi the far side had
+		 * already passed becomes, turned round, one that is on our way
+		 * back out - so the first (ndigis - orig_next) of the inverted
+		 * chain carry the has-been-repeated bit.  htonax25() stamps the
+		 * wire bit afresh from nextdigi, so leaving these in the host
+		 * digis only feeds what a client is shown, not the air.
+		 */
+		orig_next = hdr->ndigis - orig_next;
+		if(orig_next < 0)
+			orig_next = 0;
+		for(i = 0; i < hdr->ndigis; i++){
+			if(i < orig_next)
+				axp->hdr.digis[i][ALEN] |= REPEATED;
+			else
+				axp->hdr.digis[i][ALEN] &= ~REPEATED;
+		}
 		axp->hdr.nextdigi = 0;
 		for(i = axp->hdr.ndigis - 1; i >= 0; i--)
 			if(ismyax25addr(axp->hdr.digis[i])){

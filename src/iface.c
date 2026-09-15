@@ -19,6 +19,9 @@
 #include "pktdrvr.h"
 #include "lapb.h"
 #include "pidfilter.h"
+#include "framefilter.h"
+#include "asy.h"
+#include "n8250.h"
 
 static void showiface(struct iface *ifp, int verbose);
 static int mask2width(int32 mask);
@@ -39,6 +42,8 @@ static int ifarp(int argc,char *argv[],void *p);
 static int ifhfdatarate(int argc,char *argv[],void *p);
 static int ifdamagap(int argc,char *argv[],void *p);
 static int ifusertouser(int argc,char *argv[],void *p);
+static int ifdigikeepad(int argc,char *argv[],void *p);
+static int ifdigiout(int argc,char *argv[],void *p);
 static int ifbridge(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
@@ -211,9 +216,10 @@ struct cmds Ifcmds[] = {
 	  "ifconfig <iface> mtu <bytes>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "netmask",              ifnetmsk,       0,      2,
 	  "ifconfig <iface> netmask <ip netmask>\n  The current value is in \"ifconfig <iface> verbose\"." },
-	{ "pid",                  ifpid,          0,      1,      Pid_usage },
+	{ "pid-filter",            if_pid_filter,  0,      1,      Pid_filter_usage },
+	{ "frame-filter",          if_frame_filter, 0,      1,      Frame_filter_usage },
 	{ "bridge",               ifbridge,       0,      1,
-	  "ifconfig <iface> bridge <iface>|off\n"
+	  "ifconfig <iface> bridge [<iface>|off]\n"
 	  "  Ports zusammenschliessen - beliebig viele, nicht nur zwei: der\n"
 	  "  genannte Port bestimmt die Gruppe, und wer einem beitritt, ist\n"
 	  "  mit allen darin verbunden.  Mehrere Bruecken nebeneinander gehen\n"
@@ -226,7 +232,7 @@ struct cmds Ifcmds[] = {
 	  "  Unbekanntes Ziel faellt weg und wird nicht geflutet; Broadcasts\n"
 	  "  (QST, NODES) werden nie gebrueckt." },
 	{ "user-to-user",         ifusertouser,   0,      1,
-	  "ifconfig <iface> user-to-user on|off   (Vorgabe off)\n"
+	  "ifconfig <iface> user-to-user [on|off]   (default off)\n"
 	  "  Duerfen sich zwei Nutzer DIESES Ports direkt erreichen, ohne uns\n"
 	  "  als Digipeater im Pfad?  Ohne den Schalter faellt ein Rahmen weg,\n"
 	  "  der weder an uns geht noch uns im Digipfad nennt.\n"
@@ -234,6 +240,26 @@ struct cmds Ifcmds[] = {
 	  "  bpqether sind Punkt zu Punkt je Partner, und ein Duplex-Einstieg\n"
 	  "  ist es auch.  Auf einem Simplex-Funkkanal hoeren sie einander\n"
 	  "  ohnehin - dort waere es eine Verdopplung." },
+	{ "digi-keep-path",       ifdigikeepad,    0,      1,
+	  "ifconfig <iface> [digi-keep-path on|off|default]\n"
+	  "  on:  repeat frames OUT OF THIS PORT with the whole digi path still\n"
+	  "       in the header (the already-passed digis are NOT stripped) -\n"
+	  "       path transparency, for APRS and fill-in digis.\n"
+	  "  off: strip the passed digis, add next-hop digis from the routing\n"
+	  "       table (the classic behaviour).\n"
+	  "  default: follow \"ax25 digi-keep-path\".\n"
+	  "  The port the frame ARRIVED on does not matter: the decision is\n"
+	  "  taken on the outgoing port, so what leaves an APRS port stays\n"
+	  "  transparent wherever it came from.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
+	{ "digiout",              ifdigiout,       0,      1,
+	  "ifconfig <iface> digiout [normal|same-iface|default]\n"
+	  "  normal:     choose the outgoing interface and next-hop digis from\n"
+	  "       the AX.25 routing table (the classic behaviour, the default).\n"
+	  "  same-iface: keep the frame on the interface it arrived on, path\n"
+	  "       untouched - a fill-in digipeater.\n"
+	  "  default: follow \"ax25 digiout\".\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "tncinit",              iftncinit,      0,      1,
 	  "ifconfig <iface> tncinit tapr|kenwood|kantronics|\"<sequence>\"|none" },
 	{ "txqlen",               iftxqlen,       0,      2,
@@ -421,7 +447,8 @@ if_wants_rest(const char *word)
 
 	for(cmdp = Ifcmds;cmdp->name != NULL;cmdp++)
 		if(strncmp(word,cmdp->name,strlen(word)) == 0)
-			return cmdp->func == ifpid || cmdp->func == ifdama;
+			return cmdp->func == if_pid_filter || cmdp->func == ifdama ||
+			       cmdp->func == if_frame_filter;
 	return 0;
 }
 
@@ -712,12 +739,81 @@ ifusertouser(int argc,char *argv[],void *p)
 		       "reach each other.\n", ifp->name);
 		return 1;
 	}
+	if(!ifp->user_to_user_ok){
+		printf("%s: user-to-user is for axip/axudp only\n", ifp->name);
+		return 1;
+	}
 	if(argc < 2){
 		printf("%s: user-to-user %s\n", ifp->name,
 		       ifp->user_to_user ? "on" : "off");
 		return 0;
 	}
 	return setbool(&ifp->user_to_user, "user-to-user", argc, argv);
+}
+
+static int
+ifdigikeepad(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(!is_ax25(ifp)){
+		printf("%s carries no AX.25, so digi-keep-path means nothing.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		printf("%s: digi-keep-path %s%s\n", ifp->name,
+		       ifp->digi_keep_path == DIGI_KEEP_PATH_ON ? "on" :
+		       ifp->digi_keep_path == DIGI_KEEP_PATH_OFF ? "off" : "default",
+		       ifp->digi_keep_path ? "" : "  (follows \"ax25 digi-keep-path\")");
+		return 0;
+	}
+	if(!stricmp(argv[1],"on")){
+		ifp->digi_keep_path = DIGI_KEEP_PATH_ON;
+		return 0;
+	}
+	if(!stricmp(argv[1],"off")){
+		ifp->digi_keep_path = DIGI_KEEP_PATH_OFF;
+		return 0;
+	}
+	if(!stricmp(argv[1],"default")){
+		ifp->digi_keep_path = 0;
+		return 0;
+	}
+	printf("Valid options: on off default\n");
+	return 1;
+}
+
+static int
+ifdigiout(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(!is_ax25(ifp)){
+		printf("%s carries no AX.25, so digiout means nothing.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		printf("%s: digiout %s%s\n", ifp->name,
+		       ifp->digiout == DIGIOUT_SAME ? "same-iface" : "normal",
+		       ifp->digiout ? "" : "  (follows \"ax25 digiout\")");
+		return 0;
+	}
+	if(!stricmp(argv[1],"normal")){
+		ifp->digiout = DIGIOUT_ROUTE;
+		return 0;
+	}
+	if(!stricmp(argv[1],"same-iface")){
+		ifp->digiout = DIGIOUT_SAME;
+		return 0;
+	}
+	if(!stricmp(argv[1],"default")){
+		ifp->digiout = 0;
+		return 0;
+	}
+	printf("Valid options: normal same-iface default\n");
+	return 1;
 }
 
 static int
@@ -1104,6 +1200,7 @@ showiface(struct iface *ifp, int verbose)
 	if(verbose && is_ax25(ifp))
 		dama_show(ifp);
 		pid_show_verbose(ifp);
+	frame_show_verbose(ifp);
 	/* "never" where nothing has gone yet.  The counter starts at zero, so
 	 * the difference to now is the time since 1970 - which came out as
 	 * "20686:12:19:36" on a loopback nobody had used, and reads as though
@@ -1199,6 +1296,10 @@ showiface(struct iface *ifp, int verbose)
 		 */
 		if(inherited)
 			printf("                 (* = the node's setting, not this port's)\n");
+		printf("           ax25: eax25 %s\n",
+		 ifp->eax25 == EAX25_OFF ? "off" :
+		 ifp->eax25 == EAX25_ALWAYS ? "always" :
+		 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
 	}
 
 	/* Die Groessengrenze gilt fuer JEDEN Port, der eine hat - auch fuer
@@ -1212,6 +1313,22 @@ showiface(struct iface *ifp, int verbose)
 	if(ifp->framemax)
 		printf("           link: carries at most %d octets\n",
 		 ifp->framemax);
+
+	/* Serial-line health, once and where one looks for it (Thomas): a
+	 * watchdog or I/O-error reset means the device wedged and was torn
+	 * down and reopened, which is worth seeing next to the line speed.
+	 * ifp->dev is the index into Asy[] for an asy port; the identity
+	 * check keeps non-serial interfaces (which have their own dev
+	 * tables) from reading a foreign slot.
+	 */
+	if(ifp->dev >= 0 && ifp->dev < ASY_MAX &&
+	   Asy[ifp->dev].iface == ifp){
+		struct asy *ap = &Asy[ifp->dev];
+
+		printf("           link: serial resets %lu, %lu of %lu queued bytes sent\n",
+		 (unsigned long) ap->wdreset,
+		 (unsigned long) ap->txchar,(unsigned long) ap->txqueued);
+	}
 
 	if(!is_ax25(ifp))
 		return;
@@ -1234,14 +1351,15 @@ showiface(struct iface *ifp, int verbose)
 		       "out there,\n                 unchanged and without us "
 		       "in the path\n", ifp->bridgegroup, bm);
 	}
-	if(ifp->user_to_user)
+	if(ifp->user_to_user && ifp->user_to_user_ok)
 		printf("           ax25: user-to-user on - two users of this "
 		       "port reach each other\n                 directly, "
 		       "without us in the digipeater path\n");
-	printf("           ax25: eax25 %s\n",
-	 ifp->eax25 == EAX25_OFF ? "off" :
-	 ifp->eax25 == EAX25_ALWAYS ? "always" :
-	 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
+	if(ifp->digi_keep_path || ifp->digiout){
+		printf("           ax25: digi-keep-path %s, digiout %s\n",
+		       ifp->digi_keep_path == DIGI_KEEP_PATH_ON ? "on" : "off",
+		       ifp->digiout == DIGIOUT_SAME ? "same-iface" : "normal");
+	}
 	/* "link:" und nicht "ax25:" (Thomas).  Die Pruefsumme gehoert der
 	 * RAHMUNG, nicht AX.25 - KISS handelt sie aus, axudp haengt sie
 	 * unbedingt an (axip.c: append_crc_ccitt beim Senden,

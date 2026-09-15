@@ -15,6 +15,7 @@
 #include "ax25.h"
 #include "lapb.h"
 #include "pidfilter.h"
+#include "framefilter.h"
 
 /* Bring the called side up on the next turn of the event loop rather than
  * from inside the caller's own call - see the note at the use.  One
@@ -192,6 +193,15 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 	}
 	switch(axp->state){
 	case LAPB_DISCONNECTED:
+		/* A port that may carry no connections refuses the new one
+		 * before the SABM leaves - see framefilter.c.  The caller hears
+		 * a reason at once instead of waiting for a reply that cannot
+		 * come.
+		 */
+		if(mode == AX_ACTIVE && frame_blocks(axp->iface,PF_OUT,FRF_CONN)){
+			Net_error = NOPROTO;
+			return NULL;
+		}
 		est_link(axp);
 		lapbstate(axp,LAPB_SETUP);
 		break;

@@ -199,6 +199,7 @@ struct iface {
 	 * deshalb entscheidet der Sysop und nicht der Porttyp.
 	 */
 	int user_to_user;
+	int user_to_user_ok;    /* 1: axip/axudp — user-to-user makes sense here */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_mark_own;      /* als Slave: eigene Rahmen markieren.  Vorgabe
 				 * AUS - das Bit ist das des Masters. */
@@ -296,7 +297,24 @@ struct iface {
 	 */
 	int pidblocked[2];      /* PF_IN, PF_OUT: how many bits are set */
 	uint32 pidblock[2][8];
+	/* Which AX.25 frame classes may cross this port, one bit per class
+	 * (FRF_UI, FRF_CONN) and direction - see framefilter.c.  A port nobody
+	 * configured has zeroes and costs nothing in the send and receive
+	 * paths.
+	 */
+	uint8 framemask[2];     /* PF_IN, PF_OUT */
+
+	/* Per-port digipeat path transparency and output interface control.
+	 * 0 = use the global default (ax25 digi-keep-path / ax25 digiout),
+	 * otherwise the per-port value: DIGI_KEEP_PATH_ON/OFF, DIGIOUT_*
+	 */
+	int digi_keep_path;
+	int digiout;
 };
+#define DIGI_KEEP_PATH_ON   1
+#define DIGI_KEEP_PATH_OFF  2
+#define DIGIOUT_ROUTE       1
+#define DIGIOUT_SAME        2
 extern struct iface *Ifaces;    /* Head of interface list */
 extern struct iface  Loopback;  /* Optional loopback interface */
 extern struct iface  Encap;     /* IP-in-IP pseudo interface */
