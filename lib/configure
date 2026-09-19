@@ -15,6 +15,12 @@ LDFLAGS='$(CFLAGS) '"${STRIPFLAG-"-s"}"
 LIBS='../lib/libutil.a'
 SLIBS=''
 
+# The default for TCPDIR on this platform: /tcp everywhere, /usr/local/wampes
+# on macOS, where /tcp is not a directory anyone has.  It is decided per
+# platform and reaches the installation even on a tree that was configured on
+# the other OS last time - see the note next to the configure.mak read.
+DEFAULT_TCPDIR=/tcp
+
 # lib/Makefile re-runs this script on every build, so a setting made once
 # has to survive.  Take the previous answers from the configure.mak we wrote
 # last time as the defaults; the environment still overrides them, and a
@@ -32,9 +38,14 @@ if [ -f configure.mak ]; then
 	# that moving TCPDIR moves them along instead of leaving them behind.
 	[ "$old_BINDIR"  = "$old_TCPDIR/bin"  ] && old_BINDIR=
 	[ "$old_SBINDIR" = "$old_TCPDIR/sbin" ] && old_SBINDIR=
+	# The same for TCPDIR: the two values named here are what the built-in
+	# defaults fall back to, /tcp everywhere and /usr/local/wampes on
+	# macOS, and neither is a choice.  On a tree that was last configured
+	# on the other OS, one of them sits in configure.mak and would quietly
+	# keep the build back on that OS, so each platform keeps its own default.
+	[ "$old_TCPDIR" = /tcp ] && old_TCPDIR=
+	[ "$old_TCPDIR" = /usr/local/wampes ] && old_TCPDIR=
 fi
-
-TCPDIR=${TCPDIR-$old_TCPDIR}
 
 MKDIR='@if [ ! -d `dirname $@` ]; then mkdir -p `dirname $@`; fi'
 RMTARGET='@if [ -f $@ ]; then rm -f $@ || mv -f $@ $@~; fi'
@@ -191,7 +202,7 @@ NeXT*)
 Darwin*)
 	CC='gcc'
 	CFLAGS="$CFLAGS -D__MACOSX__"
-	TCPDIR=${TCPDIR:-/usr/local/wampes}
+	DEFAULT_TCPDIR=/usr/local/wampes
 	;;
 
 esac
@@ -222,7 +233,7 @@ PROBE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS${EXTRA_CFLAGS:+ $EXTRA_CFLAGS}"
 LDFLAGS="$LDFLAGS${EXTRA_LDFLAGS:+ $EXTRA_LDFLAGS}"
 
-TCPDIR=${TCPDIR:-/tcp}
+TCPDIR=${TCPDIR:-$DEFAULT_TCPDIR}
 
 # Where the programs go.  Everything WAMPES installs lives under TCPDIR by
 # default, so that a local installation is one directory that can be moved,

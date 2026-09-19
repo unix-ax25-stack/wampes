@@ -1,3 +1,25 @@
+- axip rou: ich brauche noch eine Moeglichkeit dass die remote-IP fuer das call (und das interface) nicht umgelernt wird,
+            also permanet ist (Schutz vor Missbrauch oder bugs).
+            Das interface haengt glaube ich an der ax25-route. Aber axip bzw. axudp sagen wir mit bei der ax25 route
+	    ja nur, dass es auf das entsprechenee iface geht; welche IP Adresse (ggf. port) er nutzt, lernt der Treiber;
+	    hier muesste er ein "permanent" von der ax25-Route erben. Zumindest was die IP-Adresse betrifft. Was den Pport
+	    bei UDP betrifft, mag man umlernen koennen. Siehe nechster Absatz.
+	    Haben wir einen timeout fuer gelernte axudp Ports? SRC-Ports werden bei NAT umgeschrieben und sind nach idle Zeit ggf. nicht mehr
+	    erreichbar - da muesste er, wenn es nicht der default port ist, nach gewisser Zeit umschwenken auf den default Port (vielleicht hat
+	    die Gegenseite ja z.B. Port 93 auf dem Router inbound zum server weitergeleitet). Vielleicht laesst sich das statistisch ermitteln,
+	    wie lange ein src-Port != 93 "haelt" bevor er wechselt. Wenn er einmal gewechselt hat wissen wir, dass er sich durch NAT aendern kann.
+	    Und da muessten wir uns an den typischen Haltezeiten fuer udp orientieren (linux kernel, fritzbox-Router, etc).
+- axtcp Protokoll
+              - BPQAXIP Configuration – John Wiseman G8BPQ
+  		(https://www.cantab.net/users/john.wiseman/Documents/BPQAXIP%20Configuration.htm)
+  		- linbpq/bpqaxip.c – g8bpq/LinBPQ (https://github.com/g8bpq/LinBPQ/blob/master/bpqaxip.c)
+  		- The G8BPQ AX25 Networking Package (https://www.cantab.net/users/john.wiseman/Documents/BPQ32.html)
+  "
+		Zu axtcp: ich lese gerade im source fuer attach asy in n8250.c, dass da mit addr/vec ein Hack besteht fuer
+		eie outgoin tcp Verbindung als SOCK_STREAM .. - duerfte bei axip wohl zu kiss ueber tcp fuehren. Ein listen/accept-pendant fand ich nicht.
+
+- ARP Frage aus  d5772ad90d6a13b007b9a11486870225c0e79ce2 - siehe auch unten die Abschnitte unter "NACHGESEHEN, UND ES IST SOGAR ZWEIFACH FALSCH:"
+
 - tun: GEBAUT FUER ALLE DREI SYSTEME, "attach tun <label> <mtu>" heisst
   ueberall gleich. src/tun.c traegt jetzt drei Wege zum selben Geraet, und
   sie unterscheiden sich nur im Oeffnen und in dem, was vor einem Paket
