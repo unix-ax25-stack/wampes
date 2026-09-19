@@ -5,7 +5,7 @@ atta tun ax25 1500 linux
 ! ifconfig ax25 44.130.60.100 netmask 255.255.255.255 up
 ! ip route add 44.130.60.101 dev ax25
 ! ip route add 44.130.254.0/24 via 44.130.60.101
-route add 45.130.60.100 linux
+route add 44.130.60.100 linux
 
 atta axip xnet udp 930:9393 bind=127.0.0.1
 ifc xnet encap ax25i mtu 1500
