@@ -91,7 +91,7 @@ ax25 mycall db0fhn-10
 ip addr 44.130.60.101
 
 atta tun ax25 1500 linux
-route add 45.130.60.100 linux
+route add 44.130.60.100 linux
 
 atta axip xnet udp 930:9393 bind=127.0.0.1
 ifc xnet encap ax25i mtu 1500
@@ -210,8 +210,8 @@ Quick example how to compile and install libax25 ax25-apps ax25-tools and wampes
 after git clone:
 
 ```
-cd wampes; make install; cd ..
-for i in libax25 ax25-apps ax25-tools; do
+cd wampes.git; make install; cd ..
+for i in libax25.git ax25-apps.git ax25-tools.git; do
   cd $i ; autoreconf --install --force ; ./configure --enable-userspace-ax25 --prefix=/usr --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man; make clean; make install
   # For first-time-install of the configuration files: make installconf
   cd ..
