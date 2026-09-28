@@ -35,6 +35,7 @@ $(SBINDIR)/conversd: conversd
 
 
 
+distclean:; @$(MAKE) clean
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
 convers.o:\

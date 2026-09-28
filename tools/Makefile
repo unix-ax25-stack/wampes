@@ -58,6 +58,7 @@ udpbridge: udpbridge.o $(LIBS)
 
 _install: \
 
+distclean:; @$(MAKE) clean
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
 check_seteugid.o:\

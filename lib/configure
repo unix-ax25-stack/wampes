@@ -233,7 +233,14 @@ PROBE_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS${EXTRA_CFLAGS:+ $EXTRA_CFLAGS}"
 LDFLAGS="$LDFLAGS${EXTRA_LDFLAGS:+ $EXTRA_LDFLAGS}"
 
-TCPDIR=${TCPDIR:-$DEFAULT_TCPDIR}
+# old_TCPDIR, not DEFAULT_TCPDIR: a TCPDIR that is neither of the two
+# built-in defaults was a deliberate choice and has to survive into the next
+# build, which is what lib/Makefile re-running this script on every build
+# needs.  The two defaults are dropped above, so this cannot keep a tree
+# built on one OS on that OS's default on another - that was the bug the
+# per-platform DEFAULT_TCPDIR was introduced for, and leaving old_TCPDIR out
+# of this line fixed the paths and lost the setting along with them.
+TCPDIR=${TCPDIR:-${old_TCPDIR:-$DEFAULT_TCPDIR}}
 
 # Where the programs go.  Everything WAMPES installs lives under TCPDIR by
 # default, so that a local installation is one directory that can be moved,

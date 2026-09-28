@@ -18,6 +18,7 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
+distclean:; @$(MAKE) clean
 clean:; @rm -f *.o *.a *~ \#*\#
 ###
 next.o:\

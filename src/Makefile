@@ -384,6 +384,7 @@ version_git.h: FORCE
 
 FORCE:
 
+distclean:;      @$(MAKE) clean
 clean:;         @rm -f *.o $(PROGRAM) version_git.h lint tags TAGS *~ \#*\#
 
 _install:       $(SBINDIR)/net

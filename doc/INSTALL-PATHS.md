@@ -7,7 +7,8 @@ the next person from having to work all of this out again.
 ## Today
 
 Everything lives under one root, `TCPDIR`, which `lib/configure` fixes at
-build time and which defaults to `/usr/local/wampes`:
+build time and which defaults to `/usr/local/wampes` on macOS and to `/tcp`
+everywhere else:
 
     $TCPDIR/bin/      bbs cnet convers md5 path qth
     $TCPDIR/sbin/     net conversd mkhostdb qaddr qname
@@ -23,16 +24,40 @@ build time and which defaults to `/usr/local/wampes`:
     /usr/local/bin/   wampes-bbs wampes-cnet wampes-convers wampes-path
                       wampes-qth
 
-Four settings steer this, all of them remembered by `lib/configure` once given,
-so that `TCPDIR=/somewhere ./configure && make install` really does install
-somewhere else:
+Four settings steer this.  There is no `./configure`: the top-level `Makefile`
+descends into `lib`, and `lib/Makefile` runs `lib/configure` on every build, so
+the environment of the `make` is what decides.  `make install` depends on
+`all`, so one command configures and installs together:
+
+    TCPDIR=/somewhere make install
 
 | variable | what it holds | default |
 |---|---|---|
-| `TCPDIR` | the root of everything | `/usr/local/wampes` |
+| `TCPDIR` | the root of everything | `/usr/local/wampes` on macOS, `/tcp` elsewhere |
 | `BINDIR` | user commands | `$TCPDIR/bin` |
 | `SBINDIR` | daemons and administrative commands | `$TCPDIR/sbin` |
 | `PUBLICBINDIR` | where the `wampes-` symlinks go, empty to skip them | `/usr/local/bin` |
+
+All four are read back out of `lib/configure.mak` and so survive into later
+builds, which is what a `lib/configure` that runs on every build needs.  Two
+are forgotten along the way, deliberately: a `TCPDIR` that is one of the two
+built-in defaults is no choice at all, and a `BINDIR` or `SBINDIR` that was
+merely `$TCPDIR/bin` or `$TCPDIR/sbin` goes when `TCPDIR` goes, so that moving
+the root moves them along instead of leaving them behind.  A `TCPDIR` that is
+neither `/tcp` nor `/usr/local/wampes` was deliberate and is kept.
+
+`make clean` keeps `lib/configure.mak` for the same reason - it is the only
+record of a `TCPDIR` that was not a default, and `make clean; make` has to
+keep installing where the last build installed.  Everything else that clean
+removes really is rebuilt from source, including `lib/configure.h`, which
+comes from a compile probe and follows the platform and the flags.
+
+`make distclean` is the one that forgets.  It is clean plus everything a
+configure run left behind, so after it the tree is as a fresh checkout looks
+and the next `make` asks again: a `TCPDIR` that was not a default is gone and
+the platform default comes back.  Only `lib` runs a configure, so it is the
+only directory with anything extra to remove; for the rest, distclean is just
+clean.
 
 The prefix is for the shared directory only.  Inside `$TCPDIR/sbin` a program
 called `net` is unambiguous; in `/usr/local/bin` it is not, and neither are

@@ -164,4 +164,14 @@ clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-rm -f wampes-??????.t*
 	@-find . -name .pure -exec rm {} \;
 	@-find . -name .trimtime -exec rm {} \;
+# Everything clean does, plus the recorded configure answers.  Only lib runs
+# a configure, so it is the only one with a distclean that does more than
+# clean; the other directories answer distclean with clean, which is all it
+# means for them.  Every directory in DIRS has the target, so this needs no
+# fallback and no silenced errors.
+distclean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i distclean ); done
+	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i distclean ); fi
+	@-rm -f wampes-??????.t*
+	@-find . -name .pure -exec rm {} \;
+	@-find . -name .trimtime -exec rm {} \;
 ###
