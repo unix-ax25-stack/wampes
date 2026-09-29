@@ -124,7 +124,7 @@ callsigns, and every WAMPES interface has a callsign of its own anyway.  The
 two fit together without changing the file format.
 
 Where each node listens is named in `wampes.conf`, one node per line, in the
-shape `agwpe.conf` has:
+shape `ax25netd_agwpe.conf` has:
 
     wampes    /usr/local/wampes/sockets/ax25    the node on this machine
     db0aaa    [fd00::5]:8010                    the club node, over IPv6
