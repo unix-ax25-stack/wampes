@@ -49,6 +49,14 @@ ip learn deny 44.128.0.0/10 iface=linux # hamnet RF via host
 ip learn deny 44.0.0.0/9 iface=linux # amprnet inet via host
 ip learn deny 0.0.0.0/0 # the rest of the universe
 
+# Who may use the node at all is decided one level below this file, on
+# $TCPDIR/sockets, and not here - see doc/PERMISSIONS.md.  chgrp hams
+# there is the line that gives the radio to a group; make install does
+# not do it, because it cannot know who is meant to have it.
+# axsock group hams      the same thing from here, every start
+# axsock                 show owner, group and mode of the socket
+# axsock mode 0660       or decide it on the socket instead
+#
 #listen ax25 add db0fhn-11 tcp:127.0.0.1:3600
 #listen ax25 add db0fhn-12 tcp:127.0.0.1:3610
 #listen ax25 add db0fhn-13 tcp:127.0.0.1:6810
