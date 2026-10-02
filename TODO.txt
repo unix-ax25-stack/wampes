@@ -47,7 +47,7 @@
 - IPIP (src/ipip.c) auch via IPv6 - der letzte Rest der Umstellung. Erledigt
   sind AXIP/AXUDP und alles, was ueber build_sockaddr() geht: der Dienstsocket
   samt seiner tcp:-Ziele (2026-08-14 mit tcp:[::1]:9099 durchgefahren),
-  netcmd und Port 8010, tcpgate, bridge, cnet. ipip.c kennt AF_INET6 gar nicht.
+  netcmd und Port 8213, tcpgate, bridge, cnet. ipip.c kennt AF_INET6 gar nicht.
   Ebenfalls noch v4-only, aber je eigene Baustelle: src/ni.c, die versteckten
   TCP-Verbindungen in src/n8250.c und src/tun.c. Nicht gemeint sind domain.c
   und krnlif.c - das ist WAMPES' eigener IPv4-Stack.
@@ -6633,7 +6633,7 @@ WAS BEI UNS ZU ENTSCHEIDEN WAERE, wenn es gebaut wird:
   * VERWEIGERN, NICHT ERSETZEN - anders als der Kernel.  Ein Client, der
     glaubt, unter einem Rufzeichen zu senden, und stillschweigend umgebogen
     wird, ist schlimmer als eine Fehlermeldung.
-  * DIE TCP-TUER HAT KEINE AUSWEISE (127.0.0.1:8010).  Unter einer
+  * DIE TCP-TUER HAT KEINE AUSWEISE (127.0.0.1:8213).  Unter einer
     Staffelung waere sie die anonyme Stufe - und damit erst brauchbar: heute
     ist sie ganz oder gar nicht, weshalb sie aus ist.
   * SSID-BEREICH: die Grammatik gibt es schon, "flexnet ssid 5-9".

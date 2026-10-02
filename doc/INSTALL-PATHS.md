@@ -77,7 +77,7 @@ Not an accident of history, but a rights boundary:
   mode does the work - 0660 and group `hams` where that group exists,
   otherwise it keeps its owner, which errs narrow rather than wide.  The same
   service is reachable over TCP on 127.0.0.1 and ::1 after `axsock tcp-listen
-  on` (or `... port <n>`), default port 8010; that listener is off unless
+  on` (or `... port <n>`), default port 8213; that listener is off unless
   net.rc asks for it, because a TCP port carries no rights of its own.
 
 `lib/rundir.c` enforces both: `mkdir` alone would leave the mode to the umask,

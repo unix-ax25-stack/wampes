@@ -104,7 +104,7 @@ static struct listener Listeners[] = {
  * says so, because a TCP port carries no rights of its own.  Switching it on
  * is the statement that every local account may use the transmitter.
  */
-#define AXTCP_PORT_DEFAULT 8010
+#define AXTCP_PORT_DEFAULT 8213
 
 static struct listener Axtcp[] = {
   { 0, 1, -1 },                         /* 127.0.0.1 */
@@ -722,7 +722,7 @@ static int connect_command(struct controlblock *cp)
  * The source and the path come out of the data, not out of the command, which
  * is what makes forwarding possible at all:
  *
- *     ( echo "datagram hf1:"; cat ) < /dev/aprsport | socat - tcp:localhost:8010
+ *     ( echo "datagram hf1:"; cat ) < /dev/aprsport | socat - tcp:localhost:8213
  *
  * The port is a filter here, not a requirement.  There is no connection and
  * no state, so the same frame going out of two ports harms nothing - unlike a
