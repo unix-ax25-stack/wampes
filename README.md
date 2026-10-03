@@ -73,7 +73,7 @@ library has changed a lot. Compile details incl. `--enable-userspace-ax25`:
 ### The example below is for the AGWPE connector, with direwolf for the upstream connection
 
 
-(/usr/local/)etc/ax25/agwpe.conf:
+/etc/ax25/ax25netd_agwpe.conf:
 ```
 auth    extern
 autoroute yes
@@ -82,7 +82,7 @@ loop    -    -
 ```
 
 
-(/usr/local/)axports:
+/etc/ax25/axports:
 ```
 direwolf      DL9SAU-2  0  256  7   Direwolf channel 0
 ```
@@ -268,13 +268,16 @@ Alpine                            apk add gdbm-dev ...
 
 David Ranch KI6ZHD provided a build-script: build-unix-ax25-stack.sh:
 ```
-  https://github.com/unix-ax25-stack/.github/blob/main/build-unix-ax25-stack.sh
+  https://github.com/unix-ax25-stack/documentation/blob/main/build-unix-ax25-stack.sh
 ```
 
 Then compile and install:
 ```
-for i in libax25.git ax25-apps.git ax25-tools.git; do
+for i in libax25 ax25-apps ax25-tools; do
+  # linux:
   cd $i ; autoreconf --install --force ; ./configure --enable-userspace-ax25 --prefix=/usr --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man; make clean; make install
+  # macos
+  # cd $i ; autoreconf --install --force ; ./configure ; make install
   # For first-time-install of the configuration files:
   # make installconf
   cd ..
@@ -283,7 +286,7 @@ done
 
 If you like to use WAMPES' net ax25-stack:
 ```
-cd wampes.git; make install; cd ..
+cd wampes; make install; cd ..
 ```
 
 
