@@ -1740,6 +1740,47 @@ int doaxip(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* How long a "<call>[:<iface>]" is allowed to be - decided BEFORE anybody types
+ * one.
+ *
+ * AXBUF on its own is too small, and that was the cause of a bug which
+ * announced itself as something else entirely.  This call
+ *
+ *     axip route add te1st:axtcp 127.0.0.2 1000
+ *
+ * has eleven characters in front of the host.  The buffer was AXBUF (ten),
+ * and the strncpy() quietly kept nine of them plus the null.  axip_split_call()
+ * then saw "te1st:axt", failed to look up that port, and said
+ *
+ *     No such interface "axt"
+ *
+ * which is the message for a port that does not exist - and the port that was
+ * written does exist.  With "default:axtcp" (thirteen characters) what was
+ * left was "default:a", and the message came out as "No such interface \"a\"",
+ * which is harder still to read.  The sysop goes looking for the interface
+ * name, not for a buffer bound, and the message has nothing to do with the
+ * cause.
+ *
+ * The size is built out of the parts now instead of guessed: AXBUF for the
+ * callsign (the longest that setcall() takes), one colon, AXIP_IFNAMELEN for
+ * the port name.
+ *
+ * AXIP_IFNAMELEN is deliberately NOT IFNAMSIZ.  That is 16 bytes and it is the
+ * kernel's name limit, not WAMPES'.  "attach axtcp" and "attach kisstcp"
+ * reserve 64 (axtcp.c:255, kisstcp.c:362), and "attach axip" does not truncate
+ * the name at all: it arrives as argv[1] and is taken over with strdup()
+ * (axip.c:1286).  Nothing in the tree shortens a port name to 16, so IFNAMSIZ
+ * here would only have moved the same truncation further along.
+ *
+ * 128 is twice the longest port name the tree's own bounds reserve - 64.  "attach
+ * axip" reserves nothing, so a longer name can be typed, and a route naming
+ * one is then cut at 128: that is where such a bound has to be fixed, in the
+ * place that says what it holds, rather than in a buffer that only pretends to
+ * hold callsigns.
+ */
+#define AXIP_IFNAMELEN	128
+#define AXIP_CALLBUF	(AXBUF + 1 + AXIP_IFNAMELEN)
+
 static struct cmds Axiproutecmds[] = {
   { "add",    doaxiprouteadd,  0, 4,
     "axip route add [permanent] <call>[:<iface>] <host> [<port>]" },
@@ -1874,7 +1915,9 @@ int *isdefp)
 static int doaxiprouteadd(int argc, char *argv[], void *p)
 {
 
-  char callbuf[AXBUF];
+  /* AXIP_CALLBUF, not AXBUF: what lands in here is "<call>[:<iface>]", not a
+   * callsign.  See the definition for the bug that AXBUF caused here. */
+  char callbuf[AXIP_CALLBUF];
   uint8 call[AXALEN];
   struct sockaddr_storage ss;
   struct axip_route *rp;
@@ -1914,10 +1957,17 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
     }
     port = (int) tmp;
   }
-  /* argv[1] wird veraendert - axip_split_call() schneidet am Doppelpunkt - und
-   * das ist in Ordnung: argv gehoert dem Aufrufer, der es fuer nichts
-   * anderes braucht, und an dieser Stelle ist der Doppelpunkt wirklich ein
-   * Trenner.  AXBUF ist die groesste Rufzeichenlaenge, plus Null.
+  /* argv[1] is modified - axip_split_call() cuts at the colon - and that is
+   * fine: argv belongs to the caller, who wants nothing else out of it, and
+   * here the colon really is a separator.
+   *
+   * The comment that used to stand here read "AXBUF is the longest callsign,
+   * plus a null" - which was true, and was the bug.  AXBUF is the longest
+   * CALLSIGN, and what lands in this buffer is "<call>[:<iface>]": callsign,
+   * colon, name.  The claim was about what the buffer takes, not about what it
+   * has to take, and a strncpy() truncates without making a sound.  The bound
+   * belongs to the definition of AXIP_CALLBUF - not to this line, and not to
+   * anyone's memory.
    */
   strncpy(callbuf, argv[1], sizeof(callbuf) - 1);
   callbuf[sizeof(callbuf) - 1] = 0;

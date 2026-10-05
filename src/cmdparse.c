@@ -363,13 +363,51 @@ void *p)
 	}
 }
 
+#define HELP_WIDTH	16		/* field width of one name in a help list */
+
 static int print_help(
 struct cmds *cmdp)
 {
 	int i;
+	int spill = 0;			/* the name just printed filled its field */
 
-	for (i = 0; cmdp->name; cmdp++, i++)
-		printf((i % 5) < 4 ? "%-16s" : "%s\n", cmdp->name);
+	/* A NAME THAT FILLS THE FIELD LEAVES THE NEXT COLUMN NOTHING.
+	 *
+	 * The field is HELP_WIDTH and two names in the ifconfig table do not fit
+	 * it: "axip-dns-interval" is 17, "axip-dns-silence" is exactly 16.  A
+	 * "%-16s" pads to 16 but never overflows a field, so the 17 went past its
+	 * column, the 16 filled its own to the last character, and the two stood
+	 * against each other:
+	 *
+	 *     axip-dns-intervalaxip-dns-silence
+	 *
+	 * That is not a shortened name.  It is the NEXT name, and a reader
+	 * counting the list counts four words where there are two.
+	 *
+	 * So the column stays where it has always been - a list that fits today
+	 * looks exactly as it did - and a name that reached the end of its field
+	 * leaves a space for the one after it.  Widening the column instead would
+	 * move all five columns of every table for the sake of one, and five of
+	 * them wider than 16 no longer fit in 80 anyway.
+	 *
+	 * The space is owed in front of the name that follows, so it belongs at
+	 * the top of the loop and not at the end of the branch - the fifth name
+	 * of a row is a next name too, and it is exactly where the two glued in
+	 * the ifconfig list ("axip-dns-silence" is 16 and filled its column, and
+	 * the fifth, "hf-datarate", landed on its last character).  After the
+	 * fifth there is a newline, and a space there would be blanks at the end
+	 * of the line.
+	 */
+	for (i = 0; cmdp->name; cmdp++, i++) {
+		if (spill) putchar(' ');
+		if ((i % 5) == 4) {
+			printf("%s\n", cmdp->name);
+			spill = 0;
+			continue;
+		}
+		spill = (int) strlen(cmdp->name) >= HELP_WIDTH;
+		printf("%-*s", HELP_WIDTH, cmdp->name);
+	}
 	if (i % 5) putchar('\n');
 	putchar('\n');
 	return 0;

@@ -174,15 +174,28 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
  */
 char Crc_usage[] =
   "ifconfig <iface> crc auto|off|smack|flexnet|ccitt\n"
-  "  smack   (or 16)    KISS SMACK, bit 7 of the type byte.  CRC-16/ARC.\n"
+  /* Every description here begins at column 22, and the four continuation
+   * lines are what put it there.  Four of the five entries stood at 21 - one
+   * space too few, not one too many - so "smack", "ccitt", "auto" and "off"
+   * sat a column to the left of "flexnet" and of their own text.  "flexnet
+   * (or rmnc)" is 20 characters, the longest entry, and the only one that came
+   * to 22 by itself: that is not luck, it is the reason it is the pattern.
+   */
+  "  smack   (or 16)     KISS SMACK, bit 7 of the type byte.  CRC-16/ARC.\n"
   "  flexnet (or rmnc)   KISS FlexNet, type byte 0x20.  No room for a\n"
   "                      port in that byte.\n"
-  "  ccitt              the AX.25 frame check sequence, CRC-16/X-25.\n"
+  "  ccitt               the AX.25 frame check sequence, CRC-16/X-25.\n"
   "                      Not a KISS CRC - a TNC does this on the air and\n"
   "                      never puts it on a KISS line.\n"
-  "  auto               let the peer's frames decide.  This is what a\n"
-  "                      freshly attached KISS port starts in.\n"
-  "  off                no checksum on the wire.\n"
+  "  auto                let the peer's frames decide.  This is what a\n"
+  "                      freshly attached SERIAL KISS port starts in.\n"
+  /* And the last sentence was wrong for KISSTCP: that port starts in "off", on
+   * purpose (kisstcp.c:511).  "auto" is CRC_TEST_16 and stands only at the
+   * serial port (kiss.c:60).  A sysop who had read "attach kisstcp" and then
+   * called "crc ?" was given two answers that contradict each other, and there
+   * was nothing in either of them to show which one was the wrong one.
+   */
+  "  off                 no checksum on the wire.\n"
   "  The current value is in \"ifconfig <iface> verbose\".";
 
 struct cmds Ifcmds[] = {

@@ -10188,6 +10188,18 @@ AXTCP/TCPKISS: Auto-Detection & Session-Policy
     Safety, CRC primaeres Kriterium.
   - Unidentifizierte eingehende Sessions: Garbage-Window ~5 Min Inaktivitaet
     -> trennen (Port-Scan-Abwehr). Kein fester 2-5s Initial-Timeout.
+  - Authentisierung fehlt vollstaendig: jede TCP-Gegenstelle darf einen
+    axtcp- oder kisstcp-Port als Client benutzen, und "session:unidentified"
+    in "attach <port> stat" ist bisher nur eine Anzeige, keine Sperre
+    (tcpsock.c:1314, aus TCPAD_DETECT in tcpsock.h:62). Ein geteilter
+    Schluessel (ein PSK je Port, in der sysop-Konfiguration, nie im
+    Klartext im Log) waere die kleinste Massnahme, die eine fremde Station
+    aussperrt, ohne TLS. Wichtig fuer die
+    Reihenfolge: die Garbage-Window-Zeile oben beendet eine fremde Sitzung
+    nach fuenf Minuten - das ist bei einem PSK die *erlaubte* Reaktion, bei
+    einer fremden Station aber nur Verzoegerung. Erst der Schluessel, dann
+    ist das Fenster die richtige Antwort. Ohne ihn bleibt zu entscheiden,
+    was mit "unidentified" passiert, solange die Sitzung Daten traegt.
   - Session-Duplikate: bei Lernzuordnung aeltere Verbindung bevorzugt
     trennen, neue behalten (Session-Affinitaet zur aktuellen Route).
   - Cleanup nur LEARNED bei Disconnect; perm/perm_once/sysop bleiben.
