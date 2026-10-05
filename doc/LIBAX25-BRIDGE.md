@@ -88,7 +88,7 @@ the pid, both for a claim and for a connect.
 `libax25/wampes.c`, hooked into `axsock.c` at seven places.  Which ports it
 serves comes out of `wampes.conf`, see below.  The outgoing direction:
 
-* `socket(AF_AX25, …)` returns a placeholder descriptor - an unbound unix
+* `socket(AF_AX25, ...)` returns a placeholder descriptor - an unbound unix
   socket.  It has to be a real descriptor because the application gets the
   number now and the connection only exists later.
 * `bind()` carries two different things in one address.  `sax25_call` is the
@@ -99,7 +99,7 @@ serves comes out of `wampes.conf`, see below.  The outgoing direction:
 * `connect()` holds the conversation above and then `dup2()`s the real socket
   onto the number the application already has.  From there nothing of ours is
   in the way.
-* `setsockopt(SOL_AX25, …)` answers success and changes nothing.  The channel
+* `setsockopt(SOL_AX25, ...)` answers success and changes nothing.  The channel
   parameters belong to the node's interface configuration; a program that
   checks the return value must not be told its window size was refused.
 
@@ -232,7 +232,7 @@ What preloading cannot reach, on either system:
 * setuid and setgid programs - the loader drops the variables in secure
   execution mode.  Run them as root without the setuid bit instead.
 * statically linked programs - there is nothing to override.
-* a program calling `syscall(SYS_socket, …)` directly.
+* a program calling `syscall(SYS_socket, ...)` directly.
 * on macOS additionally anything protected by SIP, which strips every
   `DYLD_*` variable.
 

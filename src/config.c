@@ -201,8 +201,8 @@ struct cmds Attab[] = {
 	{ "netrom", nr_attach, 0, 1,
 	"attach netrom [ip_addr]" },
 
-	{ "axip", axip_attach, 0, 1,
-	"attach axip [<label> [<ip|udp|ip6|udp6> [<number>|<srcport>:<dstport>]]]\n"
+		{ "axip", axip_attach, 0, 1,
+	"attach axip [<label> [<ip|udp|ip6|udp6> [<host|fqdn> [<number>|<srcport>:<dstport>]]]]\n"
 	"  AX.25 inside IP, RFC-1226.  Each word needs the one before it, so a\n"
 	"  type can only be given with a label.\n"
 	"\n"
@@ -212,8 +212,20 @@ struct cmds Attab[] = {
 	"  udp, udp6 a UDP socket, and <number> is then the PORT.  It may be\n"
 	"            written \"<src>:<dst>\" to bind one and send to the other;\n"
 	"            one number means both, which is what it always did\n"
+	"  <host|fqdn> optional remote peer (host name or IP literal)\n"
 	"  <number>  default 93 either way - the AX.25 protocol number of\n"
 	"            RFC-1226, and by custom the axudp port as well\n"
+ },
+
+	{ "axtcp", axtcp_attach, 0, 1,
+	"attach axtcp [<label> [listen [<port>] | client <host>[:<port>]]]\n"
+	"  AX.25 over TCP with 2-byte length prefix (XRouter style). Payload is\n"
+	"  the AX.25 frame including CRC16, length big-endian. Default port 9393.\n" },
+
+	{ "kisstcp", kisstcp_attach, 0, 1,
+	"attach kisstcp [<label> [listen [<port>] | client <host>[:<port>]]]\n"
+	"  KISS-over-TCP (kisstcp/tcpkiss), FEND 0xC0 framing with escaping.\n"
+	"  Default port 8001. Ports: 7342 (fldigi), 8100 (VARAFM).\n"
 	"\n"
 	"  bind=<addr> which local address to listen on.  Left out it is every\n"
 	"            one, which is what a node on the air wants.  Named -\n"

@@ -52,6 +52,45 @@ static int ax_user_to_user(struct iface *iface, struct ax25 *hdr,
 
 /*---------------------------------------------------------------------------*/
 
+/* TRAEGT DIESE PID EIN IP-DATAGRAMM?  Nicht "ist sie PID_IP" - das ist die
+ * Frage, an der die drei Zahlen eines AX.25-Ports haengen, und sie hat mehr
+ * als eine richtige Antwort.
+ *
+ * Ein Datagramm, das als PID_VJCOMP oder PID_VJUNCOMP ankommt, ist ein ganz
+ * gewoehnliches IP-Datagramm, nur Van-Jacobson-komprimiert: ax_rx_vjcomp()
+ * und ax_rx_vjuncomp() blasen es auf und geben es an ip_route(), und das
+ * zaehlt in ipsndcnt und iprecvcnt.  Wuerde man es hier fuer "kein IP"
+ * halten, stuende dasselbe Datagramm in ax25sndcnt UND in ipsndcnt, und die
+ * Summe waere um eins zu gross fuer jedes komprimierte TCP-Segment.  Die
+ * beiden stehen unter #ifdef AX25_VJCOMP in Axlink (config.c), und ohne die
+ * Zeilen hat das Frame keinen Handler und kommt in free_p() - dann ist es
+ * auch kein IP-Datagramm, deshalb die gleiche Bedingung hier.
+ *
+ * PID_ARP ist KEIN IP-Datagramm und steht deshalb nicht hier: axarp() faengt
+ * es, ohne dass iproute.c etwas zaehlt.  Es ist ein AX.25-Rahmen, der etwas
+ * anderes transportiert, und genau so soll ifconfig es zeigen.
+ *
+ * PID_SEGMENT steht auch nicht hier, und aus einem anderen Grund: es sagt
+ * nichts darueber aus, was in ihm ist (lapb.c, segmenter()).  Es traegt nie
+ * ein Datagramm, sondern die Stuecke eines - und die gehoeren in
+ * ipsndcnt/iprecvcnt, nicht in ax25sndcnt/ax25recvcnt.  segmenter() ist die
+ * einzige Stelle, die es erzeugt, und sie rechnet selbst.
+ */
+int
+ax25_pid_is_ip(
+int pid
+){
+	if(pid == PID_IP)
+		return 1;
+#ifdef	AX25_VJCOMP
+	if(pid == PID_VJCOMP || pid == PID_VJUNCOMP)
+		return 1;
+#endif
+	return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 int
 axi_send(
 struct mbuf **bpp,
@@ -184,6 +223,33 @@ uint8 tos
 	if((tbp = segmenter(bpp,axp->paclen)) == NULL){
 		free_p(bpp);
 		return -1;
+	}
+	/* SEGMENTED, AND THE SEGMENTS ARE COUNTED HERE BECAUSE ONLY HERE THE
+	 * COUNT IS STILL TO BE HAD.
+	 *
+	 * sendframe() deliberately ignores a frame whose pid is
+	 * PID_SEGMENT: the pid says nothing about what is in the frame, so
+	 * from there on nobody could tell a segmented IP datagram from a
+	 * segmented FlexNet one - and one of them belongs to ipsndcnt, the
+	 * other to ax25sndcnt.  Both have just been q_pkt()'d as IP
+	 * datagrams, and this is the last function that knows it.
+	 *
+	 * So the segments are counted here, ONE SHORT of their number.  The
+	 * datagram itself already stands in ipsndcnt, and "tot == ip +
+	 * ax25" can only hold if exactly one of its N frames is not counted
+	 * as AX.25 - and which of them that is carries no meaning, because
+	 * the far end throws them together before it looks at any.
+	 *
+	 * The common case is untouched: segmenter() hands a datagram back
+	 * whole when it fits the path (lapb.c, "Too small to segment"), and
+	 * then there is one segment, nothing is added here, and sendframe()
+	 * reads the real pid off the front of it.
+	 */
+	if(axp->iface != NULL){
+		uint nseg = len_q(tbp);
+
+		if(nseg > 1)
+			axp->iface->ax25sndcnt += nseg - 1;
 	}
 	return send_ax25(axp,&tbp,-1);
 }
@@ -396,6 +462,25 @@ struct mbuf **bpp
 
 	idest = (hdr->ndigis != 0 && hdr->nextdigi != hdr->ndigis) ?
 		hdr->digis[hdr->nextdigi] : hdr->dest;
+	/* The second UI exit, and counted the same way as axsend()'s - from
+	 * the pid argument, which is still in hand here.  This one is not
+	 * dead code with a single user: a DAMA master polls through it, and
+	 * remote_net.c sends a bridged datagram through it, and only the
+	 * first of those is certainly not an IP datagram.
+	 */
+	if(!ax25_pid_is_ip(pid)){
+		/* Counted BEFORE the DAMA deferral below, because that does not
+		 * cancel the frame, it postpones it: dama_ui_flush() hands
+		 * every queued frame to the driver later on, and by then the
+		 * pid is behind two address fields and unreadable.  Counting
+		 * after would leave the sum short by every frame that waited
+		 * for a poll window.
+		 */
+		if(iface->forw != NULL)
+			iface->forw->ax25sndcnt++;
+		else
+			iface->ax25sndcnt++;
+	}
 	if(iface->forw != NULL){
 		logsrc(iface->forw,iface->forw->hwaddr);
 		logdest(iface->forw,idest);
@@ -479,6 +564,28 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	struct iface *ifp;
 	uint8 *idest;
 	int rval;
+	int carries_ip;
+
+	/* Is this frame an IP datagram in an AX.25 envelope, or a plain AX.25
+	 * frame?  Asked HERE, on entry, because this is the last moment the
+	 * pid can still be read off the front: ax_output() pushed it there
+	 * and pushdown() below moves the addresses in front of it.  Further
+	 * down it is indistinguishable from a keepalive's.
+	 *
+	 * The answer goes to ifp->ax25sndcnt, the AX.25 half of "tot".  It is
+	 * read here rather than in ax_output() because ax_output() can hand
+	 * this function more than one frame to send - the "collision domain"
+	 * patch builds a frame per digipeater for a multicast - and each of
+	 * them is a frame on the wire, each counted in the driver's rawsndcnt,
+	 * so each needs its turn of the counter.  Counting on entry to
+	 * ax_output() would have made the sum short by one per digipeater.
+	 *
+	 * A PID_IP frame is an IP datagram: it belongs to ipsndcnt, which
+	 * q_pkt() counted before ax_output() ever saw it.  Everything else -
+	 * PID_NO_L3 from a "connect", a keepalive, whatever a program sent -
+	 * is a plain AX.25 frame.
+	 */
+	carries_ip = (*bpp != NULL && ax25_pid_is_ip((*bpp)->data[0]));
 
 	/* If the source addr is unspecified, use the interface address */
 	if(source[0] == '\0')
@@ -517,6 +624,12 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	if(iface->forw != NULL){
 		logsrc(iface->forw,iface->forw->hwaddr);
 		logdest(iface->forw,idest);
+		/* Counted on the interface that puts the frame on the wire -
+		 * the one whose driver will bump rawsndcnt - and not on iface,
+		 * which only passes it on.
+		 */
+		if(!carries_ip)
+			iface->forw->ax25sndcnt++;
 		rval = (*iface->forw->raw)(iface->forw,bpp);
 	} else {
 		logsrc(iface,iface->hwaddr);
@@ -527,6 +640,8 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 		 */
 		if(dama_defer_ui(iface,bpp))
 			return 0;
+		if(!carries_ip)
+			iface->ax25sndcnt++;
 		rval = (*iface->raw)(iface,bpp);
 	}
 	return rval;
@@ -639,6 +754,26 @@ struct mbuf **bpp
 	uint8 (*mpp)[AXALEN];
 	int mcast;
 	uint8 *isrc,*idest;     /* "immediate" source and destination */
+
+	/* THE INCOMING HALF OF ifp->ax25recvcnt, and counted HERE rather than in
+	 * every driver for two reasons.
+	 *
+	 * ax_recv() is the rcvf of every AX.25 port there is - the seven serial
+	 * ones out of config.c, and axip/axudp, axtcp/kisstcp and bpqether by
+	 * way of setencap(ifp, "AX25UI") - so this is the one place where the
+	 * whole family passes.  The alternative is eight driver hooks and a
+	 * ninth port type later nobody remembers.
+	 *
+	 * It is counted before ANY check, because iface.c has already counted
+	 * the frame in ifp->rawrecvcnt, and the two have to agree: a frame
+	 * with a broken header, a frame for somebody else, and our own echo
+	 * all stand in "tot", and the sum has to hold for them too.  So the
+	 * count goes up first and comes down again below, in the one place
+	 * where it turns out to be an IP datagram - a frame that carries one
+	 * belongs in iprecvcnt instead, and the reader is entitled to see
+	 * that only one of the two counters moved.
+	 */
+	iface->ax25recvcnt++;
 
 	/* Loop-Schutz: ein UI-Rahmen, den wir selbst gerade byte-identisch
 	 * ausgesendet haben, ist unser Echo (Bruecke, Digi, Datagramm-Loop).
@@ -794,6 +929,23 @@ struct mbuf **bpp
 				if (ifp) {
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
+					/* A frame WE repeat is a frame we SEND, and the
+					 * interface it leaves by counts it as one -
+					 * so its own ax25sndcnt has to move as well, or
+					 * the sum tot == ip + ax25 on that port
+					 * goes wrong by exactly the frames this
+					 * digipeater repeated.  The pid is still the
+					 * first byte here: it is only pulled off
+					 * further down, and then only for a frame
+					 * that came through all the digis.
+					 *
+					 * Before the DAMA test rather than inside
+					 * it, for the reason given in
+					 * ax_send_ui(): a deferred frame is
+					 * still a frame that goes out.
+					 */
+					if(*bpp && !ax25_pid_is_ip((*bpp)->data[0]))
+						ifp->ax25sndcnt++;
 					/* Nur UI wird hier ueberhaupt wiederholt
 					 * (digipeat 2); auf einem DAMA-Kanal
 					 * darf auch das auf das Fenster warten.
@@ -857,9 +1009,23 @@ struct mbuf **bpp
 			if(ipp->pid == pid)
 				break;
 		}
-		if(ipp->funct != NULL)
+		if(ipp->funct != NULL){
+			/* An IP datagram in an AX.25 frame is counted by
+			 * ip_route() in iprecvcnt, so the count we put up on
+			 * the way in has to come back down - otherwise the same
+			 * frame stands in both numbers and the sum the reader
+			 * checks counts it twice.
+			 *
+			 * Only here and not at the pid: a datagram client that
+			 * claimed this pid above is NOT ip_route(), and nobody
+			 * has counted such a frame in iprecvcnt.  And only when
+			 * there is a handler at all - a frame that ends in
+			 * free_p() has not been an IP datagram for anybody.
+			 */
+			if(ax25_pid_is_ip(pid))
+				iface->ax25recvcnt--;
 			(*ipp->funct)(iface,NULL,hdr.source,hdr.dest,bpp,mcast);
-		else
+		} else
 			free_p(bpp);
 		return;
 	}
@@ -1233,7 +1399,7 @@ uint32 ax_fingerprint_data(const uint8 *data, int len)
 }
 
 /* Ist der Rahmen ein UI (Datagramm)?  Laeuft durch das Adressfeld bis zum
- * Kontrollbyte und prüft es - den ganzen Kopf zu bauen nur fuer diese Frage
+ * Kontrollbyte und prueft es - den ganzen Kopf zu bauen nur fuer diese Frage
  * waere verschwendet.  Nur UI wird auf Inhalt verworfen: connected-mode
  * sendet identische Wiederholungen (RR+/I/SABM) als Protokoll-Timing, die
  * duerfen nie unter die Inkarnation-Logik fallen.
@@ -1330,6 +1496,12 @@ struct mbuf **bpp
 	}
 	logsrc(out,out->hwaddr);
 	logdest(out,(uint8 *)idest);
+	/* A bridge between two AX.25 ports: whatever the frame carried, it
+	 * leaves this port as an AX.25 frame, and ip_proc() never had a hand
+	 * in it - on the input side it was already counted in iface->ax25recvcnt,
+	 * and this is its counterpart for the output side.
+	 */
+	out->ax25sndcnt++;
 	(*out->raw)(out,bpp);
 	return 1;
 }

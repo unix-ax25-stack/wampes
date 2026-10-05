@@ -23,6 +23,7 @@
 #include "cmdparse.h"
 #include "domain.h"
 #include "hostdb.h"
+#include "buildsaddr.h"		/* build_hostport(): the "[host]" rule */
 
 #define DBHOSTADDR      TCPDIR "/hostaddr"
 #define DBHOSTNAME      TCPDIR "/hostname"
@@ -399,15 +400,39 @@ socklen_t *len)
 {
 
   char names[3][1024];
+  char hbuf[1024];
+  char sbuf[32];
   datum daddr;
   datum dname;
   int family;
+  int want6 = 0;
   int i;
   unsigned char a[16];
 
   if (!name || !*name || !ss || !len) return 0;
   memset(ss, 0, sizeof(*ss));
   *len = 0;
+
+  /* DIE KLAMMERN ZUERST ABSTREIFEN.  Sie bedeuten hier dasselbe wie in
+   * build_sockaddr() - IPv6 -, und inet_pton() nimmt sie nicht: ohne diesen
+   * Schritt scheitert "[2001:db8::1]" an der Literale und faellt in die
+   * Tabelle, wo es nicht steht.
+   *
+   * Auch "[db0sao.ampr.org]" kommt so in die Tabelle, denn es ist ein Name -
+   * aber nur als AAAA.  Wer die Klammern schreibt, hat IPv6 im Sinn, und eine
+   * A-Adresse waere hier eine andere Antwort auf dieselbe Frage.
+   */
+  {
+    int fam;
+
+    if (!build_hostport(name, hbuf, sizeof(hbuf), sbuf, sizeof(sbuf), &fam)) {
+      if (*sbuf) return 0;	/* "host:port" - not a host at all */
+      name = hbuf;
+#if HAS_AF_INET6
+      want6 = (fam == AF_INET6);
+#endif
+    }
+  }
 
   /* A literal needs no table */
   if (strchr(name, ':')) {
@@ -445,6 +470,12 @@ socklen_t *len)
 	break;
     }
     if (!names[i][0]) return 0;
+#if HAS_AF_INET6
+    /* Die Klammern wollten IPv6, also ist eine V4-Zeile hier die falsche
+     * Antwort und nicht eine brauchbare Ersatzloesung.
+     */
+    if (want6 && family != HOSTDB_V6) return 0;
+#endif
   }
 
 #if HAS_AF_INET6

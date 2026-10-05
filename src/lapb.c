@@ -1168,6 +1168,36 @@ struct mbuf **bpp
 			ifp = ifp->forw;
 		logsrc(ifp,ifp->hwaddr);
 		logdest(ifp,axp->hdr.nextdigi != axp->hdr.ndigis ? axp->hdr.digis[axp->hdr.nextdigi] : axp->hdr.dest);
+		/* WHICH OF THE THREE NUMBERS THIS FRAME BELONGS TO.  Not always
+		 * the third, and the two exceptions are worth the lines.
+		 *
+		 * (ctl & 3) != U is a link control frame - SABM, UA, DM, RR,
+		 * RNR, REJ.  There is nothing behind the control field, so it
+		 * is pure AX.25 and needs no test at all.  Retransmissions of
+		 * a T1 or of a window timer count like any other: each of them
+		 * is a frame the driver counts in rawsndcnt.
+		 *
+		 * With ctl == UI it is a data frame in connected mode, and
+		 * send_ax25() has already pushed the protocol id onto the front
+		 * of it.  That can be an IP datagram, and ipsndcnt counted the
+		 * datagram before it ever got here.
+		 *
+		 * PID_SEGMENT is the odd one and is not counted here at all:
+		 * a frame that says PID_SEGMENT says nothing about what is
+		 * inside it, and the only thing that ever wrote that pid is
+		 * segmenter() - which axi_send() below counts itself, one less
+		 * than the number of segments, so that one of them stands for
+		 * the datagram ipsndcnt already has.
+		 */
+		if((ctl & 3) != U)
+			ifp->ax25sndcnt++;
+		else {
+			int dpid = (*bpp != NULL && (*bpp)->cnt > 0) ?
+				(*bpp)->data[0] : PID_NO_L3;
+
+			if(dpid != PID_SEGMENT && !ax25_pid_is_ip(dpid))
+				ifp->ax25sndcnt++;
+		}
 		return (*ifp->raw)(ifp,bpp);
 	}
 	free_p(bpp);
@@ -1502,6 +1532,24 @@ struct mbuf **bpp
 			break;
 	}
 	if(ipp->funct != NULL){
+		/* The counterpart of the ax25recvcnt++ in ax_recv(), and needed for
+		 * the same reason: that one counted the frame on its way in
+		 * before anything was known about it, and ip_route() inside the
+		 * handler below counts the datagram in iprecvcnt, so the same
+		 * frame would stand in both numbers.
+		 *
+		 * Once per DATAGRAM, not once per frame, and that is what makes
+		 * a segmented one come out right: the segments were counted
+		 * separately as they arrived, only the last of them carried the
+		 * frame through here, and so N frames leave N-1 in ax25recvcnt
+		 * against the one in iprecvcnt - which is what tot says.
+		 *
+		 * The pid is read from the reassembled data, which is the
+		 * point: it says nothing at all while the frame says
+		 * PID_SEGMENT.  See ax25_pid_is_ip().
+		 */
+		if(ax25_pid_is_ip(pid) && axp->iface != NULL)
+			axp->iface->ax25recvcnt--;
 		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bpp,0);
 	}
 	else

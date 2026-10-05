@@ -8,6 +8,7 @@
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
+#include "tcpsock.h"	/* ifkeepalive(): tcpsock_raw, TCP_KEEPALIVE_DEFAULT */
 #include "dama.h"
 #include "ip.h"
 #include "icmp.h"
@@ -19,6 +20,7 @@
 #include "pktdrvr.h"
 #include "lapb.h"
 #include "pidfilter.h"
+#include "axip.h"
 #include "framefilter.h"
 #include "asy.h"
 #include "n8250.h"
@@ -53,6 +55,7 @@ static int ifbridge(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
+static int ifkeepalive(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
 static int ifmaxframe(int argc,char *argv[],void *p);
 static int ifemaxframe(int argc,char *argv[],void *p);
@@ -96,8 +99,10 @@ struct iface Loopback = {
 	NULL,           /* (*discard)   */
 	NULL,           /* (*echo)      */
 	0,              /* ipsndcnt     */
+	0,              /* ax25sndcnt   */
 	0,              /* rawsndcnt    */
 	0,              /* iprecvcnt    */
+	0,              /* ax25recvcnt  */
 	0,              /* rawrcvcnt    */
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
@@ -142,8 +147,10 @@ struct iface Encap = {
 	NULL,           /* (*discard)   */
 	NULL,           /* (*echo)      */
 	0,              /* ipsndcnt     */
+	0,              /* ax25sndcnt   */
 	0,              /* rawsndcnt    */
 	0,              /* iprecvcnt    */
+	0,              /* ax25recvcnt  */
 	0,              /* rawrcvcnt    */
 	0,              /* lastsent     */
 	0,              /* lastrecv     */
@@ -156,8 +163,42 @@ struct iface Encap = {
 
 char Noipaddr[] = "IP address field missing, and ip address not set\n";
 
+/* The usage text of "ifconfig <iface> crc", as an object of its own because
+ * there are two places that have to print it and a setting that silently
+ * ignores a misspelled word is a setting that silently does the wrong thing.
+ * A wrong CRC on a KISS line throws every frame away, and the operator who
+ * typed "flexnett" is told nothing at all - the port keeps whatever it had,
+ * and the only visible symptom is that nothing gets through.  So an unknown
+ * word answers with the words that WOULD have worked, exactly as a missing
+ * argument already does (cmdparse.c print_usage).
+ */
+char Crc_usage[] =
+  "ifconfig <iface> crc auto|off|smack|flexnet|ccitt\n"
+  "  smack   (or 16)    KISS SMACK, bit 7 of the type byte.  CRC-16/ARC.\n"
+  "  flexnet (or rmnc)   KISS FlexNet, type byte 0x20.  No room for a\n"
+  "                      port in that byte.\n"
+  "  ccitt              the AX.25 frame check sequence, CRC-16/X-25.\n"
+  "                      Not a KISS CRC - a TNC does this on the air and\n"
+  "                      never puts it on a KISS line.\n"
+  "  auto               let the peer's frames decide.  This is what a\n"
+  "                      freshly attached KISS port starts in.\n"
+  "  off                no checksum on the wire.\n"
+  "  The current value is in \"ifconfig <iface> verbose\".";
+
 struct cmds Ifcmds[] = {
 	{ "arp",                  ifarp,          0,      1, NULL },
+	/* DIE DREI AXIP-BEFEHLE.  Sie stehen hier so, wie sie dastehen, und
+	 * nicht zufaellig: cmdparse vergleicht mit strncmp(argv[0], name,
+	 * strlen(argv[0])) und nimmt den ERSTEN Treffer, siehe die
+	 * Anmerkung bei "dama-gap".  Zwischen diesen dreien gibt es kein
+	 * Praefix, das einem anderen in den Weg kommen koennte - und ein
+	 * kurzes "axip-dns" darf hier auch nicht auftauchen, denn das
+	 * wuerde "axip-dns-silence" dorthin schicken, wo man nach einer
+	 * Zahl gefragt wird und keine steht.
+	 */
+	{ "axip-learn",           if_axip_learn,  0,      1,      Axip_learn_usage },
+	{ "axip-dns-interval",    if_axip_dns_interval, 0, 1,      Axip_dns_usage },
+	{ "axip-dns-silence",     if_axip_dns_silence,  0, 1,      Axip_dns_usage },
 	{ "hf-datarate",          ifhfdatarate,   0,      1,
 	  "ifconfig <iface> hf-datarate <bit/s>   (0 = unbekannt)\n"
 	  "  Die Geschwindigkeit AUF DER LUFT, nicht die zum TNC.  DAMA rechnet\n"
@@ -168,8 +209,7 @@ struct cmds Ifcmds[] = {
 	  "ifconfig <iface> digiarp list | add|del|addvia|delvia <digi>|-" },
 	{ "broadcast",            ifbroad,        0,      2,
 	  "ifconfig <iface> broadcast <ip address>\n  The current value is in \"ifconfig <iface> verbose\"." },
-	{ "crc",                  ifcrc,          0,      2,
-	  "ifconfig <iface> crc auto|off|16|rmnc|ccitt\n  The current value is in \"ifconfig <iface> verbose\"." },
+	{ "crc",                  ifcrc,          0,      2,      Crc_usage },
 	{ "dama",                 ifdama,         0,      2,
 	  "ifconfig <iface> dama off | slave [timeout <seconds>]\n"
 	  "  timeout: how long a master may be silent before we stop\n"
@@ -271,6 +311,12 @@ struct cmds Ifcmds[] = {
 	  "ifconfig <iface> txqlen <packets>" },
 	{ "rxbuf",                ifrxbuf,        0,      2,
 	  "ifconfig <iface> rxbuf <bytes>" },
+	{ "keepalive",            ifkeepalive,    0,      1,
+	  "ifconfig <iface> keepalive <seconds>   (0 = off)\n"
+	  "  Sends one packet per interval on a TCP port that has nothing to\n"
+	  "  say, so that a NAT box which dropped its mapping quietly is found\n"
+	  "  out.  Default 300.  Read without an argument it says what the port\n"
+	  "  is doing now; with one it changes it without detaching the port." },
 	{ NULL }
 };
 /*
@@ -828,7 +874,7 @@ ifarp(int argc,char *argv[],void *p)
 
 	/* EIN PORT, DER GAR NICHT FRAGT, hat hier nichts zu schalten, und das
 	 * zu verschweigen ist die schlechtere Antwort: bisher nahm ein tun-
-	 * oder loopback-Gerät "arp on" widerspruchslos an, obwohl dort nie
+	 * oder loopback-Geraet "arp on" widerspruchslos an, obwohl dort nie
 	 * eine Anfrage entsteht (Thomas).  res_arp() wird auf genau einem Weg
 	 * gerufen, dem von IP ueber AX.25 - alles andere ist Punkt zu Punkt
 	 * oder gekapselt und kennt die Frage nicht.
@@ -900,6 +946,31 @@ ifbroad(int argc,char *argv[],void *p)
  * whatever was configured here, so this command did not stick.  "auto" puts
  * the interface back to probing.
  */
+/* THE THREE KISS CHECKSUMS HAVE DIFFERENT NAMES, and so does the AX.25 one.
+ * "crc 16" and "crc-ccitt" say nothing about each other that is true at the
+ * same time - one is CRC-16/ARC, the other CRC-16/X-25 - and "crc-rmnc" is a
+ * FlexNet spelling of RMNC.  Printing the internal names made the line look
+ * like three flavours of one thing, which is exactly the reading that leads
+ * to putting "crc ccitt" on a KISS line:
+ *
+ *   crc-smack    poly 0x8005, init 0, no final xor, residue 0x0000, 2 bytes
+ *                low byte first.  Check value for "123456789" 0xbb3d, i.e.
+ *                CRC-16/ARC.  Flagged by bit 7 of the KISS type byte.
+ *   crc-flexnet  poly 0x1021, init 0xffff, no final xor, residue 0x7070,
+ *                2 bytes HIGH byte first.  Check value 0x9fb5.  Flagged by
+ *                the whole type byte being 0x20, so there is no room for a
+ *                port nibble in it.
+ *   crc-ccitt    poly 0x1021, init 0xffff, final xor 0xffff, residue 0xf0b8,
+ *                2 bytes low byte first.  Check value 0x906e, i.e. CRC-16/
+ *                X-25: the AX.25 frame check sequence.  Not a KISS CRC at
+ *                all - no KISS dialect carries it, a TNC computes it on the
+ *                air itself, and so does axip/axtcp/axudp, which have no TNC
+ *                in the path.
+ *
+ * Note that flexnet and ccitt share polynomial AND init and differ only in
+ * the final xor and the residue, while smack differs from both in the
+ * polynomial.  So this is two polynomials, not three sizes of one.
+ */
 static int
 ifcrc(int argc,char *argv[],void *p)
 {
@@ -916,9 +987,15 @@ ifcrc(int argc,char *argv[],void *p)
 	case 'o':
 		ifp->crccontrol = CRC_OFF;
 		break;
+	case 'S':
+	case 's':
+	/* "1" is how this has always been spelled. */
 	case '1':
 		ifp->crccontrol = CRC_16;
 		break;
+	case 'F':
+	case 'f':
+	/* Ditto "rmnc"; RMNC and FlexNet are the same dialect. */
 	case 'R':
 	case 'r':
 		ifp->crccontrol = CRC_RMNC;
@@ -928,6 +1005,11 @@ ifcrc(int argc,char *argv[],void *p)
 		ifp->crccontrol = CRC_CCITT;
 		break;
 	default:
+		/* Say what would have worked instead of failing silently.  The
+		 * value is left alone either way, so nothing is changed by
+		 * typing nonsense - but the operator finds out. */
+		printf("\"crc %s\" is not a CRC this build knows.\n", argv[1]);
+		printf("Usage: %s\n", Crc_usage);
 		return -1;
 	}
 	return 0;
@@ -1221,6 +1303,46 @@ static int is_ax25(struct iface *ifp)
 	return ifp->iftype != NULL && ifp->iftype->type == CL_AX25;
 }
 
+/* DER KEEPALIVE EINES TCP-PORTS, live aenderbar.
+ *
+ * HERE AND NOT ONLY IN THE ATTACH LINE, because the sysop who watches a node
+ * for an hour wants to turn it off the moment he sees the keepalive packets on
+ * the wire - not detach the port and lose the partner with it.  The value sits
+ * on the interface, so the ticker picks the new one up on its next round
+ * without a word to anybody (Thomas).
+ *
+ * ONLY FOR TCP PORTS, and it says so rather than accepting the word and
+ * storing it: on a serial line the question does not arise - the line is not
+ * quietly dropped by a NAT box - and a setting that has no effect and is
+ * quietly accepted is the kind that gets believed to be doing something.
+ */
+static int
+ifkeepalive(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(ifp->raw != tcpsock_raw){
+		printf("Interface %s is not a TCP port; keepalive means nothing there.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		printf("%s: keepalive %d",ifp->name,ifp->keepalive);
+		if(ifp->keepalive == 0)
+			printf("  (off)");
+		else if(ifp->keepalive == TCP_KEEPALIVE_DEFAULT)
+			printf("  (the default)");
+		printf("\n");
+		return 0;
+	}
+	/* setintrc() AND NOT setint(): a word that is not a number has to be
+	 * refused, and "keepalive" is one of those places where a quiet zero would
+	 * be read as "off" - which is the one value a sysop writes when he wants
+	 * to stop something, and not the one he writes when he mistypes.
+	 */
+	return setintrc(&ifp->keepalive,"keepalive",argc,argv,0,86400);
+}
+
 /* DARF DER ALLGEMEINE LERNER IN ip_route() HIER ARBEITEN?
  *
  * Er stammt aus KA9Q, wo jedes Datagramm von jedem Port durch ip_route()
@@ -1286,27 +1408,78 @@ showiface(struct iface *ifp, int verbose)
 		 inet_ntoa(ifp->broadcast));
 	if(ifp->forw != NULL)
 		printf("           output forward to %s\n",ifp->forw->name);
-	if(verbose && is_ax25(ifp))
+	/* Die drei if()s hier waren bis 2026-10-02 EINE if() ohne Klammern - bzw.
+	 * zwei if()s, von denen nur das erste geschlossen war.  Dadurch liefen
+	 * pid_show_verbose() und frame_show_verbose() auch im Kurz-"ifconfig"
+	 * mit, wo nach gar nichts gefragt wurde.  Eine Zeile, die nie
+	 * gebraucht wird, macht die Ausgabe unlesbar; deshalb sind es jetzt
+	 * drei if()s, und jedes sieht nach sich selbst.
+	 *
+	 * axip_isport() statt is_ax25(): die axip-Ports tragen "AX25UI" als
+	 * encapsulation und sind damit fuer is_ax25() AX.25 - die Vorgaben
+	 * gehoeren aber nur den axip- und axudp-Ports und nicht jedem
+	 * AX.25-Port im System.
+	 */
+	if(verbose && is_ax25(ifp)) {
 		dama_show(ifp);
 		pid_show_verbose(ifp);
-	frame_show_verbose(ifp);
+		frame_show_verbose(ifp);
+	}
+	if(verbose && axip_isport(ifp))
+		axip_show_verbose(ifp);
 	/* "never" where nothing has gone yet.  The counter starts at zero, so
 	 * the difference to now is the time since 1970 - which came out as
 	 * "20686:12:19:36" on a loopback nobody had used, and reads as though
 	 * the port had been idle since before there was one.
 	 */
-	printf("           sent: ip %lu tot %lu idle %s qlen %u",
-	 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->rawsndcnt,
-	 ifp->lastsent ? tformat(secclock() - ifp->lastsent) : "never",
-		len_q(ifp->outq));
+	/* THREE NUMBERS WHERE THREE ARE TRUE, AND TWO WHERE THEY ARE NOT.
+	 * "ax25" is what "tot" holds besides the IP datagrams, on a port
+	 * where that is a question with an answer - an AX.25 one.  On a tun,
+	 * an encap or a loopback port "tot" IS the IP datagrams, there is no
+	 * second kind of frame, and a standing zero would say nothing.
+	 *
+	 * The field sits between "ip" and "tot", so that the two halves read
+	 * as the sum they are.  Nothing in the node parses this line back -
+	 * ax25cmd.c reads ifp->lastsent and ifp->rawsndcnt out of the struct -
+	 * so the position is a question about the reader and not about a
+	 * machine.
+	 *
+	 * "ip + ax25 == tot" is true, and true is worth checking - but a
+	 * reader who finds it off by a few and does not know why will decide
+	 * the counter is broken.  So the reason is here and not only in
+	 * iface.h: in the sending direction the sum runs ahead by exactly the
+	 * number of datagrams still waiting for address resolution.  Such a
+	 * datagram is already in "ip" (q_pkt) and has produced no frame yet,
+	 * only the ARP question that went out in its place - and that question
+	 * is AX.25, so it is in "ax25" and in "tot".  Both halves are right
+	 * and the sum is off by one per open datagram, and it closes by itself
+	 * as soon as the address arrives.
+	 */
+	if(is_ax25(ifp))
+		printf("           sent: ip %lu ax25 %lu tot %lu idle %s qlen %u",
+		 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->ax25sndcnt,
+		 (unsigned long)ifp->rawsndcnt,
+		 ifp->lastsent ? tformat(secclock() - ifp->lastsent) : "never",
+			len_q(ifp->outq));
+	else
+		printf("           sent: ip %lu tot %lu idle %s qlen %u",
+		 (unsigned long)ifp->ipsndcnt,(unsigned long)ifp->rawsndcnt,
+		 ifp->lastsent ? tformat(secclock() - ifp->lastsent) : "never",
+			len_q(ifp->outq));
 	if(ifp->outlim != 0)
 		printf("/%u",ifp->outlim);
 	if(ifp->txbusy)
 		printf(" BUSY");
 	printf("\n");
-	printf("           recv: ip %lu tot %lu idle %s\n",
-	 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
-	 ifp->lastrecv ? tformat(secclock() - ifp->lastrecv) : "never");
+	if(is_ax25(ifp))
+		printf("           recv: ip %lu ax25 %lu tot %lu idle %s\n",
+		 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->ax25recvcnt,
+		 (unsigned long)ifp->rawrecvcnt,
+		 ifp->lastrecv ? tformat(secclock() - ifp->lastrecv) : "never");
+	else
+		printf("           recv: ip %lu tot %lu idle %s\n",
+		 (unsigned long)ifp->iprecvcnt,(unsigned long)ifp->rawrecvcnt,
+		 ifp->lastrecv ? tformat(secclock() - ifp->lastrecv) : "never");
 	if(!verbose)
 		return;
 
@@ -1459,10 +1632,10 @@ showiface(struct iface *ifp, int verbose)
 	 */
 	switch (ifp->crccontrol){
 	default:            printf("           link: crc off");           break;
-	case CRC_TEST_16:   printf("           link: crc-16 test");       break;
-	case CRC_TEST_RMNC: printf("           link: crc-rmnc test");     break;
-	case CRC_16:        printf("           link: crc-16 enabled");    break;
-	case CRC_RMNC:      printf("           link: crc-rmnc enabled");  break;
+	case CRC_TEST_16:   printf("           link: crc-smack test");     break;
+	case CRC_TEST_RMNC: printf("           link: crc-flexnet test");   break;
+	case CRC_16:        printf("           link: crc-smack enabled");  break;
+	case CRC_RMNC:      printf("           link: crc-flexnet enabled");break;
 	case CRC_CCITT:     printf("           link: crc-ccitt enabled"); break;
 	}
 	printf(", crc errors %lu, bad ax25 headers %lu\n",

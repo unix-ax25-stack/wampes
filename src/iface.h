@@ -56,7 +56,7 @@ extern struct iftype Iftypes[];
 struct iface {
 	struct iface *next;     /* Linked list pointer */
 	char *name;             /* Ascii string with interface name */
-
+	
 	int32 addr;             /* IP address */
 	int32 broadcast;        /* Broadcast address */
 	int32 netmask;          /* Network mask */
@@ -117,8 +117,53 @@ struct iface {
 
 	/* Counters */
 	int32 ipsndcnt;         /* IP datagrams sent */
+	/* THE AX.25 HALF OF "tot", and one field per direction because the
+	 * other three counters have two each - one number for "sent" and one
+	 * for "recv", and a shared field would print the same figure twice
+	 * and be the sum of both besides, which is no figure at all.
+	 *
+	 * On an AX.25 port every frame either carries an IP datagram or is a
+	 * plain AX.25 frame - a SABM, a UA, an ARP, a UI with a keepalive, a
+	 * digipeated frame - and so
+	 *
+	 *	rawsndcnt == ipsndcnt + ax25sndcnt
+	 *	rawrecvcnt == iprecvcnt + ax25recvcnt
+	 *
+	 * holds on every AX.25 port, and THAT is the point of the third
+	 * number: three counters that must agree.  When they do not, one of
+	 * them is wrong, and the disagreement says which pair to look at -
+	 * something a single "tot" cannot do.
+	 *
+	 * It is a counter and not "tot - ip" because a number the reader has
+	 * to compute is not an answer.  Counted in the AX.25 layer, where the
+	 * frame's nature is known: ax_recv() and axsend() for the frames that
+	 * go over a port, sendframe() for the link control ones, plus the
+	 * digipeater's forward, "ax25 sendraw" and the segmenter.
+	 *
+	 * ZERO ON EVERY OTHER KIND OF PORT, and not shown there either: a zero
+	 * that is always there is not information.
+	 *
+	 * THE ONE WAY THE SUM CAN BE OFF, and it is in the sending direction
+	 * and it is exactly the number of datagrams waiting for address
+	 * resolution - so it goes back to zero by itself:
+	 *
+	 * An ARP request carries no IP datagram, and it counts as AX.25.  But
+	 * the datagram it goes out for has been counted in ipsndcnt already
+	 * (iproute.c, q_pkt) and is still sitting in the arp module: no frame
+	 * for it yet, only the question.  So ipsndcnt + ax25sndcnt runs
+	 * "number of datagrams still unresolved" ahead of rawsndcnt.
+	 *
+	 * The alternative - counting our own ARP request as IP - was
+	 * measured and is worse: it makes the sum exact only while the sum
+	 * is broken.  Once the address is resolved the UI frame with the
+	 * datagram goes out and moves rawsndcnt again, and then the
+	 * datagram would be counted twice and nothing once.  Steady state is
+	 * the state that is worth being right in.
+	 */
+	int32 ax25sndcnt;
 	int32 rawsndcnt;        /* Raw packets sent */
 	int32 iprecvcnt;        /* IP datagrams received */
+	int32 ax25recvcnt;
 	int32 rawrecvcnt;       /* Raw packets received */
 	int32 lastsent;         /* Clock time of last send */
 	int32 lastrecv;         /* Clock time of last receive */
@@ -144,6 +189,11 @@ struct iface {
 	 */
 	int noarp_auto;
 
+	/* AXIP/AXUDP.  See axip.h for the meanings. */
+	int axip_learn;
+	int axip_dns_interval;
+	int axip_dns_silence;
+
 	int crccontrol;         /* CRC send control */
 	int crcfixed;           /* Set by "ifconfig <if> crc": stop autodetecting */
 #define CRC_OFF         0       /* Don't send CRC packets */
@@ -152,6 +202,14 @@ struct iface {
 #define CRC_16          3       /* Send CRC_16 packets */
 #define CRC_RMNC        4       /* Send CRC_RMNC packets */
 #define CRC_CCITT       5       /* Send CRC_CCITT packets */
+
+	/* THE KEEPALIVE OF A TCP PORT, in seconds; 0 says nothing is sent.  See
+	 * tcpsock.h for what the packet is and why it is needed.  It lives on
+	 * the interface and not on the session because there is one listening port
+	 * per interface, and a client port has exactly one partner - a session
+	 * cannot outlive a change of it (Thomas).
+	 */
+	int keepalive;
 	/* DAMA, see dama.c.  The role is what the sysop asked for; whether it
 	 * is in force depends on a master actually being heard, which is what
 	 * dama_heard records.
@@ -199,7 +257,7 @@ struct iface {
 	 * deshalb entscheidet der Sysop und nicht der Porttyp.
 	 */
 	int user_to_user;
-	int user_to_user_ok;    /* 1: axip/axudp — user-to-user makes sense here */
+	int user_to_user_ok;    /* 1: axip/axudp - user-to-user makes sense here */
 	int dama_policy;        /* als Master: DAMA_LAZY/PERMISSIVE/ENFORCE */
 	int dama_mark_own;      /* als Slave: eigene Rahmen markieren.  Vorgabe
 				 * AUS - das Bit ist das des Masters. */

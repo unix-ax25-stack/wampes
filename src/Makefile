@@ -90,6 +90,9 @@ OBJS          = adjtime.o \
 		axheard.o \
 		axhc.o \
 		axip.o \
+		axtcp.o \
+		kisstcp.o \
+		tcpsock.o \
 		axserver.o \
 		cmdparse.o \
 		config.o \
@@ -210,6 +213,9 @@ SRCS          = adjtime.c \
 		axheard.c \
 		axhc.c \
 		axip.c \
+		axtcp.c \
+		kisstcp.c \
+		tcpsock.c \
 		axserver.c \
 		cmdparse.c \
 		config.c \
@@ -644,16 +650,85 @@ axip.o:\
 	cmdparse.h\
 	crc.h\
 	global.h\
-	hpux.h\
 	iface.h\
 	internet.h\
+	ip.h\
 	mbuf.h\
 	netuser.h\
 	proc.h\
 	socket.h\
+	tcp.h\
 	timer.h\
-	trace.h\
+	udp.h\
 	uhnp.h
+
+axtcp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ax25.h\
+	axtcp.c\
+	tcpsock.h\
+	cmdparse.h\
+	crc.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	timer.h\
+	udp.h\
+	uhnp.h
+
+kisstcp.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ax25.h\
+	kiss.h\
+	kisstcp.c\
+	tcpsock.h\
+	cmdparse.h\
+	crc.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	timer.h\
+	udp.h\
+	uhnp.h
+
+tcpsock.o:\
+	../lib/configure.h\
+	../lib/strdup.h\
+	../lib/strerror.h\
+	ax25.h\
+	tcpsock.c\
+	tcpsock.h\
+	cmdparse.h\
+	crc.h\
+	global.h\
+	iface.h\
+	internet.h\
+	ip.h\
+	mbuf.h\
+	netuser.h\
+	proc.h\
+	socket.h\
+	tcp.h\
+	timer.h\
+	udp.h\
+	uhnp.h
+
 axserver.o:\
 	../lib/configure.h\
 	../lib/strdup.h\

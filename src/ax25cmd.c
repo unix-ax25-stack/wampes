@@ -272,7 +272,15 @@ struct iface *ifp)
 	struct lq *lp,*lp1;
 	struct ld *ld,*ld1;
 
+	/* The SEND counters, all three, and not only "tot" as it was before
+	 * ax25sndcnt existed.  Zeroing the total on its own left the sum
+	 * rawsndcnt == ipsndcnt + ax25sndcnt false from the next packet on,
+	 * which is exactly the one moment a reader checks it - right after
+	 * he cleared it and wants to see it grow again.
+	 */
 	ifp->rawsndcnt = 0;
+	ifp->ipsndcnt = 0;
+	ifp->ax25sndcnt = 0;
 	for(lp = Lq;lp != NULL;lp = lp1){
 		lp1 = lp->next;
 		free(lp);

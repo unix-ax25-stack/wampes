@@ -278,6 +278,12 @@ int ax_answers_to(struct iface *iface, const uint8 *addr);
 int ax_send_ui(struct iface *iface, struct ax25 *hdr, int pid,
 	struct mbuf **bpp);
 void axroute(struct ax25 *hdr, struct iface **ifpp, int keep_path);
+/* Does this protocol id carry an IP datagram?  Not "is it PID_IP" - see
+ * ax25_pid_is_ip() in ax25.c, which is where the reasons are.  Used to
+ * decide which of iface->ipsndcnt and iface->ax25cnt a frame belongs in,
+ * so that rawsndcnt == ipsndcnt + ax25cnt stays true on an AX.25 port.
+ */
+int ax25_pid_is_ip(int pid);
 
 #ifdef	AX25_VJCOMP
 /* MW: prototypes for VJ receiver hooks (in ax25.c) */
