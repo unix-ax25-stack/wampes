@@ -10321,3 +10321,120 @@ ifconfig: was "tot" zaehlt, und der AX.25-Zaehler, der fehlt
     334858" laesst die Maschinen unangetastet und den Menschen trotzdem
     raten, welche Zahl die AX.25 ist.  Ein Testlauf ueber die vorhandenen
     Fahrzeuge entscheidet das mit, nicht der Geschmack.
+
+
+----------------------------------------------------------------------
+AXUDP-KEEPALIVE GEGEN NAT (gebaut, 2026-10-07)
+----------------------------------------------------------------------
+Zweck: auf einem axudp-Port die NAT-Abbildung warm halten, damit der
+Partner uns unter demselben Quellport erreicht (siehe oben, "axudp UND
+DAS NAT-ZEITFENSTER").  TCP-Ports hatten das schon:
+tcpsock_keepalive_send(), tcpsock.c:403.
+
+Verhalten, alles gemessen:
+  - Befehl: "ifconfig <iface> keepalive <sekunden>" (iface.c:1341).
+    Erlaubt auf axtcp/kisstcp (tcpsock) und axudp; andere Ports lehnt
+    er ab: "Interface %s is not a TCP or axudp port; keepalive means
+    nothing there."
+  - Ohne Ziel wird der Wert trotzdem angenommen, mit der Warnung
+    "%s: keepalive set, but this port has no destination to keep alive
+    yet" - Routen koennen spaeter kommen.  "keepalive 0" stoppt den
+    Takt.
+  - Rahmen: leere UI, 16 Byte, dest == src == eigener Ruf, ctl 03,
+    pid f0; dest-E clear, src-E gesetzt (Bytes 6/13).  Er adressiert
+    niemanden und darf darum KEINE Antwort sein (siehe unten,
+    Shared-Key-Auth).
+  - Zielauswahl: nur Routen MIT rdev == diesem Port ("axip route add
+    <call>:<iface> ..."); ohne Suffix bleibt rdev == 0 und der Keepalive
+    sendet nichts.  Zwei Routen auf EINEN Ort zaehlen einmal
+    (axip_route_preceded_by_same_target()).
+  - Benannte Routen (FQDN) fragt der Takt VOR dem Senden nach,
+    axip_lookup_one() (axip.c:440) auf dem axip-dns-Intervall: einem
+    Dyndns-Partner folgt der Keepalive.
+  - Takt: AXIP_KEEPALIVE_TICK 10000L (axip.h:61), selbststoppend
+    (axip_keepalive_tick(), axip.c:1114), je Port mit Ziel gestartet
+    durch axip_keepalive_start() (axip.c:1154).  Kein Reiter auf
+    axip_timer(); der hat keinen ersten Start (naechster Block).
+  - lastsent setzt der Takt selbst; sendto() ist synchron (axip.c:1032).
+  - OFFEN: rp->stime setzt der Keepalive bewusst NICHT.  Bekommt
+    axip_timer() je einen Start, sperrt die Stille-Frist eine Route,
+    deren einziger Verkehr der Keepalive ist - dann zu entscheiden.
+
+----------------------------------------------------------------------
+AXIP: DER NAME EINER FQDN-ROUTE (BEFUND, behoben 2026-10-07)
+----------------------------------------------------------------------
+Gemessen: "axip route add dl9xs:ga db0fhn.hamnet.network 9393" wurde
+angenommen und aufgeloest (192.68.17.66) - aber der NAME fehlte im
+Listing.  Ursache: axip_is_literal() (axip.c:382) pruefte die FORM der
+AUFGELOESTEN Zeichenkette ("192.68.17.66" ist lauter Ziffern und
+Punkte) und stufte so einen Namen, der auf eine saubere IPv4-Adresse
+(oder IPv6) aufloest, als Literale ein.  Der Name wurde verworfen und
+die FQDN-Wiederaufloesung konnte nie laufen.  Der Kommentar davor
+(axip.c:421) schreibt die richtige Regel bereits vor: aufgeloeste
+Zeichenkette mit der EINGEGEBENEN vergleichen, nicht die Form
+ansehen.  Korrigiert, axip.c:426:
+
+    return strcmp(abuf, host) == 0;
+
+"localhost" ist damit wieder ein Name; "[2001:db8::1]" weiterhin eine
+Adresse (der Doppelpunktweg bleibt, axip.c:417).
+
+Verhalten jetzt (gemessen, 15/15): der Parser nimmt den FQDN an, das
+Listing zeigt Adresse, port, via und den Namen; "axip stats" zaehlt
+die Nachfragen ("lookups %ld (%ld failed)", axip.c:2548); nach dem
+ersten Keepalive-Tick steht "asked ... ago" auf der Zeile.  Ein Name,
+der sich nicht aufloesen laesst, wird beim Anlegen abgewiesen:
+"Unknown host <name>" (Badhost, main.c:50).
+
+----------------------------------------------------------------------
+AXIP/AXUDP UND AXTCP/KISSTCP: WAS DIE KONSOLE NICHT SAGT
+----------------------------------------------------------------------
+  1. axip_timer() (axip.c:534) hat keinen ersten Start - der
+     DNS-Nachfrage-Takt existiert im Code, aber kein Aufruf stoesst
+     ihn an.  Die Namensfrage laeuft darum auf dem Sendeweg
+     (axip_raw) und seit 2026-10-07 auf dem Keepalive-Tick.  Das
+     axip-dns-interval ist damit eine FRIST je Route (rtime), kein
+     Hintergrund-Takt.  "asked ... ago" im Listing ist die Wahrheit
+     des letzten VERSUCHS, nicht eines weckenden Timers.
+  2. Der axudp-Keepalive umgeht axip_raw(); sendto() direkt
+     (axip.c:1032ff).  Gemessen: auf "ifconfig ga" bleibt
+     "sent: ip 0 ax25 0 tot 0" stehen, waehrend "idle" weiterlaeuft
+     (lastsent setzt der Takt).  Die Konsole zeigt also Aktivitaet
+     (idle) ohne jeden Rahmenzaehler - absichtlich, der Rahmen
+     adressiert niemanden.
+  3. Damit haelt der Keepalive die Invariante "tot == ip + ax25"
+     (Block oben zum ax25-Zaehler) ein: er zaehlt in KEINEM der drei
+     Felder.  Wer "tot" als Verkehrszaehler liest, unterschlaegt ihn
+     - gut so.
+
+----------------------------------------------------------------------
+AXIP/AXUDP: IPv6-LITERALE UND NAMEN IN KLAMMERN
+----------------------------------------------------------------------
+Wo IPv6-Adressen und -Namen im Parser auseinandergehen:
+  - bind= und Host-Wort: eine IPv6-LITERALE steht in eckigen Klammern,
+    sonst abgewiesen ("\"%s\": an IPv6 literal is written in brackets",
+    sockaddr_util.c:198).  Der Zoneindex steht IN der Klammer mit
+    "%" dahinter ("[fe80::1%2]") und wird ueber if_nametoindex()
+    aufgeloest (sockaddr_util.c:205ff); genau EINE Zone, und nur auf
+    IPv6.
+  - "axip route add": "[2001:db8::1]" ist eine Adresse, "[name]" ein
+    Name zum Nachfragen (axip.c:392-416).  Eine NACKTE IPv6-Literal
+    ist mehrdeutig und wird fuer diese Frage wie eine Adresse behandelt
+    (der Doppelpunkt steht ohnehin fuer IPv6, axip.c:407-417).
+  - "Adresse oder Name" entscheidet der Vergleich der aufgeloesten
+    Zeichenkette mit der EINGABE (siehe Block oben, axip.c:426),
+    nicht die Form der Antwort.
+
+----------------------------------------------------------------------
+SHARED-KEY-AUTH: NICHT GEBAUT, BEIDE HAELFTEN
+----------------------------------------------------------------------
+Nur festgehalten, kein Zug, keine Anfrage.  Die NOT-BUILT-Kommentare
+sind die Standortbestimmung fuer einen spaeteren Bau:
+  - EINGEHEND: Schluesselwort am Port, Pruefung des ERSTEN Pakets mit
+    addreq()-Logik (keine eigene Maske bauen), axip.c:819.
+  - AUSGEHEND: genau EIN leerer UI-Rahmen je Sitzung an die
+    konfigurierte Ziel-IP; der Rahmen gilt fuer die zwei Ports auf
+    dieser Schicht (axtcp/kisstcp) und fuer axip/axudp, tcpsock.c:1034.
+  - Der Keepalive (Block oben) adressiert niemanden und muss von dem
+    Antwortrahmen unterscheidbar bleiben: dest == src und E-Clear ist
+    sein Abdruck (axip.c:856-859).  Er darf nie als Antwort zaehlen.

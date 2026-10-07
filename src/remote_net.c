@@ -103,23 +103,28 @@ static struct listener Listeners[] = {
 /* The loopback listeners are not among them: they stay closed unless net.rc
  * says so, because a TCP port carries no rights of its own.  Switching it on
  * is the statement that every local account may use the transmitter.
+ *
+ * THE NAME: "tcp-listen" is the sysop's word for the remote-control gateway,
+ * and every identifier below - TCP_AX25_GW_* - says the same.  "axtcp" is
+ * taken: that is the carrier that encapsulates AX.25 frames over TCP, a
+ * different thing on a different layer (axtcp.c).
  */
-#define AXTCP_PORT_DEFAULT 8213
+#define TCP_AX25_GW_PORT_DEFAULT 8213
 
-static struct listener Axtcp[] = {
+static struct listener Tcpax25gw[] = {
   { 0, 1, -1 },                         /* 127.0.0.1 */
   { 0, 1, -1 },                         /* ::1       */
   { 0, 0, -1 }
 };
 
-static char Axtcp_addr[2][32];
-static int Axtcp_port;                  /* 0 while nothing is listening */
+static char Tcpax25gw_addr[2][32];
+static int Tcpax25gw_port;              /* 0 while nothing is listening */
 
 /*---------------------------------------------------------------------------*/
 
 static void command_receive(void *arg);
-static int axtcp_on(int port);
-static void axtcp_off(void);
+static int tcpax25gw_on(int port);
+static void tcpax25gw_off(void);
 static void complain(const char *fmt, ...);
 
 static char *getarg(char *line, int all)
@@ -1262,10 +1267,11 @@ int doaxsock(int argc, char *argv[], void *p)
     printf("%s  mode 0%03o  uid %lu  gid %lu\n", Axsock_path,
            (unsigned) (st.st_mode & 07777),
            (unsigned long) st.st_uid, (unsigned long) st.st_gid);
-    if (Axtcp_port)
-      printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Axtcp_port);
+    if (Tcpax25gw_port)
+      printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Tcpax25gw_port);
     else
-      printf("tcp-listen off\n");
+      printf("tcp-listen off (default port %d)\n",
+	     TCP_AX25_GW_PORT_DEFAULT);
     return 0;
   }
 
@@ -1304,25 +1310,26 @@ int doaxsock(int argc, char *argv[], void *p)
 
   /* The Unix sockets are always there - they come up with the node and go
    * down with it.  Only the TCP door is a decision, so it is a setting on
-   * axsock and not a "start axtcp": nothing gets started here, a listener
-   * that is already running just gains a second way in.
+   * axsock and not a start of the axtcp carrier: nothing gets started here,
+   * a listener that is already running just gains a second way in.
    */
   if (!strcmp(argv[1], "tcp-listen")) {
     int port;
 
     if (argc < 3) {
-      if (Axtcp_port)
-	printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Axtcp_port);
+      if (Tcpax25gw_port)
+	printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Tcpax25gw_port);
       else
-	printf("tcp-listen off\n");
+	printf("tcp-listen off (default port %d)\n",
+	       TCP_AX25_GW_PORT_DEFAULT);
       return 0;
     }
     if (!strcmp(argv[2], "off")) {
-      axtcp_off();
+      tcpax25gw_off();
       return 0;
     }
     if (!strcmp(argv[2], "on"))
-      port = AXTCP_PORT_DEFAULT;
+      port = TCP_AX25_GW_PORT_DEFAULT;
     else {
       /* "port 8011" and a bare "8011" both, so that the word from the
        * listing reads back as a command.
@@ -1331,16 +1338,18 @@ int doaxsock(int argc, char *argv[], void *p)
 
       port = (int) strtol(arg, &end, 10);
       if (!*arg || *end || port <= 0 || port > 65535) {
-	printf("axsock tcp-listen <on|off|port <n>>\n");
+	printf("axsock tcp-listen <on|off|port <n>>  (default %d)\n",
+	       TCP_AX25_GW_PORT_DEFAULT);
 	return 1;
       }
     }
-    if (Axtcp_port == port) return 0;   /* already where it is wanted */
-    axtcp_off();                        /* a new port replaces the old one */
-    return axtcp_on(port);
+    if (Tcpax25gw_port == port) return 0;   /* already where it is wanted */
+    tcpax25gw_off();                        /* a new port replaces the old one */
+    return tcpax25gw_on(port);
   }
 
-  printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n");
+  printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n"
+	 "       (tcp-listen default port %d)\n", TCP_AX25_GW_PORT_DEFAULT);
   return 1;
 }
 
@@ -1433,39 +1442,39 @@ static void close_listener(struct listener *l)
  * local account may use the transmitter.
  */
 
-static int axtcp_on(int port)
+static int tcpax25gw_on(int port)
 {
 
   int i;
 
-  sprintf(Axtcp_addr[0], "127.0.0.1:%d", port);
-  sprintf(Axtcp_addr[1], "[::1]:%d", port);
+  sprintf(Tcpax25gw_addr[0], "127.0.0.1:%d", port);
+  sprintf(Tcpax25gw_addr[1], "[::1]:%d", port);
   for (i = 0; i < 2; i++) {
-    Axtcp[i].name = Axtcp_addr[i];
-    open_listener(&Axtcp[i], 0);
+    Tcpax25gw[i].name = Tcpax25gw_addr[i];
+    open_listener(&Tcpax25gw[i], 0);
   }
 
   /* One of the two is enough to be useful - a machine without IPv6 is not an
    * error here, and neither is one without IPv4.
    */
-  if (Axtcp[0].fd < 0 && Axtcp[1].fd < 0) {
+  if (Tcpax25gw[0].fd < 0 && Tcpax25gw[1].fd < 0) {
     complain("axsock tcp-listen: neither 127.0.0.1 nor ::1 could be opened "
 	     "on port %d", port);
     return 1;
   }
-  Axtcp_port = port;
+  Tcpax25gw_port = port;
   return 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void axtcp_off(void)
+static void tcpax25gw_off(void)
 {
   int i;
 
   for (i = 0; i < 2; i++)
-    close_listener(&Axtcp[i]);
-  Axtcp_port = 0;
+    close_listener(&Tcpax25gw[i]);
+  Tcpax25gw_port = 0;
 }
 
 /*---------------------------------------------------------------------------*/

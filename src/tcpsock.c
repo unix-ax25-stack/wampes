@@ -29,6 +29,8 @@
 #include "axip.h"
 #include "hpux.h"
 #include "tcpsock.h"
+#include "trace.h"
+#include "sockaddr_util.h"	/* tcpsock_show_verbose(): the bound address */
 
 /*---------------------------------------------------------------------------*/
 
@@ -71,6 +73,8 @@ int attempts)
 
 static void tcpsock_flush(struct tcpsock *tp);
 static void tcpsock_on_write(void *p);
+static void tcpsock_on_accept(void *p);
+static void tcpsock_close_listens(struct tcpsock *tp);
 static void tcpsock_on_accept(void *p);
 static void tcpsock_reconnect(struct tcpsock *tp);
 
@@ -319,6 +323,27 @@ struct mbuf *bp)
     return 0;
   }
 
+  /* THE SEND SIDE, which was missing here while axip has traced its own since
+   * the beginning (axip.c:729).  Every port traced what came IN through the
+   * kernel input path (iface.c:397) and nothing said what went OUT on the two
+   * TCP carriers, so a link that is not the one the sysop believes it is looks
+   * exactly like a link nobody speaks on - and we are then debugging the wrong
+   * end of a cable.
+   *
+   * HERE and not in axtcp_tx()/kisstcp_tx(), because this is the one place
+   * both carriers pass through, and what arrives here is the bare AX.25 frame:
+   * the two-byte length prefix and the FEND framing are not what the sysop
+   * wants to read, and the CRC is still on the frame as ax25 handed it over.
+   *
+   * dump() works on its own copy and leaves the frame alone - axip has always
+   * done it this way and the frame has to go out afterwards.
+   */
+  if (tp->ifp != NULL) {
+    dump(tp->ifp, IF_TRACE_OUT, bp);
+    if (tp->ifp->trace & IF_TRACE_RAW)
+      raw_dump(tp->ifp, -1, bp);
+  }
+
   /* THE LOOP PROTECTION BEFORE THE SEND.  This is the other half of
    * ax_dup_recent(): what one sends oneself goes into the receiver's memory,
    * and that has to happen here - otherwise only the far side remembers and
@@ -450,6 +475,17 @@ void *p)
     tp->flags |= TCF_CONNECTED;
     tp->attempts = 0;
     tp->nextrecon = 0;
+    /* THE LOCAL ADDRESS OF THE SESSION, once the build has stood: on the way
+     * into a connection getsockname() on a connecting socket is not the answer,
+     * and a "bound" line that names an address the session does not use is
+     * worse than none (Thomas).
+     */
+    {
+      socklen_t sl = sizeof(tp->laddr);
+
+      if (getsockname(tp->fd, (struct sockaddr *) &tp->laddr, &sl) < 0)
+	memset(&tp->laddr, 0, sizeof(tp->laddr));
+    }
     /* THE KEEPALIVE GOES OUT AT ONCE, and that is the whole reason it is on by
      * default.  A partner that has just answered our SYN has told us nothing
      * about itself, so it cannot know whether we speak AXTCP or KISS - and the
@@ -558,10 +594,8 @@ struct tcpsock *tp)
   if (tp == NULL)
     return;
   tcpsock_gone(tp);
-  if (tp->listenfd >= 0) {
-    close(tp->listenfd);
-    tp->listenfd = -1;
-  }
+  tcpsock_close_listens(tp);
+  tcpsock_bind_free(tp->binds);
   /* THE ROUTE FIRST, and that is the reason for this call here and not one in
    * axip: the axip table does not know which of its rows hang on a TCP session,
    * and cannot know it - it knows channels, not sockets.
@@ -613,7 +647,8 @@ int portproto)
   if ((tp = (struct tcpsock *) calloc(1, sizeof(struct tcpsock))) == NULL)
     return NULL;
   tp->ifp = ifp;
-  tp->listenfd = -1;
+  tp->listens = NULL;
+  tp->nlistens = 0;
   tp->fd = -1;
   /* A NEW NEIGHBOUR DOES NOT YET KNOW WHICH PROTOCOL IT SPEAKS.
    * TCPAD_DETECT is not the exception here but the normal case, and it is the
@@ -659,94 +694,332 @@ struct iface *ifp)
   return tcpsock_first(ifp) != NULL;
 }
 
-/*---------------------------------------------------------------------------*/
-
-/* A LISTENER.  The address is NULL for "all", and that is a real 0.0.0.0 and not
- * a placeholder for "no address": 0.0.0.0 is the way in which one accepts
- * something without knowing it, and :: is the same way for IPv6 (Thomas).
+/* WHETHER THIS PORT IS ONE OF THE TWO TCP CARRIERS AT ALL.  For ifconfig
+ * verbose, which walks every port in the node: a serial port, a loopback and a
+ * tun must not be asked about sockets and listening ports they do not have.
  */
 int
-tcpsock_listen(
+tcpsock_isport(
+struct iface *ifp)
+{
+  return tcpsock_first(ifp) != NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* THE "bind=" LIST, split on the commas and looked up once.
+ *
+ * Written in the order it stands in the configuration and kept in that order,
+ * because "ifconfig verbose" prints the sockets that way and a sysop comparing
+ * two lines has to be comparing them in the order he wrote them.
+ *
+ * ONE ADDRESS PER SOCKET, because one socket cannot answer on 0.0.0.0 and on
+ * ::1 at the same time, and "bind=0.0.0.0,[::]" is two addresses somebody wrote
+ * on purpose.  AT MOST ONE PER FAMILY, and the second one is refused rather than
+ * bound: which of two IPv4 sockets a session would leave by is a question with
+ * no answer in the configuration, and an answer the code makes up is one the
+ * sysop did not write.
+ *
+ * Returns NULL for no list, and NULL with a message for a list that cannot be
+ * taken.  The word is quoted in every message - "cannot bind 127.0.0.2" is
+ * something to act on, "cannot bind" is not.
+ */
+struct tcpsock_bindlist *
+tcpsock_bind_list(
+const char *list)
+{
+  struct tcpsock_bindlist *bl;
+  char *copy;
+  char *entry;
+  char *comma;
+  struct tcpsock_bind *b;
+  struct tcpsock_bind *tail;
+
+  if (list == NULL || *list == '\0')
+    return NULL;
+  if (!(bl = (struct tcpsock_bindlist *) malloc(sizeof(struct tcpsock_bindlist)))) {
+    printf("out of memory\n");
+    return NULL;
+  }
+  memset(bl, 0, sizeof(*bl));
+  if (!(copy = strdup(list))) {
+    printf("out of memory\n");
+    free(bl);
+    return NULL;
+  }
+
+  for (entry = copy; entry; entry = comma) {
+    struct sockaddr_storage sa;
+    socklen_t sl = 0;
+
+    if ((comma = strchr(entry, ',')) != NULL)
+      *comma++ = '\0';
+    if (!*entry) {
+      printf("\"bind=%s\" has an empty entry\n", list);
+      goto Fail;
+    }
+    if (sockaddr_from_bindword(entry, 0, &sa, &sl))
+      goto Fail;
+    for (b = bl->head; b; b = b->next)
+      if (b->family == (int) sa.ss_family) {
+	printf("\"%s\": this port already has an address of this family "
+	       "(%s).  One\nsocket per family - \"bind=%s\" is what names the "
+	       "other one.\n", entry,
+	       sa.ss_family == AF_INET6 ? "IPv6" : "IPv4",
+	       sa.ss_family == AF_INET6 ? "[::]" : "0.0.0.0");
+	goto Fail;
+      }
+    if (!(b = (struct tcpsock_bind *) malloc(sizeof(struct tcpsock_bind)))) {
+      printf("out of memory\n");
+      goto Fail;
+    }
+    memset(b, 0, sizeof(*b));
+    b->family = (int) sa.ss_family;
+    b->addr = sa;
+    snprintf(b->word, sizeof(b->word), "%s", entry);
+    /* AT THE END, so the list reads the way it was written.  A single-linked
+     * list that everybody prepends to comes out backwards, and "bind=0.0.0.0,
+     * [::]" would be displayed as [::] and then 0.0.0.0 - the reverse of the
+     * configuration, on every screen, for ever.
+     */
+    if (bl->head == NULL)
+      bl->head = b;
+    else {
+      for (tail = bl->head; tail->next; tail = tail->next)
+	;
+      tail->next = b;
+    }
+    bl->n++;
+  }
+  free(copy);
+  return bl;
+
+Fail:
+  free(copy);
+  tcpsock_bind_free(bl);
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+void
+tcpsock_bind_free(
+struct tcpsock_bindlist *bl)
+{
+  struct tcpsock_bind *b;
+  struct tcpsock_bind *bn;
+
+  if (bl == NULL)
+    return;
+  for (b = bl->head; b; b = bn) {
+    bn = b->next;
+    free(b);
+  }
+  free(bl);
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct tcpsock_bind *
+tcpsock_bind_nth(
+struct tcpsock_bindlist *bl,
+int n)
+{
+  struct tcpsock_bind *b;
+
+  if (bl == NULL || n < 0)
+    return NULL;
+  for (b = bl->head; b; b = b->next, n--)
+    if (n == 0)
+      return b;
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+struct tcpsock_bind *
+tcpsock_bind_family(
+struct tcpsock_bindlist *bl,
+int family)
+{
+  struct tcpsock_bind *b;
+
+  if (bl == NULL)
+    return NULL;
+  for (b = bl->head; b; b = b->next)
+    if (b->family == family)
+      return b;
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* ONE LISTENING SOCKET, on one address.
+ *
+ * b says which address; NULL means the default of this family, and the family
+ * is a parameter because without a "bind=" there are two defaults and not one.
+ *
+ * THE PORT GOES INTO THE ADDRESS HERE, and not at the bind() call, because the
+ * address is what "ifconfig verbose" prints - and it should print what the
+ * socket really got rather than what the parse tree believed.
+ */
+static int
+tcpsock_listen_one(
 struct tcpsock *tp,
-const char *addr,
+struct tcpsock_bind *b,
+int family,
 int port)
 {
+  struct tcpsock_listen *ln;
   struct sockaddr_storage ss;
   socklen_t sl;
-  int fd;
   int on = 1;
 
-  if (tp == NULL)
-    return -1;
-  if (tp->family == 0)
-    tp->family = AF_INET;
   memset(&ss, 0, sizeof(ss));
-  if (addr != NULL && *addr) {
-    struct addrinfo hints, *res = NULL;
-    char portbuf[16];
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = tp->family;
-    hints.ai_socktype = SOCK_STREAM;
-    snprintf(portbuf, sizeof(portbuf), "%d", port);
-    if (getaddrinfo(addr, portbuf, &hints, &res) != 0 || res == NULL) {
-      printf("Cannot resolve \"%s\"\n", addr);
-      return -1;
-    }
-    memcpy(&ss, res->ai_addr, res->ai_addrlen);
-    sl = res->ai_addrlen;
-    freeaddrinfo(res);
+  if (b != NULL) {
+    ss = b->addr;
+    family = b->family;
+    sl = sockaddr_len((struct sockaddr *) &ss);
   } else {
-    if (tp->family == AF_INET6) {
+    /* THE DEFAULT OF A FAMILY: every address of it, which is the way in which
+     * one accepts something without knowing it.  It is a real 0.0.0.0 and not a
+     * placeholder for "no address" (Thomas).
+     */
+    if (family == AF_INET6) {
       struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) &ss;
       sin6->sin6_family = AF_INET6;
       sin6->sin6_addr = in6addr_any;
-      sin6->sin6_port = htons((unsigned short) port);
       sl = sizeof(*sin6);
     } else {
       struct sockaddr_in *sin = (struct sockaddr_in *) &ss;
       sin->sin_family = AF_INET;
       sin->sin_addr.s_addr = INADDR_ANY;
-      sin->sin_port = htons((unsigned short) port);
       sl = sizeof(*sin);
     }
   }
-  /* REMEMBER THE ADDRESS THAT WAS BOUND.  Without it one cannot say after an
-   * accept() which of several ports was meant, once several of them hang on one
-   * interface.
-   */
-  tp->laddr = ss;
-
-  if ((fd = socket(tp->family, SOCK_STREAM, 0)) < 0)
+  if (sl == 0 || !sockaddr_set_port((struct sockaddr *) &ss, port)) {
+    printf("\"bind=%s\" has no port for the number %d\n",
+	   b ? b->word : "0.0.0.0", port);
     return -1;
-  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-  if (tp->family == AF_INET6) {
+  }
+
+  if (!(ln = (struct tcpsock_listen *) malloc(sizeof(struct tcpsock_listen)))) {
+    printf("out of memory\n");
+    return -1;
+  }
+  memset(ln, 0, sizeof(*ln));
+  ln->family = family;
+  ln->addr = ss;
+
+  if ((ln->fd = socket(family, SOCK_STREAM, 0)) < 0) {
+    printf("cannot create socket: %s\n", strerror(errno));
+    free(ln);
+    return -1;
+  }
+  setsockopt(ln->fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+  if (family == AF_INET6) {
     /* ONLY THIS INTERFACE, and therefore this flag: :: would otherwise also take
      * IPv4, and the second address is rejected with "address already in use"
-     * without anybody seeing the reason.
+     * without anybody seeing the reason.  It is also what lets an axudp port and
+     * an axtcp port sit side by side on one number.
      */
     int v6only = 1;
-    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
+    setsockopt(ln->fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only));
   }
-  if (bind(fd, (struct sockaddr *) &ss, sl) < 0) {
-    printf("Cannot bind port %d: %s\n", port, strerror(errno));
-    close(fd);
+  if (bind(ln->fd, (struct sockaddr *) &ss, sl) < 0) {
+    char abuf[SOCKADDR_STRLEN];
+
+    printf("cannot bind %s port %d: %s\n",
+	   sockaddr_to_string((struct sockaddr *) &ss, abuf, sizeof(abuf)),
+	   port, strerror(errno));
+    close(ln->fd);
+    free(ln);
     return -1;
   }
-  if (listen(fd, 5) < 0) {
-    close(fd);
+  if (listen(ln->fd, 5) < 0) {
+    printf("cannot listen on port %d: %s\n", port, strerror(errno));
+    close(ln->fd);
+    free(ln);
     return -1;
   }
-  tcpsock_set_nonblock(fd);
-  tp->listenfd = fd;
+  tcpsock_set_nonblock(ln->fd);
+  /* AT THE END, for the reason tcpsock_bind_list() keeps its order: the sockets
+   * are printed in the order the configuration lists them, and a list that
+   * everybody prepends to comes out backwards (Thomas).
+   */
+  {
+    struct tcpsock_listen *t;
+
+    if (tp->listens == NULL)
+      tp->listens = ln;
+    else {
+      for (t = tp->listens; t->next; t = t->next)
+	;
+      t->next = ln;
+    }
+  }
+  tp->nlistens++;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* A LISTENER: one socket per address of the "bind=" list, and the two defaults
+ * when there is no list at all.
+ *
+ * BOTH FAMILIES BY DEFAULT, and the IPv6 one second: 0.0.0.0 and [::] are the
+ * way in which one accepts something without knowing it, and a node on the air
+ * has partners of both kinds.  "bind=0.0.0.0" says IPv4 and nothing else, which
+ * is what a sysop writes when he means it.
+ */
+int
+tcpsock_listen(
+struct tcpsock *tp,
+struct tcpsock_bindlist *bl,
+int port)
+{
+  struct tcpsock_listen *ln;
+
+  if (tp == NULL)
+    return -1;
+  /* THE LISTENING PORT IS ITS OWN NUMBER.  A port that listens and dials has
+   * two of them, and the one the partner is called on says nothing about the one
+   * that is answered on (Thomas).
+   */
+  tp->lport = port;
+
+  if (bl == NULL) {
+    if (tcpsock_listen_one(tp, NULL, AF_INET, port))
+      return -1;
+#if HAS_AF_INET6
+    if (tcpsock_listen_one(tp, NULL, AF_INET6, port)) {
+      tcpsock_close_listens(tp);
+      return -1;
+    }
+#endif
+  } else {
+    int i;
+
+    for (i = 0; i < bl->n; i++) {
+      if (tcpsock_listen_one(tp, tcpsock_bind_nth(bl, i),
+			     tcpsock_bind_nth(bl, i)->family, port)) {
+	tcpsock_close_listens(tp);
+	return -1;
+      }
+    }
+  }
   tp->flags |= TCF_LISTEN;
-  tp->port = port;
   /* THE ONLY WAY TO AN ACCEPTED SESSION.  Not in a ticker of its own: a ticker of
    * its own polls every port every few seconds, including the many on which
    * nothing comes, and on ten ports on a Raspberry Pi that is the difference
    * between a radio and a heater (Thomas).
+   *
+   * The argument is the LISTENING SOCKET and not the port: there is more than one
+   * of them, only the socket says which one is readable, and WHICH one it was
+   * says the family of everything that comes out of it.
    */
-  on_read(fd, tcpsock_on_accept, tp);
+  for (ln = tp->listens; ln; ln = ln->next)
+    on_read(ln->fd, tcpsock_on_accept, ln);
   return 0;
 }
 
@@ -792,6 +1065,7 @@ int port)
   char portbuf[16];
   int fd = -1;
   int rc = -1;
+  int said = 0;			/* has this attempt already said why? */
 
   if (tp == NULL || host == NULL)
     return -1;
@@ -815,7 +1089,7 @@ int port)
   hints.ai_socktype = SOCK_STREAM;
   snprintf(portbuf, sizeof(portbuf), "%d", port);
   if (getaddrinfo(host, portbuf, &hints, &res) != 0 || res == NULL) {
-    printf("Cannot resolve \"%s\"\n", host);
+    printf("Cannot resolve \"%s\" - will retry\n", host);
     return -1;
   }
   /* THE FIRST ONE THAT GOES - and not the first one that can be bound.  A
@@ -824,13 +1098,43 @@ int port)
    * answered at once (XRouter against BPQ).
    */
   for (ai = res; ai != NULL; ai = ai->ai_next) {
+    struct tcpsock_bind *b;
+
     if (tp->family && ai->ai_family != tp->family)
       continue;
     if ((fd = socket(ai->ai_family, SOCK_STREAM, 0)) < 0)
       continue;
-    tp->family = ai->ai_family;
-    tp->laddr = *(struct sockaddr_storage *) ai->ai_addr;
     tcpsock_set_nonblock(fd);
+    /* THE SOURCE ADDRESS THE SYSOP WROTE, and it is a bind() before the
+     * connect() - there is no other way to leave a machine by one of its own
+     * addresses.  WHICH entry applies depends on the peer: a client has one
+     * socket and therefore one source address, and the peer decides which
+     * family that is.  So a node with two addresses that calls a partner over
+     * IPv6 leaves by the IPv6 one named in "bind=", and a name that resolves
+     * to either family picks the matching entry - neither of which is
+     * possible if the address is decided once, before the name is looked up.
+     *
+     * NO ENTRY FOR THIS FAMILY IS NOT AN ERROR HERE, and that is worth a word:
+     * the peer may come back on the other family after the next outage, and a
+     * session that rings again must be able to.  An entry that cannot be bound
+     * at all IS said, here and now, and not by the caller: the caller only
+     * knows that the session did not come up, and "will retry" on its own
+     * would read as a peer that is not there yet (Thomas).
+     */
+    if ((b = tcpsock_bind_family(tp->binds, ai->ai_family)) != NULL) {
+      struct sockaddr_storage src = b->addr;
+      socklen_t sl = sockaddr_len((struct sockaddr *) &src);
+
+      if (sl == 0 || bind(fd, (struct sockaddr *) &src, sl) < 0) {
+	printf("Cannot leave by %s to reach %s: %s - will retry\n", b->word,
+	       host, strerror(errno));
+	said = 1;
+	close(fd);
+	fd = -1;
+	continue;
+      }
+    }
+    tp->family = ai->ai_family;
     if (connect(fd, ai->ai_addr, ai->ai_addrlen) == 0)
       break;			/* connected at once - the loopback case */
     if (errno == EINPROGRESS || errno == EALREADY || errno == EWOULDBLOCK) {
@@ -857,6 +1161,27 @@ int port)
     on_write(fd, tcpsock_on_write, tp);
     rc = 0;
   }
+  /* THE LOCAL ADDRESS OF THE SESSION, and only now is it known: getsockname()
+   * answers the address the kernel picked, which without a "bind=" is not the
+   * address the sysop would have named and with one is the address he did.  It
+   * is asked after the connect() and not before, because before the connect a
+   * socket that is not connected yet has the address it was bound to, which on
+   * a host with several addresses is 0.0.0.0 - a line that says "bound 0.0.0.0"
+   * on a working session is a line nobody can learn anything from.
+   */
+  if (fd >= 0 && tp->fd >= 0) {
+    socklen_t sl = sizeof(tp->laddr);
+
+    if (getsockname(tp->fd, (struct sockaddr *) &tp->laddr, &sl) < 0)
+      memset(&tp->laddr, 0, sizeof(tp->laddr));
+  }
+  /* ONE SENTENCE FOR THE ATTEMPT, from whoever knows most about it.  The
+   * caller adds nothing of its own: "Cannot connect" after a line that already
+   * said "Cannot leave by 127.0.0.2" is the same mistake twice, and the second
+   * one is the one that hides the first (Thomas).
+   */
+  if (rc && !said)
+    printf("Cannot connect to %s:%d - will retry\n", host, port);
   return rc;
 }
 
@@ -980,23 +1305,74 @@ void *p)
 
 /*---------------------------------------------------------------------------*/
 
+/* ALL THE LISTENING SOCKETS OF A PORT GONE, and their entries with them.
+ *
+ * A PARTIAL LIST IS NOT A LISTENER.  "bind=0.0.0.0,192.168.1.1" on a node that
+ * has no 192.168.1.1 would otherwise leave a port that listens on 0.0.0.0 and
+ * says nothing about the second address that failed - and a sysop who wrote two
+ * addresses is entitled to know that he got neither.
+ */
+static void
+tcpsock_close_listens(
+struct tcpsock *tp)
+{
+  struct tcpsock_listen *ln;
+  struct tcpsock_listen *lnn;
+
+  for (ln = tp->listens; ln; ln = lnn) {
+    lnn = ln->next;
+    close(ln->fd);
+    free(ln);
+  }
+  tp->listens = NULL;
+  tp->nlistens = 0;
+  tp->flags &= ~TCF_LISTEN;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* A NEW ACCEPTED ONE.  It inherits the hooks of the listener - not the
  * identity: the session is new, with its own buffer and its own counters, and
  * it has nothing to do with the listening socket except for the port number
  * (Thomas).
+ *
+ * IT ALSO INHERITS THE ADDRESS AND THE FAMILY OF THE ONE LISTENING SOCKET IT
+ * CAME IN ON, and that is not a detail: the port may listen on both families at
+ * once, and a session that said "IPv4" for a partner that arrived on ::1 is
+ * wrong in the one line "ifconfig verbose" has to get right (Thomas).
  */
 static void
 tcpsock_on_accept(
 void *p)
 {
-  struct tcpsock *lp = (struct tcpsock *) p;
+  struct tcpsock_listen *ln = (struct tcpsock_listen *) p;
+  struct tcpsock_listen *l;
+  struct tcpsock *lp;
   struct tcpsock *tp;
   struct sockaddr_storage ss;
   socklen_t sl;
   int fd;
 
+  /* Back to the port: the socket knows the address, the port knows the hooks.
+   *
+   * AND THE SOCKET IS LOOKED FOR ANYWHERE IN THE LIST, not only at its head:
+   * "bind=127.0.0.1,[::1]" is ONE port with TWO listening sockets, and an
+   * accept on the second socket would otherwise find no port and be dropped in
+   * silence - the accept() had happened, the socket had data, and nobody read
+   * it (Thomas).
+   */
+  for (lp = Tcp_socks; lp; lp = lp->next) {
+    for (l = lp->listens; l != NULL; l = l->next)
+      if (l == ln)
+	break;
+    if (l != NULL)
+      break;
+  }
+  if (lp == NULL)
+    return;			/* the port is gone; do not accept into it */
+
   sl = sizeof(ss);
-  if ((fd = accept(lp->listenfd, (struct sockaddr *) &ss, &sl)) < 0)
+  if ((fd = accept(ln->fd, (struct sockaddr *) &ss, &sl)) < 0)
     return;
   tcpsock_set_nonblock(fd);
   if ((tp = (struct tcpsock *) calloc(1, sizeof(struct tcpsock))) == NULL) {
@@ -1004,11 +1380,10 @@ void *p)
     return;
   }
   tp->ifp = lp->ifp;
-  tp->listenfd = -1;
   tp->fd = fd;
-  tp->family = lp->family;
-  tp->laddr = lp->laddr;
-  tp->port = lp->port;
+  tp->family = ln->family;
+  tp->laddr = ln->addr;
+  tp->port = lp->lport;
   tp->flags = TCF_CONNECTED;
   /* THE KIND OF PORT COMES ALONG, and stays the one the sysop ordered.
    * proto here is the state of the session and means "still unidentified" - when
@@ -1273,6 +1648,82 @@ struct mbuf **bpp)
 
 /*---------------------------------------------------------------------------*/
 
+/* ifconfig <iface> verbose, for the two TCP carriers.
+ *
+ * "attach axtcp" or "attach kisstcp", and then nothing about the socket: which
+ * address it is bound to is not printed anywhere in "ifconfig", and the
+ * "attach ... stat" list that does know it is a separate command on a separate
+ * page.  The bound address is the one thing that decides whether a TCP link
+ * can work at all - a port bound to 127.0.0.1 is unreachable from the network
+ * side, and a link that is bound to the wrong family accepts nothing and
+ * explains nothing.  The sysop sees a port that exists and a link that does
+ * not.
+ *
+ * ONE PORT, ONE LINE HERE - one line PER LISTENING SOCKET, because a port with
+ * two of them has two addresses and a reader has to know that the second
+ * "bound" is not a contradiction of the first but the other socket.  One line
+ * per session is left to "attach stat": the sessions come and go while a link is
+ * being watched, and a line that changes shape is not a thing to read.  This
+ * says the port: what it speaks, whether it listens or dials, where it is bound,
+ * and where it would dial.
+ */
+void
+tcpsock_show_verbose(
+struct iface *ifp)
+{
+  struct tcpsock *tp;
+  struct tcpsock_listen *ln;
+  char abuf[SOCKADDR_STRLEN];
+
+  if ((tp = tcpsock_first(ifp)) == NULL)
+    return;
+  if (tp->listens) {
+    /* A LISTENER HAS NO ONE FAMILY, and it says so per socket: the family is
+     * the property of the address that was bound, and "axtcp listener, IPv4"
+     * above two sockets of which one is IPv6 is a line that is wrong in half
+     * its parts (Thomas).
+     */
+    for (ln = tp->listens; ln; ln = ln->next) {
+      printf("           %s listener, %s port %d\n",
+	     tp->portproto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+	     ln->family == AF_INET6 ? "IPv6" : "IPv4", tp->lport);
+      printf("           bound %s\n",
+	     sockaddr_to_string((struct sockaddr *) &ln->addr, abuf,
+				sizeof(abuf)));
+    }
+  } else {
+    printf("           %s %s, %s port %d\n",
+	   tp->portproto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+	   (tp->flags & TCF_LISTEN) ? "listener" : "client",
+	   (tp->family == AF_INET6) ? "IPv6" : "IPv4",
+	   (tp->flags & TCF_LISTEN) ? tp->lport : tp->port);
+    /* tp->laddr, and not the config word: the config says what was asked for,
+     * laddr says what the socket got.  On a host without the address that was
+     * asked for, the attach failed and is long gone; this line is what is left.
+     *
+     * AND WITH NO ADDRESS AT ALL IT SAYS SO, rather than printing the family
+     * zero that an unused sockaddr carries: a client that has not come up yet
+     * has no local address, and "bound <af 0>" is not a thing anybody can act
+     * on (Thomas).
+     */
+    if (tp->laddr.ss_family == 0)
+      printf("           bound (no session yet)\n");
+    else
+      printf("           bound %s\n",
+	     sockaddr_to_string((struct sockaddr *) &tp->laddr, abuf,
+				 sizeof(abuf)));
+  }
+  /* BOTH ROLES ARE ONE PORT, so both numbers are said: the pair of lines above
+   * the "dials" line are the sockets, and a sysop who wrote "listen 8000 client
+   * host:8001" has to be able to see that the 8001 next to "dials" is not also
+   * the port it answers on (Thomas).
+   */
+  if ((tp->flags & TCF_CLIENT) && tp->peer != NULL)
+    printf("           dials %s port %d\n", tp->peer, tp->port);
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* "axtcp stat" and "kisstcp stat" share this function. */
 int
 tcpsock_stat(
@@ -1298,9 +1749,20 @@ void *p)
      */
     if (proto != 0 && tp->portproto != proto)
       continue;
-    printf("  %-12s fd:%d listenfd:%d peer:%s port:%d\n",
-	   tp->ifp ? tp->ifp->name : "-",
-	   tp->fd, tp->listenfd, tp->peer ? tp->peer : "-", tp->port);
+    /* "listens:%d" and not one fd, because there is more than one: a port with
+     * "bind=0.0.0.0,[::]" has two listening sockets, and a column that can only
+     * show one of them is a column that has to lie on half the ports.  Which
+     * sockets they are, and what they are bound to, is "ifconfig verbose"'s
+     * line and stays there - this list is one line per session (Thomas). */
+    if ((tp->flags & TCF_LISTEN) && (tp->flags & TCF_CLIENT))
+      printf("  %-12s fd:%d listens:%d listen:%d peer:%s port:%d\n",
+	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, tp->lport,
+	     tp->peer ? tp->peer : "-", tp->port);
+    else
+      printf("  %-12s fd:%d listens:%d peer:%s port:%d\n",
+	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens,
+	     tp->peer ? tp->peer : "-",
+	     (tp->flags & TCF_LISTEN) ? tp->lport : tp->port);
 /* "in" AND "out" ARE FRAMES AND BYTES ON THE WIRE, and the two halves do not
      * count the same thing: the first number is AX.25 frames handed over, the
      * second is everything that went through the socket - the AXTCP length

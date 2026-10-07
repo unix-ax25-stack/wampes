@@ -187,6 +187,7 @@ static long Axip_lookupfail;   /* davon ohne Ergebnis */
 
 static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
+static struct axip_sock *axip_sock_of(struct iface *ifp, int family);
 static int axip_route_add(uint8 *call, const struct sockaddr *dest,
 	  int keepport, int from, struct iface *ifp);
 static void axip_learn_port(uint8 *call, const struct sockaddr *addr, struct edv_t *edv);
@@ -282,6 +283,17 @@ int axip_isport(
 const struct iface *ifp)
 {
   return ifp != NULL && ifp->raw == axip_raw;
+}
+
+int axip_isudp(
+const struct iface *ifp)
+{
+  struct edv_t *edv;
+
+  if (!axip_isport(ifp))
+    return 0;
+  edv = (struct edv_t *) ifp->edv;
+  return edv != NULL && edv->type == USE_UDP;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -411,7 +423,7 @@ const char *host)
    * eine gueltige Antwort und trotzdem ein Name, den man nachfragen will.
    */
   sockaddr_to_string((struct sockaddr *) &ss, abuf, sizeof(abuf));
-  return strchr(abuf, ':') != NULL || strspn(abuf, "0123456789.") == strlen(abuf);
+  return strcmp(abuf, host) == 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -894,24 +906,31 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
        */
       for (rp = Axip_routes; rp; rp = rp->next) {
         struct sockaddr_storage to;
+        struct axip_sock *sk;
         int port;
 
-        if (rp->dest.ss_family != (sa_family_t) edv->family) continue;
+        /* DIE FAMILIE GEHOERT ZUR WAHL - und als Socket, nicht als Vergleich
+         * mit einem Flag: ein axudp-Port mit "bind=0.0.0.0" hat fuer eine
+         * IPv6-Route keinen Socket, und das ist die Antwort, keine Kuerze.
+         */
+        sk = axip_sock_of(ifp, (int) rp->dest.ss_family);
+        if (sk == NULL) continue;
         if (rp->rdev && rp->rdev != thisdev) continue;
         if (!rp->rdev) rp->rdev = thisdev;
         if (axip_route_preceded_by_same_target(rp)) continue;
         if (axip_route_target(rp, edv, &to, &port) < 0) continue;
         rp->stime = secclock();
-        sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
+        sendto(sk->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
                sockaddr_len((struct sockaddr *) &to));
       }
     } else {
       for (rp = Axip_routes; rp; rp = rp->next) {
         int prio;
+
         /* DIE FAMILIE GEHOERT zur Wahl: eine IPv6-Route auf einem IPv4-Port
          * ist nicht "schlechter", sie ist unbrauchbar.
          */
-        if (rp->dest.ss_family != (sa_family_t) edv->family) continue;
+        if (axip_sock_of(ifp, (int) rp->dest.ss_family) == NULL) continue;
         if (!rp->is_default && !axip_call_match(rp->call, dest)) continue;
         if (rp->is_default)
           prio = (rp->rdev && rp->rdev == thisdev) ? 0 : -1;
@@ -925,8 +944,14 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
       }
       if (best) {
         struct sockaddr_storage to;
+        struct axip_sock *sk;
         int port;
 
+        /* The socket of the family this route resolved to - the same lookup
+         * the scan above did, and the same answer, so that a route is not
+         * picked here and found to have no socket afterwards. */
+        sk = axip_sock_of(ifp, (int) best->dest.ss_family);
+        if (sk == NULL) return l;
         rp = best;
         /* EIN GEBUNDENER EINTRAG AUF EINEM ANDEREN PORT IST NICHT KANDIDAT.
          * Er wurde an diesen Port geschrieben, und ihn hier umzubiegen waere
@@ -938,13 +963,200 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
         if (!rp->rdev) rp->rdev = thisdev;
         if (axip_route_target(rp, edv, &to, &port) < 0) return l;
         rp->stime = secclock();
-        sendto(edv->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
+        sendto(sk->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
                sockaddr_len((struct sockaddr *) &to));
       }
     }
   }
 
   return l;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* WHICH SOCKET A DATAGRAM LEAVES BY: the one of the destination's family.
+ *
+ * A route whose family this port has no socket for is not a route for this
+ * port, and that is what makes "bind=0.0.0.0" mean what it says - the port is
+ * IPv4, and an IPv6 route on it is not a worse candidate than an IPv4 one, it
+ * is not one at all.  NULL for no such socket.
+ */
+static struct axip_sock *axip_sock_of(struct iface *ifp, int family)
+{
+  struct edv_t *edv = (struct edv_t *) ifp->edv;
+  struct axip_sock *sk;
+
+  for (sk = edv->socks; sk; sk = sk->next)
+    if (sk->family == family)
+      return sk;
+  return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* THE KEEPALIVE OF AN AXUDP PORT, AGAINST THE NAT TABLE.
+ *
+ * WHY THERE IS A FRAME AT ALL: the local UDP socket belongs to the NAT box
+ * only while the box has seen a packet go out of it.  A mapping that
+ * nothing has used for a while is dropped, and then the peer that was
+ * answering into it can no longer reach the node - not because the node
+ * stopped, but because the mapping did.  One empty datagram per interval,
+ * per distinct destination, keeps each mapping in use, exactly as the TCP
+ * keepalive keeps a session (Thomas).
+ *
+ * WHAT THE FRAME IS: an empty UI that ADDRESSES NOBODY.  Destination and
+ * source are our own call, so every station that receives it sees "for us,
+ * from us" and drops it without answering - a frame that raised an answer
+ * would not be a keepalive, it would be a beacon.  Its shape is the one of
+ * an AX.25 link probe, the same shape the not-built authentication block
+ * above describes; note that there the keepalive is the one thing that
+ * "addresses nobody and must not count as an answer".
+ *
+ * ONE DATAGRAM PER DISTINCT TARGET, and the targets are the routes of this
+ * port: the same list, the same family choice and the same deduplication
+ * as the broadcast branch of axip_raw(), only without the frame that
+ * triggered it.  Two routes to one place count as one (see
+ * axip_route_preceded_by_same_target()).  Only routes that already know
+ * this port take part: a route without one is not a destination yet, and
+ * claiming it here would keep the side effect of a real send.
+ *
+ * A NAMED ROUTE IS RE-RESOLVED FIRST, on the same axip-dns interval as the
+ * send path: the partner may be a dyndns machine whose address moved since
+ * the last lookup, and a keepalive to the stale address would keep the stale
+ * mapping alive, not the partner (see axip_lookup_one()).
+ *
+ * IT SETS lastsent ITSELF, because sendto() is synchronous: only when it
+ * has returned has the NAT box seen anything - the same truth that
+ * tcpsock_flush() is for the TCP keepalive (see tcpsock_keepalive_send()).
+ */
+static void axip_keepalive_send(
+struct iface *ifp,
+time_t now)
+{
+  struct edv_t *edv = (struct edv_t *) ifp->edv;
+  int thisdev = axip_ifp_to_rdev(ifp);
+  int interval = axip_interval(ifp);
+  struct axip_route *rp;
+  uint8 buf[2 * AXALEN + 2];
+  int l;
+
+  if (ifp->hwaddr == NULL)
+    return;
+
+  memcpy(buf, ifp->hwaddr, AXALEN);
+  memcpy(buf + AXALEN, ifp->hwaddr, AXALEN);
+  buf[6] &= (uint8) ~E;
+  buf[AXALEN + 6] |= E;
+  buf[2 * AXALEN] = 0x03;         /* UI */
+  buf[2 * AXALEN + 1] = 0xf0;     /* no layer 3 */
+  l = 2 * AXALEN + 2;
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    struct sockaddr_storage to;
+    struct axip_sock *sk;
+    int port;
+
+    if (rp->rdev != thisdev)
+      continue;
+    /* A DYNDNS PARTNER: pull the address up to date before it serves as the
+     * target.  The gating still works: axip_lookup_one() only asks after the
+     * interval has passed, and the send path keeps the same interval - no
+     * double frequency (Thomas).
+     */
+    axip_lookup_one(rp, interval);
+    sk = axip_sock_of(ifp, (int) rp->dest.ss_family);
+    if (sk == NULL)
+      continue;
+    if (axip_route_preceded_by_same_target(rp))
+      continue;
+    if (axip_route_target(rp, edv, &to, &port) < 0)
+      continue;
+    sendto(sk->fd, (char *) buf, l, 0, (struct sockaddr *) &to,
+           sockaddr_len((struct sockaddr *) &to));
+  }
+  ifp->lastsent = now;
+}
+
+/* DOES THIS PORT HAVE A DESTINATION AT ALL?  ifkeepalive() asks when a
+ * value is set, so that a keepalive with nobody to reach is said out loud
+ * instead of silently doing nothing.  The answer walks the same list as
+ * the send, so both agree on what counts.
+ */
+int axip_keepalive_has_target(
+const struct iface *ifp)
+{
+  int thisdev = axip_ifp_to_rdev(ifp);
+  struct axip_route *rp;
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    if (rp->rdev != thisdev)
+      continue;
+    if (axip_sock_of((struct iface *) ifp,
+		     (int) rp->dest.ss_family) == NULL)
+      continue;
+    if (axip_route_preceded_by_same_target(rp))
+      continue;
+    return 1;
+  }
+  return 0;
+}
+
+/* THE TICK OF THE KEEPALIVE, ten seconds at a time.
+ *
+ * A TICK OF ITS OWN, and not a rider on axip_timer(): axip_timer() is the
+ * clock of the route-name questions and there is nothing that starts it -
+ * so the keepalive must not depend on that being fixed one day.
+ *
+ * IT STOPS ITSELF when no axudp port asks for a keepalive any more, and
+ * ifkeepalive() starts it again when one is set.  A tick with nothing to
+ * do is not a clock, it is a habit.
+ */
+static void axip_keepalive_tick(
+void *arg)
+{
+  static struct timer tmr;
+  struct iface *ifp;
+  time_t now;
+  int keep = 0;
+
+  switch (tmr.state) {
+  case TIMER_STOP:
+    tmr.func = axip_keepalive_tick;
+    tmr.arg = 0;
+    set_timer(&tmr, AXIP_KEEPALIVE_TICK);
+    start_timer(&tmr);
+    return;
+  case TIMER_RUN:
+    return;
+  case TIMER_EXPIRE:
+    tmr.state = TIMER_STOP;
+    break;
+  }
+
+  now = secclock();
+  for (ifp = Ifaces; ifp != NULL; ifp = ifp->next) {
+    if (ifp->raw != axip_raw)
+      continue;
+    if (ifp->keepalive <= 0)
+      continue;
+    if (!axip_isudp(ifp))
+      continue;
+    keep = 1;
+    if (now - ifp->lastsent >= ifp->keepalive)
+      axip_keepalive_send(ifp, now);
+  }
+  if (keep)
+    axip_keepalive_tick(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
+void axip_keepalive_start(void)
+{
+  /* Either the tick is already running and this is a no-op, or it is
+   * stopped and the TIMER_STOP branch above schedules it.
+   */
+  axip_keepalive_tick(0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -959,6 +1171,7 @@ static void axip_recv(void *argp)
   struct axip_route *rp;
   struct edv_t *edv;
   struct iface *ifp;
+  struct axip_sock *sk;
   struct ip *ipptr;
   struct mbuf *bp;
   struct sockaddr_storage addr;
@@ -969,9 +1182,17 @@ static void axip_recv(void *argp)
   int trust_port;
 
   ifp = (struct iface *) argp;
+  /* WHICH SOCKET SPOKE.  on_read() was given the axip_sock and not the
+   * interface, because there is more than one of them now and the interface
+   * alone cannot say which one this datagram came in on.  Everything below is
+   * unchanged and belongs to the interface.
+   */
+  sk = (struct axip_sock *) argp;
+  ifp = sk->ifp;
   edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
-  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
+  l = recvfrom(sk->fd, (char *) (bufptr = buf), sizeof(buf), 0,
+	       (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
     /* cast: l is int, and recvfrom() returns -1 on error.  Comparing against
      * an unsigned sizeof would convert that -1 to SIZE_MAX and pass. */
@@ -1101,38 +1322,134 @@ Fail:
 
 /*---------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------*/
+
+/* AXIP_USAGE, as an object of its own: it is printed for a word too many and
+ * for a word that is not there, and those two places must not drift apart.
+ */
+static char Axip_attach_usage[] =
+  "attach axip [<label> [<ip|udp> [<number>|<srcport>:<dstport>]]]"
+  " [bind=<addr>[,<addr>]...]\n";
+
+/* ONE SOCKET, out of one word of the "bind=" list.
+ *
+ * entry is the sysop's word, sa/sl is what it resolved to, and the port is
+ * filled in here because that is the only place it belongs: a raw socket has
+ * no port, and the address the sysop wrote has none either.
+ *
+ * Returns 0 and hands out a socket, or -1 with a message.  A second address of
+ * a family that already has one is refused, not bound: which of two IPv4
+ * sockets a route would leave by would then be a question with no answer in
+ * the configuration.
+ */
+static int axip_bind_one(struct axip_sock **listp, struct iface *ifp,
+                         int type, int port, const char *entry,
+                         const struct sockaddr *sa, socklen_t sl)
+{
+  struct axip_sock *sk;
+  struct sockaddr_storage addr;
+  int family = sa->sa_family;
+  int on = 1;
+
+  for (sk = *listp; sk; sk = sk->next)
+    if (sk->family == family) {
+      printf("\"%s\": this port already has an address of this family (%s).  "
+             "One\nsocket per family - \"bind=%s\" is what names the other "
+             "one.\n", entry, family == AF_INET6 ? "IPv6" : "IPv4",
+             family == AF_INET6 ? "[::]" : "0.0.0.0");
+      return -1;
+    }
+
+  if (!(sk = (struct axip_sock *) malloc(sizeof(struct axip_sock)))) {
+    printf("out of memory\n");
+    return -1;
+  }
+  memset(sk, 0, sizeof(*sk));
+  sk->ifp = ifp;
+  sk->family = family;
+
+  if (type == USE_IP)
+    sk->fd = socket(family, SOCK_RAW, port);
+  else
+    sk->fd = socket(family, SOCK_DGRAM, 0);
+  if (sk->fd < 0) {
+    printf("cannot create socket: %s\n", strerror(errno));
+    free(sk);
+    return -1;
+  }
+#if HAS_AF_INET6
+  if (family == AF_INET6) {
+    /* Pin this down rather than inheriting it: whether an IPv6 socket also
+     * accepts IPv4 differs between Linux and the BSDs, and an axip and an
+     * axip6 interface have to be able to hold the same port side by side. */
+    setsockopt(sk->fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &on, sizeof(on));
+  }
+#endif
+
+  memset(&addr, 0, sizeof(addr));
+  memcpy(&addr, sa, (size_t) sl);
+  /* A raw socket is bound by protocol number, not by port: "bind=" says which
+   * address answers on it, and a port there would be a second thing in a word
+   * that already says one. */
+  if (type == USE_UDP)
+    sockaddr_set_port((struct sockaddr *) &addr, port);
+  if (bind(sk->fd, (struct sockaddr *) &addr, sl)) {
+    printf("cannot bind address: %s\n", strerror(errno));
+    close(sk->fd);
+    free(sk);
+    return -1;
+  }
+  sk->next = *listp;
+  *listp = sk;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+
 int axip_attach(int argc, char *argv[], void *p)
 {
 
   char *ifname = "axip";
-  char *bindhost = 0;
+  char *bindlist = 0;
   char *av[8];
   int ac = 0;
   int i;
-  int fd;
-  int family = AF_INET;
   int port = AX25_PTCL;
   int dport = 0;
   int type = USE_IP;
+  long tmp;
+  struct axip_sock *socks = 0;
+  struct axip_sock *sk;
   struct edv_t *edv;
   struct iface *ifp;
-  struct sockaddr_storage addr;
-  socklen_t addrlen;
+  char *entry;
 
-  /* WHICH ADDRESS TO LISTEN ON, and the only word here that is not
+  /* WHICH ADDRESSES TO LISTEN ON, and the only word here that is not
    * positional - the rest is "each word needs the one before it", and a
    * setting that is usually left out cannot live at the end of such a chain.
    *
-   * Left out it is every address, which is what it always was and what a node
-   * on the air wants: peers turn up on whatever interface the routing gives
-   * them.  Named, it is the one - "bind=127.0.0.1" or "bind=::1" for a node
-   * that only talks to programs on the same machine, so the axudp port is not
-   * reachable from outside without a firewall in front of it.
+   * A LIST, and one socket per entry, because one socket cannot answer on
+   * 0.0.0.0 and on ::1 at once.  The address also says the family, so there is
+   * no second word that says it again: no bind= is every address of every
+   * family the node has, and "bind=0.0.0.0,[::]" says the same thing the long
+   * way round.
    */
-  for (i = 0; i < argc && ac < (int) (sizeof(av) / sizeof(av[0])); i++) {
+  for (i = 0; i < argc; i++) {
     if (!strncmp(argv[i], "bind=", 5)) {
-      bindhost = argv[i] + 5;
+      if (bindlist != NULL) {
+        printf("\"bind=\" is written twice - it takes a list, so one word: "
+               "\"bind=%s,%s\"\n", bindlist, argv[i] + 5);
+        return -1;
+      }
+      bindlist = argv[i] + 5;
       continue;
+    }
+    if (ac >= (int) (sizeof(av) / sizeof(av[0]))) {
+      fputs(Axip_attach_usage, stdout);
+      printf("... and too many words before it.\n");
+      return -1;
     }
     av[ac++] = argv[i];
   }
@@ -1146,14 +1463,27 @@ int axip_attach(int argc, char *argv[], void *p)
     return -1;
   }
 
-  /* "ip"/"udp" as before; a trailing 6 - "ip6", "udp6" - selects IPv6 for the
-   * outer transport.  The encapsulated frame is untouched by that, so an IPv4
-   * peer running ax25ipd or XNET sees no difference; an IPv6 peer needs
-   * something that speaks it, which today means another WAMPES.
+  /* A WORD TOO MANY IS REFUSED, not dropped.
+   *
+   * The rest of this function reads its arguments by position, so a word it
+   * does not know is a word nobody looked at.  That is how
+   *
+   *     attach axip l7 udp 19963 19964
+   *
+   * bound 19963, answered nothing about 19964, and left a port that was not
+   * the one in the config file - and how "attach axip l5 udp 127.0.0.1 19961"
+   * became a listener on port 127, because a word that was read as a number
+   * was one.  A line that does not fit is answered with the line that would.
    */
+  if (argc > 4) {
+    fputs(Axip_attach_usage, stdout);
+    printf("... and \"%s\" is one word too many.\n", argv[4]);
+    return -1;
+  }
+
   if (argc >= 3) {
     char *t = argv[2];
-    int is6 = *t && t[strlen(t) - 1] == '6';
+    size_t tl = strlen(t);
 
     switch (*t) {
     case 'I':
@@ -1165,16 +1495,22 @@ int axip_attach(int argc, char *argv[], void *p)
       type = USE_UDP;
       break;
     default:
-      printf("Type must be IP, UDP, IP6 or UDP6\n");
+      printf("Type must be IP or UDP\n");
+      fputs(Axip_attach_usage, stdout);
       return -1;
     }
-    if (is6) {
-#if HAS_AF_INET6
-      family = AF_INET6;
-#else
-      printf("This build has no IPv6 support\n");
+    /* "ip6"/"udp6" are gone, and the message says where the family went
+     * rather than only that the word is not known: a config file that carried
+     * them from the days when they were the only way has to be corrected, and
+     * a word that is merely refused is a word the sysop does not know what to
+     * do about.
+     */
+    if (tl && t[tl - 1] == '6') {
+      printf("\"%s\" is gone: the family is what \"bind=\" names.  Without "
+             "it the port has\nboth - 0.0.0.0 and [::] - and with one address "
+             "it has that one:\n\"bind=0.0.0.0\" is IPv4, \"bind=[::1]\" is "
+             "IPv6.\n", t);
       return -1;
-#endif
     }
   }
 
@@ -1187,100 +1523,36 @@ int axip_attach(int argc, char *argv[], void *p)
    * Only for UDP.  With a raw socket the number is the IP protocol, there is
    * no port at either end, and a colon there would be nonsense rather than a
    * setting nobody uses.
+   *
+   * AND BOTH HALVES ARE NUMBERS, checked as such.  atoi() answers zero for
+   * anything it does not understand and cannot be asked whether it understood,
+   * so "127.0.0.1" was not a mistake that was refused - it was a port.
    */
   if (argc >= 4) {
     char *colon = strchr(argv[3], ':');
 
     if (colon) {
       if (type != USE_UDP) {
-        printf("\"%s\": with ip or ip6 the number is the IP protocol, and a "
-               "raw\nsocket has no ports to keep apart\n", argv[3]);
+        printf("\"%s\": with ip the number is the IP protocol, and a raw "
+               "socket has no ports to keep apart\n", argv[3]);
         return -1;
       }
       *colon = '\0';
-      dport = atoi(colon + 1);
-      if (dport <= 0 || dport > 65535) {
+      if (cmd_getnum(colon + 1, &tmp) || tmp <= 0 || tmp > 65535) {
         printf("\"%s\" is not a port\n", colon + 1);
         return -1;
       }
+      dport = (int) tmp;
     }
-    port = atoi(argv[3]);
-    if (type == USE_UDP && (port <= 0 || port > 65535)) {
-      printf("\"%s\" is not a port\n", argv[3]);
+    if (cmd_getnum(argv[3], &tmp) || (type == USE_UDP && (tmp <= 0 || tmp > 65535)) ||
+        (type == USE_IP && (tmp < 0 || tmp > 255))) {
+      printf("\"%s\" is not %s\n", argv[3],
+             type == USE_UDP ? "a port" : "an IP protocol number");
       return -1;
     }
+    port = (int) tmp;
   }
   if (!dport) dport = port;             /* one number means both */
-
-  if (type == USE_IP)
-    fd = socket(family, SOCK_RAW, port);
-  else
-    fd = socket(family, SOCK_DGRAM, 0);
-  if (fd < 0) {
-    printf("cannot create socket: %s\n", strerror(errno));
-    return -1;
-  }
-
-#if HAS_AF_INET6
-  if (family == AF_INET6) {
-    int arg = 1;
-
-    /* Pin this down rather than inheriting it: whether an IPv6 socket also
-     * accepts IPv4 differs between Linux and the BSDs, and an axip and an
-     * axip6 interface have to be able to hold the same port side by side. */
-    setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &arg, sizeof(arg));
-  }
-#endif
-
-  if (type == USE_UDP || bindhost != NULL) {
-    memset(&addr, 0, sizeof(addr));
-    if (bindhost != NULL) {
-      struct sockaddr *sa;
-      int len;
-
-      /* A raw socket has no port; binding it to an address still says which
-       * one we answer on, so the host is asked for with port 0 there.
-       */
-      if (!(sa = build_sockaddr_host(bindhost,
-				     type == USE_UDP ? port : 0, &len))) {
-	printf("cannot look up \"%s\"\n", bindhost);
-	close(fd);
-	return -1;
-      }
-      if (sa->sa_family != family) {
-	printf("\"%s\" is not an address of the family this interface "
-	       "speaks -\nuse \"udp6\"/\"ip6\" for an IPv6 address\n",
-	       bindhost);
-	close(fd);
-	return -1;
-      }
-      memcpy(&addr, sa, (size_t) len);
-      addrlen = (socklen_t) len;
-    } else {
-#if HAS_AF_INET6
-    if (family == AF_INET6) {
-      struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) &addr;
-
-      s6->sin6_family = AF_INET6;
-      s6->sin6_addr = in6addr_any;
-      s6->sin6_port = htons(port);
-    } else
-#endif
-    {
-      struct sockaddr_in *si = (struct sockaddr_in *) &addr;
-
-      si->sin_family = AF_INET;
-      si->sin_addr.s_addr = INADDR_ANY;
-      si->sin_port = htons(port);
-    }
-    addrlen = sockaddr_len((struct sockaddr *) &addr);
-    }
-    if (bind(fd, (struct sockaddr *) &addr, addrlen)) {
-      printf("cannot bind address: %s\n", strerror(errno));
-      close(fd);
-      return -1;
-    }
-  }
 
   ifp = (struct iface *) callocw(1, sizeof(struct iface));
   ifp->name = strdup(ifname);
@@ -1295,23 +1567,107 @@ int axip_attach(int argc, char *argv[], void *p)
   ifp->user_to_user_ok = 1;
 
   edv = (struct edv_t *) malloc(sizeof(struct edv_t));
+  memset(edv, 0, sizeof(*edv));
   edv->type = type;
   edv->port = port;
   edv->dport = dport;
-  edv->fd = fd;
-  edv->family = family;
-  edv->uhnp = 0;
   edv->uhnp_time = secclock();
   ifp->edv = edv;
+  edv->socks = 0;
+
+  /* NO "bind=": every address of every family the node has.  Both, because a
+   * route may name either and a route whose family the port cannot serve is
+   * no route for this port at all - so a node behind an IPv4-only uplink that
+   * did not say "bind=" would carry one idle socket it never sends on, and a
+   * node on a dual stack host would carry one partner it never reaches.
+   */
+  if (bindlist == NULL || !*bindlist) {
+    struct sockaddr_storage sa;
+    socklen_t sl;
+
+    memset(&sa, 0, sizeof(sa));
+    ((struct sockaddr_in *) &sa)->sin_family = AF_INET;
+    ((struct sockaddr_in *) &sa)->sin_addr.s_addr = INADDR_ANY;
+    ((struct sockaddr_in *) &sa)->sin_port = htons((unsigned short) port);
+    sl = (socklen_t) sizeof(struct sockaddr_in);
+    if (axip_bind_one(&socks, ifp, type, port, "0.0.0.0",
+		      (struct sockaddr *) &sa, sl))
+      goto Fail;
+#if HAS_AF_INET6
+    memset(&sa, 0, sizeof(sa));
+    ((struct sockaddr_in6 *) &sa)->sin6_family = AF_INET6;
+    ((struct sockaddr_in6 *) &sa)->sin6_addr = in6addr_any;
+    ((struct sockaddr_in6 *) &sa)->sin6_port = htons((unsigned short) port);
+    sl = (socklen_t) sizeof(struct sockaddr_in6);
+    if (axip_bind_one(&socks, ifp, type, port, "[::]",
+		      (struct sockaddr *) &sa, sl))
+      goto Fail;
+#endif
+  } else {
+    /* THE LIST.  One word, comma-separated, and every entry is one socket:
+     * the sysop wrote two addresses and means to answer on both, and a
+     * configuration that silently listened on one of them would be a port
+     * that is not the one in the config file.
+     */
+    char *list = strdup(bindlist);
+    char *comma;
+
+    if (list == NULL) {
+      printf("out of memory\n");
+      goto Fail;
+    }
+    for (entry = list; entry; entry = comma) {
+      struct sockaddr_storage sa;
+      socklen_t sl;
+
+      if ((comma = strchr(entry, ',')) != NULL)
+        *comma++ = '\0';
+      if (!*entry) {
+        printf("\"bind=%s\" has an empty entry\n", bindlist);
+        free(list);
+        goto Fail;
+      }
+      if (sockaddr_from_bindword(entry, port, &sa, &sl)) {
+        free(list);
+        goto Fail;
+      }
+      if (axip_bind_one(&socks, ifp, type, port, entry,
+			(struct sockaddr *) &sa, sl)) {
+        free(list);
+        goto Fail;
+      }
+    }
+    free(list);
+  }
+
+  edv->socks = socks;
 
   ifp->raw = axip_raw;
-  on_read(fd, axip_recv, (void * ) ifp);
+  /* on_read() takes the axip_sock, not the interface: there is more than one
+   * socket now and only the axip_sock says which one is readable. */
+  for (sk = socks; sk; sk = sk->next)
+    on_read(sk->fd, axip_recv, (void *) sk);
 
   ifp->next = Ifaces;
   Ifaces = ifp;
 
   return 0;
+
+Fail:
+  {
+    struct axip_sock *sk, *sn;
+
+    for (sk = socks; sk; sk = sn) {
+      sn = sk->next;
+      if (sk->fd >= 0) close(sk->fd);
+      free(sk);
+    }
+  }
+  free(edv);
+  if_detach(ifp);                 /* it frees the name and the address */
+  return -1;
 }
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -1703,7 +2059,7 @@ static struct cmds Axipcmds[] = {
     "axip route                             list the routes\n"
     "       axip route add [permanent] <call>[:<iface>] <host> [<port>]\n"
     "       axip route add [permanent] default[:<iface>] <host> [<port>]\n"
-    "       axip route drop <call>|default[:<iface>]\n"
+    "       axip route drop <call>[:<iface>]|default[:<iface>]\n"
     "  <port> is for a partner who listens somewhere other than the port of\n"
     "  the interface; left out it means the interface's, or whatever he was\n"
     "  last seen using.\n"
@@ -1781,8 +2137,20 @@ int doaxip(int argc, char *argv[], void *p)
 #define AXIP_IFNAMELEN	128
 #define AXIP_CALLBUF	(AXBUF + 1 + AXIP_IFNAMELEN)
 
+/* argcmin COUNTS THE WORD "add", because subcmd() drops argv[0] before it
+ * tests the count, and argv[0] is the subcommand itself.  Three is therefore
+ * "add <call> <host>" - the shortest line the usage string has always
+ * promised.  Four made the port mandatory, and without one all you got was
+ *
+ *     Usage: axip route add [permanent] <call>[:<iface>] <host> [<port>]
+ *
+ * with the angle brackets in the very line that refused to do without them.
+ * The fallback is not undefined, either: a route without a port sits in the
+ * table with port 0, and axip_route_target() (below) hands it edv->dport -
+ * which is what the interface's own port is anyway.
+ */
 static struct cmds Axiproutecmds[] = {
-  { "add",    doaxiprouteadd,  0, 4,
+  { "add",    doaxiprouteadd,  0, 3,
     "axip route add [permanent] <call>[:<iface>] <host> [<port>]" },
   { "drop",   doaxiproutedrop, 0, 2,
     "axip route drop <call>[:<iface>]|default[:<iface>]" },
@@ -2066,24 +2434,39 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
 static int doaxiproutedrop(int argc, char *argv[], void *p)
 {
 
+  /* AXIP_CALLBUF, and that is the whole point: what lands here is
+   * "<call>[:<iface>]".  "drop" did not split at the colon - it handed the
+   * entire word to setcall(), which then complained about a callsign nobody
+   * had typed:
+   *
+   *     axip route drop DL0PEA:aud
+   *     Invalid call "DL0PEA:aud"
+   *
+   * The usage line above has promised the colon all along and "add" split it.
+   * The difference only showed when one wanted to REMOVE a route rather than
+   * write one - which is to say exactly when one already knows the word and
+   * copied it out of "axip route" to save the typing.
+   *
+   * The port behind the colon is NOT what the search uses: a route belongs to
+   * its callsign, not to the port it happens to hang on.  A name that does not
+   * exist is still said out loud, though - that is a typo, and "drop" is the
+   * command one reaches for while hunting for exactly such a typo.
+   *
+   * Cut in a COPY, unlike "add": here the word still has to be printed if
+   * nothing matched, and half a word in the caller's argv[] would be no help
+   * with that.
+   */
+  char callbuf[AXIP_CALLBUF];
   uint8 call[AXALEN];
   struct axip_route *rp, *pp;
+  struct iface *ifp;
   int isdef;
 
-  /* "default[:<iface>]" ist ein Wort und kein Rufzeichen - siehe
-   * axip_route.is_default.  "drop" darf es daher nicht durch setcall()
-   * schicken, das nur echte Rufzeichen annimmt.
-   */
-  if (axip_arg_is_default(argv[1])) {
-    isdef = 1;
-    memset(call, ' ', AXALEN);
-  } else {
-    if (setcall(call, argv[1])) {
-      printf("Invalid call \"%s\"\n", argv[1]);
-      return 1;
-    }
-    isdef = 0;
-  }
+  strncpy(callbuf, argv[1], sizeof(callbuf) - 1);
+  callbuf[sizeof(callbuf) - 1] = 0;
+  if (axip_split_call(callbuf, call, &ifp, &isdef))
+    return 1;
+
   for (pp = 0, rp = Axip_routes; rp; pp = rp, rp = rp->next)
     if (rp->is_default == isdef && axip_call_match(rp->call, call)) {
       if (pp)
@@ -2099,9 +2482,17 @@ static int doaxiproutedrop(int argc, char *argv[], void *p)
       if (rp->name)
 	free(rp->name);
       free(rp);
-      break;
+      return 0;
     }
-  return 0;
+
+  /* AND WHEN THERE WAS NONE, IT SAYS SO.  All that stood here was "return 0",
+   * so a typo in the callsign looked like a success - and "default" was worse,
+   * because "default" always exists; it had only just gone.  This is the one
+   * command whose answer is needed, because what follows it is "axip route"
+   * and the question whether the line is gone.
+   */
+  printf("No route for \"%s\"\n", argv[1]);
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2261,7 +2652,54 @@ int if_axip_dns_silence(int argc, char *argv[], void *p)
 void axip_show_verbose(const struct iface *ifp)
 {
   struct iface *ifp2 = (struct iface *) ifp;
+  struct edv_t *edv = (struct edv_t *) ifp2->edv;
+  struct sockaddr_storage ss;
+  socklen_t sl = sizeof(ss);
+  char abuf[SOCKADDR_STRLEN];
 
+  /* WHAT KIND OF PORT THIS IS, AND WHERE IT LISTENS.  Both were invisible:
+   * "attached as axip" is the same word for all four kinds of axip port, and
+   * the "IP addr" line above says "*" for every one of them, because
+   * ifp->addr is the AX.25 address and nothing to do with the socket.  So a
+   * udp6 port on [::1]:19962 and a udp port on 127.0.0.1:19962 printed the
+   * same eleven lines - and which of the two a frame leaves by is the first
+   * question anybody asks when a link is not the link they meant.
+   *
+   * The bound address comes from getsockname() and not from the config: the
+   * config word is what the sysop asked for, the socket is what came of it.
+   * They differ whenever the host has no such address, and then the error was
+   * long gone and this line is all that is left.
+   */
+  if (edv != NULL) {
+    const char *kind = edv->type == USE_UDP ? "udp" : "ip";
+    struct axip_sock *sk;
+
+    /* ONE BLOCK PER SOCKET, in the order they were written.  A port with one
+     * address - which is what "bind=<one address>" gives and what most nodes
+     * have - prints exactly the two lines it printed before; a port with both
+     * families prints them twice, and the second "bound" is not a contradiction
+     * of the first but the other socket.  Both sockets are named, because a
+     * frame leaving by the wrong one of two is the question this block exists
+     * to answer, and answering it for only one of them answers it wrong.
+     */
+    for (sk = edv->socks; sk; sk = sk->next) {
+      const char *fam = sk->family == AF_INET6 ? "6" : "4";
+
+      if (edv->type == USE_UDP)
+	printf("           axip %s%s port %d, sends to port %d\n", kind, fam,
+	       edv->port, edv->dport);
+      else
+	/* A raw socket has no port at either end: the number is the IP
+	 * protocol, and saying "port" here would be a category error. */
+	printf("           axip %s%s proto %d\n", kind, fam, edv->port);
+      if (sk->fd >= 0 && !getsockname(sk->fd, (struct sockaddr *) &ss, &sl))
+	printf("           bound %s\n",
+	       sockaddr_to_string((struct sockaddr *) &ss, abuf, sizeof(abuf)));
+      else
+	printf("           bound nothing (no socket)\n");
+      sl = sizeof(ss);
+    }
+  }
   printf("           axip-learn %s%s%s\n",
 	 ifp2->axip_learn == AXIP_LEARN_ON    ? "on" :
 	 ifp2->axip_learn == AXIP_LEARN_ONCE  ? "once" : "off",

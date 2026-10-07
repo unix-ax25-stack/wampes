@@ -326,10 +326,14 @@ struct cmds Ifcmds[] = {
 	  "ifconfig <iface> rxbuf <bytes>" },
 	{ "keepalive",            ifkeepalive,    0,      1,
 	  "ifconfig <iface> keepalive <seconds>   (0 = off)\n"
-	  "  Sends one packet per interval on a TCP port that has nothing to\n"
-	  "  say, so that a NAT box which dropped its mapping quietly is found\n"
-	  "  out.  Default 300.  Read without an argument it says what the port\n"
-	  "  is doing now; with one it changes it without detaching the port." },
+	  "  On a TCP port: one empty packet per session per interval, so that\n"
+	  "  a NAT box which dropped its mapping quietly is found out.  Default\n"
+	  "  300, read without an argument it says what the port does now.\n"
+	  "  On an axudp port: one empty UI frame per distinct destination, to\n"
+	  "  keep each NAT mapping in use - no default, 0 is off.  The\n"
+	  "  destinations are the routes of \"axip route add\"; without one the\n"
+	  "  port says so.  A UDP value may go out at most every ten seconds.\n"
+	  "  With an argument either port is changed without being detached." },
 	{ NULL }
 };
 /*
@@ -1316,7 +1320,7 @@ static int is_ax25(struct iface *ifp)
 	return ifp->iftype != NULL && ifp->iftype->type == CL_AX25;
 }
 
-/* DER KEEPALIVE EINES TCP-PORTS, live aenderbar.
+/* DER KEEPALIVE EINES PORTS, live aenderbar.
  *
  * HERE AND NOT ONLY IN THE ATTACH LINE, because the sysop who watches a node
  * for an hour wants to turn it off the moment he sees the keepalive packets on
@@ -1324,26 +1328,31 @@ static int is_ax25(struct iface *ifp)
  * on the interface, so the ticker picks the new one up on its next round
  * without a word to anybody (Thomas).
  *
- * ONLY FOR TCP PORTS, and it says so rather than accepting the word and
- * storing it: on a serial line the question does not arise - the line is not
- * quietly dropped by a NAT box - and a setting that has no effect and is
- * quietly accepted is the kind that gets believed to be doing something.
+ * FOR TWO KINDS OF PORT.  A TCP port sends one empty packet per session (the
+ * ticker in tcpsock.c), an axudp port one empty UI frame per distinct
+ * destination every interval (axip_keepalive_send(), driven by
+ * axip_keepalive_start()).  Everywhere else the question does not arise - a
+ * serial line is not quietly dropped by a NAT box - and a setting that has no
+ * effect and is quietly accepted is the kind that gets believed to be doing
+ * something.  Those ports are refused, with a sentence that says which kinds
+ * carry a keepalive at all.
  */
 static int
 ifkeepalive(int argc,char *argv[],void *p)
 {
 	struct iface *ifp = (struct iface *) p;
 
-	if(ifp->raw != tcpsock_raw){
-		printf("Interface %s is not a TCP port; keepalive means nothing there.\n",
-		       ifp->name);
+	if(ifp->raw != tcpsock_raw && !axip_isudp(ifp)){
+		printf("Interface %s is not a TCP or axudp port; "
+		       "keepalive means nothing there.\n", ifp->name);
 		return 1;
 	}
 	if(argc < 2){
 		printf("%s: keepalive %d",ifp->name,ifp->keepalive);
 		if(ifp->keepalive == 0)
 			printf("  (off)");
-		else if(ifp->keepalive == TCP_KEEPALIVE_DEFAULT)
+		else if(ifp->raw == tcpsock_raw
+		     && ifp->keepalive == TCP_KEEPALIVE_DEFAULT)
 			printf("  (the default)");
 		printf("\n");
 		return 0;
@@ -1353,7 +1362,22 @@ ifkeepalive(int argc,char *argv[],void *p)
 	 * be read as "off" - which is the one value a sysop writes when he wants
 	 * to stop something, and not the one he writes when he mistypes.
 	 */
-	return setintrc(&ifp->keepalive,"keepalive",argc,argv,0,86400);
+	if(setintrc(&ifp->keepalive,"keepalive",argc,argv,0,86400))
+		return 1;
+	/* AXUDP AND SET: the tick has to run or the value never sends; and a port
+	 * with no destination right now is told out loud, because a keepalive with
+	 * nobody to reach is a promise that nothing keeps.  Routes may still come
+	 * later - that is why this is a sentence and not a refusal (Thomas).
+	 */
+	if(axip_isudp(ifp) && ifp->keepalive > 0){
+		int have = axip_keepalive_has_target(ifp);
+
+		axip_keepalive_start();
+		if(!have)
+			printf("%s: keepalive set, but this port has no "
+			       "destination to keep alive yet\n", ifp->name);
+	}
+	return 0;
 }
 
 /* DARF DER ALLGEMEINE LERNER IN ip_route() HIER ARBEITEN?
@@ -1440,6 +1464,14 @@ showiface(struct iface *ifp, int verbose)
 	}
 	if(verbose && axip_isport(ifp))
 		axip_show_verbose(ifp);
+	/* Der TCP-Teil: ob der Port lauscht oder waehlt, welche Familie er hat
+	 * und an welche Adresse er gebunden ist.  Dieselbe Luecke wie bei den
+	 * axip-Ports - "attached as axtcp" stand da, und die gebundene Adresse
+	 * nirgends.  tcpsock_show_verbose() gibt selbst nichts aus, wenn an dem
+	 * Port keine Sitzung haengt; das ist keine Ausnahme, sondern der Zustand.
+	 */
+	if(verbose && tcpsock_isport(ifp))
+		tcpsock_show_verbose(ifp);
 	/* "never" where nothing has gone yet.  The counter starts at zero, so
 	 * the difference to now is the time since 1970 - which came out as
 	 * "20686:12:19:36" on a loopback nobody had used, and reads as though

@@ -108,8 +108,11 @@ struct cmds Cmds[] = {
 	  "  crc.\n"
 	  "  \"ifconfig <iface> ?\" lists the settings, \"ifconfig <iface>\n"
 	  "  <setting> ?\" explains one." },
+	/* The default number in the synopsis keeps in step with
+	 * TCP_AX25_GW_PORT_DEFAULT in remote_net.c (Thomas). */
 	{ "axsock",       doaxsock,       0, 0,
-	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]" },
+	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n"
+	  "       tcp-listen default port 8213" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },
 	{ "ipfilter",     doipfilter,     0, 0,
@@ -175,7 +178,24 @@ struct cmds Cmds[] = {
 	{ "tcp",          dotcp,          0, 0, NULL },
 	{ "telnet",       dotelnet,       0, 2, "telnet <address>" },
 	{ "topt",         dotopt,         0, 0, NULL },
-	{ "trace",        dotrace,        0, 0, NULL },
+	{ "trace",        dotrace,        0, 0,
+	"trace <iface> [input|output|ascii|hex|raw|broadcast|off] [file=<path>]\n"
+	"  What comes in and what goes out on one port.  A word beginning with a\n"
+	"  digit is a trace word read as HEX, so \"trace ax0 111\" is 0x0111 -\n"
+	"  input, output and the ASCII dump, not one hundred eleven.\n"
+	"\n"
+	"  input, output   the two directions.  WITHOUT one of them nothing is\n"
+	"            printed at all, whatever else is asked for.\n"
+	"  ascii, hex      the payload as characters or as hex.  They are two\n"
+	"            halves of one pair, so each clears the other; with both\n"
+	"            set the ASCII one is what appears.\n"
+	"  raw             the bytes, no interpretation of the headers\n"
+	"  broadcast       -broadcast drops broadcasts from the input trace\n"
+	"  off             all of it off, and back to the screen\n"
+	"  file=<path>     write the trace there instead of to the screen\n"
+	"\n"
+	"  The value in force is printed by \"trace <iface>\" and by \"ifconfig\n"
+	"  <iface> verbose\", in hex." },
 	{ "udp",          doudp,          0, 0, NULL },
 	{ "upload",       doupload,       0, 0, NULL },
 	{ NULL,           NULL,           0, 0, "Unknown command; type \"?\" for list" }
@@ -202,36 +222,33 @@ struct cmds Attab[] = {
 	"attach netrom [ip_addr]" },
 
 		{ "axip", axip_attach, 0, 1,
-	"attach axip [<label> [<ip|udp|ip6|udp6> [<host|fqdn> [<number>|<srcport>:<dstport>]]]]\n"
+	"attach axip [<label> [<ip|udp> [<number>|<srcport>:<dstport>]]] [bind=<addr>[,<addr>]...]\n"
 	"  AX.25 inside IP, RFC-1226.  Each word needs the one before it, so a\n"
-	"  type can only be given with a label.\n"
+	"  type can only be given with a label.  A word that does not fit is\n"
+	"  answered with this line instead of being left unread - \"attach axip\n"
+	"  l7 udp 19963 19964\" used to bind 19963 and say nothing about 19964.\n"
 	"\n"
 	"  <label>   interface name, default \"axip\"\n"
-	"  ip, ip6   a raw socket, and <number> is then the IP PROTOCOL - the\n"
+	"  ip        a raw socket, and <number> is then the IP PROTOCOL - the\n"
 	"            field in the IP header, the way 6 is TCP and 17 is UDP\n"
-	"  udp, udp6 a UDP socket, and <number> is then the PORT.  It may be\n"
+	"  udp       a UDP socket, and <number> is then the PORT.  It may be\n"
 	"            written \"<src>:<dst>\" to bind one and send to the other;\n"
-	"            one number means both, which is what it always did\n"
-	"  <host|fqdn> optional remote peer (host name or IP literal)\n"
-	"  <number>  default 93 either way - the AX.25 protocol number of\n"
-	"            RFC-1226, and by custom the axudp port as well\n"
- },
-
-	{ "axtcp", axtcp_attach, 0, 1,
-	"attach axtcp [<label> [listen [<port>] | client <host>[:<port>]]]\n"
-	"  AX.25 over TCP with 2-byte length prefix (XRouter style). Payload is\n"
-	"  the AX.25 frame including CRC16, length big-endian. Default port 9393.\n" },
-
-	{ "kisstcp", kisstcp_attach, 0, 1,
-	"attach kisstcp [<label> [listen [<port>] | client <host>[:<port>]]]\n"
-	"  KISS-over-TCP (kisstcp/tcpkiss), FEND 0xC0 framing with escaping.\n"
-	"  Default port 8001. Ports: 7342 (fldigi), 8100 (VARAFM).\n"
+	"            one number means both, which is what it always did.  Left\n"
+	"            out it is 93 - the AX.25 protocol number of RFC-1226, and\n"
+	"            by custom the axudp port as well\n"
 	"\n"
-	"  bind=<addr> which local address to listen on.  Left out it is every\n"
-	"            one, which is what a node on the air wants.  Named -\n"
-	"            \"bind=127.0.0.1\", \"bind=::1\" - only that one, for a node\n"
-	"            whose axudp port has no business being reachable from\n"
-	"            outside.  It is the one word here that may stand anywhere.\n"
+	"  bind=<addr>[,<addr>...]\n"
+	"            which local addresses to answer on, ONE SOCKET EACH.  Left\n"
+	"            out it is every address of every family the node has -\n"
+	"            0.0.0.0 and [::] - which is what a node on the air wants.\n"
+	"            Named, a node whose axudp port has no business being\n"
+	"            reachable from outside writes \"bind=127.0.0.1\".  The\n"
+	"            address also says the family: \"bind=0.0.0.0\" is IPv4 only,\n"
+	"            \"bind=[::1]\" IPv6 only, and \"bind=0.0.0.0,[::]\" says the\n"
+	"            same as leaving it out.  At most ONE address per family.  An\n"
+	"            IPv6 literal goes in brackets, as in \"bind=[::1]\", and a\n"
+	"            link-local one takes its zone: \"bind=[fe80::1%en0]\".\n"
+	"            It is the one word here that may stand anywhere.\n"
 	"\n"
 	"  The PEER'S ADDRESS is never here - it comes from \"axip route add\n"
 	"  <call> <host> [<port>]\", one per station.  <dstport> is only the\n"
@@ -243,6 +260,45 @@ struct cmds Attab[] = {
 	"  route\" shows it.  A callsign never heard yet falls back on what the\n"
 	"  host was last seen using, which is right for a partner running\n"
 	"  several callsigns on one ax25ipd." },
+
+	{ "axtcp", axtcp_attach, 0, 1,
+	"attach axtcp [<label> [listen [<port>]]] [client <host>[:<port>]]\n"
+	"                [bind=<addr>[,<addr>]...] [keepalive <seconds>]\n"
+	"  AX.25 over TCP with 2-byte length prefix (XRouter style). Payload is\n"
+	"  the AX.25 frame including CRC16, length big-endian. Default port 9393.\n"
+	"\n"
+	"  \"listen\" and \"client\" are two words, not two modes: a node that\n"
+	"  answers an XRouter AND keeps a session to a partner writes both, in\n"
+	"  either order.  Neither word at all is a listener on the default port.\n"
+	"  The number after \"listen\" is where this node ANSWERS, the one in\n"
+	"  \"client\" is where it CALLS - two numbers, not one: \"listen 20102\n"
+	"  client host:20103\" answers 20102 and calls 20103.\n"
+	"  An IPv6 literal in \"client\" goes in brackets, as in [::1]:8000.\n"
+	"  \"keepalive\" is seconds, 0 (off) to 86400, and \"ifconfig <if>\n"
+	"  keepalive\" changes it while the node runs.  See \"attach kisstcp\"\n"
+	"  for the same words - they are the same there." },
+
+	{ "kisstcp", kisstcp_attach, 0, 1,
+	"attach kisstcp [<label> [listen [<port>]]] [client <host>[:<port>]]\n"
+	"                  [bind=<addr>[,<addr>]...] [keepalive <seconds>]\n"
+	"  KISS-over-TCP (kisstcp/tcpkiss), FEND 0xC0 framing with escaping.\n"
+	"  Default port 8001. Ports: 7342 (fldigi), 8100 (VARAFM).\n"
+	"\n"
+	"  The words are the ones from \"attach axtcp\" and mean the same thing\n"
+	"  there: \"listen\" and \"client\" are independent, both may be written,\n"
+	"  and one socket is made per \"bind=\" entry.\n"
+	"\n"
+	"  bind=<addr>[,<addr>...]\n"
+	"            which local addresses to answer on for \"listen\", and which\n"
+	"            local address the session leaves by for \"client\" - a node\n"
+	"            with two addresses that wants to call from one of them\n"
+	"            writes the other one down here.  Left out it is every\n"
+	"            address of every family: 0.0.0.0 and [::].  The address says\n"
+	"            the family, so \"bind=0.0.0.0\" leaves a node with an IPv4\n"
+	"            listener only, and at most one address per family is taken.\n"
+	"            An IPv6 literal goes in brackets.  It may stand anywhere.\n"
+	"  keepalive   seconds, 0 (off) to 86400.  An empty packet on the wire,\n"
+	"            for a NAT box that forgets a mapping nothing else uses." },
 
 	{ "ipip", ipip_attach, 0, 1,
 	"attach ipip [<label> [<ip|udp> [<number>|<srcport>:<dstport>]]]\n"

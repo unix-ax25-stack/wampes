@@ -253,24 +253,53 @@ void *p)
   struct iface *ifp;
   struct tcpsock *tp;
   char ifname[64];
-  const char *bindhost = NULL;
-  char *av[8];
+  const char *bindword = NULL;
+  char *av[10];
   char *host = NULL;
   char hostbuf[1024];
   char servbuf[32];
+  struct tcpsock_bindlist *binds = NULL;
   int family = AF_UNSPEC;
   long tmp;
-  int port = AXTCP_DEFAULT_PORT;
+  /* TWO PORT NUMBERS, and not one.  "listen 8000 client host:8001" is one
+   * interface that answers on 8000 and calls on 8001, and a single
+   * variable would make whichever word came last the answer to both
+   * questions - so "listen 20102 client 127.0.0.1:20103" listened on
+   * 20103 and said nothing (Thomas).
+   */
+  int lport = AXTCP_DEFAULT_PORT;		/* the port this port ANSWERS on */
+  int dport = AXTCP_DEFAULT_PORT;		/* the port this port CALLS on */
   int client = 0;
+  int listen = 0;
   int ac = 0;
   int i;
   int keepalive = -1;		/* -1 = not written, so the default applies */
 
   (void) p;
-  for (i = 0; i < argc && ac < (int) (sizeof(av) / sizeof(av[0])); i++) {
+  /* "bind=" AND "keepalive" ARE THE TWO WORDS THAT MAY STAND ANYWHERE, and
+   * both are taken out here, before anything reads a position.  A word that may
+   * only be written in one particular place is an extra rule to think about
+   * while copying a line out.
+   *
+   * "bind=" IS A LIST, and the list is parsed ONCE and then belongs to the port,
+   * so that "listen" can make a socket per entry and "client" can leave by the
+   * entry of the peer's family out of the same words.
+   */
+  for (i = 0; i < argc; i++) {
     if (!strncmp(argv[i], "bind=", 5)) {
-      bindhost = argv[i] + 5;
+      if (bindword != NULL) {
+	printf("\"bind=\" is written twice - it takes a list, so one word: "
+	       "\"bind=%s,%s\"\n", bindword, argv[i] + 5);
+	return 1;
+      }
+      bindword = argv[i] + 5;
       continue;
+    }
+    if (ac >= (int) (sizeof(av) / sizeof(av[0]))) {
+      printf("Usage: attach axtcp [<label> [listen [<port>]]]"
+	     " [client <host>[:<port>]] [keepalive <seconds>]\n");
+      printf("... and too many words before it.\n");
+      return 1;
     }
     av[ac++] = argv[i];
   }
@@ -315,21 +344,48 @@ void *p)
     return 1;
   }
 
-  /* THE SECOND WORD MAKES THE MODE.  Without it the port is a listener - that
-   * is the more frequent form and the one where you need not decide on a word.
+  /* THE LIST IS TAKEN APART HERE, before the interface exists: a list that
+   * cannot be read is a mistake in the command line, and building the interface
+   * first and then refusing it would leave a name that is already half made.
    */
-  if (argc >= 3) {
-    if (!strcmp(argv[2], "listen")) {
-      if (argc >= 4) {
-	if (cmd_getnum(argv[3], &tmp) || tmp <= 0 || tmp > 65535) {
-	  printf("Port \"%s\" is not a port number\n", argv[3]);
+  if ((binds = tcpsock_bind_list(bindword)) == NULL && bindword != NULL)
+    return 1;
+
+  /* "listen" AND "client" ARE TWO WORDS, NOT TWO MODES, and both may stand:
+   * a node that answers an XRouter AND holds a session to a partner is both of
+   * those at once, and it is one interface - one name for "ifconfig", one
+   * "keepalive", one thing to trace.  Making them modes meant writing the
+   * second word decided everything and the first was ignored, so such a node
+   * had to become two interfaces over one port number, and two interfaces
+   * cannot hold one port number between them.
+   *
+   * Either word may come first, and the line is walked word by word until
+   * neither is there any more - the same shape as the "bind=" filtering above.
+   *
+   * NEITHER WORD AT ALL IS A LISTENER, which is the more frequent form and the
+   * one where you need not decide on a word.
+   */
+  listen = 0;
+  for (i = 2; i < argc; ) {
+    if (!strcmp(argv[i], "listen")) {
+      if (listen++)
+	goto Usage;
+      i++;
+      if (i < argc && argv[i][0] != '\0') {
+	if (cmd_getnum(argv[i], &tmp) || tmp <= 0 || tmp > 65535) {
+	  printf("Port \"%s\" is not a port number\n", argv[i]);
 	  return 1;
 	}
-	port = (int) tmp;
+	lport = (int) tmp;
+	i++;
       }
-    } else if (!strcmp(argv[2], "client")) {
-      if (argc < 4) {
-	printf("Usage: attach axtcp <label> client <host>[:<port>]\n");
+    } else if (!strcmp(argv[i], "client")) {
+      if (client++)
+	goto Usage;
+      if (++i >= argc) {
+	printf("\"client\" wants a host, as in \"client db0sao.ampr.org:8000\"\n");
+	printf("Usage: attach axtcp [<label> [listen [<port>]]] "
+	       "[client <host>[:<port>]]\n");
 	return 1;
       }
       /* THE PORT STANDS IN THE HOST, and that is right here: "client" has
@@ -343,10 +399,10 @@ void *p)
        * telling the port from the address, and the wrong guess is the one that
        * costs the afternoon.
        */
-      if (build_hostport(argv[3], hostbuf, sizeof(hostbuf), servbuf,
-	    sizeof(servbuf), &family)) {
+      if (build_hostport(argv[i], hostbuf, sizeof(hostbuf), servbuf,
+		 sizeof(servbuf), &family)) {
 	printf("\"%s\" is not a host or a host:port - an IPv6 literal goes in "
-	       "brackets, as in [::1]:8000\n", argv[3]);
+	       "brackets, as in [::1]:8000\n", argv[i]);
 	return 1;
       }
       if (*servbuf) {
@@ -354,17 +410,32 @@ void *p)
 	  printf("Port \"%s\" is not a port number\n", servbuf);
 	  return 1;
 	}
-	port = (int) tmp;
+	dport = (int) tmp;
       }
       if ((host = strdup(hostbuf)) == NULL)
 	return 1;
       client = 1;
+      i++;
     } else {
-      printf("Usage: attach axtcp [<label> [listen [<port>] | client <host>[:<port>]]]"
-	       " [keepalive <seconds>]]\n");
+    Usage:
+      /* A WORD TOO MANY IS REFUSED, not left unread.  The line is walked by
+       * position, and a word nobody read is a word the sysop believes was
+       * honoured: "attach axtcp al listen 19966 19967" bound 19966 and said
+       * nothing at all about 19967, which is not a shorter answer than this
+       * one.
+       */
+      printf("Usage: attach axtcp [<label> [listen [<port>]]]"
+	     " [client <host>[:<port>]] [keepalive <seconds>]\n");
+      if (i < argc)
+	printf("... and \"%s\" is one word too many.\n", argv[i]);
       return 1;
     }
   }
+  /* NEITHER WORD IS A LISTENER, on the default port: that is the more frequent
+   * form and the one where you need not decide on a word.
+   */
+  if (!client)
+    listen = 1;
 
   if ((ifp = (struct iface *) calloc(1, sizeof(struct iface))) == NULL) {
     if (host)
@@ -412,47 +483,69 @@ void *p)
    */
   ifp->keepalive = keepalive < 0 ? TCP_KEEPALIVE_DEFAULT : keepalive;
 
-  if (client) {
-    if ((tp = tcpsock_new(ifp, TCF_CLIENT, TCPAD_AXTCP)) == NULL) {
+  /* ONE PORT WITH BOTH ROLES, and the two hooks are one set of four - the same
+   * bytes either way.  Only the flags say which half of it is wanted, and the
+   * session list is what "attach axtcp stat" walks.
+   *
+   * "bind=" BELONGS TO THE PORT AND NOT TO A ROLE, and that is what makes both
+   * words work with one list: a listener makes a socket per entry, and the
+   * session the client holds leaves by the entry of the peer's family.  A
+   * listener and a client on one interface that want different local addresses
+   * would need two interfaces - and two interfaces cannot hold one port number
+   * between them, which is why they are one interface (Thomas).
+   */
+  if ((tp = tcpsock_new(ifp, (client ? TCF_CLIENT : 0) | (listen ? TCF_LISTEN : 0),
+			TCPAD_AXTCP)) == NULL) {
+    if (host)
+      free(host);
+    tcpsock_bind_free(binds);
+    if_detach(ifp);
+    return 1;
+  }
+  tp->rx = axtcp_rx;
+  tp->tx = axtcp_tx;
+  tp->detect = axtcp_detect;
+  tp->keepalive = axtcp_keepalive;
+  /* THE LIST IS THE PORT'S, and not the call's: the rebuild needs it, and a
+   * session that rings again has to leave by the address it was told to leave
+   * by.  tcpsock_forget() takes it away with the port.
+   */
+  tp->binds = binds;
+
+  if (listen) {
+    if (tcpsock_listen(tp, binds, lport)) {
+      /* tcpsock_listen() has said which address and why.  A second sentence
+       * here would only repeat the port number at somebody who has just been
+       * told the address.
+       */
+      tcpsock_forget(tp);
       if (host)
 	free(host);
       if_detach(ifp);
       return 1;
     }
-    tp->rx = axtcp_rx;
-    tp->tx = axtcp_tx;
-    tp->detect = axtcp_detect;
-    tp->keepalive = axtcp_keepalive;
+  }
+  if (client) {
     /* WHAT THE BRACKETS SAID, remembered before the first attempt and not
      * only for it: AF_INET6 tells tcpsock_connect() to stop after the v6
      * answers, and a later retry would otherwise be free to walk into an A
      * record for a name that was written with "[...]" on purpose.  Zero means
      * "either family", which is what an unbracketed spelling asks for.
+     *
+     * AND WITH A LISTENER ALONGSIDE, THE BRACKETS ARE THE PORT'S TOO: they say
+     * which family the peer is, and the "bind=" entry of that family is the
+     * address the session leaves by.  So a bracketed peer plus "bind=[::]" is
+     * a port that listens on [::] and calls out of [::], which is what the two
+     * words together say.
      */
     tp->family = family;
-    /* A RING THAT FAILS IS NO REASON TO LOSE THE PORT.  The message says so,
-     * the attach carries on, and the ticker tries again after the deadline -
-     * otherwise after every outage of the peer one would have to type the
-     * command once more (Thomas).
+    /* A RING THAT FAILS IS NO REASON TO LOSE THE PORT.  tcpsock_connect() says
+     * why, once, and the attach carries on; the ticker tries again after the
+     * deadline - otherwise after every outage of the peer one would have to
+     * type the command once more (Thomas).
      */
-    if (tcpsock_connect(tp, host, port))
-      printf("Cannot connect to %s:%d - will retry\n", host, port);
+    tcpsock_connect(tp, host, dport);
     free(host);
-  } else {
-    if ((tp = tcpsock_new(ifp, TCF_LISTEN, TCPAD_AXTCP)) == NULL) {
-      if_detach(ifp);
-      return 1;
-    }
-    tp->rx = axtcp_rx;
-    tp->tx = axtcp_tx;
-    tp->detect = axtcp_detect;
-    tp->keepalive = axtcp_keepalive;
-    if (tcpsock_listen(tp, bindhost, port)) {
-      printf("Cannot listen on port %d\n", port);
-      tcpsock_forget(tp);
-      if_detach(ifp);
-      return 1;
-    }
   }
   /* THE TICK, and it has to be started HERE.  tcpsock_init() exists and does
    * exactly this, but nothing calls it: the axtcp_init() that was meant to call

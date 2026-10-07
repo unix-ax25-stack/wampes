@@ -26,6 +26,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+/* SOCKADDR_STRLEN, for the "bind=" words: it is what sockaddr_to_string() wants
+ * and what the list keeps each entry in, so the header that declares the list
+ * has to be here rather than in every file that includes this one.
+ */
+#include "sockaddr_util.h"
+
 /* What one read() takes in at a time.  Big enough that an ordinary frame
  * arrives in one go, and not so big that a flood fills memory.
  */
@@ -125,9 +131,71 @@
  */
 #define TCP_BACKOFF_STEP(n)	((n) < 8 ? (TCP_BACKOFF_FIRST << (n)) : TCP_BACKOFF_MAX)
 
+/* ONE ENTRY OF THE "bind=" LIST, and one socket on it.
+ *
+ * THE ADDRESS SAYS THE FAMILY, and there is no second word that says it again:
+ * "bind=0.0.0.0" is an IPv4 port, "bind=[::1]" an IPv6 one, and a list with
+ * both is a port with both.  The port number is not in here yet - it is one
+ * number for the whole line ("listen 8000") and it is written into the address
+ * when the socket is made, which is the only place it is ever known.
+ *
+ * word is the entry as the sysop wrote it, and it is kept because every message
+ * about a bind has to quote it: "cannot bind 127.0.0.2" is a thing the sysop
+ * can act on, "cannot bind" is not.
+ */
+struct tcpsock_bind {
+  struct tcpsock_bind *next;
+  int family;			/* AF_INET or AF_INET6 */
+  struct sockaddr_storage addr;
+  char word[SOCKADDR_STRLEN + 16];
+};
+
+/* ONE LIST PER PORT, walked in the order it was written - so that "ifconfig
+ * verbose" shows the sockets in the order the configuration lists them, and a
+ * sysop comparing two lines compares them in the same order he wrote them.
+ *
+ * A list, and not one address, because one socket cannot answer on 0.0.0.0 and
+ * on ::1 at the same time, and "bind=0.0.0.0,[::]" is two addresses somebody
+ * wrote on purpose.  AT MOST ONE ENTRY PER FAMILY: which of two IPv4 sockets a
+ * session would leave by is a question with no answer in the configuration.
+ *
+ * NULL means "there is no bind= word", which is NOT the same as an empty list:
+ * no word is both families (the two default sockets, or no source address for a
+ * client), and an empty entry in a written list is a mistake that is refused.
+ */
+struct tcpsock_bindlist {
+  struct tcpsock_bind *head;
+  int n;
+};
+
+/* ONE LISTENING SOCKET PER ADDRESS, and not one for all of them: 0.0.0.0,
+ * ::1 and a single global address need different sockets, because you cannot
+ * bind to ::1 by binding to ::.  "bind=0.0.0.0,[::]" is two addresses a sysop
+ * wrote on purpose, and one socket cannot answer on both.
+ *
+ * Each socket remembers the address it was bound to, because the ADDRESS is
+ * what says the family: a listener has no one family of its own any more, and
+ * an accepted session has to be told which of its port's sockets it came in on
+ * - after an accept() the bound address is the only thing that says whether the
+ * partner arrived over IPv4 or over IPv6, and a session that cannot say it
+ * prints "IPv4" for a partner that came in on ::1.
+ */
+struct tcpsock_listen {
+  struct tcpsock_listen *next;
+  int fd;			/* >= 0 always, one per "bind=" entry */
+  int family;			/* AF_INET or AF_INET6, and NOT the port's */
+  struct sockaddr_storage addr;	/* what this socket was bound to */
+};
+
 struct tcpsock {
   struct tcpsock *next;
   struct iface *ifp;		/* who the session belongs to */
+  struct tcpsock_bindlist *binds;	/* the "bind=" list, kept for the
+					 * rebuild: a session that rings again
+					 * must leave by the same address it
+					 * was told to leave by, or the second
+					 * attempt is a different link from
+					 * the first (Thomas). */
   int flags;
   int proto;			/* TCPAD_*: what this SESSION has settled on */
   int portproto;		/* TCPAD_*: what the PORT speaks - on a
@@ -139,20 +207,31 @@ struct tcpsock {
 				 * port (Thomas). */
   int family;			/* AF_INET or AF_INET6 */
 
-  /* ONE LISTENING SOCKET PER ADDRESS, and not one for all of them: 0.0.0.0,
-   * ::1 and a single global address need different sockets, because you
-   * cannot bind to ::1 by binding to ::.  The list below is a list for that
-   * reason.
+  /* The listening sockets, one per "bind=" entry - see struct
+   * tcpsock_listen below, and why there is a list and not one fd.
    *
    * NO TIMER MAY TOUCH THIS.  The loss of a client closes the session; the
    * loss of a listening socket closes the port, and that is an error in the
    * command, not a timeout (Thomas).
    */
-  int listenfd;			/* >= 0 only with TCF_LISTEN */
+  struct tcpsock_listen *listens;
+  int nlistens;
+
   int fd;			/* >= 0 from accept() or connect() */
   char *peer;			/* host, for the client and for the display */
-  int port;			/* target port, resp. the listening port */
-  struct sockaddr_storage laddr;	/* the address that was bound */
+  int port;			/* the TARGET port of a client session */
+  int lport;			/* the port this port LISTENS on, 0 when it does
+				 * not listen.  TWO NUMBERS, because a port may be
+				 * both at once: "listen 8000 client host:8001"
+				 * is one interface with two port numbers, and one
+				 * field for both would make the second word
+				 * overwrite the first (Thomas). */
+  struct sockaddr_storage laddr;	/* the local address of a SESSION.  On a
+					 * listener the address is in the list
+					 * above, one per socket - and the peer
+					 * address is nowhere here, it is
+					 * tp->peer and it is printed as
+					 * "dials" (Thomas). */
 
   /* THE STREAM.  raw is the unmodified TCP content, len how much of it is
    * already there.  For AXTCP that is needed until length field AND announced
@@ -248,12 +327,44 @@ int tcpsock_send(struct tcpsock *tp, struct mbuf *bp);
 struct tcpsock *tcpsock_new(struct iface *ifp, int flags, int portproto);
 int tcpsock_init(void);
 int tcpsock_set_nonblock(int fd);
-int tcpsock_listen(struct tcpsock *tp, const char *addr, int port);
+
+/* THE "bind=" LIST, parsed once at the attach and used in two roles:
+ *
+ *   for a LISTENER it is one socket per entry, and no list at all is the two
+ *   default sockets - 0.0.0.0 and [::] - so a port without "bind=" answers on
+ *   both families, exactly as the axip ports do;
+ *
+ *   for a CLIENT it is the source address the session leaves by, and which
+ *   entry that is depends on the peer: the entry of the family the name
+ *   resolved to.  A client has one socket and therefore one source address,
+ *   and with no list it is the one the kernel picks, which is what it always
+ *   did.
+ *
+ * The list is kept on the port (tp->binds) and not freed after the attach: a
+ * session that rings again has to leave by the same address it was told to
+ * leave by, or the second attempt is a different link from the first.
+ *
+ * Returns NULL when there is nothing to parse (list == NULL, or an empty
+ * word - the callers only ask for a list when the word was written), and NULL
+ * with a message when the list is wrong.  At most one entry per family; a
+ * second one is refused.
+ */
+struct tcpsock_bindlist *tcpsock_bind_list(const char *list);
+void tcpsock_bind_free(struct tcpsock_bindlist *bl);
+
+/* The n-th entry, in the order it was written.  NULL past the end. */
+struct tcpsock_bind *tcpsock_bind_nth(struct tcpsock_bindlist *bl, int n);
+/* The entry of this family, or NULL when the list has none. */
+struct tcpsock_bind *tcpsock_bind_family(struct tcpsock_bindlist *bl, int family);
+
+int tcpsock_listen(struct tcpsock *tp, struct tcpsock_bindlist *bl, int port);
 int tcpsock_connect(struct tcpsock *tp, const char *host, int port);
 void tcpsock_forget(struct tcpsock *tp);
 void tcpsock_gone(struct tcpsock *tp);
 struct tcpsock *tcpsock_first(struct iface *ifp);
 int tcpsock_has_session(struct iface *ifp);
+int tcpsock_isport(struct iface *ifp);
+void tcpsock_show_verbose(struct iface *ifp);
 
 /* THE COUNTERS.  ifp == NULL means "all ports", proto == 0 "all protocols" -
  * which is what "attach axtcp stat" without a label says: the ports of this
