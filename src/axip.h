@@ -73,6 +73,12 @@ int axip_isport(const struct iface *ifp);
  * koennte - der Keepalive ist die Antwort auf ein UDP-Problem.
  */
 int axip_isudp(const struct iface *ifp);
+/* WHICH PORTS CARRY A ROUTE AT ALL: the axip/axudp ones (raw hook axip_raw)
+ * and the two TCP carriers axtcp/kisstcp (raw hook tcpsock_raw).  Both learn
+ * callsigns, so both want the same commands - a setting refused on one of the
+ * two would be one the sysop has to guess (Thomas).
+ */
+int axip_iscarrier(const struct iface *ifp);
 /* Der Keepalive der axudp-Ports braucht einen eigenen Tick: axip_timer()
  * gehoert zu den Routen und hat keine Stelle, die ihn anstossen koennte.
  * ifkeepalive() ruft das hier, sobald ein axudp-Port einen Keepalive
@@ -104,6 +110,12 @@ int if_axip_dns_silence(int argc, char *argv[], void *p);
 void axip_forget_transport(void *tsock);
 int axip_learn_transport(const uint8 *call, void *tsock, int chan, int proto, struct iface *ifp);
 void *axip_transport_route(const uint8 *call, struct iface *ifp);
+/* A WRITTEN route on a TCP port (tsock == NULL, so not a learned one) for
+ * this callsign - or a default written on it.  The address of such a route
+ * is a stand-in: over TCP the connection is the address, and the port picks
+ * the session it has (tcpsock_raw(), Thomas).
+ */
+int axip_sysop_route_on(const uint8 *call, struct iface *ifp);
 void axip_heard(const uint8 *call);
 void axip_dropped(void);
 

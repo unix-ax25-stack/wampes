@@ -332,6 +332,19 @@ void *p)
     return tcpsock_stat(statif, TCPAD_AXTCP, argc, argv, p);
   }
 
+  /* "listen" AND "client" ARE NOT LABELS, and a first word that is one of
+   * them is the classic mistype: the name comes first, the option second, so
+   * "attach axtcp listen 999" builds a port NAMED "listen" - and the next
+   * attempt says "Interface listen already exists", a message about a port
+   * nobody meant to make (the "stat" case above has the same shape, Thomas).
+   */
+  if (argc >= 2 &&
+      (!strcmp(argv[1], "listen") || !strcmp(argv[1], "client"))) {
+    printf("\"%s\" is taken as the interface NAME here - the name stands\n"
+	   "first and the option after it: \"attach axtcp <name> %s ...\"\n",
+	   argv[1], argv[1]);
+    return 1;
+  }
   if (argc >= 2) {
     strncpy(ifname, argv[1], sizeof(ifname) - 1);
     ifname[sizeof(ifname) - 1] = 0;

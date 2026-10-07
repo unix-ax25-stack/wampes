@@ -435,6 +435,17 @@ void *p)
     return tcpsock_stat(statif, TCPAD_KISSTCP, argc, argv, p);
   }
 
+  /* "listen" AND "client" ARE NOT LABELS - see the same question in
+   * axtcp_attach(): the name stands first, and a first word that is one of
+   * them is taken as the name (Thomas).
+   */
+  if (argc >= 2 &&
+      (!strcmp(argv[1], "listen") || !strcmp(argv[1], "client"))) {
+    printf("\"%s\" is taken as the interface NAME here - the name stands\n"
+	   "first and the option after it: \"attach kisstcp <name> %s ...\"\n",
+	   argv[1], argv[1]);
+    return 1;
+  }
   if (argc >= 2) {
     strncpy(ifname, argv[1], sizeof(ifname) - 1);
     ifname[sizeof(ifname) - 1] = 0;

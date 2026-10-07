@@ -1348,7 +1348,7 @@ ifkeepalive(int argc,char *argv[],void *p)
 		return 1;
 	}
 	if(argc < 2){
-		printf("%s: keepalive %d",ifp->name,ifp->keepalive);
+		printf("%s: keepalive %d s",ifp->name,ifp->keepalive);
 		if(ifp->keepalive == 0)
 			printf("  (off)");
 		else if(ifp->raw == tcpsock_raw
@@ -1462,7 +1462,7 @@ showiface(struct iface *ifp, int verbose)
 		pid_show_verbose(ifp);
 		frame_show_verbose(ifp);
 	}
-	if(verbose && axip_isport(ifp))
+	if(verbose && axip_iscarrier(ifp))
 		axip_show_verbose(ifp);
 	/* Der TCP-Teil: ob der Port lauscht oder waehlt, welche Familie er hat
 	 * und an welche Adresse er gebunden ist.  Dieselbe Luecke wie bei den

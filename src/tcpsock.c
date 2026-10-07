@@ -705,6 +705,37 @@ struct iface *ifp)
   return tcpsock_first(ifp) != NULL;
 }
 
+/* THE PORT'S ONLY SESSION, or NULL when it has zero or several.  For a
+ * written route that names the port instead of a session (axip_sysop_route_on(),
+ * tcpsock_raw()): with one session hanging on the port, "the port" and "the
+ * neighbour" are the same thing - what "axip route add <call>:<port>" says is
+ * then no guess.  With two, the route says nothing about WHICH one, and the
+ * answer this does not give is worth more than the one it makes up (Thomas).
+ *
+ * ONLY WHAT IS CONNECTED COUNTS.  The port's own listening socket sits in the
+ * same list with the same tp->ifp and holds no peer (tcpsock_stat() prints
+ * the two kinds as "listen" and "connected").  Counted, it turned one session
+ * into two and the written route never wrote - measured: ax25sndcnt 1,
+ * rawsndcnt 0, nothing on the wire; and with no session at all it made the
+ * listener look like the one session, so the frame went to a socket nobody
+ * answers on and rawsndcnt counted it as sent all the same.
+ */
+static struct tcpsock *
+tcpsock_single_session(
+struct iface *ifp)
+{
+  struct tcpsock *tp;
+  struct tcpsock *one = NULL;
+  int n = 0;
+
+  for (tp = Tcp_socks; tp != NULL; tp = tp->next)
+    if (tp->ifp == ifp && (tp->flags & TCF_CONNECTED)) {
+      one = tp;
+      n++;
+    }
+  return n == 1 ? one : NULL;
+}
+
 /*---------------------------------------------------------------------------*/
 
 /* THE "bind=" LIST, split on the commas and looked up once.
@@ -1633,6 +1664,18 @@ struct mbuf **bpp)
 
   if ((tp = (struct tcpsock *) axip_transport_route(dest, ifp)) == NULL)
     tp = tcpsock_client_session(ifp);
+  /* A WRITTEN ROUTE FOR THIS PORT, and no other session to ask: this is the
+   * listener case (a client port already sent by the line above), and here
+   * "the port" resolves to a session only while exactly ONE session hangs on
+   * it - the neighbour of a single peer is precisely whom the sysop named in
+   * "axip route add <call>:<port>".  Two sessions mean two possible answers
+   * to a question the route does not ask, and a frame pushed onto the wrong
+   * neighbour's session is not an answer anybody wanted; so it stays
+   * unwritten (tcpsock_single_session(), Thomas).
+   */
+  if (tp == NULL &&
+      axip_sysop_route_on(dest, ifp))
+    tp = tcpsock_single_session(ifp);
   if (tp == NULL)
     return -1;			/* nobody knows where to */
 

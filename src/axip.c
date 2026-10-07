@@ -33,6 +33,12 @@
 #include "domain.h"
 #include "../lib/buildsaddr.h"
 
+/* THE TCP CARRIERS, for axip_iscarrier() below: the axtcp and kisstcp ports
+ * live in tcpsock.c, and tcpsock_raw is the raw hook a route on such a port
+ * has to be able to name (Thomas).
+ */
+#include "tcpsock.h"
+
 #define MAX_FRAME       2048
 
 #ifdef	notdef
@@ -294,6 +300,25 @@ const struct iface *ifp)
     return 0;
   edv = (struct edv_t *) ifp->edv;
   return edv != NULL && edv->type == USE_UDP;
+}
+
+/* WHICH PORTS CARRY A ROUTE AT ALL, for the commands below and for the gates
+ * in if_axip_learn(), if_axip_dns_interval() and axip_split_call().
+ *
+ * A TCP carrier (axtcp, kisstcp) is not a second kind of table: the session IS
+ * its address, so it needs no sockaddr - but it does learn, callsign per
+ * session (axip_learn_transport()), and it does send from the same table
+ * (axip_transport_route(), tcpsock_raw()).  Refusing these ports the common
+ * settings was a gate reading the raw hook where it should have asked "does
+ * this port carry callsigns at all".  axip_isport() keeps its meaning: one
+ * socket per bind= entry, an axudp keepalive, and "verbose" showing which
+ * sockets a port is bound to (Thomas).
+ */
+int axip_iscarrier(
+const struct iface *ifp)
+{
+  return ifp != NULL &&
+         (ifp->raw == axip_raw || ifp->raw == tcpsock_raw);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1977,6 +2002,34 @@ struct iface *ifp)
   return best;
 }
 
+/* OB AUF DIESEM PORT EINE VON HAND GESCHRIEBENE ROUTE AUF DAS RUFZEICHEN
+ * STEHT, nicht die gelernte: tsock == NULL, wie nur "axip route add" sie
+ * schreibt (axip_learn_transport() setzt immer eine Sitzung darunter).
+ *
+ * WOFUER: tcpsock_raw() fragt damit, ob ein auftauchendes Rufzeichen hier
+ * ueberhaupt erwartet wird.  Ueber TCP ist die Adresse der Verbindung selbst,
+ * die Route nennt also kein Ziel, das man anbinden koennte - sie sagt nur
+ * "dieses Rufzeichen gehoert in diesen Port", und der Port entscheidet, wenn
+ * er nur eine Sitzung hat (Thomas).
+ */
+int axip_sysop_route_on(
+const uint8 *call,
+struct iface *ifp)
+{
+  struct axip_route *rp;
+  int thisdev = axip_ifp_to_rdev(ifp);
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    if (rp->tsock != NULL)
+      continue;
+    if (rp->rdev != thisdev)
+      continue;
+    if (rp->is_default || axip_call_match(rp->call, call))
+      return 1;
+  }
+  return 0;
+}
+
 /* DIE LETZTE NACHRICHT VON DIESER ADRESSE GESAGT - und zwar an ALLE ihre
  * Eintraege, nicht nur an den, den der Rahmen eben getroffen hat.  Sonst saehe
  * ein Rufzeichen, das hinter einer anderen Adresse liegt, nach der Stille-Frist
@@ -2024,6 +2077,8 @@ char Axip_learn_usage[] =
 "  Only a LEARNED address is ever affected.  \"axip route add\" and \"add\n"
 "  ... permanent\" are the sysop's business and are not touched by it.\n"
 "  A route belongs to one port: learned on one, it is not used on another.\n"
+"  An axtcp or kisstcp port has this switch too: what is learned there is\n"
+"  the SESSION a callsign was heard on - the connection is its address.\n"
 "  The current value is in \"ifconfig <iface> verbose\".";
 
 char Axip_dns_usage[] =
@@ -2209,7 +2264,7 @@ static int doaxiproute(int argc, char *argv[], void *p)
       if (rp->qdue)
 	printf("  address wrong");
       if (rp->rtime)
-	printf("  asked %s ago", tformat(secclock() - rp->rtime));
+	printf("  resolved %s ago", tformat(secclock() - rp->rtime));
     }
     /* ALTER DER BEIDEN RICHTUNGEN.  Nur was da ist; eine frisch angelegte
      * Route hat noch kein "vor ..." und soll nicht so tun, als waere sie
@@ -2253,13 +2308,14 @@ int *isdefp)
       printf("No such interface \"%s\"\n", colon + 1);
       return 1;
     }
-    /* Ein Interface, das gar kein axip-Port ist, kann keine Route bekommen:
-     * es gaebe keinen Socket, ueber den sie liefe, und das waere eine Zeile
-     * in "axip route", die niemals benutzt wird.  Und die Meldung sagt es,
-     * statt stillzuschweigen - sonst sucht man den Fehler in ax25 route.
+    /* A PORT THAT CANNOT CARRY CALLSIGNS can have no route: there would be no
+     * session or socket for it to run on, and it would be a line in "axip
+     * route" that is never used.  And the message says so, instead of being
+     * silent - otherwise the sysop looks for the error in "ax25 route".
      */
-    if (!axip_isport(ifp)) {
-      printf("%s is not an axip or axudp interface\n", ifp->name);
+    if (!axip_iscarrier(ifp)) {
+      printf("%s is not an axip, axudp, axtcp or kisstcp interface\n",
+	     ifp->name);
       return 1;
     }
     *ifpp = ifp;
@@ -2426,6 +2482,19 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
    */
   rp->rtime = 0;
   rp->qdue = 0;
+
+  /* WHERE THE ADDRESS STANDS FOR A CONNECTION.  An axtcp or kisstcp port
+   * still takes a host here - keeping the partner's address for the record
+   * is the sysop's business - but it is not a socket the port sends through:
+   * the connection IS the address, and the port sends to the one session it
+   * has (axip_sysop_route_on(), tcpsock_raw()).  Without this note the line
+   * in "axip route" reads like a UDP route that will send to 127.0.0.1
+   * (Thomas).
+   */
+  if (ifp != NULL && axip_iscarrier(ifp) && !axip_isport(ifp))
+    printf("%s is a TCP carrier: the address above is the connection, not a\n"
+	   "socket - the route counts while the port has ONE session.\n",
+	   ifp->name);
   return 0;
 }
 
@@ -2565,18 +2634,24 @@ static int doaxipstats(int argc, char *argv[], void *p)
 
 /* ifconfig <iface> axip-learn on|once|off
  *
- * Ein Interface, das gar kein axip-Port ist, sagt es, statt die Angabe zu
- * nehmen und still zu nichts zu tun - dieselbe Begruendung wie bei ifarp() in
- * iface.c, und es ist derselbe Fehler: eine Einstellung, die nichts bewirkt,
- * sieht hinterher aus wie eine, die etwas bewirkt.
+ * A port that carries no callsigns at all says so, instead of taking the
+ * setting and doing nothing with it - the same justification as ifarp() in
+ * iface.c, and it is the same error: a setting that does nothing looks
+ * afterwards like one that does.
+ *
+ * THIS IS ALSO A SETTING OF THE TCP CARRIERS.  axip_learn_transport() asks
+ * axip_may_learn() for every frame an axtcp or kisstcp session brings in, so
+ * the switch exists there - only the gate refused it, because it asked for
+ * the raw hook axip_raw instead of "does this port carry callsigns"
+ * (axip_iscarrier(), Thomas).
  */
 int if_axip_learn(int argc, char *argv[], void *p)
 {
   struct iface *ifp = (struct iface *) p;
 
-  if (!axip_isport(ifp)) {
-    printf("%s is not an axip or axudp interface - it has no callsigns to\n"
-	   "learn.  \"attach axip\" or \"attach axudp\" makes one.\n", ifp->name);
+  if (!axip_iscarrier(ifp)) {
+    printf("%s carries no callsigns to learn - it is not an axip, axudp,\n"
+	   "axtcp or kisstcp interface.\n", ifp->name);
     return 1;
   }
   if (argc < 2) {
@@ -2610,8 +2685,12 @@ int if_axip_dns_interval(int argc, char *argv[], void *p)
 {
   struct iface *ifp = (struct iface *) p;
 
-  if (!axip_isport(ifp)) {
-    printf("%s is not an axip or axudp interface\n", ifp->name);
+  /* AXIP_ISCARRIER: a named route may sit on a TCP carrier too, and there it
+   * is the port that decides how often the name is asked about - see
+   * axip_iscarrier() (Thomas). */
+  if (!axip_iscarrier(ifp)) {
+    printf("%s is not an axip, axudp, axtcp or kisstcp interface\n",
+	   ifp->name);
     return 1;
   }
   if (argc < 2) {
@@ -2626,8 +2705,10 @@ int if_axip_dns_silence(int argc, char *argv[], void *p)
 {
   struct iface *ifp = (struct iface *) p;
 
-  if (!axip_isport(ifp)) {
-    printf("%s is not an axip or axudp interface\n", ifp->name);
+  /* AXIP_ISCARRIER, and for the same reason as the interval above (Thomas). */
+  if (!axip_iscarrier(ifp)) {
+    printf("%s is not an axip, axudp, axtcp or kisstcp interface\n",
+	   ifp->name);
     return 1;
   }
   if (argc < 2) {
@@ -2670,7 +2751,14 @@ void axip_show_verbose(const struct iface *ifp)
    * They differ whenever the host has no such address, and then the error was
    * long gone and this line is all that is left.
    */
-  if (edv != NULL) {
+  /* THE SOCKETS, and only for a port that HAS axip sockets.  The state lines
+   * below belong to every carrier - a TCP carrier has axip-learn and the two
+   * dns frists too, see axip_iscarrier() - but its edv_t is a struct tcpsock
+   * and reading edv->socks out of it would print a list from memory.  The
+   * sockets of a TCP port are printed by tcpsock_show_verbose(), next to this
+   * one (Thomas).
+   */
+  if (edv != NULL && axip_isport(ifp2)) {
     const char *kind = edv->type == USE_UDP ? "udp" : "ip";
     struct axip_sock *sk;
 
