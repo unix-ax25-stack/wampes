@@ -514,6 +514,15 @@ void *p)
     if (err != 0) {
       tp->resets++;
       if (tp->flags & TCF_CLIENT) {
+	/* THE FIRST REFUSAL HAD ONLY THE SILENT PATH.  tcpsock_connect()
+	 * reports the synchronous failures and nothing after that, and the
+	 * refusal the kernel almost always delivers as ECONNREFUSED arrives
+	 * asynchronously as SO_ERROR - which made a client whose peer is
+	 * switched off look exactly like one that was never ringing at all
+	 * (Thomas).
+	 */
+	if (tp->peer != NULL)
+	  printf("Cannot connect to %s:%d - will retry\n", tp->peer, tp->port);
 	tcpsock_gone(tp);
 	tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
 	tp->attempts++;
