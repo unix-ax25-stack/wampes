@@ -52,7 +52,14 @@ static int Tcp_timer_running = 0;
  * shorter one makes the second impossible, because "nothing for five minutes"
  * and "nothing for three seconds" would be the same report.
  */
-#define TCPTIMER_INTERVAL	30000	/* ms */
+/* ZEHN SEKUNDEN, und nicht mehr dreissig: der Tick prueft ueberall nur
+ * Fristen (Reconnect-Termine, Keepalive, Garbage), nie Zaehler - er darf
+ * also haeufiger schlagen, ohne dass sich sonst etwas aendert, ausser dass
+ * eine Frist hoechstens 10 statt 30 s zu spaet kommt.  Genau das ist der
+ * Unterschied zwischen "sofort neu verbunden" und "der Nutzer schaut auf
+ * die Uhr" nach einem Serverneustart (Thomas).
+ */
+#define TCPTIMER_INTERVAL	10000	/* ms */
 
 /* HOW OFTEN A RING.  Attempts 1..7 double, after that it stays at half an hour.
  * The build starts at four minutes, because until then the kernel goes its own
@@ -78,6 +85,8 @@ static void tcpsock_on_accept(void *p);
 static void tcpsock_close_listens(struct tcpsock *tp);
 static void tcpsock_on_accept(void *p);
 static void tcpsock_reconnect(struct tcpsock *tp);
+static void tcpsock_client_lost(struct tcpsock *tp);
+static void tcpsock_build_failed(struct tcpsock *tp);
 
 /* WHEN A CHANNEL COMES UP FOR A DECISION and has not decided yet: the first
  * byte decides, and after that it stays decided.  Anyone who tests again after
@@ -524,14 +533,15 @@ void *p)
 	if (tp->peer != NULL)
 	  printf("Cannot connect to %s:%d - will retry\n", tp->peer, tp->port);
 	tcpsock_gone(tp);
-	tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
-	tp->attempts++;
+	tcpsock_build_failed(tp);
       } else {
 	tcpsock_forget(tp);
       }
       return;
     }
-    tp->flags |= TCF_CONNECTED;
+    tp->flags |= TCF_CONNECTED | TCF_WASUP;
+    tp->early = 0;		/* der Burst ist bezahlt oder nie gefallen;
+				 * ab hier zaehlt nur noch die Leiter */
     tp->attempts = 0;
     tp->nextrecon = 0;
     on_read(tp->fd, tcpsock_on_read, tp);
@@ -605,13 +615,10 @@ struct tcpsock *tp)
    */
   if (l < 0)
     tp->resets++;
-  if (tp->flags & TCF_CLIENT) {
-    tcpsock_gone(tp);
-    tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
-    tp->attempts++;
-  } else {
+  if (tp->flags & TCF_CLIENT)
+    tcpsock_client_lost(tp);
+  else
     tcpsock_forget(tp);
-  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -639,6 +646,68 @@ struct tcpsock *tp)
   tp->flags &= ~(TCF_CONNECTED | TCF_CONNECTING);
   tp->len = 0;			/* half a frame of a dead connection
 				 * belongs to no new one */
+}
+
+/* DIE SITZUNG EINES CLIENT-PORTS IST WEG, und wie lange gewartet wird, bis
+ * neu gebaut wird, entscheidet sich hier.
+ *
+ * EINE SITZUNG, DIE STAND (TCF_WASUP) UND LANGER ALS TCP_EARLY_AGE: der
+ * Peer war bis vor Sekunden erreichbar - der Server neu gestartet, die
+ * Leitung kurz weg, beides kehrt ueblicherweise in einer Minute zurueck.
+ * Also darf der erste Neubau sofort kommen (naechster Tick, hoechstens
+ * 10 s, oder beim naechsten sendenden Frame gleich), und die naechsten
+ * TCP_EARLY_TRIES Versuche folgen im Abstand von TCP_EARLY_GAP - das ist
+ * das Fenster, in das ein Neustart des Gegners haelt.  Erst danach gilt
+ * die uebliche Leiter wieder.
+ *
+ * DIE SICHERUNG DAUERHAFT GEBAUT: wer annehmen und sofort wieder
+ * zumachen kann (alter Server, Proxy, Konfigurationsfehler), bekommt
+ * genau diesen Burst und sonst nichts - seine Sitzungen stehen ja nie
+ * TCP_EARLY_AGE lang, und ohne Alter kein Budget.  So kostet jeder echte
+ * Ausfall eine Handvoll SYNs und nicht eine pro Tick (Thomas).
+ *
+ * ALLES ANDERE wie bisher: ein Port, der noch nie gestanden hat, oder
+ * eine zu kurz stehende Sitzung warten erst die volle Wartezeit, denn
+ * ohne beobachtbare Sitzung geht die Rechnung von einem ausgeschalteten
+ * Gegner aus und vom Kernel, der auf eigene Faust SYN wiederholt.
+ */
+static void
+tcpsock_client_lost(
+struct tcpsock *tp)
+{
+  tcpsock_gone(tp);
+  if ((tp->flags & TCF_WASUP) &&
+      secclock() - tp->lastbuild >= TCP_EARLY_AGE) {
+    tp->early = TCP_EARLY_TRIES;
+    tp->attempts = 0;
+    tp->nextrecon = secclock();
+  } else {
+    tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
+    tp->attempts++;
+  }
+}
+
+/* DER BAU IST FEHLGESCHLAGEN - die entscheidete Stelle fuer die naechste
+ * Wartezeit, an der beiden Wege zusammenlaufen: das asynchrone
+ * ECONNREFUSED aus on_write() und das Scheitern in tcpsock_reconnect().
+ *
+ * Das Early-Budget geht vor.  Es wird hier bezahlt und nicht dort, wo der
+ * Verlust fiel, weil zwischen den beiden die Dauer des Syn-Self-Timeouts
+ * liegen kann - die Sekunden des Budgets gehoeren ans Ende des
+ * Fehlversuchs und nicht an den Anfang des Ausfalls.
+ */
+static void
+tcpsock_build_failed(
+struct tcpsock *tp)
+{
+  if (tp->early > 0) {
+    tp->early--;
+    tp->nextrecon = secclock() + TCP_EARLY_GAP;
+    tp->attempts = 0;
+  } else {
+    tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
+    tp->attempts++;
+  }
 }
 
 /* HAT DER PORT NOCH EINE SITZUNG?  tcpsock_forget() fragt das, wenn eine
@@ -1188,6 +1257,12 @@ int port)
   if (tp == NULL || host == NULL)
     return -1;
 
+  /* WHEN WE RANG LAST, and every attempt says so here - the sync failure as
+   * well as the one that goes through on_write().  tcpsock_client_lost() asks
+   * this to decide between an early rebuild and the patient ladder (Thomas).
+   */
+  tp->lastbuild = secclock();
+
   /* THE TARGET GOES IN BEFORE THE RING, not after.  A build that fails on the
    * first attempt - no route to the machine, port closed, SYN discarded - must
    * be able to repeat the same build as every later one, and the tick only
@@ -1340,10 +1415,11 @@ struct tcpsock *tp)
      * types the attach once more (Thomas).
      *
      * The next attempt waits out the backoff time, and that grows: a radio that
-     * is switched off should not put a SYN on the wire every two minutes.
+     * is switched off should not put a SYN on the wire every two minutes -
+     * es sei denn, es laeuft gerade das Early-Budget eines verlorenen
+     * Stehenden (tcpsock_build_failed()).
      */
-    tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
-    tp->attempts++;
+    tcpsock_build_failed(tp);
   }
   free(peer);
 }
@@ -1385,13 +1461,10 @@ void *p)
       /* THE PEER HAS ORDERED AN END.  The conversation ends here.
        */
       tp->resets++;
-      if (tp->flags & TCF_CLIENT) {
-	tcpsock_gone(tp);
-	tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
-	tp->attempts++;
-      } else {
+      if (tp->flags & TCF_CLIENT)
+	tcpsock_client_lost(tp);
+      else
 	tcpsock_forget(tp);
-      }
       return;
     }
     if (errno == EINTR)
@@ -1399,13 +1472,10 @@ void *p)
     if (errno == EAGAIN || errno == EWOULDBLOCK)
       break;
     tp->resets++;
-    if (tp->flags & TCF_CLIENT) {
-      tcpsock_gone(tp);
-      tp->nextrecon = secclock() + tcp_backoff(tp->attempts);
-      tp->attempts++;
-    } else {
+    if (tp->flags & TCF_CLIENT)
+      tcpsock_client_lost(tp);
+    else
       tcpsock_forget(tp);
-    }
     return;
   }
 

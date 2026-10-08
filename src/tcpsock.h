@@ -66,6 +66,19 @@
 #define TCF_CONNECTING	(1<<2)
 #define TCF_CONNECTED	(1<<3)
 #define TCF_GARBAGE	(1<<4)	/* still unidentified, waiting for its test */
+#define TCF_WASUP	(1<<5)	/* the client has stood at least once.  The
+				 * loss of a session that was up is answered
+				 * with an early rebuild (the very next tick),
+				 * while the patient ladder (four minutes and
+				 * more) is for a port that has NEVER rung or
+				 * whose session stood less than TCP_EARLY_AGE:
+				 * there the peer may simply be switched off,
+				 * and a rebuild every 15 s would ring a down
+				 * radio until the sysop notices the port.
+				 * Here we KNOW the peer was reachable, so the
+				 * first try may come at once; the ladder
+				 * begins with the first failure of its own.
+				 */
 
 /* TIMES, all in seconds.
  *
@@ -87,6 +100,22 @@
 					   then gone - that is the port scanner */
 #define TCP_BACKOFF_FIRST	240	/* first retry of our own, 4 min */
 #define TCP_BACKOFF_MAX		1800	/* after that up to half an hour */
+
+/* THE EARLY BUDGET, for the one case where the patient ladder is wrong: a
+ * session that STOOD and was lost.  The peer was reachable seconds ago - a
+ * server being restarted, a line that blinked - and he is usually back
+ * within a minute.  So the first rebuild may come at once and a handful of
+ * further ones at short range, BEFORE the ladder above takes over.
+ *
+ * THREE NUMBERS THAT HOLD EACH OTHER: the session must have stood for at
+ * least TCP_EARLY_AGE, so a peer that accepts and closes again (loop,
+ * misconfiguration) never gets a budget; the budget is finite (TRIES), so
+ * the burst ends; and it is paid in gaps of TCP_EARLY_GAP seconds, so one
+ * outage costs a handful of SYNs and not one per tick.
+ */
+#define TCP_EARLY_AGE		60	/* the session must have stood 1 min */
+#define TCP_EARLY_TRIES		6	/* early rebuilds after its loss */
+#define TCP_EARLY_GAP		15	/* seconds between them */
 
 /* THE KEEPALIVE, in seconds, and the default for a fresh port.
  *
@@ -271,8 +300,16 @@ struct tcpsock {
   time_t lastrx;
   time_t lasttx;
   time_t garbage_since;	/* when the unidentified session arrived */
+  time_t lastbuild;	/* when our own last SYN was sent.  A session that
+			 * was up and lost may be rebuilt at once - but only
+			 * if it STOOD for TCP_EARLY_AGE, so a peer that
+			 * accepts and closes again can never be rung more
+			 * often than the patient backoff rings a silent one
+			 * (see tcpsock_client_lost()) */
   time_t nextrecon;	/* when we ring again, 0 = now */
   int attempts;		/* failed build attempts since then */
+  int early;		/* early rebuilds left after a standing session was
+			 * lost - see TCP_EARLY_* in tcpsock.h; 0 normally */
 
   /* THE TWO PROTOCOL HOOKS, and nothing more: tcpsock.c knows how to read,
    * write, wait on and close a socket; it does not know what a frame is.
