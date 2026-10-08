@@ -247,7 +247,7 @@ int chan)
     axip_dropped();
     return;
   }
-  axip_heard(src);
+  axip_heard(src, tp->ifp);
   /* THE COUNTER, AND IT COUNTS FRAMES HANDED OVER.  A frame that learning
    * discarded is not one - otherwise the number would be a statement about the
    * traffic and not about the port, and the two look the same when either of
@@ -632,6 +632,26 @@ struct tcpsock *tp)
 				 * belongs to no new one */
 }
 
+/* HAT DER PORT NOCH EINE SITZUNG?  tcpsock_forget() fragt das, wenn eine
+ * EINGEHENDE Sitzung endet: Erst wenn die letzte weg ist, sind auch die
+ * Adress-Routen des Ports ohne Weg und werden vergessen (axip_forget_iface()).
+ * Eine gerade sterbende Sitzung zaehlt nicht mehr: tcpsock_gone() hat ihren
+ * TCF_CONNECTED vorher schon geloescht.
+ */
+static int
+tcpsock_iface_has_session(
+struct iface *ifp)
+{
+  struct tcpsock *tp;
+
+  if (ifp == NULL)
+    return 0;
+  for (tp = Tcp_socks; tp != NULL; tp = tp->next)
+    if (tp->ifp == ifp && tp->fd >= 0 && (tp->flags & TCF_CONNECTED))
+      return 1;
+  return 0;
+}
+
 /* THE WHOLE SESSION GONE.  For a client this is the last step - a failed build
  * is not repairable by waiting, and the list should not collect entries over
  * the night that nobody reads any more.
@@ -653,6 +673,16 @@ struct tcpsock *tp)
    * and cannot know it - it knows channels, not sockets.
    */
   axip_forget_transport(tp);
+  /* EINGEHENDE SITZUNG WEG, UND DAMIT ALLE.  Eine akzeptierte Sitzung ist die
+   * eines Besuchers, der wiederkommt, wenn er will - der Port haelt nichts fuer
+   * ihn.  Ist es die letzte gewesen, gehoeren auch die Adress-Routen des Ports
+   * weg, die keine eigene Sitzung haben (axip_forget_iface()): eine Route
+   * "via <port>" waere sonst eine Zeile, deren Weg in Wirklichkeit niemand
+   * haelt.  Bei einer CLIENT-Sitzung gilt das nicht: den baut der Port selbst
+   * wieder auf und behaelt seine Routen dafuer (Thomas).
+   */
+  if (!(tp->flags & TCF_CLIENT) && !tcpsock_iface_has_session(tp->ifp))
+    axip_forget_iface(tp->ifp);
 
   for (prev = NULL, next = Tcp_socks; next != NULL; next = next->next) {
     if (next == tp) {

@@ -66,6 +66,7 @@
  */
 extern char Axip_learn_usage[];
 extern char Axip_dns_usage[];
+extern char Axip_expiry_usage[];
 
 int axip_isport(const struct iface *ifp);
 /* Ist der axip-Port ein AXUDP-Port?  ifkeepalive() braucht den Unterschied:
@@ -100,6 +101,7 @@ void axip_show_verbose(const struct iface *ifp);
 int if_axip_learn(int argc, char *argv[], void *p);
 int if_axip_dns_interval(int argc, char *argv[], void *p);
 int if_axip_dns_silence(int argc, char *argv[], void *p);
+int if_axip_expiry(int argc, char *argv[], void *p);
 
 /* DIE TABELLE IST AUCH DIE DER TCP-PORTE, und das ist der Grund fuer diese
  * drei Funktionen hier: axip-learn, "permanent" und die Frage, was beim Weggehen
@@ -117,7 +119,12 @@ void *axip_transport_route(const uint8 *call, struct iface *ifp);
  * the session it has (tcpsock_raw(), Thomas).
  */
 int axip_sysop_route_on(const uint8 *call, struct iface *ifp);
-void axip_heard(const uint8 *call);
+/* Der letzte Sitzung eines TCP-Ports weg: die Adress-Routen des Ports, die
+ * zu keiner Sitzung gehoeren, sind dann ohne Weg.  Gerufen von tcpsock.c,
+ * wenn nach dem Ende einer eingehenden Sitzung keine mehr da ist.
+ */
+void axip_forget_iface(struct iface *ifp);
+void axip_heard(const uint8 *call, struct iface *ifp);
 void axip_dropped(void);
 
 #endif /* _AXIP_H */

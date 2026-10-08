@@ -193,6 +193,7 @@ struct iface {
 	int axip_learn;
 	int axip_dns_interval;
 	int axip_dns_silence;
+	int axip_expiry;        /* idle-drop of learned routes, minutes; 0 = node's */
 
 	int crccontrol;         /* CRC send control */
 	int crcfixed;           /* Set by "ifconfig <if> crc": stop autodetecting */

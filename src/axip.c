@@ -102,6 +102,16 @@ struct axip_route {
   struct edv_t *ledv;
   time_t ltime;
 
+  /* UEBER EIN NAT GESEHEN ODER DIREKT?  Ein Partner, der uns mit einem
+   * QUELLPORT == unserem Listen-Port erreicht, hat eine echte Adresse oder
+   * eine Port-Weiterleitung fuer eingehende IP: sein Rufzeichen-zu-Adresse-
+   * Verhaeltnis ist stabil und darf nicht altern.  Ein Partner hinter einem
+   * NAT hat einen fremden Quellport, seine Zuordnung ist Mietware des NATs
+   * und vergaenglich - er gehoert der Idle-Frist (axip-expiry).  Bei jedem
+   * UDP-Frame neu entschieden, siehe axip_learn_port().
+   */
+  int udp_direct;
+
   /* DER NAME, UND DIE FRAGEN, DIE NUR MIT EINEM NAME UEBERHAUPT SINKEN.  Bis
    * hierher wurde der Name beim Eintragen einmal aufgeloest und dann
    * weggeworfen: die Route kannte nur die Adresse, die gerade dastand, und
@@ -125,6 +135,17 @@ struct axip_route {
    */
   int perm;                   /* the sysop wrote "permanent" */
   int perm_once;              /* "axip-learn once": trust on first use */
+
+  /* VON HAND GESCHRIEBEN: "axip route add" hat diesen Eintrag angelegt oder
+   * umgebogen, ob mit Permanent-Wort oder nicht.  Eine Absicht, keine
+   * Beobachtung: Expiry und das TCP-Session-Vergessen fassen sie nicht an
+   * (siehe axip_expiry_tick() und axip_forget_iface()).  Ohne ihn waere
+   * eine Hand-Route ohne "permanent" und ohne Name still alles, was der
+   * Verkehr gelernt hat - und eine ungebundene Hand-Route, die der Sysop
+   * von axtcp auf kisstcp umziehen laesst, waere von der Sache her keine
+   * Miete des Verkehrs (Thomas).
+   */
+  int written;
 
   /* WANN ZULETZT von dieser ADRESSE etwas kam, und wann zuletzt danach
    * gesendet wurde.  Beide zusammen sind das, wonach die Stille-Frist
@@ -181,6 +202,13 @@ static struct axip_route *Axip_routes;
 int Axip_dns_interval = AXIP_DNS_INTERVAL_DEFAULT;
 int Axip_dns_silence = AXIP_DNS_SILENCE_DEFAULT;
 
+/* WANN EINE GELERNTE ROUTE, VON DER NICHTS MEHR KOMMT, VERGISST WIRD, in
+ * Minuten.  0 = nie, das Verhalten bis heute.  Permanent, once, ein Name und
+ * der Default sind Absichten und werden nicht vergessen; ein axudp-Partner,
+ * der direkt kam (Quellport == unser Listen-Port), auch nicht (Thomas).
+ */
+int Axip_expiry = 0;
+
 /* Die Zaehler fuer "axip stats".  Beides sind Faelle, in denen wir einen
  * Rahmen wegwerfen, und beide waeren im Betrieb lautlos - einmal abgelehnt
  * heisst, dass die Adresse nicht mehr passt, und das sieht sonst aus wie ein
@@ -190,14 +218,17 @@ static long Axip_refused;      /* gelernt werden wollte, aber permanent */
 static long Axip_dropped;      /* Adresse passt nicht, oder Lernen ist aus */
 static long Axip_lookups;      /* durchgefuehrte Namensfragen */
 static long Axip_lookupfail;   /* davon ohne Ergebnis */
+static long Axip_expired;      /* stille gelernte Routen, die der Expiry wegnahm */
 
 static int axip_raw(struct iface *ifp, struct mbuf **bpp);
 static void axip_recv(void *argp);
 static struct axip_sock *axip_sock_of(struct iface *ifp, int family);
 static int axip_route_add(uint8 *call, const struct sockaddr *dest,
 	  int keepport, int from, struct iface *ifp);
-static void axip_learn_port(uint8 *call, const struct sockaddr *addr, struct edv_t *edv);
+static void axip_learn_port(uint8 *call, const struct sockaddr *addr,
+	struct edv_t *edv, int trust);
 static int axip_learned_port(struct axip_route *rp, struct edv_t *edv);
+static void axip_expiry_start(void);
 static int doaxiproute(int argc, char *argv[], void *p);
 static int doaxiprouteadd(int argc, char *argv[], void *p);
 static int doaxiproutedrop(int argc, char *argv[], void *p);
@@ -209,7 +240,7 @@ static int doaxipstats(int argc, char *argv[], void *p);
 void axip_forget_transport(void *tsock);
 int axip_learn_transport(const uint8 *call, void *tsock, int chan, int proto, struct iface *ifp);
 void *axip_transport_route(const uint8 *call, struct iface *ifp);
-void axip_heard(const uint8 *call);
+void axip_heard(const uint8 *call, struct iface *ifp);
 void axip_dropped(void);
 
 /*---------------------------------------------------------------------------*/
@@ -503,6 +534,16 @@ static int axip_silence(struct iface *ifp)
 {
   if (ifp && ifp->axip_dns_silence) return ifp->axip_dns_silence * 60;
   return Axip_dns_silence * 60;
+}
+
+/* DIE IDLE-FRIST VOR DEM VERGESSEN einer gelernten Route, Sekunden.  0 =
+ * aus.  Wie die beiden DNS-Fristen: "0 am Port" bedeutet "der Knotenwert",
+ * und "0 am Knoten" bedeutet "nie".
+ */
+static int axip_expiry(struct iface *ifp)
+{
+  if (ifp && ifp->axip_expiry) return ifp->axip_expiry * 60;
+  return Axip_expiry * 60;
 }
 
 /* DEN NAMEN EINER ROUTE FRAGEN, wenn er faellig ist.  Aufrufer: der Timer,
@@ -1206,6 +1247,7 @@ static void axip_recv(void *argp)
   uint8 *p;
   uint8 *src;
   int trust_port;
+  int thisdev;
 
   ifp = (struct iface *) argp;
   /* WHICH SOCKET SPOKE.  on_read() was given the axip_sock and not the
@@ -1216,6 +1258,7 @@ static void axip_recv(void *argp)
   sk = (struct axip_sock *) argp;
   ifp = sk->ifp;
   edv = (struct edv_t *) ifp->edv;
+  thisdev = axip_ifp_to_rdev(ifp);
   addrlen = sizeof(addr);
   l = recvfrom(sk->fd, (char *) (bufptr = buf), sizeof(buf), 0,
 	       (struct sockaddr *) &addr, &addrlen);
@@ -1312,10 +1355,11 @@ static void axip_recv(void *argp)
 
   /* Der Quellport wird auch dann gemerkt, wenn die Adresse gleich war - es
    * ist die NAT-Zuordnung dieses Rufzeichens, und die gehoert nicht davon ab,
-   * ob der Eintrag eben neu geschrieben wurde.
+   * ob der Eintrag eben neu geschrieben wurde.  Das Vertrauen (trust_port)
+   * bleibt dabei: ohne es steht kein Port, nur das direkte-oder-NAT-Flag.
    */
-  if (trust_port)
-    axip_learn_port(src, (struct sockaddr *) &addr, edv);
+  if (edv->type == USE_UDP)
+    axip_learn_port(src, (struct sockaddr *) &addr, edv, trust_port);
 
   /* WIR HABEN ES GEHOERT, und zwar an der Adresse, die auch die Rueckrichtung
    * benutzt.  Deshalb htime an alle Eintraege dieser Adresse, nicht nur an den,
@@ -1323,9 +1367,17 @@ static void axip_recv(void *argp)
    * Rufzeichen, dessen eigener Eintrag unveraendert stehen bleibt, waere nach
    * der Stille-Frist "still", obwohl gerade gesprochen wurde.  Die Familie
    * steht mit im Vergleich - ein 127.0.0.1 und ein ::1 sind nicht dasselbe.
+   *
+   * UND NUR AN DIESEM PORT.  Ein Eintrag, der einem ANDEREN Port gehoert
+   * (rdev), ist dessen Beobachtung und wird hier nicht mitgefuehrt - sonst
+   * schiene eine Route, die ueber xnet gelernt und beim ersten Senden an den
+   * kisstcp-Port gebunden wurde, durch jeden xnet-Frame "gehoert", waeren
+   * ihre Verbindung schon tot.  Der Idle ist damit genau das, was die
+   * sysop-Einstellung verspricht: einer Route je (Port, Adresse).
    */
   for (rp = Axip_routes; rp; rp = rp->next)
-    if (sockaddr_addr_eq((struct sockaddr *) &rp->dest, (struct sockaddr *) &addr))
+    if (sockaddr_addr_eq((struct sockaddr *) &rp->dest, (struct sockaddr *) &addr) &&
+	(rp->rdev == 0 || rp->rdev == thisdev))
       rp->htime = secclock();
 
   bp = qdata(bufptr, l);
@@ -1750,8 +1802,19 @@ static int axip_route_add(uint8 *call, const struct sockaddr *dest,
      */
     if (from == AXIP_FROM_LEARNED && ifp && ifp->axip_learn == AXIP_LEARN_ONCE)
       rp->perm_once = 1;
+    /* VON HAND: der Sysop (oder der Aufloeser einer Route, die er benannt
+     * hat) haelt diesen Eintrag - die Schutz-Regel von axip_expiry_tick()
+     * und axip_forget_iface() schaut auf written.
+     */
+    if (from != AXIP_FROM_LEARNED)
+      rp->written = 1;
     rp->next = Axip_routes;
     Axip_routes = rp;
+    /* DER EXPIRY-TICK SOLL IHN SEHEN.  Er stellt sich selbst ab, wenn kein
+     * Kandidat mehr da ist (axip_expiry_tick()); ein Neuer hier ist der
+     * Zeitpunkt, an dem er wieder anfangen muss.
+     */
+    axip_expiry_start();
   } else if (!sockaddr_addr_eq((struct sockaddr *) &rp->dest, dest)) {
     /* EINE ANDERE ADRESSE.  Drei Faelle, und sie sind nicht gleich:
      *
@@ -1790,6 +1853,13 @@ static int axip_route_add(uint8 *call, const struct sockaddr *dest,
 	return 0;
       }
     }
+    /* DER SYSOP HAT UMGESCHRIEBEN: "axip route add" ist auch der Weg, eine
+     * Route ueber einen anderen Port fahren zu lassen (siehe Axipcmds).
+     * Damit ist sie von jetzt an Absicht - auch eine, die der Verkehr einmal
+     * gelernt hatte.
+     */
+    if (from == AXIP_FROM_SYSOP)
+      rp->written = 1;
     /* Der gelernte Port stirbt mit der Adresse, zu der er gehoerte - sonst
      * traegt eine umgezogene Station den Port ihres Vorgaengers weiter.  Der
      * Empfangsweg lernt ihn unmittelbar danach neu.
@@ -1797,6 +1867,7 @@ static int axip_route_add(uint8 *call, const struct sockaddr *dest,
     rp->lport = 0;
     rp->ledv = 0;
     rp->ltime = 0;
+    rp->udp_direct = 0;
   }
   memset(&rp->dest, 0, sizeof(rp->dest));
   memcpy(&rp->dest, dest, (size_t) len);
@@ -1815,17 +1886,25 @@ static int axip_route_add(uint8 *call, const struct sockaddr *dest,
 /* Den Quellport auf dem Rufzeichen merken.  Gerufen nur direkt hinter
  * axip_route_add(), das die Adresse eben erst gesetzt hat - deshalb steht
  * hier keine zweite Adresspruefung.
+ *
+ * trust entscheidet, ob der PORT gemerkt wird (das secure-port-Modell von
+ * axip_recv()).  Das Flag udp_direct steht unabhaengig davon, denn NAT oder
+ * nicht ist eine andere Frage als vertraut oder nicht: es haelt fest, ob der
+ * Partner mit dem eigenen Listen-Port als Quellport ankam.
  */
 static void axip_learn_port(uint8 *call, const struct sockaddr *addr,
-	struct edv_t *edv)
+	struct edv_t *edv, int trust)
 {
   struct axip_route *rp;
 
   for (rp = Axip_routes; rp && !axip_call_match(rp->call, call); rp = rp->next) ;
   if (!rp) return;
-  rp->lport = sockaddr_port(addr);
-  rp->ledv = edv;
-  rp->ltime = secclock();
+  if (trust) {
+    rp->lport = sockaddr_port(addr);
+    rp->ledv = edv;
+    rp->ltime = secclock();
+  }
+  rp->udp_direct = sockaddr_port(addr) == edv->port;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1970,6 +2049,153 @@ void *tsock)
   }
 }
 
+/* DER PORT HAT KEINE SITZUNG MEHR.  Die Sitzungs-Routen sind mit ihr
+ * gegangen (axip_forget_transport()); was hier noch uebrig ist, ist die
+ * Adress-Route, die der Sysop auf diesen Port geschrieben hat (rdev auf
+ * einem Carrier entsteht ausschliesslich ueber "axip route add", siehe
+ * doaxiprouteadd()) und zu keiner Sitzung gehoert: sie stuende als
+ * "via <port>" da, waehrend den Weg in Wirklichkeit niemand haelt -
+ * "die Route zaehlt, solange der Port EINE Sitzung hat" (doaxiprouteadd()).
+ *
+ * DESHALB GEHOERT WRITTEN NICHT HIERHIN: written schuetzt vor der ZEITFRIST
+ * (axip_expiry_tick()), denn eine Hand-Route ohne Verkehr ist eine Absicht,
+ * die der Verkehr noch erfuellen mag.  Das hier ist keine Frage der Zeit,
+ * sondern des Weges - ohne Sitzung gibt es ueber diesen Port keinen Weg, und
+ * die Zeile luegt.  Bleiben soll, was der Sysop als Festlegung
+ * hingezeichnet hat: permanent, once, ein Name, der Default (Thomas).
+ */
+void axip_forget_iface(
+struct iface *ifp)
+{
+  struct axip_route *rp, *pp, *nx;
+  int thisdev;
+
+  if (ifp == NULL)
+    return;
+  thisdev = axip_ifp_to_rdev(ifp);
+  if (thisdev == 0)
+    return;
+
+  for (pp = 0, rp = Axip_routes; rp; rp = nx) {
+    nx = rp->next;
+    if (rp->tsock || rp->rdev != thisdev ||
+	rp->perm || rp->perm_once || rp->name || rp->is_default) {
+      pp = rp;
+      continue;
+    }
+    if (pp)
+      pp->next = nx;
+    else
+      Axip_routes = nx;
+    if (rp->name)
+      free(rp->name);
+    free(rp);
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* DER EXPIRY-TICK.  Alle 60 Sekunden loest er das Versprechen von "axip
+ * expire" ein und fuehrt die Frage "gelernt UND stille" endlich zu Ende.
+ *
+ * WAS VERGISST WIRD, ist eine reine Verkehrs-Lernroute: nichts von Hand
+ * Geschriebenes (written), kein permanent, kein once, kein Name, kein
+ * Default, keine Sitzung.  Adress-Routen auf einem TCP-Port sind ohnehin
+ * immer von Hand geschrieben (written) - ihre Sitzungsregel uebernimmt
+ * axip_forget_iface().  GEMAESSEN wird ueber htime, den letzten EMPFANG:
+ * die eigenen Keepalives zaehlen nicht, sonst hielte sich eine Route an
+ * ihrem eigenen Keuchen fest und der Expiry waere eine Farce.
+ *
+ * GESTOPPT wird er, sobald kein Kandidat mit eingestellter Frist mehr da
+ * ist; "axip expire", "ifconfig <iface> axip-expiry" und das Lernen einer
+ * neuen Route starten ihn neu.  Gegen einen doppelten Start ist er gefeit
+ * (TIMER_RUN), wie der Routen-Timer.
+ */
+static void axip_expiry_tick(
+void *arg)
+{
+  static struct timer tmr;
+  struct axip_route *rp, *pp, *nx;
+  struct iface *ifp;
+  time_t now;
+  int interval;
+  int keep = 0;
+
+  switch (tmr.state) {
+  case TIMER_STOP:
+    tmr.func = axip_expiry_tick;
+    tmr.arg = 0;
+    set_timer(&tmr, AXIP_TICK);
+    start_timer(&tmr);
+    return;
+  case TIMER_RUN:
+    return;
+  case TIMER_EXPIRE:
+    tmr.state = TIMER_STOP;
+    break;
+  }
+
+  now = secclock();
+  for (pp = 0, rp = Axip_routes; rp; rp = nx) {
+    nx = rp->next;
+    /* ABSICHTEN BLEIBEN STEHEN: permanent, once, ein Name, der Default - und
+     * jede Route, die "axip route add" von Hand geschrieben oder umgebogen
+     * hat (written, auch ohne das Wort "permanent").  Sie sind Absichten,
+     * keine Beobachtungen.
+     */
+    if (rp->written || rp->perm || rp->perm_once || rp->name || rp->is_default) {
+      pp = rp;
+      continue;
+    }
+    /* Eine Sitzungs-Route haengt an ihrer Sitzung und stirbt mit ihr,
+     * siehe axip_forget_transport().
+     */
+    if (rp->tsock) {
+      pp = rp;
+      continue;
+    }
+    /* EIN DIREKTER AXUDP-PARTNER altert nicht: seine Adresse ist echt oder
+     * durchgereicht, keine NAT-Miete (axip_learn_port()).
+     */
+    if (rp->udp_direct) {
+      pp = rp;
+      continue;
+    }
+    ifp = rp->rdev ? axip_iface(rp->rdev) : NULL;
+    interval = axip_expiry(ifp);
+    if (interval == 0) {
+      pp = rp;
+      continue;
+    }
+    keep = 1;
+    /* Nie gehoert: keine Beobachtung (eine von Hand geschriebene Route ohne
+     * Verkehr), und die Frist soll nicht etwas entscheiden, das nie begann.
+     */
+    if (!rp->htime || rp->htime + interval >= now) {
+      pp = rp;
+      continue;
+    }
+    Axip_expired++;
+    if (pp)
+      pp->next = nx;
+    else
+      Axip_routes = nx;
+    if (rp->name)
+      free(rp->name);
+    free(rp);
+  }
+  if (keep)
+    axip_expiry_tick(0);
+}
+
+static void axip_expiry_start(
+void)
+{
+  axip_expiry_tick(0);
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* DIE SITZUNG FUER EIN RUFZEICHEN, oder NULL.  Zuerst die exakte Route auf
  * diesem Port, dann die exakte Route irgendwo, dann der Default auf diesem
  * Port, dann der Default irgendwo - dieselbe Reihenfolge wie axip_raw().
@@ -2035,14 +2261,22 @@ struct iface *ifp)
  * Eintraege, nicht nur an den, den der Rahmen eben getroffen hat.  Sonst saehe
  * ein Rufzeichen, das hinter einer anderen Adresse liegt, nach der Stille-Frist
  * still aus, obwohl gerade gesprochen wurde (siehe axip_recv()).
+ *
+ * UND AN DIESEM PORT: der iface-Filter wie in axip_recv(), nur ueber das
+ * Rufzeichen statt ueber die Adresse.  Was auf einer Sitzung dieses Ports
+ * gehoert wurde, haelt nur die Eintraege dieses Ports jung - ein Eintrag,
+ * der woanders gebunden ist, gehoert einem anderen Beobachter (Thomas).
  */
 void axip_heard(
-const uint8 *call)
+const uint8 *call,
+struct iface *ifp)
 {
   struct axip_route *rp;
+  int thisdev = axip_ifp_to_rdev(ifp);
 
   for (rp = Axip_routes; rp; rp = rp->next)
-    if (!rp->is_default && axip_call_match(rp->call, call))
+    if (!rp->is_default && axip_call_match(rp->call, call) &&
+	(rp->rdev == 0 || rp->rdev == thisdev))
       rp->htime = secclock();
 }
 
@@ -2100,6 +2334,28 @@ char Axip_dns_usage[] =
 "  The current values are in \"ifconfig <iface> verbose\".\n"
 "  See also \"axip dns-interval\" and \"axip dns-silence\" for the node's.";
 
+char Axip_expiry_usage[] =
+"ifconfig <iface> axip-expiry <minutes>   (0 = the node's)\n"
+"  The idle time of a route LEARNED FROM TRAFFIC on this port: after this\n"
+"  many minutes with no frame RECEIVED from that peer the route is dropped.\n"
+"  Its keepalives and its line in \"axip route\" go with it; a peer who comes\n"
+"  back is learned again on the next frame.  A value sent BY us does not\n"
+"  count - otherwise a route would hold itself alive forever.\n"
+"  What is protected stays: a route you wrote yourself with \"axip route\n"
+"  add\" - even without \"permanent\" and without a name - and beyond that\n"
+"  \"permanent\", \"once\", a route written with a NAME, and the default are\n"
+"  intentions too, and are never expired.\n"
+"  An axudp partner who reaches us with a source port equal to our listen\n"
+"  port is a real address or a port forwarding, not a NAT mapping, and is\n"
+"  kept too.\n"
+"  The axtcp and kisstcp ports keep their address-routes by a rule of their\n"
+"  own: one written onto the port, belonging to no session, goes when the\n"
+"  port's last session is gone - a missing path, not a silent peer, so this\n"
+"  silence is not what decides it.  \"permanent\", \"once\", a NAME and the\n"
+"  default stay there too.\n"
+"  0 at the node means \"never\": a learned route lives until the port closes,\n"
+"  the peer moves, or \"axip route drop\".  See \"axip expire\" for the node's.";
+
 static int doaxipdnsinterval(int argc, char *argv[], void *p)
 {
   return setintrc(&Axip_dns_interval, "axip dns-interval", argc, argv, 0, 1440);
@@ -2108,6 +2364,18 @@ static int doaxipdnsinterval(int argc, char *argv[], void *p)
 static int doaxipdnssilence(int argc, char *argv[], void *p)
 {
   return setintrc(&Axip_dns_silence, "axip dns-silence", argc, argv, 0, 1440);
+}
+
+static int doaxipexpire(int argc, char *argv[], void *p)
+{
+  int rc = setintrc(&Axip_expiry, "axip expire", argc, argv, 0, 10080);
+
+  /* Ein Wert statt "aus" braucht den Tick, damit aus dem Versprechen eine
+   * Tat wird; das ifconfig-Analogon startet ihn genauso.
+   */
+  if (rc == 0 && Axip_expiry)
+    axip_expiry_start();
+  return rc;
 }
 
 static struct cmds Axipcmds[] = {
@@ -2129,7 +2397,11 @@ static struct cmds Axipcmds[] = {
     "  permanent: the traffic may not move this address.  See also\n"
     "  \"ifconfig <iface> axip-learn once\", which does the same for the\n"
     "  address a callsign was first heard at - there is no default and no\n"
-    "  learning for an address written by hand." },
+    "  learning for an address written by hand.\n"
+    "  Important: a route LEARNED from traffic is dropped after \"axip\n"
+    "  expire\" minutes with no frame received from its peer, so that a\n"
+    "  keepalive does not go out to an address that has been reassigned.\n"
+    "  What is written here is kept - \"axip route add\" writes an intention." },
   { "dns-interval", doaxipdnsinterval, 0, 1,
     "axip dns-interval [minutes 0..1440]   (0 = never look up)\n"
     "  The node's shortest time between two lookups of the same name.  An\n"
@@ -2139,6 +2411,18 @@ static struct cmds Axipcmds[] = {
     "  After this many minutes with no traffic in either direction, a name is\n"
     "  looked up again anyway.  0 at the node means: only a packet to send\n"
     "  asks.  See \"axip dns-interval\"." },
+  { "expire",  doaxipexpire, 0, 1,
+    "axip expire [minutes 0..10080]   (0 = never, the behaviour to date)\n"
+    "  The node's idle time of a route LEARNED from traffic: after this many\n"
+    "  minutes with no frame RECEIVED from the peer the route is dropped, and\n"
+    "  with it the keepalives that would otherwise go to an address that has\n"
+    "  been reassigned.  A frame SENT by us does not count.\n"
+    "  A route you wrote yourself with \"axip route add\" - hand-written, even\n"
+    "  without \"permanent\" and without a name - plus permanent, once, a name\n"
+    "  and the default are never expired; an axudp partner whose source port\n"
+    "  is our listen port (a real address or a port forwarding, not a NAT)\n"
+    "  is kept as well.\n"
+    "  A port can have one of its own, see \"ifconfig <iface> axip-expiry\"." },
   { "stats",  doaxipstats, 0, 0,
     "axip stats                      routes, and echoes dropped by the\n"
     "       loop-protect (see also \"ax25 loop-protect [s]\")" },
@@ -2631,6 +2915,9 @@ static int doaxipstats(int argc, char *argv[], void *p)
    */
   if (unbound)
     printf("unbound     %d   no port yet; they bind on first use\n", unbound);
+  if (Axip_expired)
+    printf("expired     %ld   silent learned routes dropped by axip-expiry\n",
+	   Axip_expired);
   printf("dns         every %d min, after %d min quiet (node's)\n",
          Axip_dns_interval, Axip_dns_silence);
   printf("bad echoes  %d   loop-protect window %d s\n",
@@ -2727,6 +3014,35 @@ int if_axip_dns_silence(int argc, char *argv[], void *p)
   return setintrc(&ifp->axip_dns_silence, "axip-dns-silence", argc, argv, 0, 1440);
 }
 
+int if_axip_expiry(int argc, char *argv[], void *p)
+{
+  struct iface *ifp = (struct iface *) p;
+  int rc;
+
+  /* AXIP_ISCARRIER, and for the same reason as the interval above (Thomas):
+   * a value for every port that carries callsigns, read by the tick for
+   * whatever route is bound to the port (axip_expiry(), axip_expiry_tick()).
+   * On a TCP carrier what is bound there was written by hand (written) or
+   * belongs to a session (tsock) - both kept anyway - so nothing there waits
+   * for this silence; the knob is accepted so the rule reads the same on
+   * every port, and the session rule is the one axip_expiry_usage() tells.
+   */
+  if (!axip_iscarrier(ifp)) {
+    printf("%s is not an axip, axudp, axtcp or kisstcp interface\n",
+	   ifp->name);
+    return 1;
+  }
+  if (argc < 2) {
+    printf("%s: axip-expiry %d%s\n", ifp->name, ifp->axip_expiry,
+	   ifp->axip_expiry ? "" : " (the node's)");
+    return 0;
+  }
+  rc = setintrc(&ifp->axip_expiry, "axip-expiry", argc, argv, 0, 10080);
+  if (rc == 0 && ifp->axip_expiry)
+    axip_expiry_start();
+  return rc;
+}
+
 /*---------------------------------------------------------------------------*/
 
 /* ifconfig <iface> verbose: eine Zeile je eingestelltem Wert, und das "*"
@@ -2807,4 +3123,7 @@ void axip_show_verbose(const struct iface *ifp)
   printf("           axip-dns-silence %d min%s (%d min node's)\n",
 	 ifp2->axip_dns_silence * 60, ifp2->axip_dns_silence ? "" : "*",
 	 Axip_dns_silence);
+  printf("           axip-expiry %d min%s (%d min node's)\n",
+	 ifp2->axip_expiry, ifp2->axip_expiry ? "" : "*",
+	 Axip_expiry);
 }

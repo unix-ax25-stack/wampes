@@ -212,6 +212,7 @@ struct cmds Ifcmds[] = {
 	{ "axip-learn",           if_axip_learn,  0,      1,      Axip_learn_usage },
 	{ "axip-dns-interval",    if_axip_dns_interval, 0, 1,      Axip_dns_usage },
 	{ "axip-dns-silence",     if_axip_dns_silence,  0, 1,      Axip_dns_usage },
+	{ "axip-expiry",          if_axip_expiry,       0, 1,      Axip_expiry_usage },
 	{ "hf-datarate",          ifhfdatarate,   0,      1,
 	  "ifconfig <iface> hf-datarate <bit/s>   (0 = unbekannt)\n"
 	  "  Die Geschwindigkeit AUF DER LUFT, nicht die zum TNC.  DAMA rechnet\n"
