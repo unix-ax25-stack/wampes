@@ -2989,8 +2989,13 @@ int if_axip_dns_interval(int argc, char *argv[], void *p)
     return 1;
   }
   if (argc < 2) {
-    printf("%s: axip-dns-interval %d%s\n", ifp->name, ifp->axip_dns_interval,
-	   ifp->axip_dns_interval ? "" : " (the node's)");
+    if (ifp->axip_dns_interval)
+      printf("%s: axip-dns-interval %d min\n", ifp->name,
+	     ifp->axip_dns_interval);
+    else
+      printf("%s: axip-dns-interval not set (the node's %d min from "
+	     "\"axip dns-interval\" is in force)\n", ifp->name,
+	     Axip_dns_interval);
     return 0;
   }
   return setintrc(&ifp->axip_dns_interval, "axip-dns-interval", argc, argv, 0, 1440);
@@ -3007,8 +3012,13 @@ int if_axip_dns_silence(int argc, char *argv[], void *p)
     return 1;
   }
   if (argc < 2) {
-    printf("%s: axip-dns-silence %d%s\n", ifp->name, ifp->axip_dns_silence,
-	   ifp->axip_dns_silence ? "" : " (the node's)");
+    if (ifp->axip_dns_silence)
+      printf("%s: axip-dns-silence %d min\n", ifp->name,
+	     ifp->axip_dns_silence);
+    else
+      printf("%s: axip-dns-silence not set (the node's %d min from "
+	     "\"axip dns-silence\" is in force)\n", ifp->name,
+	     Axip_dns_silence);
     return 0;
   }
   return setintrc(&ifp->axip_dns_silence, "axip-dns-silence", argc, argv, 0, 1440);
@@ -3033,8 +3043,11 @@ int if_axip_expiry(int argc, char *argv[], void *p)
     return 1;
   }
   if (argc < 2) {
-    printf("%s: axip-expiry %d%s\n", ifp->name, ifp->axip_expiry,
-	   ifp->axip_expiry ? "" : " (the node's)");
+    if (ifp->axip_expiry)
+      printf("%s: axip-expiry %d min\n", ifp->name, ifp->axip_expiry);
+    else
+      printf("%s: axip-expiry not set (the node's %d min from "
+	     "\"axip expire\" is in force)\n", ifp->name, Axip_expiry);
     return 0;
   }
   rc = setintrc(&ifp->axip_expiry, "axip-expiry", argc, argv, 0, 10080);
@@ -3046,13 +3059,11 @@ int if_axip_expiry(int argc, char *argv[], void *p)
 /*---------------------------------------------------------------------------*/
 
 /* ifconfig <iface> verbose: eine Zeile je eingestelltem Wert, und das "*"
- * bedeutet "vom Knoten geerbt".  Sonst sieht ein Port, der nie eingestellt
- * wurde, ungesetzt aus - und "0" ist hier ein gesetzter Wert, der etwas
- * bedeutet, nicht "nichts".
- *
- * Der Knotenwert steht in derselben Zeile dahinter, weil die Zahl ohne ihn
- * nicht lesbar ist: "axip-dns-interval 0" heisst "alle zehn Minuten", und
- * das sieht man an dieser Stelle erst, wenn der Knotenwert danebensteht.
+ * bedeutet "vom Knoten geerbt": der Wert gilt, ist aber nicht hier gesetzt.
+ * Gezeigt wird immer der WIRKSAME Wert - ein Portwert von 0 heisst
+ * "Knotenwert uebernehmen" und ist also nie der, der zaehlt.  Die alte
+ * Fassung druckte Portwert und Knotenwert in eine Zeile und das war
+ * doppelt, wenn beide gleich waren: "axip-expiry 0 min* (0 min node's)".
  */
 void axip_show_verbose(const struct iface *ifp)
 {
@@ -3117,13 +3128,23 @@ void axip_show_verbose(const struct iface *ifp)
 	 ifp2->axip_learn == AXIP_LEARN_ONCE  ? "once" : "off",
 	 ifp2->axip_learn ? "" : " (default)",
 	 "");
-  printf("           axip-dns-interval %d min%s (%d min node's)\n",
-	 ifp2->axip_dns_interval * 60, ifp2->axip_dns_interval ? "" : "*",
-	 Axip_dns_interval);
-  printf("           axip-dns-silence %d min%s (%d min node's)\n",
-	 ifp2->axip_dns_silence * 60, ifp2->axip_dns_silence ? "" : "*",
-	 Axip_dns_silence);
-  printf("           axip-expiry %d min%s (%d min node's)\n",
-	 ifp2->axip_expiry, ifp2->axip_expiry ? "" : "*",
-	 Axip_expiry);
+  /* THE VALUE IN FORCE, one number per line, and a "*" where it is the
+   * node's and not this port's.  A port that left it unset holds the number
+   * 0, which is by definition not the value in force, so printing it as
+   * well would print "0 min* (0 min node's)" whenever the node's is 0 too
+   * - twice the same sentence (Thomas).
+   */
+  printf("           axip-dns-interval %d min%s\n",
+	 ifp2->axip_dns_interval ? ifp2->axip_dns_interval : Axip_dns_interval,
+	 ifp2->axip_dns_interval ? "" : "*");
+  printf("           axip-dns-silence %d min%s\n",
+	 ifp2->axip_dns_silence ? ifp2->axip_dns_silence : Axip_dns_silence,
+	 ifp2->axip_dns_silence ? "" : "*");
+  printf("           axip-expiry %d min%s\n",
+	 ifp2->axip_expiry ? ifp2->axip_expiry : Axip_expiry,
+	 ifp2->axip_expiry ? "" : "*");
+  if (!ifp2->axip_dns_interval || !ifp2->axip_dns_silence || !ifp2->axip_expiry)
+    printf("                 (* = the node's setting, not this port's - set by\n"
+	   "                  \"axip dns-interval\", \"axip dns-silence\" and\n"
+	   "                  \"axip expire\")\n");
 }
