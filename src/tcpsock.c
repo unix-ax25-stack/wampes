@@ -73,6 +73,7 @@ int attempts)
 
 static void tcpsock_flush(struct tcpsock *tp);
 static void tcpsock_on_write(void *p);
+static void tcpsock_on_read(void *p);
 static void tcpsock_on_accept(void *p);
 static void tcpsock_close_listens(struct tcpsock *tp);
 static void tcpsock_on_accept(void *p);
@@ -524,6 +525,7 @@ void *p)
     tp->flags |= TCF_CONNECTED;
     tp->attempts = 0;
     tp->nextrecon = 0;
+    on_read(tp->fd, tcpsock_on_read, tp);
     /* THE LOCAL ADDRESS OF THE SESSION, once the build has stood: on the way
      * into a connection getsockname() on a connecting socket is not the answer,
      * and a "bound" line that names an address the session does not use is
