@@ -178,7 +178,10 @@ for `0x08` - such a frame would be freed without comment.  That is not an
 oversight: `procdata()` requires the segments strictly in order and
 without gaps, and discards the whole reassembly at the first deviation.
 Only LAPB guarantees that.  On a UI link the sole mechanism is IP
-fragmentation, with nothing underneath it to repeat a loss.
+fragmentation, with nothing underneath it to repeat a loss.  Reaching
+the same place by segmenting the node's own text is built, and by
+segmenting a UI frame is a decided design not yet in the code; both are in
+the last section.
 
 ## So which MTU
 
@@ -410,6 +413,62 @@ multiply into more queued data than either number suggests.
                                whenever offset or the MF flag is set
 
 If neither appears, the datagram fitted in one frame.
+
+## Into UI, and into the node's own text
+
+Everything above is what the code did before this was taken further:
+`segmenter()` was reached from `axui_send()` alone, so segmentation was IP
+and connected-mode only.  Two pieces have been added, and two are still a
+decided shape rather than code.
+
+**The node's own stream (built).**  What the node itself initiates - a text
+session, the TCP gate, an axsock forwarder - is where the operator decides,
+because the far end is not guaranteed to be the original sender's peer.
+One setting, three answers, at the node or per port:
+
+    off         never segment the node's own packets
+    on          segment every protocol
+    exempt-l3   segment every protocol except PID 0xf0 (plain text)
+
+    ax25 segmentation off | on | exempt-l3
+    ifconfig <iface> segmentation off | on | exempt-l3 | default
+
+`exempt-l3` is the default, because it is the shape that changes nothing:
+IP and every other protocol segment when the MTU exceeds the paclen, as
+before, and text keeps the classic packetizing - one frame of paclen bytes
+per write, every frame carrying PID `0xf0`.  `on` pulls text into the
+segmenter as well.  `off` turns the node's own segmentation off entirely;
+a datagram that then does not fit the port is dropped rather than cut,
+because an IP datagram is not a byte stream, while a byte stream is simply
+packetized as it always was.
+
+`0xf0` is the one protocol set apart, and for one reason: it is the PID
+most likely to meet a station that does not reassemble.  A segment arrives
+as PID `0x08`; a station that implements this reassembler turns it back
+into text, but a plain AX.25 socket - Linux's, for one - hands `0x08` up as
+a protocol of its own and the text never appears.  A BBS or a TNC on the
+other side can be such a station, and text is what talks to BBSes.
+
+**Receiving and repeating (decided, not built).**  Segmented data is
+reassembled like any other protocol - a segment says nothing about what it
+carries, the real PID travels in the first segment and comes out again when
+the pieces are joined.  Connected mode already does that (`procdata()`: one
+reassembly per link, strictly in order, and a link teardown frees a partial
+one).  UI mode does not yet; there the reassembly is per (destination,
+source) pair, with a timer TR210 of 60 seconds that every in-order segment
+restarts, so a stalled reassembly cannot hold its buffer forever.
+
+A frame the node *repeats* is not covered by the setting above: there the
+far end is by construction the receiver of the original packet, and it
+reassembles like any PID.  A packet that is digipeated onto a port whose
+paclen is smaller than the packet is segmented, with nothing to configure -
+the receiver gets back exactly the bytes, and the length, that the original
+sender put on the air, which the sender chose for a reason.  A packet that
+arrives not yet segmented is segmented here.  A packet that arrives *as a
+segment* is not segmented further: its counter says how many follow, and
+that cannot be recounted, so such a packet is dropped when the outgoing
+paclen is smaller than the segment.  This is the one place the splitter
+must not fire twice.
 
 ## Where this came from
 

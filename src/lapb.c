@@ -1146,11 +1146,21 @@ struct mbuf **bpp
 ){
 	struct iface *ifp;
 	struct mbuf *bp;
+	int dpid = -1;
 
 	if(bpp == NULL){
 		bp = NULL;
 		bpp = &bp;
 	}
+	/* READ THE PROTOCOL ID WHILE IT IS STILL AT THE FRONT.  Only an I
+	 * frame carries one - its control octet has bit 0 clear - and for an
+	 * I frame from send_ax25() the pid is the first byte of the
+	 * information field, here, before the control field and then the
+	 * addresses are pushed in front of it.  A pure control frame has
+	 * none, and -1 lets it count as plain AX.25.
+	 */
+	if((ctl & 1) == 0 && *bpp != NULL && (*bpp)->cnt > 0)
+		dpid = (*bpp)->data[0];
 	/* Pushed first so that it ends up behind ctl, which is pushed next */
 	if(ctlx != -1){
 		pushdown(bpp,NULL,1);
@@ -1168,36 +1178,23 @@ struct mbuf **bpp
 			ifp = ifp->forw;
 		logsrc(ifp,ifp->hwaddr);
 		logdest(ifp,axp->hdr.nextdigi != axp->hdr.ndigis ? axp->hdr.digis[axp->hdr.nextdigi] : axp->hdr.dest);
-		/* WHICH OF THE THREE NUMBERS THIS FRAME BELONGS TO.  Not always
-		 * the third, and the two exceptions are worth the lines.
+		/* WHICH OF THE THREE NUMBERS THIS FRAME BELONGS TO.  Answered
+		 * from the pid read on entry, the last moment it could be told
+		 * apart from data.
 		 *
-		 * (ctl & 3) != U is a link control frame - SABM, UA, DM, RR,
-		 * RNR, REJ.  There is nothing behind the control field, so it
-		 * is pure AX.25 and needs no test at all.  Retransmissions of
-		 * a T1 or of a window timer count like any other: each of them
-		 * is a frame the driver counts in rawsndcnt.
+		 * An I frame carrying an IP datagram belongs to ipsndcnt: q_pkt()
+		 * counted the datagram before this frame existed.  One carrying
+		 * a segment belongs to whoever sliced the datagram - the sender
+		 * still knew what was inside, this frame only says PID_SEGMENT.
 		 *
-		 * With ctl == UI it is a data frame in connected mode, and
-		 * send_ax25() has already pushed the protocol id onto the front
-		 * of it.  That can be an IP datagram, and ipsndcnt counted the
-		 * datagram before it ever got here.
-		 *
-		 * PID_SEGMENT is the odd one and is not counted here at all:
-		 * a frame that says PID_SEGMENT says nothing about what is
-		 * inside it, and the only thing that ever wrote that pid is
-		 * segmenter() - which axi_send() below counts itself, one less
-		 * than the number of segments, so that one of them stands for
-		 * the datagram ipsndcnt already has.
+		 * Everything else is a plain AX.25 frame and is counted here:
+		 * every link control frame (SABM, UA, DM, RR, RNR, REJ), a
+		 * keepalive, own text, and each segment of it.  So "tot == ip +
+		 * ax25" holds.  A retransmission counts like any other; it is a
+		 * frame the driver counts in rawsndcnt too.
 		 */
-		if((ctl & 3) != U)
+		if(dpid != PID_SEGMENT && !ax25_pid_is_ip(dpid))
 			ifp->ax25sndcnt++;
-		else {
-			int dpid = (*bpp != NULL && (*bpp)->cnt > 0) ?
-				(*bpp)->data[0] : PID_NO_L3;
-
-			if(dpid != PID_SEGMENT && !ax25_pid_is_ip(dpid))
-				ifp->ax25sndcnt++;
-		}
 		return (*ifp->raw)(ifp,bpp);
 	}
 	free_p(bpp);

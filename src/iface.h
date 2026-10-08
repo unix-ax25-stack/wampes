@@ -347,6 +347,12 @@ struct iface {
 	int maxframe;
 	int emaxframe;
 
+	/* Whether the node segments its own packets sent out of this port:
+	 * 0 = the node's setting ("ax25 segmentation"), else AXSEG_OFF,
+	 * AXSEG_ON or AXSEG_EXEMPT_L3.  See ax25.h.
+	 */
+	int segmentation;
+
 	int eax25;
 	int eax25_hinted;       /* We have already said, on this port, that
 				 * somebody here speaks modulo-128.  Once per

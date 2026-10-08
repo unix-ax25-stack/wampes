@@ -57,6 +57,7 @@ static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
 static int ifkeepalive(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
+static int ifsegmentation(int argc,char *argv[],void *p);
 static int ifmaxframe(int argc,char *argv[],void *p);
 static int ifemaxframe(int argc,char *argv[],void *p);
 static int if_wants_rest(const char *word);
@@ -260,6 +261,13 @@ struct cmds Ifcmds[] = {
 	  "ifconfig <iface> maxframe 0..7   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "paclen",               ifpaclen,       0,      2,
 	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
+	{ "segmentation",         ifsegmentation, 0,      1,
+	  "ifconfig <iface> segmentation off|on|exempt-l3|default\n"
+	  "  Whether the node segments its OWN packets sent out of this port\n"
+	  "  when the MTU is larger than paclen.  off: never.  on: every\n"
+	  "  protocol.  exempt-l3: every protocol except plain text (PID\n"
+	  "  0xf0).  default: follow \"ax25 segmentation\".\n"
+	  "  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "forward",              ifforw,         0,      2,
 	  "ifconfig <iface> forward <iface>   (receive here, send there)\n"
 	  "  Der Empfang auf diesem Port bleibt, nur das SENDEN geht auf den\n"
@@ -679,18 +687,18 @@ ifdamagap(int argc,char *argv[],void *p)
 	}
 	if(argc < 2){
 		if(ifp->dama_gap)
-			printf("%s: dama-gap %ldms (gesetzt)\n", ifp->name,
+			printf("%s: dama-gap %ldms (set)\n", ifp->name,
 			       (long) ifp->dama_gap);
 		else
-			printf("%s: dama-gap %ldms, berechnet aus hf-datarate "
-			       "und TX-Delay\n", ifp->name,
+			printf("%s: dama-gap %ldms, computed with hf-datarate "
+			       "and TX-Delay\n", ifp->name,
 			       (long) dama_gap_time(ifp));
 		return 0;
 	}
 	n = atol(argv[1]);
 	if(n < 0 || n > 30000L){
 		printf("dama-gap wants milliseconds, 0 to 30000 "
-		       "(0 = Vorgabe %ld)\n", (long) DAMA_GAP_DEFAULT);
+		       "(0 = default %ld)\n", (long) DAMA_GAP_DEFAULT);
 		return 1;
 	}
 	/* NULL IST ERLAUBT, aber gemessen: ohne Pause rast die Runde - mit
@@ -1109,6 +1117,38 @@ ifemaxframe(int argc,char *argv[],void *p)
 
 	return setintrc(&ifp->emaxframe,
 	 "Window modulo-128, this port (0 = node)",argc,argv,0,63);
+}
+
+/* Whether the node segments its own packets sent out of this port - see
+ * ax25.h.  "default" drops the port's own answer and follows the node's.
+ */
+static int
+ifsegmentation(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+	int mode;
+
+	if(!is_ax25(ifp)){
+		printf("%s carries no AX.25, so segmentation means nothing.\n",
+		       ifp->name);
+		return 1;
+	}
+	if(argc < 2){
+		printf("%s: segmentation %s\n", ifp->name,
+		       axseg_name(ifp->segmentation ? ifp->segmentation
+		                                    : Ax25_segmentation));
+		return 0;
+	}
+	if(!stricmp(argv[1],"default")){
+		ifp->segmentation = 0;
+		return 0;
+	}
+	if((mode = axseg_word(argv[1])) == 0){
+		printf("Valid options: off on exempt-l3 default\n");
+		return 1;
+	}
+	ifp->segmentation = mode;
+	return 0;
 }
 
 /* Set the network mask. This is actually done by installing
@@ -1599,6 +1639,9 @@ showiface(struct iface *ifp, int verbose)
 		 ifp->paclen ? ifp->paclen : Paclen,
 		 ifp->maxframe ? ifp->maxframe : Maxframe,
 		 ifp->emaxframe ? ifp->emaxframe : EMaxframe);
+		printf("           ax25: segmentation %s\n",
+		 axseg_name(ifp->segmentation ? ifp->segmentation
+		                              : Ax25_segmentation));
 		printf("           ax25: eax25 %s\n",
 		 ifp->eax25 == EAX25_OFF ? "off" :
 		 ifp->eax25 == EAX25_ALWAYS ? "always" :

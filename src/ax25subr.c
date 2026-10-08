@@ -41,6 +41,49 @@ int   T5init = 3600000;         /* Idle disconnect timeout, ms */
 enum lapb_version Axversion = V2; /* Protocol version */
 int32 Blimit = 16;              /* Retransmission backoff limit */
 int   Axigntos;                 /* Ignore TOS */
+/* Segment our own packets?  The node default; "ifconfig <iface>
+ * segmentation" overrides it per port.  See ax25.h.
+ */
+int   Ax25_segmentation = AXSEG_EXEMPT_L3;
+
+char *
+axseg_name(int mode){
+	switch(mode){
+	case AXSEG_OFF: return "off";
+	case AXSEG_ON:  return "on";
+	default:        return "exempt-l3";
+	}
+}
+
+/* "off" | "on" | "exempt-l3" -> AXSEG_*, or 0 when the word is none of them
+ * (which is also what "default" is NOT: the callers that accept it say so
+ * themselves, because only a port has something to fall back to).
+ */
+int
+axseg_word(char *s){
+	if(!stricmp(s,"off"))
+		return AXSEG_OFF;
+	if(!stricmp(s,"on"))
+		return AXSEG_ON;
+	if(!stricmp(s,"exempt-l3"))
+		return AXSEG_EXEMPT_L3;
+	return 0;
+}
+
+/* Does a packet with this pid, sent by the NODE itself out of this port,
+ * get segmented?  The port's answer when it has one, the node's otherwise.
+ */
+int
+ax25_segments_pid(struct iface *ifp, int pid){
+	int mode = (ifp && ifp->segmentation) ? ifp->segmentation
+	                                      : Ax25_segmentation;
+
+	if(mode == AXSEG_OFF)
+		return 0;
+	if(mode == AXSEG_EXEMPT_L3 && pid == PID_NO_L3)
+		return 0;
+	return 1;
+}
 
 static int Nextid = 1;          /* Next control block ID */
 

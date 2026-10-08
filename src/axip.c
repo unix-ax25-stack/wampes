@@ -2956,7 +2956,7 @@ static int doaxipstats(int argc, char *argv[], void *p)
   if (Axip_expired)
     printf("expired     %ld   silent learned routes dropped by axip-expiry\n",
 	   Axip_expired);
-  printf("dns         every %d min, after %d min quiet (node's)\n",
+  printf("dns         every %d min, after %d min quiet\n",
          Axip_dns_interval, Axip_dns_silence);
   printf("bad echoes  %d   loop-protect window %d s\n",
          Ax_echoes, Ax_dup_window / 1000);

@@ -271,6 +271,37 @@ int pid
 			free_p(bpp);
 			return -1;
 		}
+		/* Segment when the operator asks for it and the packet is
+		 * larger than one frame.  The port decides (ax25.h, "ax25
+		 * segmentation" / "ifconfig <iface> segmentation"); the default
+		 * exempts PID 0xf0, so text keeps the classic behaviour unless
+		 * it is asked for.  segmenter() hands a packet that fits back
+		 * whole, so the common case does not change at all.
+		 */
+		if(ax25_segments_pid(axp->iface,pid)){
+			struct mbuf *tbp;
+			uint nseg;
+
+			pushdown(bpp,NULL,1);
+			(*bpp)->data[0] = pid;
+			if((tbp = segmenter(bpp,axp->paclen)) == NULL){
+				free_p(bpp);
+				return -1;
+			}
+			/* The frames of a real segmentation carry PID_SEGMENT,
+			 * which sendframe() does not count.  An IP datagram
+			 * this stands for is already in ipsndcnt (as in
+			 * axui_send), so only the rest are AX.25; for anything
+			 * else the datagram is not counted anywhere else and
+			 * every one of its frames is.
+			 */
+			nseg = len_q(tbp);
+			if(nseg > 1 && axp->iface != NULL)
+				axp->iface->ax25sndcnt +=
+				 ax25_pid_is_ip(pid) ? nseg - 1 : nseg;
+			enqueue(&axp->txq,&tbp);
+			return lapb_output(axp);
+		}
 		offset = 0;
 		len = len_p(*bpp);
 		/* It is important that all the pushdowns be done before

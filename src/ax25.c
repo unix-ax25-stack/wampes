@@ -220,6 +220,21 @@ uint8 tos
 	/* Insert the PID */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = pid;
+	if(!ax25_segments_pid(iface,pid)){
+		/* The operator has turned segmentation off for this port.  A
+		 * datagram that still fits goes as it always would; one that
+		 * does not cannot be sent - it may not be cut (an IP datagram
+		 * is not a byte stream) and there is no segmenter to carry it
+		 * - so it is dropped, as when segmenter() itself refuses.
+		 */
+		if(len_p(*bpp) > axp->paclen + 1){
+			free_p(bpp);
+			return -1;
+		}
+		tbp = *bpp;
+		*bpp = NULL;
+		return send_ax25(axp,&tbp,-1);
+	}
 	if((tbp = segmenter(bpp,axp->paclen)) == NULL){
 		free_p(bpp);
 		return -1;

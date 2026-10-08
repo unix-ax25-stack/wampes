@@ -44,6 +44,22 @@ extern int Digiout;
 extern int Ax25mbox;
 extern int Axigntos;
 
+/* Whether the node segments ITS OWN packets when the MTU is larger than
+ * paclen - and only those: received segments are always reassembled, and a
+ * repeated frame is always segmented to fit the outgoing port, neither of
+ * which is a matter of configuration.  off: never.  on: every protocol.
+ * exempt-l3: every protocol except PID_NO_L3 (plain text, 0xf0), which is
+ * the default.  The value here is the node default; a port can override it
+ * with "ifconfig <iface> segmentation".  See doc/AX25-MTU-SEGMENTATION.md.
+ */
+#define AXSEG_OFF       1
+#define AXSEG_ON        2
+#define AXSEG_EXEMPT_L3 3
+extern int Ax25_segmentation;
+char *axseg_name(int mode);
+int   axseg_word(char *s);
+int   ax25_segments_pid(struct iface *ifp, int pid);
+
 /* Loop-Schutz: Fingerprint eines fertigen UI-Rahmens merken und ein
  * byte-identisches Wiederkommen innerhalb Ax_dup_window als Schleife/Echo
  * verwerfen.  Nur UI: connected-mode identische Wiederholungen (RR+/I/SABM)
