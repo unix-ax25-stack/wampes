@@ -289,8 +289,8 @@ void *p)
     }
     if (ac >= (int) (sizeof(av) / sizeof(av[0]))) {
       printf("Usage: attach axtcp [<label> [listen [<port>]]]"
-	     " [client <host>[:<port>]] [keepalive <seconds>]"
-	     " [shared-key <code>]\n");
+	     " [client <host>[:<port>]] [bind=<addr>[,<addr>]...]"
+	     " [keepalive <seconds>] [shared-key <code>]\n");
       printf("... and too many words before it.\n");
       return 1;
     }
@@ -396,8 +396,9 @@ void *p)
 	goto Usage;
       if (++i >= argc) {
 	printf("\"client\" wants a host, as in \"client db0sao.ampr.org:8000\"\n");
-	printf("Usage: attach axtcp [<label> [listen [<port>]]] "
-	       "[client <host>[:<port>]]\n");
+	printf("Usage: attach axtcp [<label> [listen [<port>]]]"
+	       " [client <host>[:<port>]] [bind=<addr>[,<addr>]...]"
+	       " [keepalive <seconds>] [shared-key <code>]\n");
 	return 1;
       }
       /* THE PORT STANDS IN THE HOST, and that is right here: "client" has
@@ -437,8 +438,8 @@ void *p)
        * one.
        */
       printf("Usage: attach axtcp [<label> [listen [<port>]]]"
-	     " [client <host>[:<port>]] [keepalive <seconds>]"
-	     " [shared-key <code>]\n");
+	     " [client <host>[:<port>]] [bind=<addr>[,<addr>]...]"
+	     " [keepalive <seconds>] [shared-key <code>]\n");
       if (i < argc)
 	printf("... and \"%s\" is one word too many.\n", argv[i]);
       return 1;

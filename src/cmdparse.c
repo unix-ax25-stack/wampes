@@ -345,6 +345,23 @@ void *p)
 	}
 	if (query_arg(cmdp, argc, argv))
 		return 0;
+	/* A QUESTION ANYWHERE ON THE LINE, and not only as the whole rest of
+	 * it.  query_arg() answers "command ?"; here the "?" comes after words
+	 * that were already being read - "attach axtcp axtcp client host ?" -
+	 * and without this it would travel on until a walker refused it with
+	 * "... and "?" is one word too many."  Answer with the entry's own
+	 * usage text, or with its subcommand list where there is none.
+	 */
+	for (i = 1; i < argc; i++)
+		if (strcmp(argv[i], "?") == 0) {
+			if (cmdp->argc_errmsg != NULL)
+				printf("Usage: %s\n", cmdp->argc_errmsg);
+			else if (cmdp->subtab != NULL) {
+				printf("\"%s\" subcommands:\n", argv[0]);
+				print_help(cmdp->subtab);
+			}
+			return 0;
+		}
 	if(argc < cmdp->argcmin){
 		return print_usage(cmdp);
 	}
