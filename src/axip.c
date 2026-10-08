@@ -833,8 +833,10 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
    * Rundspruk vorliegt, steht weiter oben und wird von hier nicht gebraucht.
    */
 
-  /* NOT BUILT - but the shape is decided here so that building it later does
-   * not mean guessing.  It covers axip and axudp, which share this function.
+  /* NOT BUILT - the half that still has no carrier, for axip and axudp, and
+   * the incoming half for all four ports.  The SHAPE is decided here so that
+   * a later build does not mean guessing.  The outgoing half over a TCP
+   * carrier IS built, in client mode, in tcpsock.c (tcpsock_auth_send()).
    *
    * WHY THERE IS NO ROOM FOR A REAL SECRET IN AN ADDRESS FIELD: an AX.25
    * source field is who you claim to be, and nothing more.  Whoever connects
@@ -845,35 +847,41 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
    * partner.  That is protection against misuse, not against an adversary,
    * and the code should be named for what it is.
    *
-   * WHAT WOULD BE BUILT, in both directions.  The code lives IN THE INTERFACE
-   * (ifp), one per axip/axudp/axtcp/kisstcp port - NOT in Ax25multi[], which is
-   * the table of multicast destinations (QST-0, NODES-0) and has nothing to do
-   * with partners.  Do not put the two together.
+   * THE CODE LIVES IN THE INTERFACE (ifp->sharedkey), one per
+   * axip/axudp/axtcp/kisstcp port - NOT in Ax25multi[], which is the table of
+   * multicast destinations (QST-0, NODES-0) and has nothing to do with
+   * partners.  Do not put the two together.
    *
-   *   Incoming.  Two conditions together, and both are needed: an auth code is
-   *   set on the interface, AND the interface has not yet accepted a packet.
-   *   Then the destination field of that first packet is checked - and only
-   *   that one packet, because after it the session is established.  The check
-   *   is deliberately crude: the first six bytes of the destination field are
-   *   the callsign, each shifted left by one, and the SSID sits in bits 1..4 of
-   *   the seventh byte.  So it is exactly addreq(), and there is nothing to
-   *   mask by hand: addreq() already drops bit 0 (E, end of address) and bit 7
-   *   (C/R, command or repeated) with SSID == 0x1E, and compares only what names
-   *   the station.  Do not "fix" a comparison here that addreq() does not need
-   *   fixing - a byte-for-byte memcmp() would be the actual bug.  If it matches,
-   *   the code becomes the alias the peer is known by, and learning and the
-   *   route table take it from there as any other address.
+   * WHAT WOULD BE BUILT HERE:
    *
-   *   Outgoing, to the configured default IP.  Exactly ONE empty UI frame:
-   *   source the interface's own call (ifp->hwaddr, already filled in from
-   *   ax25 mycall), destination the code.  Once per session, not per tick.
-   *   That it can only go to the default IP is the whole reason this is
-   *   awkward: over axip/axudp we do not know which peer sits behind which
-   *   MAC, so the first frame has no better address than "the one we send to
-   *   anyway".  An empty UI frame is the right shape for it - it is the
-   *   standard AX.25 link probe, so the far end sees something it recognises
-   *   rather than a stranger - and it must stay distinguishable from the
-   *   keepalive, which addresses nobody and must not count as an answer.
+   *   Incoming, on all four.  Two conditions together, and both are needed:
+   *   an auth code is set on the interface, AND the interface has not yet
+   *   accepted a packet.  Then the destination field of that first packet is
+   *   checked - and only that one packet, because after it the session is
+   *   established.  The check is deliberately crude: the first six bytes of
+   *   the destination field are the callsign, each shifted left by one, and
+   *   the SSID sits in bits 1..4 of the seventh byte.  So it is exactly
+   *   addreq(), and there is nothing to mask by hand: addreq() already drops
+   *   bit 0 (E, end of address) and bit 7 (C/R, command or repeated) with
+   *   SSID == 0x1E, and compares only what names the station.  Do not "fix"
+   *   a comparison here that addreq() does not need fixing - a byte-for-byte
+   *   memcmp() would be the actual bug.  If it matches, the code becomes the
+   *   alias the peer is known by, and learning and the route table take it
+   *   from there as any other address.
+   *
+   *   Outgoing, axip and axudp only, to the configured default IP.  Exactly
+   *   ONE empty UI frame: source the interface's own call (ifp->hwaddr,
+   *   already filled in from ax25 mycall), destination the code.  That it can
+   *   only go to the default IP is the whole reason this is awkward: over
+   *   axip/axudp we do not know which peer sits behind which MAC, so the
+   *   first frame has no better address than "the one we send to anyway".
+   *   But there is no session to hang "once per session" on, and over UDP
+   *   whatever plurality of peers the port has, the trigger is still open.
+   *   An empty UI frame is the right shape for it - it is the standard AX.25
+   *   link probe, so the far end sees something it recognises rather than a
+   *   stranger - and it must stay distinguishable from the keepalive, which
+   *   addresses nobody and must not count as an answer: dest == src and a
+   *   clear extension bit are the keepalive's mark.
    *
    * WHY THE CODE IS CONFIGURED RATHER THAN DERIVED: the peer normally hands
    * the same code to everyone he serves.  So "the alias from our own CONFIG
@@ -885,7 +893,8 @@ static int axip_raw(struct iface *ifp, struct mbuf **bpp)
    * ifconfig subcommand would have to reject every interface type it does not
    * apply to.  attach is where the port type is already being named, so the
    * set of interfaces that can carry a code is exactly the set that asked for
-   * one.  OPEN: the exact wording of the attach argument.
+   * one.  For the TCP ports the word is "shared-key <code>"; for axip/axudp
+   * the wording is OPEN.
    */
   axip_lookup(dest, ifp);
 

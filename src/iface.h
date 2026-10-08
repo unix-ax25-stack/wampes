@@ -210,6 +210,22 @@ struct iface {
 	 * cannot outlive a change of it (Thomas).
 	 */
 	int keepalive;
+	/* THE SHARED CODE OF AN AXTCP/KISSTCP PORT, the word as written at the
+	 * attach ("shared-key <word>"), at most six characters: it travels in
+	 * an AX.25 address field, and that is what the limit comes from.  It
+	 * exists only on those ports; the attach names the port kind, and
+	 * that is where it belongs.
+	 *
+	 * SENT ONCE, IN THE FIRST FRAME of every session WE build as a client:
+	 * the partner reads the destination of the first frame we send it and
+	 * decides who we are by it, and after a rebuilt TCP link that packet
+	 * has to exist again although the user saw nothing (tcpsock.c,
+	 * tcpsock_auth_send()).  It is the word and not an encoded field, so
+	 * messages can quote it.  Empty: none configured.  The incoming half
+	 * - checking the first frame a partner sends US - is not built
+	 * (TODO.txt).
+	 */
+	char sharedkey[7];
 	/* DAMA, see dama.c.  The role is what the sysop asked for; whether it
 	 * is in force depends on a master actually being heard, which is what
 	 * dama_heard records.

@@ -224,15 +224,6 @@ struct tcpsock *tp)
   return 1;
 }
 
-/*---------------------------------------------------------------------------*/
-
-static int
-axtcp_init(
-void)
-{
-  return tcpsock_init();
-}
-
 /* attach axtcp [<label> [listen [<port>] | client <host>[:<port>]]]
  *
  * THE VALUES.  argv[0] is the word after "attach", argv[1] the label -
@@ -254,7 +245,7 @@ void *p)
   struct tcpsock *tp;
   char ifname[64];
   const char *bindword = NULL;
-  char *av[10];
+  char *av[12];
   char *host = NULL;
   char hostbuf[1024];
   char servbuf[32];
@@ -274,6 +265,7 @@ void *p)
   int ac = 0;
   int i;
   int keepalive = -1;		/* -1 = not written, so the default applies */
+  char key[AXALEN];		/* the shared code, if one was written */
 
   (void) p;
   /* "bind=" AND "keepalive" ARE THE TWO WORDS THAT MAY STAND ANYWHERE, and
@@ -297,7 +289,8 @@ void *p)
     }
     if (ac >= (int) (sizeof(av) / sizeof(av[0]))) {
       printf("Usage: attach axtcp [<label> [listen [<port>]]]"
-	     " [client <host>[:<port>]] [keepalive <seconds>]\n");
+	     " [client <host>[:<port>]] [keepalive <seconds>]"
+	     " [shared-key <code>]\n");
       printf("... and too many words before it.\n");
       return 1;
     }
@@ -310,6 +303,12 @@ void *p)
    * knows nothing about is an error the sysop would not understand.
    */
   if (tcpsock_take_keepalive(&argc, argv, &keepalive))
+    return 1;
+  /* AND THE SHARED CODE NEXT TO IT, for the same reason: a word that may only
+   * stand in one particular place is an extra rule to think about while
+   * copying a line out.
+   */
+  if (tcpsock_take_sharedkey(&argc, argv, key))
     return 1;
 
   /* "stat" IS NOT A LABEL.  The word in second place decides whether a port is
@@ -438,7 +437,8 @@ void *p)
        * one.
        */
       printf("Usage: attach axtcp [<label> [listen [<port>]]]"
-	     " [client <host>[:<port>]] [keepalive <seconds>]\n");
+	     " [client <host>[:<port>]] [keepalive <seconds>]"
+	     " [shared-key <code>]\n");
       if (i < argc)
 	printf("... and \"%s\" is one word too many.\n", argv[i]);
       return 1;
@@ -495,6 +495,8 @@ void *p)
    * a written value - "keepalive 0" means off and not "use the default".
    */
   ifp->keepalive = keepalive < 0 ? TCP_KEEPALIVE_DEFAULT : keepalive;
+  if (key[0] != '\0')
+    memcpy(ifp->sharedkey, key, sizeof(ifp->sharedkey));
 
   /* ONE PORT WITH BOTH ROLES, and the two hooks are one set of four - the same
    * bytes either way.  Only the flags say which half of it is wanted, and the
@@ -560,16 +562,16 @@ void *p)
     tcpsock_connect(tp, host, dport);
     free(host);
   }
-  /* THE TICK, and it has to be started HERE.  tcpsock_init() exists and does
-   * exactly this, but nothing calls it: the axtcp_init() that was meant to call
-   * it is unreferenced (the compiler says so with -Wall), and no command table
-   * entry leads there.  The consequence is not visible at the attach - the port
-   * listens and answers - and only shows later: nothing in tcpsock_timer_task()
-   * runs, so a client never reconnects, a connection that is not identified
-   * never hits its five minutes, and the keepalive never ticks.
+  /* THE TICK, and it has to be started HERE, at the attach.  There is no
+   * other place for it: the init call that was meant to do it is gone,
+   * because nothing called it.  The consequence of a missing start would
+   * be invisible at the attach - the port listens and answers - and only
+   * show later: nothing in tcpsock_timer_task() runs, so a client never
+   * reconnects, a connection that is not identified never hits its five
+   * minutes, and the keepalive never ticks.
    *
-   * CALLED FROM BOTH MODULES it is harmless: the first call starts the tick and
-   * every further one sees it running (see tcpsock_init()).
+   * CALLED FROM BOTH MODULES it is harmless: the first call starts the tick
+   * and every further one sees it running (see tcpsock_init()).
    */
   tcpsock_init();
   ifp->next = Ifaces;

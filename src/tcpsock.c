@@ -433,6 +433,55 @@ struct tcpsock *tp)
 
 /*---------------------------------------------------------------------------*/
 
+/* THE FIRST FRAME OF A SESSION WE BUILT.  If the port carries a shared code,
+ * the partner decides who we are by the destination of the first frame it
+ * receives from us - so the code has to ride in exactly that frame, and the
+ * frame has to be the first thing that goes out, ahead of the keepalive.
+ *
+ * THE MOMENT IS HERE, NOT AT THE ATTACH.  The user cannot know that the
+ * connection to the partner has been rebuilt and that a new code frame is
+ * due, so net has to watch the build itself.  on_write() answering the
+ * SO_ERROR question with success is precisely "the peer is listening again",
+ * and it is the one moment in the session where the first frame is
+ * guaranteed to be read.
+ *
+ * THE FRAME IS the axip keepalive frame (axip.c:1058), an empty UI of
+ * sixteen bytes - destination the code, source our own call.  It must stay
+ * distinguishable from that keepalive, which addresses nobody and must not
+ * count as an answer: dest == src and a clear extension bit are the
+ * keepalive's mark, the code is six different first bytes.
+ */
+static void
+tcpsock_auth_send(
+struct tcpsock *tp)
+{
+  struct iface *ifp = tp->ifp;
+  struct mbuf *bp;
+  uint8 buf[2 * AXALEN + 2];
+  int l = 2 * AXALEN + 2;
+
+  if (ifp == NULL || ifp->sharedkey[0] == '\0')
+    return;
+  /* The word was accepted at the attach; this setcall() is the encode, in
+   * the same spelling the partner compares with.
+   */
+  if (setcall(buf, ifp->sharedkey))
+    return;
+  memcpy(buf + AXALEN, ifp->hwaddr, AXALEN);
+  buf[AXALEN + 6] |= E;
+  buf[2 * AXALEN] = 0x03;	/* UI */
+  buf[2 * AXALEN + 1] = 0xf0;	/* no layer 3 */
+
+  if ((bp = qdata(buf, (uint) l)) == NULL)
+    return;
+  /* tcpsock_send(), not a direct write: the frame belongs in the same queue
+   * as the keepalive that comes next, and leaves it in the same order.
+   */
+  tcpsock_send(tp, bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* THE REAL ENTRY POINT FOR select().  The hook takes void * because hpux.c
  * provides it that way and not because it is pretty; the session comes back as
  * a pointer.  The call to tcpsock_flush() is one line, and without it the queue
@@ -504,6 +553,7 @@ void *p)
      * way: our own packet going out proves that we speak, not that they do.  A
      * port scanner that keeps quiet must still run into TCP_GARBAGE_MAX.
      */
+    tcpsock_auth_send(tp);
     tcpsock_keepalive_send(tp);
   }
   tcpsock_flush(tp);
@@ -1051,29 +1101,36 @@ int port)
  * on_write() tells us when the kernel has the answer - through select(), not
  * through a wait time and not through threads (Thomas).
  */
-/* NOT BUILT: the optional shared code, for the two ports that ride on this
- * layer - axtcp and kisstcp.  The reasoning, both directions, and why a code
- * that travels in an address field is a filter and not a credential, are
- * written out once in axip_raw(); this is the second half of it.
+/* THE SHARED CODE OF A TCP PORT, and the outgoing half is BUILT.  The
+ * reasoning in both directions - and why a code that travels in an address
+ * field is a filter and not a credential - is written out once in
+ * axip_raw(); this is the second half of it.
  *
- * WHAT WOULD BE BUILT HERE:
+ * WHAT IS BUILT:
  *
  *   Outgoing, client mode.  One empty UI frame as soon as the TCP connect
  *   comes up - source ifp->hwaddr, destination the configured code.  This is
  *   the one moment where the peer is guaranteed to read something: the first
- *   frame it receives from us is what it decides who we are by.  A keepalive
- *   says nothing and cannot be used for it - the AXTCP keepalive is a
- *   zero-length frame and the KISS one is FEND FEND, and neither carries an
- *   address field at all.  The keepalive is not the first frame; it is
- *   everything after it.
+ *   frame it receives from us is what it decides who we are by.  After a
+ *   rebuilt TCP link that packet must be there again although the user saw
+ *   nothing, which is why the send watches the build and not the attach
+ *   (tcpsock_auth_send()).  A keepalive says nothing and cannot be used for
+ *   it - the AXTCP keepalive is a zero-length frame and the KISS one is FEND
+ *   FEND, and neither carries an address field at all.  The keepalive is not
+ *   the first frame; it is everything after it.
+ *
+ * WHAT IS NOT BUILT:
  *
  *   Incoming.  Learn and accept once a frame addressed to the code arrives -
  *   the same rule as on axip/axudp, and for the same reason: a server that
  *   demanded it would be inventing a rule xrouter does not have, and
- *   xrouter's clients are the only ones that exist.
+ *   xrouter's clients are the only ones that exist.  One half of a filter is
+ *   not a filter, so a port that only SENDS the code protects nobody yet;
+ *   building the check later changes nothing here.
  *
- * CONFIGURATION: on attach, for the reason given in axip_raw().  OPEN: the
- * exact wording of the attach argument.
+ * CONFIGURATION: on attach ("shared-key <code>"), for the reason given in
+ * axip_raw(): a code means nothing on a port kind that has no address field
+ * to ride in, and the attach is where the kind is being named.
  */
 int
 tcpsock_connect(
@@ -1824,6 +1881,8 @@ void *p)
     if (tp->ifp != NULL && tp->ifp->keepalive > 0)
       printf("    keepalive:%d kp in:%ld kp out:%ld\n", tp->ifp->keepalive,
 	     tp->idlesin, tp->idlesout);
+    if (tp->ifp != NULL && tp->ifp->sharedkey[0] != '\0')
+      printf("    shared-key:%s\n", tp->ifp->sharedkey);
   }
   return 0;
 }
@@ -1869,6 +1928,49 @@ int *keepal)
     /* THE GAP CLOSED UP, including the terminating NULL, so that whoever reads
      * the shortened line sees exactly the line that was written.
      */
+    memmove(argv + i, argv + i + 2, (size_t) (argc - i - 1) * sizeof(char *));
+    *argcp = argc - 2;
+    return 0;
+  }
+  return 0;
+}
+
+/* THE SHARED CODE OFF AN "attach" LINE, and the twin of
+ * tcpsock_take_keepalive(): the line is positional, so an option word at the
+ * end is a word nobody in the chain knows what to do with.  Same word taken
+ * out, same gap closed, for the same reason.
+ *
+ * A CODE IS CALLSIGN-SHAPED, because that is the address field it travels in.
+ * The range is deliberately narrower than setcall()'s: a plain word of up to
+ * six characters, no SSID and no repeats mark - so the code and the frame
+ * it encodes into can never disagree about what was written, and a message
+ * can quote the word as configured.
+ *
+ * Returns 0 when the line is usable - with or without the option - and 1
+ * when it is not, having said why.
+ */
+int
+tcpsock_take_sharedkey(
+int *argcp,
+char **argv,
+char *key /* at least AXALEN bytes */)
+{
+  int argc = *argcp;
+  int i;
+  const char *p;
+
+  key[0] = '\0';
+  for (i = 2; i + 1 < argc; i++) {
+    if (stricmp(argv[i], "shared-key") != 0)
+      continue;
+    p = argv[i + 1];
+    if (*p == '\0' || strlen(p) > ALEN ||
+	strchr(p, '-') != NULL || strchr(p, '*') != NULL) {
+      printf("\"%s\" is not a shared code: it has to be a plain word"
+	     " of at most %d characters\n", p, ALEN);
+      return 1;
+    }
+    strcpy(key, p);
     memmove(argv + i, argv + i + 2, (size_t) (argc - i - 1) * sizeof(char *));
     *argcp = argc - 2;
     return 0;

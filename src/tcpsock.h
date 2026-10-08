@@ -376,6 +376,15 @@ int tcpsock_stat(struct iface *ifp, int proto, int argc, char *argv[], void *p);
  */
 int tcpsock_take_keepalive(int *argcp, char **argv, int *keepal);
 
+/* Takes "shared-key <code>" off an attach line and closes the gap behind it,
+ * exactly as tcpsock_take_keepalive() does for its word.  key takes the word
+ * itself; a code is callsign-shaped, because it travels in an AX.25 address
+ * field, so it is at most six characters and has to be a plain word.  Returns
+ * 0 when the line is usable - with or without the option - and 1 when it is
+ * not, having said why.
+ */
+int tcpsock_take_sharedkey(int *argcp, char **argv, char *key);
+
 /* THE WAY OUT, and both protocols hang it on ifp->raw.  The framing stays with
  * the tx hook: AXTCP counts the CRC into its length field, KISS sends none. */
 int tcpsock_raw(struct iface *ifp, struct mbuf **bpp);
