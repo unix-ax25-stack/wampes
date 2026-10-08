@@ -1249,6 +1249,11 @@ ifrxbuf(int argc,char *argv[],void *p)
  * and puts one fragment with a nonsensical length field on the air before
  * giving up.  See doc/AX25-MTU-SEGMENTATION.md.
  *
+ * THE FLOOR IS IP'S, and the advice has to say so: on an AX.25 link the
+ * frame size on the air is paclen (N1), not the mtu - the mtu only decides
+ * where IP fragments.  A sysop who wants short frames turns paclen down and
+ * leaves the mtu where it is (Thomas).
+ *
  * IPv6 would want 1280 here (RFC 8200 section 5), and on a link that cannot
  * carry that in one piece it also demands fragmentation and reassembly below
  * IPv6 - which is exactly what the AX.25 segmenter is.  WAMPES has no IPv6,
@@ -1258,7 +1263,8 @@ int
 mtu_ok(const char *who,long mtu)
 {
 	if(mtu < MTU_MIN){
-		printf("%s: mtu %ld is below the %d octets IP needs (RFC 791)\n",
+		printf("%s: mtu %ld is below the %d octets IP needs (RFC 791); "
+		 "the frame size on an AX.25 link is paclen, not mtu\n",
 		 who,mtu,MTU_MIN);
 		return 0;
 	}
