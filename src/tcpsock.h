@@ -362,7 +362,6 @@ int tcpsock_connect(struct tcpsock *tp, const char *host, int port);
 void tcpsock_forget(struct tcpsock *tp);
 void tcpsock_gone(struct tcpsock *tp);
 struct tcpsock *tcpsock_first(struct iface *ifp);
-int tcpsock_has_session(struct iface *ifp);
 int tcpsock_isport(struct iface *ifp);
 void tcpsock_show_verbose(struct iface *ifp);
 

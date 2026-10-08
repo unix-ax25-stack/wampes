@@ -247,23 +247,6 @@ static int axip_call_match(const uint8 *route_call, const uint8 *target_call)
   return addreq(route_call, target_call);
 }
 
-/* Der Port zu einer gespeicherten Nummer, oder NULL.  Ein Port, der
- * wegging, gibt NULL zurueck - und nicht den Nachbarn, das waere die
- * schlimmere Ueberraschung.
- */
-/* Helfer fuer die Portbindung der axip-Routen - stabil ohne Struct-Aenderung */
-static unsigned long axip_ifp_key(const struct iface *ifp)
-{
-  return (unsigned long) ifp;
-}
-static struct iface *axip_iface_from_key(unsigned long key)
-{
-  struct iface *ifp;
-  for (ifp = Ifaces; ifp != NULL; ifp = ifp->next)
-    if ((unsigned long) ifp == key)
-      return ifp;
-  return NULL;
-}
 static int axip_ifp_to_rdev(const struct iface *ifp)
 {
   if (ifp == NULL || ifp == &Loopback || ifp == &Encap) return 0;
@@ -549,6 +532,12 @@ struct iface *ifp)
 /* DER TIMER.  Alle 60 Sekunden einmal, und in einem Takt hoechstens
  * AXIP_LOOKUPS_PER_TICK Namen.
  *
+ * GESTARTET wird er von "axip route add" mit einem Namen - eine Route
+ * mit Namen entsteht nur dort.  Er STELLT SICH SELBST AB, wenn keine
+ * benannte Route ihn mehr braucht (keine da, oder keine mit einem
+ * Intervall): ein Takt ohne Arbeit ist kein Takt, sondern eine
+ * Gewohnheit.  Gegen einen doppelten Start ist er gefeit (TIMER_RUN).
+ *
  * ZWEI FRAGEN IN EINEM TAKT, und die Reihenfolge ist nicht fair, sondern
  * einfach: die Liste ist eine Kette.  Wer im Wettbewerb um einen Platz im
  * Takt leer ausgeht, ist im naechsten wieder dran, weil sein rtime nicht
@@ -566,6 +555,7 @@ void *arg)
   int interval;
   int silence;
   int lookups = 0;
+  int keep = 0;
 
   switch (tmr.state) {
   case TIMER_STOP:
@@ -599,6 +589,7 @@ void *arg)
     interval = axip_interval(ifp);
     silence = axip_silence(ifp);
     if (!interval) continue;
+    keep = 1;
     if (rp->rtime && rp->rtime + interval > now) continue;
     /* DIE STILLE, IN BEIDEN RICHTUNGEN.  htime allein genuegt nicht: auf
      * einer Frequenz, wo nur die eine Station uns erreicht, sieht jeder
@@ -619,7 +610,8 @@ void *arg)
     }
     lookups += axip_lookup_one(rp, interval);
   }
-  axip_timer(0);
+  if (keep)
+    axip_timer(0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1128,9 +1120,9 @@ const struct iface *ifp)
 
 /* THE TICK OF THE KEEPALIVE, ten seconds at a time.
  *
- * A TICK OF ITS OWN, and not a rider on axip_timer(): axip_timer() is the
- * clock of the route-name questions and there is nothing that starts it -
- * so the keepalive must not depend on that being fixed one day.
+ * A TICK OF ITS OWN, and not a rider on axip_timer(): ten seconds is the
+ * keepalive's rhythm, sixty seconds the name-checker's, and neither pumps
+ * on the other's schedule.
  *
  * IT STOPS ITSELF when no axudp port asks for a keepalive any more, and
  * ifkeepalive() starts it again when one is set.  A tick with nothing to
@@ -2457,6 +2449,13 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
     if (rp->name)
       free(rp->name);
     rp->name = name;
+    /* NAMEN SIND DER ARBEITSVORRAT DES TIMERS (axip_timer()), und eine
+     * Route mit Namen entsteht nur hier - also ist hier sein erster Start
+     * faellig.  Ein zweiter Start ist unschaedlich: ein laufender Takt
+     * faengt ihn ab (TIMER_RUN), und der Takt stoppt sich selbst, wenn
+     * keine benannte Route ihn mehr braucht.
+     */
+    axip_timer(0);
   }
   /* EIN WIEDERHOLTES "AXIP ROUTE ADD" IST AUCH DIE GELEGENHEIT, EINEN PORT ZU
    * WECHSELN, und das ist der einzige Ort, an dem sich rdev aendert.  Wer die

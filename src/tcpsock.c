@@ -683,17 +683,6 @@ struct iface *ifp)
   return NULL;
 }
 
-/* WHETHER ANYTHING HANGS ON THIS PORT AT ALL.  The interface's raw hook needs
- * that in order to decide whether it has to ask at all: a port with only a
- * client on it sends over this route, a port without a session does not.
- */
-int
-tcpsock_has_session(
-struct iface *ifp)
-{
-  return tcpsock_first(ifp) != NULL;
-}
-
 /* WHETHER THIS PORT IS ONE OF THE TWO TCP CARRIERS AT ALL.  For ifconfig
  * verbose, which walks every port in the node: a serial port, a loopback and a
  * tun must not be asked about sockets and listening ports they do not have.

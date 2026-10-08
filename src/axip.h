@@ -79,10 +79,11 @@ int axip_isudp(const struct iface *ifp);
  * two would be one the sysop has to guess (Thomas).
  */
 int axip_iscarrier(const struct iface *ifp);
-/* Der Keepalive der axudp-Ports braucht einen eigenen Tick: axip_timer()
- * gehoert zu den Routen und hat keine Stelle, die ihn anstossen koennte.
- * ifkeepalive() ruft das hier, sobald ein axudp-Port einen Keepalive
- * bekommt.  Der Tick stellt sich selbst ab, wenn keiner mehr laeuft.
+/* Der Keepalive der axudp-Ports braucht einen eigenen Tick: zehn Sekunden
+ * sind sein Takt, sechzig der des Routen-Timers (axip_timer()).  Der
+ * Routen-Timer startet bei "axip route add" mit einem Namen; ifkeepalive()
+ * ruft das hier, sobald ein axudp-Port einen Keepalive bekommt.  Beide
+ * Ticks stellen sich selbst ab, wenn keiner sie mehr braucht.
  *
  * Und: hat dieser Port in diesem Moment ein Ziel?  Sonst sagt ihm der
  * Aufrufer, dass der Keepalive noch nichts zu halten hat (Thomas).
