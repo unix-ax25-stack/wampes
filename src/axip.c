@@ -2356,19 +2356,41 @@ char Axip_expiry_usage[] =
 "  0 at the node means \"never\": a learned route lives until the port closes,\n"
 "  the peer moves, or \"axip route drop\".  See \"axip expire\" for the node's.";
 
+/* Die drei Minuten-Knoepfe des Knotens.  setintrc() allein liesse die
+ * Abfrage ohne Einheit ("axip expire" meldet dann "0", und beim naechsten
+ * Blick steht man wieder vor der Frage, ob das Minuten oder Sekunden sind -
+ * der ifconfig-Zwilling nennt seine Einheit, der Knoten dann auch (Thomas).
+ */
+static int axip_minutes(
+int *var,
+char *label,
+int argc,
+char *argv[],
+int minval,
+int maxval)
+{
+  if (argc < 2) {
+    printf("%s: %d min\n", label, *var);
+    return 0;
+  }
+  return setintrc(var, label, argc, argv, minval, maxval);
+}
+
 static int doaxipdnsinterval(int argc, char *argv[], void *p)
 {
-  return setintrc(&Axip_dns_interval, "axip dns-interval", argc, argv, 0, 1440);
+  return axip_minutes(&Axip_dns_interval, "axip dns-interval",
+		      argc, argv, 0, 1440);
 }
 
 static int doaxipdnssilence(int argc, char *argv[], void *p)
 {
-  return setintrc(&Axip_dns_silence, "axip dns-silence", argc, argv, 0, 1440);
+  return axip_minutes(&Axip_dns_silence, "axip dns-silence",
+		      argc, argv, 0, 1440);
 }
 
 static int doaxipexpire(int argc, char *argv[], void *p)
 {
-  int rc = setintrc(&Axip_expiry, "axip expire", argc, argv, 0, 10080);
+  int rc = axip_minutes(&Axip_expiry, "axip expire", argc, argv, 0, 10080);
 
   /* Ein Wert statt "aus" braucht den Tick, damit aus dem Versprechen eine
    * Tat wird; das ifconfig-Analogon startet ihn genauso.
@@ -2514,10 +2536,26 @@ static int doaxiproute(int argc, char *argv[], void *p)
     if (rp->is_default)
       printf("%-9s  %s", "default",
              sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
-    else
+    else if (rp->dest.ss_family == 0) {
+      /* EINE SITZUNGS-ROUTE (axtcp/kisstcp): die TCP-Verbindung ist die
+       * Adresse, es gibt keine IP-Adresse.  Die Addr-Spalte zeigt den
+       * Traeger, statt "<af 0>", und der Port einer leeren sockaddr ist
+       * kuenstlich (-1) und wird erst gar nicht gedruckt.  Bei einem
+       * Client, der die Sitzung selbst aufgebaut hat, steht dahinter das
+       * Ziel aus der Attach-Zeile - das ist der bekannte Port.  Bei einem
+       * Server (eingehend) gibt es keinen solchen Rueckweg, darum fehlt
+       * die Zahl dort (Thomas).
+       */
+      struct tcpsock *tp = (struct tcpsock *) rp->tsock;
+
       printf("%-9s  %s", pax25(buf, rp->call),
-             sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
-    if (sockaddr_port((struct sockaddr *) &rp->dest))
+	     (tp != NULL && tp->ifp != NULL) ? tp->ifp->name : "<gone>");
+      if (tp != NULL && (tp->flags & TCF_CLIENT) && tp->peer != NULL)
+	printf("  to %s:%d", tp->peer, tp->port);
+    } else
+      printf("%-9s  %s", pax25(buf, rp->call),
+	     sockaddr_to_string((struct sockaddr *) &rp->dest, abuf, sizeof(abuf)));
+    if (rp->dest.ss_family && sockaddr_port((struct sockaddr *) &rp->dest))
       printf("  port %d", sockaddr_port((struct sockaddr *) &rp->dest));
     /* WELCHER PORT.  Und wenn die Numme keinem Port mehr gehoert, dann sagen
      * wir das, statt eine Zahl zu zeigen, die nichts mehr bedeutet - die
@@ -3058,12 +3096,14 @@ int if_axip_expiry(int argc, char *argv[], void *p)
 
 /*---------------------------------------------------------------------------*/
 
-/* ifconfig <iface> verbose: eine Zeile je eingestelltem Wert, und das "*"
- * bedeutet "vom Knoten geerbt": der Wert gilt, ist aber nicht hier gesetzt.
- * Gezeigt wird immer der WIRKSAME Wert - ein Portwert von 0 heisst
- * "Knotenwert uebernehmen" und ist also nie der, der zaehlt.  Die alte
- * Fassung druckte Portwert und Knotenwert in eine Zeile und das war
- * doppelt, wenn beide gleich waren: "axip-expiry 0 min* (0 min node's)".
+/* ifconfig <iface> verbose: eine Zeile je eingestelltem Wert.  Gezeigt wird
+ * immer der WIRKSAME Wert - ein Portwert von 0 heisst "Knotenwert
+ * uebernehmen" und ist also nie der, der zaehlt.  Dass er geerbt ist, steht
+ * nicht dabei: das iface hat es so gut wie immer von irgendwoher, und eine
+ * Fussnote fuer jeden geerbten Wert wuerde die Anzeige mit Sternchen
+ * fuellen.  Die alte Fassung sondierte geerbte Werte mit "*" aus und
+ * druckte manchmal beides in eine Zeile: "axip-expiry 0 min* (0 min node's)"
+ * (Thomas).
  */
 void axip_show_verbose(const struct iface *ifp)
 {
@@ -3123,28 +3163,19 @@ void axip_show_verbose(const struct iface *ifp)
       sl = sizeof(ss);
     }
   }
-  printf("           axip-learn %s%s%s\n",
+  printf("           axip-learn %s\n",
 	 ifp2->axip_learn == AXIP_LEARN_ON    ? "on" :
-	 ifp2->axip_learn == AXIP_LEARN_ONCE  ? "once" : "off",
-	 ifp2->axip_learn ? "" : " (default)",
-	 "");
-  /* THE VALUE IN FORCE, one number per line, and a "*" where it is the
-   * node's and not this port's.  A port that left it unset holds the number
-   * 0, which is by definition not the value in force, so printing it as
-   * well would print "0 min* (0 min node's)" whenever the node's is 0 too
-   * - twice the same sentence (Thomas).
+	 ifp2->axip_learn == AXIP_LEARN_ONCE  ? "once" : "off");
+  /* DER WERT IN KRAFT, eine Zahl pro Zeile, in Minuten wie die Knoepfe
+   * selbst.  Ein Port, der nichts gesetzt hat (0 = "der Knoten"), zeigt
+   * den Knotenwert - dass er geerbt ist, steht schon im Kontrast zur
+   * ifconfig-Anzeige des Knotens und braucht weder Stern noch Fussnote
+   * (Thomas).
    */
-  printf("           axip-dns-interval %d min%s\n",
-	 ifp2->axip_dns_interval ? ifp2->axip_dns_interval : Axip_dns_interval,
-	 ifp2->axip_dns_interval ? "" : "*");
-  printf("           axip-dns-silence %d min%s\n",
-	 ifp2->axip_dns_silence ? ifp2->axip_dns_silence : Axip_dns_silence,
-	 ifp2->axip_dns_silence ? "" : "*");
-  printf("           axip-expiry %d min%s\n",
-	 ifp2->axip_expiry ? ifp2->axip_expiry : Axip_expiry,
-	 ifp2->axip_expiry ? "" : "*");
-  if (!ifp2->axip_dns_interval || !ifp2->axip_dns_silence || !ifp2->axip_expiry)
-    printf("                 (* = the node's setting, not this port's - set by\n"
-	   "                  \"axip dns-interval\", \"axip dns-silence\" and\n"
-	   "                  \"axip expire\")\n");
+  printf("           axip-dns-interval %d min\n",
+	 ifp2->axip_dns_interval ? ifp2->axip_dns_interval : Axip_dns_interval);
+  printf("           axip-dns-silence %d min\n",
+	 ifp2->axip_dns_silence ? ifp2->axip_dns_silence : Axip_dns_silence);
+  printf("           axip-expiry %d min\n",
+	 ifp2->axip_expiry ? ifp2->axip_expiry : Axip_expiry);
 }

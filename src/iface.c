@@ -1574,16 +1574,17 @@ showiface(struct iface *ifp, int verbose)
 		 "of them are accepted)\n");
 	}
 
-	/* Frame sizes: shown ALWAYS here, with where the number comes from.
-	 * The old condition hid exactly the normal case - a port that takes
-	 * the node's settings showed no line at all, so one could not tell
-	 * what was in force without reading the source.
+	/* Frame sizes: shown ALWAYS here, because the old condition hid
+	 * exactly the normal case - a port that takes the node's settings
+	 * showed no line at all, so one could not tell what was in force
+	 * without reading the source.  A number set on the port is its own;
+	 * a 0 stands for the node's value and shows that value here.  No
+	 * footnote marks the inherited ones: the node's settings are where
+	 * everything comes from by default, and a port that diverges says so
+	 * by the number itself (Thomas).
 	 */
 	/* "ax25:" in front of every line these settings live on, the way
-	 * "sent:" and "recv:" name theirs.  A value taken from the node rather
-	 * than set on the port is marked with "*" and the footnote says so
-	 * once - three times "(node)" in one line said the same and read like
-	 * part of the number.
+	 * "sent:" and "recv:" name theirs.
 	 */
 	/* "ax25:" NUR AUF EINEM PORT, DER AX.25 SPRICHT (Thomas).  Auf dem
 	 * NET/ROM-Pseudoport standen sie ebenfalls, weil er ein framemax hat -
@@ -1594,22 +1595,10 @@ showiface(struct iface *ifp, int verbose)
 	 * unten, ohne dieses Praefix.
 	 */
 	if(is_ax25(ifp)){
-		int inherited = !ifp->paclen || !ifp->maxframe || !ifp->emaxframe;
-
-		printf("           ax25: paclen %d%s maxframe %d%s emaxframe %d%s",
+		printf("           ax25: paclen %d maxframe %d emaxframe %d\n",
 		 ifp->paclen ? ifp->paclen : Paclen,
-		 ifp->paclen ? "" : "*",
 		 ifp->maxframe ? ifp->maxframe : Maxframe,
-		 ifp->maxframe ? "" : "*",
-		 ifp->emaxframe ? ifp->emaxframe : EMaxframe,
-		 ifp->emaxframe ? "" : "*");
-		printf("\n");
-		/* Eigene Zeile, eingerueckt bis unter das erste Wort: mit der
-		 * Fussnote dahinter wurde die Zeile 98 Zeichen lang, und ein
-		 * Terminal ist oft 80 breit (Thomas).  Die Werte allein sind 54.
-		 */
-		if(inherited)
-			printf("                 (* = the node's setting, not this port's)\n");
+		 ifp->emaxframe ? ifp->emaxframe : EMaxframe);
 		printf("           ax25: eax25 %s\n",
 		 ifp->eax25 == EAX25_OFF ? "off" :
 		 ifp->eax25 == EAX25_ALWAYS ? "always" :
