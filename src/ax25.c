@@ -23,6 +23,8 @@
 #include "lapb.h"
 #include "pidfilter.h"
 #include "framefilter.h"
+#include "timer.h"
+#include "trace.h"
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -630,8 +632,11 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	htonax25(&addr,bpp);
 	/* Loop-Schutz: nur UI merken.  Ein I- oder RR+-Rahmen wird nicht
 	 * gemerkt - dessen identische Wiederholung ist LAPB-Timing, kein Echo.
+	 * Der Test geht gegen ctl, nicht gegen (*bpp)->data[0]: htonax25()
+	 * hat den Kopf gerade davor geschoben, data[0] ist jetzt das erste
+	 * Adressbyte, und der Vergleich traefe nie.
 	 */
-	if(((*bpp)->data[0] & ~PF) == UI)
+	if((ctl & ~PF) == UI)
 		ax_dup_remember(ax_fingerprint(*bpp));
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
@@ -752,6 +757,232 @@ struct mbuf *bp
 				break;
 			}
 	return axroute_learnable(ctl, pid);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* UI reassembly.  A segmented datagram says nothing about what it carries -
+ * the segment's pid is 0x08 and the real one travels in the first segment -
+ * so the pieces are joined here, before the pid gate and before any
+ * consumer, exactly as procdata() does it for a connection.  The difference
+ * is the state: a UI frame has no control block, so there is one reassembly
+ * per (destination, source) pair instead of one per link.
+ *
+ * TR210 is 60 seconds, restarted by every in-order segment, so a stalled
+ * reassembly cannot hold its buffer for ever.  Out-of-order is fatal: UI
+ * offers no retransmission to close a gap, and the segment counter cannot
+ * ask for a missing piece.  When a sequence goes wrong, the whole thing -
+ * including anything already collected - is dropped, as in connected mode.
+ */
+struct axreasm {
+	struct axreasm *next;
+	struct timer timer;             /* TR210 */
+	uint8 dest[AXALEN];
+	uint8 source[AXALEN];
+	int segremain;                  /* Segments still to come */
+	struct mbuf *rxasm;             /* Data collected so far */
+};
+
+#define AXREASM_TR210   60000L          /* ms */
+
+static struct axreasm *Axreasmq;
+
+static struct axreasm *
+axreasm_lookup(
+const uint8 *dest,
+const uint8 *source
+){
+	struct axreasm *rp;
+
+	for(rp = Axreasmq;rp != NULL;rp = rp->next)
+		if(addreq(rp->dest,dest) && addreq(rp->source,source))
+			return rp;
+	return NULL;
+}
+
+static void
+axreasm_free(
+struct axreasm *rp
+){
+	struct axreasm *p;
+	struct axreasm *prev = NULL;
+
+	for(p = Axreasmq;p != NULL;prev = p,p = p->next)
+		if(p == rp)
+			break;
+	if(p == NULL)
+		return;                 /* not on the list */
+	stop_timer(&rp->timer);
+	if(prev != NULL)
+		prev->next = rp->next;
+	else
+		Axreasmq = rp->next;
+	free_p(&rp->rxasm);
+	free(rp);
+}
+
+static void
+axreasm_timeout(
+void *arg
+){
+	axreasm_free((struct axreasm *)arg);
+}
+
+/* Feed one UI segment to the reassembler.  Returns 0 when the frame was
+ * consumed here (the sequence is still incomplete, or it was discarded),
+ * and 1 when a complete datagram is ready: *bpp then holds the payload and
+ * *pidp the protocol id that travelled in its first segment.  The joined
+ * datagram is traced here, where it exists for the first time.
+ */
+static int
+ax25_ui_reasm(
+struct iface *iface,
+struct ax25 *hdr,
+int *pidp,
+struct mbuf **bpp
+){
+	struct axreasm *rp;
+	int pid;
+	int seq;
+
+	if((seq = PULLCHAR(bpp)) == -1)
+		return 0;               /* Counter missing: nothing to join */
+
+	rp = axreasm_lookup(hdr->dest,hdr->source);
+
+	if(seq & SEG_FIRST){
+		/* A new sequence.  A leftover one for the same pair never
+		 * finished, or this is a duplicate first segment; either
+		 * way it is superseded and goes. */
+		if(rp != NULL)
+			axreasm_free(rp);
+		if((rp = calloc(1,sizeof *rp)) == NULL){
+			free_p(bpp);
+			return 0;
+		}
+		memcpy(rp->dest,hdr->dest,AXALEN);
+		memcpy(rp->source,hdr->source,AXALEN);
+		rp->segremain = seq & SEG_REM;
+		rp->rxasm = *bpp;
+		*bpp = NULL;
+		set_timer(&rp->timer,AXREASM_TR210);
+		rp->timer.func = axreasm_timeout;
+		rp->timer.arg = rp;
+		start_timer(&rp->timer);
+		rp->next = Axreasmq;
+		Axreasmq = rp;
+	} else {
+		/* A continuation, and it has to be the next one. */
+		if(rp == NULL || (seq & SEG_REM) != rp->segremain - 1){
+			if(rp != NULL)
+				axreasm_free(rp);
+			free_p(bpp);
+			return 0;
+		}
+		append(&rp->rxasm,bpp);
+		rp->segremain = seq & SEG_REM;
+		stop_timer(&rp->timer);
+		start_timer(&rp->timer);
+	}
+
+	if(rp->segremain != 0)
+		return 0;               /* More to come */
+
+	/* Complete.  The real protocol id is the first byte of the joined
+	 * data, exactly as the segmenter wrote it. */
+	*bpp = rp->rxasm;
+	rp->rxasm = NULL;
+	axreasm_free(rp);
+	if((pid = PULLCHAR(bpp)) == -1)
+		return 0;               /* Nothing but a pid: drop it */
+	*pidp = pid;
+	ax25_dump_reasm(iface,hdr,pid,bpp);
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Cut a repeated UI frame to the outgoing port's paclen.
+ *
+ * *bpp is the headerless frame as ntohax25() left it - control, pid, data.
+ * The result is a queue of frames of that same shape, one per segment, each
+ * still without its header: ax_recv() builds the header per frame, because
+ * only it knows which digi the frame leaves by.  NULL means nothing can go.
+ *
+ * Only UI is a datagram that may be cut; an I-frame is LAPB and must not be
+ * turned into UI fragments, so it is handed back unchanged.  A frame that
+ * already carries a segment header is not cut again either: its counter says
+ * how many follow and cannot be recounted, so such a frame either fits the
+ * outgoing paclen or is dropped.  That is the one place the splitter must not
+ * fire twice - see doc/AX25-MTU-SEGMENTATION.md.
+ */
+static struct mbuf *
+ax25_repeat_segments(
+struct iface *ifp,
+struct mbuf **bpp
+){
+	uint paclen = ifp->paclen ? ifp->paclen : Paclen;
+	struct mbuf *list;
+	struct mbuf *head = NULL;
+	struct mbuf *tail = NULL;
+	struct mbuf *seg;
+	uint8 control;
+
+	if(*bpp == NULL)
+		return NULL;
+	control = (*bpp)->data[0];
+
+	if((control & ~PF) != UI){
+		/* Not a datagram: repeated as it came, in one piece. */
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+		return list;
+	}
+	/* The control byte is the same on every fragment and is not part of
+	 * what the segmenter cuts, so it comes off and goes back on in front.
+	 */
+	(void) PULLCHAR(bpp);
+	if(*bpp == NULL){
+		/* A control byte and nothing else: can only go as it is. */
+		pushdown(bpp,NULL,1);
+		(*bpp)->data[0] = control;
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+		return list;
+	}
+	if((*bpp)->data[0] == PID_SEGMENT){
+		/* Already cut, and it stays that way.  len_p() counts the
+		 * segment's pid, which is header, so the information field that
+		 * paclen bounds is one byte shorter.
+		 */
+		if(len_p(*bpp) > paclen + 1){
+			free_p(bpp);
+			return NULL;
+		}
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+	} else {
+		if((list = segmenter(bpp,paclen)) == NULL)
+			return NULL;
+	}
+	/* Put the control byte back in front of every fragment.  pushdown()
+	 * may replace the head, so the anext chain is rebuilt by hand rather
+	 * than walked while it is being changed.
+	 */
+	while((seg = dequeue(&list)) != NULL){
+		pushdown(&seg,NULL,1);
+		seg->data[0] = control;
+		seg->anext = NULL;
+		if(tail != NULL)
+			tail->anext = seg;
+		else
+			head = seg;
+		tail = seg;
+	}
+	return head;
 }
 
 /* Process incoming AX.25 packets.
@@ -878,8 +1109,11 @@ struct mbuf **bpp
 			   addreq(hdr.source, hdr.dest)) {
 				struct iface *ifp;
 				struct iface *sel;   /* Repeat-Interface (1. Auswahl) */
+				struct mbuf *frames;  /* Warteschlange der Segmente */
+				struct mbuf *f;
 				int kp;         /* keep the path? */
 				int dout;       /* output interface choice */
+				int isui;       /* control byte == UI */
 
 				/* Per-port or global digiout: normal picks an
 				 * interface from the routing table; same-iface keeps
@@ -932,41 +1166,57 @@ struct mbuf **bpp
 					axroute(&hdr, &ifp, 0);
 					ifp = sel;      /* ... erhaelt es */
 				}
-				htonax25(&hdr,bpp);
-				/* Loop-Schutz: das Wiederholen ist unsere Aussendung -
-				 * merke sie genauso wie jede andere, sonst kaeme ein
-				 * inkarnationstreuer Rueckkehrer des Digis wieder herein.
-				 * Nur UI: ein via-digi leitet auch I-Rahmen weiter und die
-				 * Wiederholung davon ist LAPB-Timing, kein Echo.
+				/* Repeating does not exempt a frame from the
+				 * outgoing port's paclen.  A packet that was not
+				 * segmented when it arrived is cut here; one that
+				 * already carries a segment header is left alone,
+				 * or dropped when it does not fit.  See
+				 * doc/AX25-MTU-SEGMENTATION.md.
+				 *
+				 * The control byte is still first here - the header
+				 * goes on per frame below, because each frame needs
+				 * its own copy of it.
 				 */
-				if(*bpp && (*(*bpp)->data & ~PF) == UI)
-					ax_dup_remember(ax_fingerprint(*bpp));
-				if (ifp) {
+				isui = (*bpp && (*(*bpp)->data & ~PF) == UI);
+				frames = ifp ? ax25_repeat_segments(ifp,bpp) : NULL;
+				if(ifp == NULL)
+					free_p(bpp);
+				while((f = dequeue(&frames)) != NULL){
+					htonax25(&hdr,&f);
+					/* Loop-Schutz: das Wiederholen ist unsere
+					 * Aussendung - merke sie genauso wie jede
+					 * andere, sonst kaeme ein inkarnationstreuer
+					 * Rueckkehrer des Digis wieder herein.  Nur UI:
+					 * ein via-digi leitet auch I-Rahmen weiter und
+					 * die Wiederholung davon ist LAPB-Timing, kein
+					 * Echo.
+					 */
+					if(isui)
+						ax_dup_remember(ax_fingerprint(f));
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
-					/* A frame WE repeat is a frame we SEND, and the
-					 * interface it leaves by counts it as one -
-					 * so its own ax25sndcnt has to move as well, or
-					 * the sum tot == ip + ax25 on that port
-					 * goes wrong by exactly the frames this
-					 * digipeater repeated.  The pid is still the
-					 * first byte here: it is only pulled off
-					 * further down, and then only for a frame
-					 * that came through all the digis.
+					/* A frame WE repeat is a frame we SEND, and
+					 * the interface it leaves by counts it as
+					 * one - so its own ax25sndcnt has to move as
+					 * well, or the sum tot == ip + ax25 on that
+					 * port goes wrong by exactly the frames this
+					 * digipeater repeated.  Every segment is such
+					 * a frame, so a cut datagram counts once per
+					 * segment.
 					 *
 					 * Before the DAMA test rather than inside
 					 * it, for the reason given in
 					 * ax_send_ui(): a deferred frame is
 					 * still a frame that goes out.
 					 */
-					if(*bpp && !ax25_pid_is_ip((*bpp)->data[0]))
-						ifp->ax25sndcnt++;
+					ifp->ax25sndcnt++;
 					/* Nur UI wird hier ueberhaupt wiederholt
 					 * (digipeat 2); auf einem DAMA-Kanal
 					 * darf auch das auf das Fenster warten.
 					 */
-					if(!dama_defer_ui(ifp,bpp))
-						(*ifp->raw)(ifp, bpp);
+					if(!dama_defer_ui(ifp,&f))
+						(*ifp->raw)(ifp, &f);
+					free_p(&f);
 				}
 			} else {
 				lapb_input(iface,&hdr,bpp);
@@ -1002,6 +1252,15 @@ struct mbuf **bpp
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
 			return;         /* No PID */
+		/* A segmented datagram is put back together before anything
+		 * else looks at it.  The segment's own pid says nothing about
+		 * what it carries - that is the whole point of it - so a port
+		 * gate or a consumer asked here would be shown PID_SEGMENT
+		 * and never see the real datagram.  The joined whole then
+		 * travels the ordinary path below, under its true pid.
+		 */
+		if(pid == PID_SEGMENT && !ax25_ui_reasm(iface,&hdr,&pid,bpp))
+			return;
 		/* Does this protocol get in here at all?  Above everything
 		 * else, clients included: a port gate is about the port.  We
 		 * are past digipeating at this point, so what is merely
@@ -1495,19 +1754,28 @@ struct mbuf **bpp
 		return 0;               /* woanders zuhause, und keine Bruecke dorthin */
 	if(out->raw == NULL)
 		return 0;
-	htonax25(hdr,bpp);
-	if(*bpp && (*(*bpp)->data & ~PF) == UI){
-		uint32 h = ax_fingerprint(*bpp);
-
-		/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
-		 * weiterreichen waere die Schleife.  Der Rahmen wird
-		 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
-		 * Nur UI: ein I- oder RR+-Doppelschlag ist Protokoll-Timing
-		 * der LAPB-Endstellen, nicht unsere Schleife.
+	{
+		/* Das Kontrollbyte ist jetzt noch das erste; htonax25()
+		 * schiebt gleich den Kopf davor.  Der Echo-Test unten muss es
+		 * also vorher abgreifen - hinterher laese er das erste
+		 * Adressbyte und traefe nie.
 		 */
-		if(ax_dup_recent(h))
-			return 0;
-		ax_dup_remember(h);
+		uint8 control = (*bpp != NULL) ? (*bpp)->data[0] : 0;
+
+		htonax25(hdr,bpp);
+		if(*bpp != NULL && (control & ~PF) == UI){
+			uint32 h = ax_fingerprint(*bpp);
+
+			/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
+			 * weiterreichen waere die Schleife.  Der Rahmen wird
+			 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
+			 * Nur UI: ein I- oder RR+-Doppelschlag ist Protokoll-Timing
+			 * der LAPB-Endstellen, nicht unsere Schleife.
+			 */
+			if(ax_dup_recent(h))
+				return 0;
+			ax_dup_remember(h);
+		}
 	}
 	logsrc(out,out->hwaddr);
 	logdest(out,(uint8 *)idest);

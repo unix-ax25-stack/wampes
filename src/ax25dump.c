@@ -12,6 +12,8 @@
 #include "socket.h"
 
 static char *decode_type(uint type);
+static void dump_l3(FILE *fp,int pid,struct mbuf **bpp,int check,
+	const char *s_ext,int partial);
 
 /* Dump an AX.25 packet header */
 void
@@ -26,6 +28,7 @@ int check       /* Not used */
 	int control,controlx,pid,seg;
 	uint type;
 	int unsegmented;
+	int segpartial = 0;
 	struct ax25 hdr;
 	uint8 *hp;
 	char *s_ext;
@@ -93,59 +96,23 @@ int check       /* Not used */
 				seg = PULLCHAR(bpp);
 				fprintf(fp,"%s remain %u",seg & SEG_FIRST ?
 				 " First seg;" : "",seg & SEG_REM);
+				/* Everything but the last segment is a
+				 * fragment: the real protocol id is carried
+				 * (on the first one), the data is not, and a
+				 * decoder run over the piece reads a header
+				 * off the middle of a datagram and reports
+				 * the fragment malformed.  Name the protocol
+				 * and leave the bytes to the raw dump below;
+				 * the joined datagram is traced from
+				 * procdata() when the last segment arrives.
+				 */
+				segpartial = (seg & SEG_REM) != 0;
 				if(seg & SEG_FIRST)
 					pid = PULLCHAR(bpp);
 			} else
 				unsegmented = 1;
 
-			switch(pid){
-			case PID_SEGMENT:
-				fputs(s_ext, fp);
-				break;  /* Already displayed */
-			case PID_ARP:
-				fprintf(fp," pid=ARP%s", s_ext);
-				arp_dump(fp,bpp);
-				break;
-			case PID_NETROM:
-				fprintf(fp," pid=NET/ROM%s", s_ext);
-				/* Don't verify checksums unless unsegmented */
-				netrom_dump(fp,bpp,unsegmented);
-				break;
-			case PID_IP:
-				fprintf(fp," pid=IP%s", s_ext);
-				/* Don't verify checksums unless unsegmented */
-				ip_dump(fp,bpp,unsegmented);
-				break;
-#ifdef  AX25_VJCOMP
-                        case PID_VJUNCOMP:
-				fprintf(fp," pid=VJ%s", s_ext);
-				/* Don't verify checksums */
-				ip_dump(fp,bpp,0);
-				break;
-                        case PID_VJCOMP:
-                                fprintf(fp," pid=VJC%s", s_ext);
-                                /*sl_dump(fp,bpp,0);*/
-                                break;
-#endif
-			case PID_X25:
-				fprintf(fp," pid=X.25%s", s_ext);
-				break;
-			case PID_TEXNET:
-				fprintf(fp," pid=TEXNET%s", s_ext);
-				break;
-			case PID_FLEXNET:
-				fprintf(fp," pid=FLEXNET%s", s_ext);
-				flexnet_dump(fp,bpp);
-				break;
-			case PID_FLEXTALK:
-				fprintf(fp," pid=FLEXTALK%s", s_ext);
-				break;
-			case PID_NO_L3:
-				fprintf(fp," pid=Text%s", s_ext);
-				break;
-			default:
-				fprintf(fp," pid=0x%x%s",pid, s_ext);
-			}
+			dump_l3(fp,pid,bpp,unsegmented,s_ext,segpartial);
 		}
 	} else if(type == FRMR && pullup(bpp,frmr,(eax25 ? 5 : 3)) == (eax25 ? 5 : 3)){
 		fprintf(fp,": %s",decode_type(ftype(frmr[0])));
@@ -172,6 +139,109 @@ int check       /* Not used */
 		fputs(s_ext, fp);
 
 }
+
+/* The layer 3 decode, shared by a single frame above and by the reassembled
+ * datagram below.  partial is a segment that is not the last one: it names
+ * its protocol but holds only a piece of the data, so the decoder is skipped
+ * and the bytes are left for the raw dump.
+ */
+static void
+dump_l3(
+FILE *fp,
+int pid,
+struct mbuf **bpp,
+int check,
+const char *s_ext,
+int partial
+){
+	switch(pid){
+	case PID_SEGMENT:
+		fputs(s_ext, fp);
+		break;  /* Already displayed */
+	case PID_ARP:
+		fprintf(fp," pid=ARP%s", s_ext);
+		if(!partial)
+			arp_dump(fp,bpp);
+		break;
+	case PID_NETROM:
+		fprintf(fp," pid=NET/ROM%s", s_ext);
+		/* Don't verify checksums unless unsegmented */
+		if(!partial)
+			netrom_dump(fp,bpp,check);
+		break;
+	case PID_IP:
+		fprintf(fp," pid=IP%s", s_ext);
+		/* Don't verify checksums unless unsegmented */
+		if(!partial)
+			ip_dump(fp,bpp,check);
+		break;
+#ifdef  AX25_VJCOMP
+	case PID_VJUNCOMP:
+		fprintf(fp," pid=VJ%s", s_ext);
+		/* Don't verify checksums */
+		if(!partial)
+			ip_dump(fp,bpp,0);
+		break;
+	case PID_VJCOMP:
+		fprintf(fp," pid=VJC%s", s_ext);
+		/*sl_dump(fp,bpp,0);*/
+		break;
+#endif
+	case PID_X25:
+		fprintf(fp," pid=X.25%s", s_ext);
+		break;
+	case PID_TEXNET:
+		fprintf(fp," pid=TEXNET%s", s_ext);
+		break;
+	case PID_FLEXNET:
+		fprintf(fp," pid=FLEXNET%s", s_ext);
+		if(!partial)
+			flexnet_dump(fp,bpp);
+		break;
+	case PID_FLEXTALK:
+		fprintf(fp," pid=FLEXTALK%s", s_ext);
+		break;
+	case PID_NO_L3:
+		fprintf(fp," pid=Text%s", s_ext);
+		break;
+	default:
+		fprintf(fp," pid=0x%x%s",pid, s_ext);
+	}
+}
+
+/* A segmented datagram is joined in procdata() long after the frames were
+ * traced one by one, so a trace of the wire shows only fragments.  This
+ * gives the datagram the node actually works on, decoded like any other; the
+ * addresses come from the control block, since the frame bytes are gone.
+ */
+void
+ax25_dump_reasm(
+struct iface *ifp,
+const struct ax25 *hdr,
+int pid,
+struct mbuf **bpp
+){
+	struct mbuf *tbp;
+	FILE *fp;
+	uint len;
+	char sbuf[AXBUF], dbuf[AXBUF];
+
+	if(ifp == NULL || hdr == NULL || bpp == NULL || *bpp == NULL)
+		return;
+	if((fp = ifp->trfp) == NULL || (ifp->trace & IF_TRACE_IN) == 0)
+		return;
+	if((len = len_p(*bpp)) == 0)
+		return;
+	if(dup_p(&tbp,*bpp,0,len) != len){
+		free_p(&tbp);
+		return;
+	}
+	fprintf(fp,"\nAX25: %s->%s reassembled",
+	 pax25(sbuf,hdr->dest),pax25(dbuf,hdr->source));
+	dump_l3(fp,pid,&tbp,1,"\n",0);
+	free_p(&tbp);
+}
+
 static char *
 decode_type(uint type)
 {

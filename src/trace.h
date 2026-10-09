@@ -49,8 +49,11 @@ int arc_forus(struct iface *iface,struct mbuf *bp);
 void arp_dump(FILE *fp,struct mbuf **bpp);
 
 /* In ax25dump.c: */
+struct ax25;
 void ax25_dump(FILE *fp,struct mbuf **bpp,int check);
 int ax_forus(struct iface *iface,struct mbuf *bp);
+void ax25_dump_reasm(struct iface *ifp,const struct ax25 *hdr,int pid,
+	struct mbuf **bpp);
 
 /* In enetdump.c: */
 void ether_dump(FILE *fp,struct mbuf **bpp,int check);

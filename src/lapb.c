@@ -15,6 +15,7 @@
 #include "slhc.h"
 #include "pidfilter.h"
 #include "framefilter.h"
+#include "trace.h"
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
 static void procdata(struct ax25_cb *axp,struct mbuf **bp);
@@ -1358,6 +1359,9 @@ struct mbuf **bpp
 				*bpp = axp->rxasm;
 				axp->rxasm = NULL;
 				pid = PULLCHAR(bpp);
+				/* The wire showed fragments; this is the
+				 * datagram they add up to. */
+				ax25_dump_reasm(axp->iface,&axp->hdr,pid,bpp);
 				handleit(axp,pid,bpp);
 			}
 		} else {
@@ -1423,8 +1427,11 @@ uint ssize              /* Max size of frame segments */
 		return NULL;
 	}
 	/* The segment counter is the first byte OF the information field, so
-	 * it comes out of paclen.  The PID_SEGMENT byte does not - that one
-	 * is header again.  Hence one, not two.
+	 * it comes out of paclen.  The PID_SEGMENT byte does not - §3.4: the
+	 * PID is not counted in the information field, it is header.  Hence
+	 * one, not two.  Appendix C6.1 instead reads its two octet header as
+	 * N1-2 octets of data and would charge both; we keep the extra byte
+	 * on purpose, see doc/AX25-MTU-SEGMENTATION.md.
 	 */
 	ssize -= 1;
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
