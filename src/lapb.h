@@ -371,6 +371,7 @@ struct circuit;
 int nrserv_listen_start(struct circuit *pc);
 int nrserv_listen_configured(void);
 const char *nrserv_listen_reason(void);
+int nrserv_listen_ready(void);
 void nrserv_listen_close(struct circuit *pc);
 struct axservice *find_axservice(struct ax25_cb *axp,int pid);
 struct mbuf *recv_axservice(struct axservice *sp,uint cnt);

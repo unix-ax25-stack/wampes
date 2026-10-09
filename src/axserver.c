@@ -2061,6 +2061,41 @@ int nrserv_listen_configured(void)
 
 /*---------------------------------------------------------------------------*/
 
+/* Can the configured target take a session right now?  The accept gate in
+ * circuit_manager() asks this before it answers a connect request.  A
+ * "client:" target whose callsign nobody holds is a refusal we can see
+ * coming, and saying CHOKE there is cleaner than accepting and disconnecting
+ * at once: the caller never builds a circuit whose far side is already gone,
+ * and never has to be told to take it down again.
+ *
+ * A program or socket target is dialled only when the session arrives, so
+ * there is nothing to ask beforehand; it counts as ready and refuses in
+ * nrserv_listen_start() if the dial fails.  The node's own login is not a
+ * forwarding target - "start netrom" turns it on - so it never answers here.
+ *
+ * A "no" leaves its reason where nrserv_listen_reason() finds it, the same
+ * one the drop path prints, so both refusals read the same.
+ */
+int nrserv_listen_ready(void)
+{
+  char call[AXBUF];
+  struct axlisten *lp, *cp;
+
+  nrserv_listen_why[0] = '\0';
+  if (!(lp = axlisten_netrom())) return 0;
+  if (lp->kind != LK_CLIENT)
+    return lp->kind == LK_PROGRAM || lp->kind == LK_SOCKET;
+  if (!(cp = axlisten_find(lp->call, PID_NO_L3, 0)) ||
+      cp->kind != LK_CLIENT || cp->clientfd < 0) {
+    snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	     "no client is holding %s", pax25(call, lp->call));
+    return 0;
+  }
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void nrserv_listen_close(struct circuit *pc)
 {
   nrpipe_close_upcall(pc);

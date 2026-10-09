@@ -2571,6 +2571,24 @@ char *nr_addr2str(struct circuit *pc)
 
 /*---------------------------------------------------------------------------*/
 
+/* The one line for a configured target that cannot take a session, whichever
+ * of the two places turns it away: the gate in circuit_manager() refuses the
+ * connect request outright, and nrserv_state_upcall() drops one that was let
+ * through.  The reason was recorded by the target lookup; the caller only
+ * sees a refusal, so this is where a sysop learns why.
+ */
+static void nrserv_refused(struct circuit *pc)
+{
+  char msg[200];
+
+  snprintf(msg, sizeof(msg), "NET/ROM: %s: %s", nr_addr2str(pc),
+	   nrserv_listen_reason());
+  printf("%s\n", msg);
+  logmsg(NULL, "%s", msg);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void reset_t1(struct circuit *pc)
 {
   int32 tmp;
@@ -2882,6 +2900,8 @@ static void circuit_manager(struct mbuf **bpp, const uint8 *answeras)
        * of being left waiting.  Who gets to answer is either the operator's
        * own login ("start netrom") or a configured "listen netrom add ..."
        * target - the two things nrserv_state_upcall() then chooses between.
+       * A client target whose callsign nobody holds is already turned away
+       * here, by nrserv_listen_ready().
        */
       if (pc->proxyas[0]) {
 	/* Proxied: do not answer yet.  We build the far half first and accept
@@ -2893,11 +2913,18 @@ static void circuit_manager(struct mbuf **bpp, const uint8 *answeras)
 	 * own back at him.
 	 */
 	if (!pc->proxypeer) nr_proxy_open_peer(pc);
-      } else if ((server_enabled || nrserv_listen_configured()) &&
+      } else if ((server_enabled || nrserv_listen_ready()) &&
 	  (nr_maxcircuits <= 0 || ncircuits <= nr_maxcircuits)) {
 	send_l4_packet(pc, NR4OPCONAK, NULL);
 	set_circuit_state(pc, NR4STCON);
       } else {
+	/* A configured target that cannot take this session right now is a
+	 * refusal we can see coming, so refuse it here instead of accepting
+	 * and disconnecting at once.  server_enabled is false whenever
+	 * nrserv_listen_ready() ran, so the reason belongs to this request.
+	 */
+	if (!server_enabled && nrserv_listen_reason()[0])
+	  nrserv_refused(pc);
 	send_l4_packet(pc, NR4OPCONAK | NR4CHOKE, NULL);
 	del_nr(pc);
       }
@@ -3453,8 +3480,6 @@ static void nrserv_close_upcall(void *arg)
 
 static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
 {
-  char msg[200];
-
   switch (newstate) {
   case NR4STCON:
     /* A configured target first - "listen netrom add ..." - and only then the
@@ -3468,12 +3493,8 @@ static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, 
       pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
       if (pc->user) break;
     }
-    if (nrserv_listen_configured()) {
-      snprintf(msg, sizeof(msg), "NET/ROM: %s: %s", nr_addr2str(pc),
-	       nrserv_listen_reason());
-      printf("%s\n", msg);
-      logmsg(NULL, "%s", msg);
-    }
+    if (nrserv_listen_configured())
+      nrserv_refused(pc);
     close_nr(pc);
     break;
   case NR4STDISC:
