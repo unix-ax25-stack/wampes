@@ -2013,6 +2013,23 @@ int nrserv_listen_start(struct circuit *pc)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is a NET/ROM target configured that is not the node's own login?  The L4
+ * accept gate asks this.  A configured target is what makes the node
+ * responsible for incoming transport connections, exactly as a
+ * "listen ax25 add" entry is for AX.25; "start netrom" is only the login
+ * behind it, and an operator who just forwards to a program wants that
+ * login left off.
+ */
+int nrserv_listen_configured(void)
+{
+  struct axlisten *lp;
+
+  if (!(lp = axlisten_netrom())) return 0;
+  return lp->kind != LK_LOGIN;
+}
+
+/*---------------------------------------------------------------------------*/
+
 void nrserv_listen_close(struct circuit *pc)
 {
   nrpipe_close_upcall(pc);

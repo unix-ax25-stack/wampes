@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <syslog.h>
 
 #include "global.h"
 #include "netuser.h"
@@ -2878,9 +2879,10 @@ static void circuit_manager(struct mbuf **bpp, const uint8 *answeras)
       if (pc->window < 1) pc->window = 1;
       /* Every connect request with a combination of index, id, user and node
        * not seen before used to open a circuit, and nothing ever said no.
-       * Refusing is what this branch already does when there is no server,
-       * and it is a legitimate answer: the peer is told to go away instead of
-       * being left waiting.
+       * Refusing is a legitimate answer: the peer is told to go away instead
+       * of being left waiting.  Who gets to answer is either the operator's
+       * own login ("start netrom") or a configured "listen netrom add ..."
+       * target - the two things nrserv_state_upcall() then chooses between.
        */
       if (pc->proxyas[0]) {
 	/* Proxied: do not answer yet.  We build the far half first and accept
@@ -2892,7 +2894,7 @@ static void circuit_manager(struct mbuf **bpp, const uint8 *answeras)
 	 * own back at him.
 	 */
 	if (!pc->proxypeer) nr_proxy_open_peer(pc);
-      } else if (server_enabled &&
+      } else if ((server_enabled || nrserv_listen_configured()) &&
 	  (nr_maxcircuits <= 0 || ncircuits <= nr_maxcircuits)) {
 	send_l4_packet(pc, NR4OPCONAK, NULL);
 	set_circuit_state(pc, NR4STCON);
@@ -3454,11 +3456,20 @@ static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, 
 {  switch (newstate) {
   case NR4STCON:
     /* A configured target first - "listen netrom add ..." - and only then the
-     * node's own login, which is what an incoming L4 session always got.
+     * node's own login, which needs "start netrom".  The accept gate let the
+     * circuit through on either of the two; a target that is configured but
+     * cannot take this session must not fall into a login the operator
+     * switched off, so the session is let go instead.
      */
     if (nrserv_listen_start(pc)) break;
-    pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
-    if (!pc->user) close_nr(pc);
+    if (server_enabled) {
+      pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
+      if (pc->user) break;
+    }
+    if (nrserv_listen_configured())
+      syslog(LOG_ERR, "netrom: %s: the configured target could not take the "
+	     "session", nr_addr2str(pc));
+    close_nr(pc);
     break;
   case NR4STDISC:
     /* Which of the two is behind this circuit?  Its own receive upcall says

@@ -369,6 +369,7 @@ void axserv_connected(struct ax25_cb *axp);
  */
 struct circuit;
 int nrserv_listen_start(struct circuit *pc);
+int nrserv_listen_configured(void);
 void nrserv_listen_close(struct circuit *pc);
 struct axservice *find_axservice(struct ax25_cb *axp,int pid);
 struct mbuf *recv_axservice(struct axservice *sp,uint cnt);
