@@ -98,13 +98,23 @@ struct mbuf **bpp)
 	int n = 0;
 	uint32 opt;
 	unsigned window, n1;
+	int segmode;
 
 	/* With no interface there is nothing to answer for - an empty
 	 * (header-only) XID is what we send then.
 	 */
 	if(ifp == NULL)
 		return;
-	opt = XID_OPT_FIXED | XID_OPT_SEGMENT
+	/* Der Segmenter/Reassembler wird nur angekuendigt, wenn der Port ihn
+	 * auch betreibt.  "segmentation off" darf nicht als "kann segmentieren"
+	 * auf den Draht, sonst schickt der Peer Segmente, die dieser Port nicht
+	 * zusammensetzt - und umgekehrt.  ON und EXEMPT_L3 koennen es (EXEMPT_L3
+	 * nur ausser fuer PID_NO_L3, was fuer die Ankuendigung genuegt).  Der
+	 * Wert 0 am Port heisst "wie der Knoten"; siehe iface.h, ax25.h.
+	 */
+	segmode = ifp->segmentation ? ifp->segmentation : Ax25_segmentation;
+	opt = XID_OPT_FIXED
+		| ((segmode != AXSEG_OFF) ? XID_OPT_SEGMENT : 0)
 		| (srej ? XID_OPT_SREJ : XID_OPT_REJ)
 		| ((mmask == EMMASK) ? XID_OPT_MOD128 : XID_OPT_MOD8);
 	/* N1, the I-field length we take, in bits (Figure 4.5).  A port
