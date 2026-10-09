@@ -1,0 +1,41 @@
+For compilation, just type make.
+Installation: make install.
+
+There is no ./configure.  The top-level Makefile descends into lib/, and
+lib/Makefile runs lib/configure on every build, so the environment of the
+make is what decides.  make install depends on all, so one command does
+both.
+
+On linux, hpux, etc. wampes goes to /tcp (historic reasons).
+On macos it goes to /usr/local/wampes
+
+If you like to install it to another path.
+/tcp is not linux FHS conform. You may like to install it to
+/var/wampes or /var/ax25/wampes or /opt/wampes
+	TCPDIR=/somewhere make install
+
+These four are remembered in lib/configure.mak, so a setting only has to be
+made once, and make clean keeps that file - otherwise the one command you
+run between trying a change and keeping it would throw the setting away.
+Two things are deliberately not remembered: a TCPDIR that is just /tcp or
+/usr/local/wampes is the platform default rather than a choice, and a
+BINDIR or SBINDIR that is only $TCPDIR/bin or $TCPDIR/sbin goes when
+TCPDIR goes.
+
+To go back to the platform defaults: make distclean
+
+doc/INSTALL-PATHS.md has the whole layout, including where each of these
+four settings ends up.
+
+For connectivity to libax25, adjust your wampes.conf in /etc/ax25
+or /usr/local/etc/ax25.
+If you compile libax25, tell it where this WAMPES will live, so that the
+example line in the wampes.conf it installs is right.  In the libax25
+source directory:
+
+	./configure --with-wampes-tcpdir=/somewhere
+
+-> Then the example line in the wampes.conf that libax25 installs points
+at $TCPDIR/sockets/ax25.  It is left commented out either way, because
+libax25 cannot ask an installed WAMPES what TCPDIR it was built with.
+Uncomment it, or leave it alone if the default was right.

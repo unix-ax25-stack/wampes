@@ -42,4 +42,28 @@ socklen_t sockaddr_len(const struct sockaddr *sa);
  */
 char *sockaddr_to_string(const struct sockaddr *sa, char *buf, size_t buflen);
 
+/* ONE ENTRY OF A "bind=" LIST, in the spelling the configuration allows:
+ *
+ *   0.0.0.0      127.0.0.1      [::1]      [fe80::1%en0]      loopback
+ *
+ * The brackets are the way a name is told apart from an IPv6 literal, and the
+ * "%" is a zone index: a link-local address without it names no link.  Both are
+ * taken off here and put into the sockaddr - build_sockaddr_host() has no room
+ * for a scope, it copies sin6_addr and stops - so a caller does not have to
+ * know that a sockaddr_in6 carries more than an address.
+ *
+ * THE BRACKETS COME OFF FIRST, and that order is the point: the "%" of a zone
+ * and the colons of an IPv6 literal live in the same word, so splitting at the
+ * first "%" from the left would cut "[fe80::1%en0]" in the middle of the
+ * address.  A zone is therefore written inside the brackets, where it cannot be
+ * confused with anything.
+ *
+ * Returns 0 and fills *sa (of length *sl) with the port already in it, or -1
+ * with a message on the console saying which word failed and why.  The family
+ * is whatever came out - a literal or a name says which one it is, and there is
+ * no second word anywhere that says it again.
+ */
+int sockaddr_from_bindword(const char *word, int port, struct sockaddr_storage *sa,
+			   socklen_t *sl);
+
 #endif  /* _SOCKADDR_UTIL_H */

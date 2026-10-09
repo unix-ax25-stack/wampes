@@ -46,6 +46,22 @@ extern long Xid_probe_time;         /* Frist vor erneutem XID-Probe, Sekunden */
 extern int Ax25mbox;
 extern int Axigntos;
 
+/* Whether the node segments ITS OWN packets when the MTU is larger than
+ * paclen - and only those: received segments are always reassembled, and a
+ * repeated frame is always segmented to fit the outgoing port, neither of
+ * which is a matter of configuration.  off: never.  on: every protocol.
+ * exempt-l3: every protocol except PID_NO_L3 (plain text, 0xf0), which is
+ * the default.  The value here is the node default; a port can override it
+ * with "ifconfig <iface> segmentation".  See doc/AX25-MTU-SEGMENTATION.md.
+ */
+#define AXSEG_OFF       1
+#define AXSEG_ON        2
+#define AXSEG_EXEMPT_L3 3
+extern int Ax25_segmentation;
+char *axseg_name(int mode);
+int   axseg_word(char *s);
+int   ax25_segments_pid(struct iface *ifp, int pid);
+
 /* Loop-Schutz: Fingerprint eines fertigen UI-Rahmens merken und ein
  * byte-identisches Wiederkommen innerhalb Ax_dup_window als Schleife/Echo
  * verwerfen.  Nur UI: connected-mode identische Wiederholungen (RR+/I/SABM)
@@ -430,6 +446,12 @@ int ax_answers_to(struct iface *iface, const uint8 *addr);
 int ax_send_ui(struct iface *iface, struct ax25 *hdr, int pid,
 	struct mbuf **bpp);
 void axroute(struct ax25 *hdr, struct iface **ifpp, int keep_path);
+/* Does this protocol id carry an IP datagram?  Not "is it PID_IP" - see
+ * ax25_pid_is_ip() in ax25.c, which is where the reasons are.  Used to
+ * decide which of iface->ipsndcnt and iface->ax25cnt a frame belongs in,
+ * so that rawsndcnt == ipsndcnt + ax25cnt stays true on an AX.25 port.
+ */
+int ax25_pid_is_ip(int pid);
 
 #ifdef	AX25_VJCOMP
 /* MW: prototypes for VJ receiver hooks (in ax25.c) */

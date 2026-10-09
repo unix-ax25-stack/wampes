@@ -137,7 +137,7 @@ int pid_number(const char *word)
 
 /* "ax25 pid-info [<protocol>]" - the table, or one entry of it.
  *
- * The numbers are not ours to invent: they are AX.25 2.2 figure 3.1, and a
+ * The numbers are not ours to invent: they are AX.25 2.2 figure 3.2, and a
  * number that stands for nothing there is still legal on the wire.  So an
  * unknown one is answered with what CAN be said about it rather than with
  * "unknown", and that is the layer 3 rule from the same figure.

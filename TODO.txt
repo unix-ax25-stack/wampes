@@ -47,7 +47,7 @@
 - IPIP (src/ipip.c) auch via IPv6 - der letzte Rest der Umstellung. Erledigt
   sind AXIP/AXUDP und alles, was ueber build_sockaddr() geht: der Dienstsocket
   samt seiner tcp:-Ziele (2026-08-14 mit tcp:[::1]:9099 durchgefahren),
-  netcmd und Port 8010, tcpgate, bridge, cnet. ipip.c kennt AF_INET6 gar nicht.
+  netcmd und Port 8213, tcpgate, bridge, cnet. ipip.c kennt AF_INET6 gar nicht.
   Ebenfalls noch v4-only, aber je eigene Baustelle: src/ni.c, die versteckten
   TCP-Verbindungen in src/n8250.c und src/tun.c. Nicht gemeint sind domain.c
   und krnlif.c - das ist WAMPES' eigener IPv4-Stack.
@@ -986,11 +986,54 @@
       belegt davon Bit 7 und FlexNet Bit 5. Der Userspace-mkiss loest das,
       indem er BEIDES NICHT MISCHT: bei FLEX_CRC schreibt er ein festes 0x20
       und traegt gar keinen Port ein, sonst Port und keinen CRC-Typ
-      (mkiss.c:208-215). G8BPQ-Checksumme klaut kein Bit und vertraegt sich
-      daher mit Multiport, FlexNet und SMACK nicht.
-  Folge: auf einem seriellen Link mit CRC ist Multiport nicht zu haben. Thomas'
-  Prioritaet ist eindeutig CRC, also ist Multiport nur ein Thema fuer TNCs, die
-  mehrere Funkports OHNE CRC auf einer Leitung anbieten.
+      (mkiss.c:208-215). G8BPQ klaut ebenfalls kein Bit und vertragt sich
+      deshalb mit Multiport - aber es ist gar KEINE CRC, sondern ein Ein-Byte-
+      XOR ueber alle Bytes (mkiss.c:176-183, "case G8BPQ_CRC: *crc ^= c;").
+      Die Tabelle crctab gehoert allein FLEX_CRC. Sie ist byteweise unsere
+      Crc_rmnc_table und die aus tnn os/linux/l1linux.c - FLEX und RMNC sind
+      dasselbe Verfahren, unabhaengig bestaetigt. (Die vorige Fassung dieser
+      Zeile nannte G8BPQ eine dritte CRC; das war falsch.)
+    * VIER LESER, VIER ANTWORTEN - 2026-10-04 an SMACK-Doku, tnn, Dire Wolf
+      und ax25-tools nachgemessen, jeder mit Fundstelle:
+      - SMACK: Flag in Bit 7, Portbits 6..4. Beides passt in EIN Byte, 0x90
+        ist Port 1 mit Pruefsumme. tnn prueft (ch & 0x8F) == 0x80 und liest
+        dann rx_port = (ch & 0x70) >> 4 (l1linux.c:1187). SMACK und Multiport
+        sind KONSTRUKTIV vertragsfaehig, die Norm sagt das auch ausdruecklich:
+        "As we did not find TNC with more than 7 modems, we decided to use the
+        most significant bit of the command byte for the checksum flag
+        purpose."
+      - FlexNet/RMNC: das GANZE Typbyte. tnn prueft (ch & 0xFF) == 0x20 und
+        verdrahtet rx_port = 0 (l1linux.c:1196); mkiss sendet CRCTYP 0x20.
+        Gar kein Portfeld vorhanden, also konstruktiv ausgeschlossen und
+        nicht bloesserweise.
+      - G8BPQ und der Dire-Wolf-TCP-Dialekt: (port << 4) | kommando, der
+        CRC-Modus wird ausserhalb des Bytes verhandelt. Kein Flag, kein
+        Konflikt. (Dire Wolf: chan = (kiss_msg[0] >> 4) & 0xf.)
+      - Linux-Kernel-mkiss: wieder eine eigene Nummerierung fuer den CRC-Typ,
+        dort ist "-c 1" = "none". Siehe den Issue-42-Kommentar in Dire Wolf
+        kiss_frame.c:583-598, mit Verweis auf mkiss.c#L489.
+  Folge, KORRIGIERT 2026-10-04: Multiport ist nicht generell an CRC gebunden,
+  die fruehere Fassung ("auf einem seriellen Link mit CRC ist Multiport nicht
+  zu haben") war zu weit gefasst. Zulaessig genau dann, wenn crccontrol ==
+  CRC_OFF oder crccontrol == CRC_16 (SMACK). Denn nur die Dialekte, die ihr
+  Flag IN das Portnibble legen, kosten den Kanal - und RMNC kostet ihn auch
+  dann, wenn der CRC ausgeschaltet ist, weil sein 0x20 das ganze Byte ist.
+  Fuer G8BPQ und den TCP-Dialekt gaebe es gar keinen Konflikt, weil dort der
+  CRC-Modus aussenband liegt; unsere Lesart ist aber die unseres TCP-
+  Gegenuebers, und die hat kein Flagbit - also crc off oder crc smack.
+  Thomas' Prioritaet ist weiterhin CRC, aber SMACK ist die Ausnahme, und sie
+  ist die, die zaehlt.
+  Serial und TCP gleichermassen. Serial braucht zusaetzlich geteilten fd und
+  Demultiplexierung - n8250.c:207 macht ein open() je attach, zwei ifaces auf
+  einer Leitung stoehlen sich die Bytes, bevor ueberhaupt ein Portbyte
+  gelesen wird. Wegweiser ist der kissport-Marker im struct iface.
+  Zaehlung ab 1: "attach kisstcp <name> [kissport N]" mit N ab 1, und
+  kissport 0 bedeutet "Voreinstellung = Port 1". Rueckwaertskompatibel,
+  weil es das Argument noch gar nicht gibt. Auf der Leite bleibt es
+  (N-1) << 4: SMACK und tnn nummerieren mit Feldwert 0 fuer das erste Geraet,
+  Dire Wolf mit Kanal 0. Die Zaehlung ist damit eine reine Anzeige- und
+  Eingabekonvention und keine Protokollfrage - die Norm zaehlt ab 1, weil
+  ein Mensch Dinge zaehlt und nicht Zustaende.
 - FlexNet: lernen und weiterleiten trennen. FlexNet ist ein reines L3-Pfadprotokoll,
   es gibt kein L4 - das Nichtlernen einer Route kappt also keine Verbindung, es macht
   das Ziel nur unerreichbar. Nutzer wollen FlexNet-Routen durchaus sehen. Gewuenscht:
@@ -3486,7 +3529,7 @@ WAS "ax25 mycall" IST, nachgelesen auf Thomas' Frage:
     Rufzeichen, unter denen eigene Links geoeffnet wurden, und die
     "listen"-Eintraege.
   * Mycall kommt nur dadurch hinein, dass JEDES AX.25-Attach es beim
-    Anlegen in ifp->hwaddr kopiert - kiss.c:56, axip.c:329,
+    Anlegen in ifp->hwaddr kopiert - kiss.c:56, axip.c:1589,
     sixpack.c:110, nrs.c:50, krnlif.c:614, ethertap.c:471. Deshalb
     erben bei db0sao alle Ports db0sao-0, ohne dass eine Zeile das sagt.
     "ifconfig <if> linkaddress" ueberschreibt hinterher.
@@ -6633,7 +6676,7 @@ WAS BEI UNS ZU ENTSCHEIDEN WAERE, wenn es gebaut wird:
   * VERWEIGERN, NICHT ERSETZEN - anders als der Kernel.  Ein Client, der
     glaubt, unter einem Rufzeichen zu senden, und stillschweigend umgebogen
     wird, ist schlimmer als eine Fehlermeldung.
-  * DIE TCP-TUER HAT KEINE AUSWEISE (127.0.0.1:8010).  Unter einer
+  * DIE TCP-TUER HAT KEINE AUSWEISE (127.0.0.1:8213).  Unter einer
     Staffelung waere sie die anonyme Stufe - und damit erst brauchbar: heute
     ist sie ganz oder gar nicht, weshalb sie aus ist.
   * SSID-BEREICH: die Grammatik gibt es schon, "flexnet ssid 5-9".
@@ -9990,7 +10033,7 @@ so kreist ein Rahmen an QST oder NODES ueber die Strecken.  Also:
 BROADCAST-ZIELE WERDEN NIE GEBRUECKT.
 
     Das kostet nichts, denn das Merkmal liegt im Empfangsweg schon vor:
-    Ax25multi[] enthaelt genau diese beiden (ax25.c:31), und "mcast" wird
+    Ax25multi[] enthaelt genau diese beiden (ax25.c:32), und "mcast" wird
     daraus berechnet, BEVOR ueber das Verwerfen entschieden wird.
 
 WIE LANGE FESTGEKLOPFT WIRD - und seine Begruendung ist besser als mein
@@ -10669,3 +10712,513 @@ ZU SCHRITT 3 (die Routendatei) - ABGEARBEITET UND DURCHGEPRUEFT (2026-09-26)
   DIE QUELLE fuer den zweiten Teil, damit sie nicht wieder verloren geht
   und niemand die 1998er Liste erneut zitiert:
   https://github.com/packethacking/ax25spec/blob/d8f67ad60ae8d3ef436f4d3fd30a02cf60a83786/doc/ax.25.2.2.4_Oct_25.md
+
+------------------------------------------------------------------------
+AXIP
+------------------------------------------------------------------------
+FQDN-Wiederaufloesung, permanent, once und Portbindung je Interface.
+
+Entscheidung (2026-10-02):
+  - Axip_routes bleibt global; die Route wird beim ersten Lernen/Senden
+    an ein Interface gebunden (rdev). Nur ein erneutes "axip route add"
+    verschiebt die Bindung. Die rdev-Nummer ist eine einmal vergebene
+    Kennung je Port (stabil auch bei Ports, die zwischenzeitlich wegfallen).
+  - axip_raw() ueberspringt fremd gebundene Routen (auch bei Multicast).
+  - Syntax: "axip route add [permanent] <call>[:<iface>] <host> [<port>]";
+    fehlt <iface>, bindet sich die Route beim ersten Benutzen.
+  - axip-learn: on (Vorgabe), once (Trust on First Use, perm_once) oder off.
+    Bei "once" friert die Adresse ein (auch der direkte Tunnelpartner).
+  - Zentrale Schreibstelle axip_route_add(call,dest,keepport,from,ifp)
+    (SYSOP/RESOLVE/LEARNED); Schutz gegen Ueberschreiben liegt dort.
+  - Stille wird in BEIDEN Richtungen gemessen: max(htime, stime).
+    htime = zuletzt von dieser aeusseren Adresse gehoert, stime = zuletzt
+    zu dieser Route gesendet, rtime = letzter Aufloesungsversuch.
+  - Vorgaben: axip-dns-interval 10 min, axip-dns-silence 60 min;
+    Interface-Overrides (0 = Knotenwert), in "ifconfig <iface> verbose"
+    mit * gekennzeichnet. Zwei Aufloesungen je 60-s-Takt.
+  - Anfrageaufloesung nur bei benannten Routen; qdue umgeht Interval/Stille,
+    wenn die Adresse sich als falsch erwiesen hat.
+  - Befehle: "ifconfig <iface> axip-learn on|once|off",
+    "ifconfig <iface> axip-dns-interval 0..1440",
+    "ifconfig <iface> axip-dns-silence 0..1440", "axip dns-interval ...",
+    "axip dns-silence ...".
+  - Anzeige von "axip route" ergaenzt Interface, P (permanent), once, Name,
+    Alter von heard/asked; "axip stats" ergaenzt Permanent-/Named-Zaehler,
+    refused/dropped, erfolgreiche/fehlgeschlagene Lookups.
+  - Bestehende AX.25-Adressgaenge (Ziel/Sprung nach Digipeatern) unveraendert.
+
+Befehle (Kurzhilfe):
+  axip route add [permanent] <call>[:<iface>] <host> [<port>]
+  axip route drop <call>
+  axip route
+  axip stats
+  axip dns-interval|dns-silence [0..1440]
+  ifconfig <iface> axip-learn on|once|off
+  ifconfig <iface> axip-dns-interval|axip-dns-silence [0..1440]
+
+Verweis: AXTCP/TCPKISS siehe TODO.txt:7381.
+
+
+------------------------------------------------------------------------
+AXIP: EINE ROUTE OHNE RUFZEICHEN ("default")
+------------------------------------------------------------------------
+Anwendungsfall: Auf einem Port sollen alle Frames, die nicht durch eine
+explizite axip-Route getroffen werden, an einen festen axip/axudp-Partner
+geschickt werden. Beispiel: KISS-over-TCP (oder ein Partner, der alles
+annimmt). Der serielle KISS-TNC und ein TCP-basiertes Gegenstueck sind
+vom Frame-Aufbau her verwandt - mehrere direkt erreichbare Ziele haengen
+an einem solchen Traeger. Siehe auch das in diesem Abschnitt erwogene
+Thema um AXTCP/AXUDP.
+
+Entscheidung (2026-10-02):
+  - Keine Implementierung in diesem Schritt. Als eigener Abschnitt
+    ins TODO aufgenommen.
+  - Sinnvoll ist eine Route ohne Rufzeichen, z.B.:
+      axip route add default <iface> <host> [<port>]
+    Diese bestimmt die Zieladresse fuer Nicht-Treffer auf diesem Interface,
+    nicht den AX.25-Default-Port ("ax25 route add default ...") fuer
+    AX.25-Routing.
+  - Gegenargument urspruenglich: Partner muesste als Digi im ax25 route-Pfad
+    sauberer sein. Fuer den hier genannten praktischen Fall (KISS-via-TCP
+    als Ausweichweg, ein 1:1-Traeger mit vielen Zielen) ist die "default"-
+    Zieladresse fuer axip jedoch eleganter und vermeidet fuer jeden Partner
+    ein eigenes Interface.
+  - axip_raw() hat derzeit keinen Fallback - kein passender Eintrag
+    bedeutet: Rahmen geht stillschweigend verloren. Das muss bei einer
+    Default-Route beruecksichtigt werden.
+
+
+------------------------------------------------------------------------
+AXTCP
+------------------------------------------------------------------------
+AX.25-Frame + CRC16 ueber TCP mit 2-Byte-Laengenpraefix (XRouter).
+
+Details:
+  - Payload = vollstaendiger AX.25-Frame einschl. FCS/CRC16.
+  - Laengenfeld Big-Endian, umfasst Payload. CRC nicht ueber Laengenfeld.
+  - Default-Port 9393. Client/Listen/beides gleichzeitig.
+  - Auto-Detection: bei Listen/Accept; erstes Byte != 0xC0 -> vermute
+    AXTCP, Length plausibilisieren, vollstaendige Payload einlesen,
+    CRC16 pruefen. CRC-Fail -> Verbindung trennen (keine Resynchronisation).
+  - Auto-Detect ohne harter Initial-Timeout; Trennung nur bei unplausibler
+    Length oder CRC-Fail. Timeout fuer halboffene eingehende Sessions
+    separat (Idle/Garbage-Window) behandeln.
+  - Idle-Kick/Garbage fuer eingehende unidentifizierte Verbindungen:
+    nach ~5 Min Inaktivitaet ohne Protokoll-Erkennung o. Traffic trennen
+    (Port-Scan-Abwehr). Keine feste 2-5s-Trennung bei Verbindungsaufbau.
+  - Keepalive/Idle: reaktiv beim Sendebedarf, optionaler Idle-Guard 3600s
+    (AXIP-kompatibel). Bei Sendebedarf fehlgeschlagene Verbindung schliessen,
+    einmal Retry nach Reconnect, sonst verwerfen.
+  - Reconnect (Client): exponentiell mit grossen Spruengen, Backoff bis
+    max 30min (z.B. 10s,20s,40s,...,30m), Jitter empfohlen. SYN-Retries
+    des TCP-Stacks beruecksichtigen (nicht aggressiv nach 1s).
+  - Idle-Frames zum Aufwecken: fuer axtcp schwierig; keine generischen
+    Keepalives erzwingen, reaktiv bevorzugen.
+  - Permissions: axip-learn on|once|off uebertragen. Cleanup nur gelernter
+    Routen (LEARNED) bei Disconnect; perm/perm_once/sysop bleiben.
+  - Keine Host-Spezialisierung im Attach, Routing via "axip route".
+
+
+------------------------------------------------------------------------
+TCPKISS/KISSTCP
+------------------------------------------------------------------------
+KISS-over-TCP, FEND 0xC0 + Escaping, selbstsynchronisierend.
+
+Details:
+  - Bezeichnung: "kisstcp" bevorzugt, Synonym "tcpkiss" in Hilfe/Manual.
+  - Default-Port 8001 (direwolf/xrouter kisstcp). Gaengige: 7342 (fldigi),
+    8100 (VARAFM) - nur Kurzhinweis.
+  - Auto-Detection: erstes Byte == 0xC0 -> KISS-over-TCP, Protokoll
+    pro Verbindung merken, ausgehende Frames spiegeln.
+  - Pro aktiver Client-Verbindung (gewollter Peer): beim Verbindungsaufbau
+    oder sofort bei erstem Sendeversuch ein Keepalive/Sync-Byte 0xC0
+    senden (Aufwecken/Sync), um TCP-Idle-Abbau entgegenzuwirken.
+  - Eingehende unidentifizierte Verbindungen: nach ~5 Min ohne Traffic
+    trennen (Port-Scan-Schutz), kein harter Initial-Timeout.
+  - Wiederverwendung von kiss.c (Encode/Decode, FEND/Escape) ohne
+    Duplikation. Stateful Decoder.
+  - Permissions, Cleanup (nur LEARNED) bei Disconnect, Reconnect mit
+    Backoff bis 30min, Idle-Guard 3600s, reaktiv beim Sendebedarf.
+  - Zwei separate Treiber (axtcp/kisstcp) + kleine gemeinsame TCP-Basis.
+
+
+------------------------------------------------------------------------
+AXTCP/TCPKISS: Auto-Detection & Session-Policy
+------------------------------------------------------------------------
+  - Pro Verbindung erkanntes Protokoll dauerhaft beibehalten (Mirror).
+  - Nur Listen/Accept auto-detektieren, reiner Client nutzt vorgegebenes
+    Interface-Protokoll.
+  - AXTCP: CRC-Fail -> sofort trennen, keine Resynchronisationsversuche.
+  - AXTCP Length-Plausibilitaet + harte Obergrenze (z.B. <= 2048) als
+    Safety, CRC primaeres Kriterium.
+  - Unidentifizierte eingehende Sessions: Garbage-Window ~5 Min Inaktivitaet
+    -> trennen (Port-Scan-Abwehr). Kein fester 2-5s Initial-Timeout.
+  - Authentisierung fehlt noch zur HAELFTE, und zwar EINGEHEND: jede
+    TCP-Gegenstelle darf einen axtcp- oder kisstcp-Port als Client
+    benutzen, und "session:unidentified" in "attach <port> stat" ist
+    bisher nur eine Anzeige, keine Sperre (tcpsock.c:1865, aus
+    TCPAD_DETECT in tcpsock.h:60).  AUSGEHEND ist gebaut - siehe den
+    Block unten, SHARED-KEY-AUTH. Ein geteilter
+    Schluessel (ein PSK je Port, in der sysop-Konfiguration, nie im
+    Klartext im Log) waere die kleinste Massnahme, die eine fremde Station
+    aussperrt, ohne TLS. Wichtig fuer die
+    Reihenfolge: die Garbage-Window-Zeile oben beendet eine fremde Sitzung
+    nach fuenf Minuten - das ist bei einem PSK die *erlaubte* Reaktion, bei
+    einer fremden Station aber nur Verzoegerung. Erst der Schluessel, dann
+    ist das Fenster die richtige Antwort. Ohne ihn bleibt zu entscheiden,
+    was mit "unidentified" passiert, solange die Sitzung Daten traegt.
+  - Session-Duplikate: bei Lernzuordnung aeltere Verbindung bevorzugt
+    trennen, neue behalten (Session-Affinitaet zur aktuellen Route).
+  - Cleanup nur LEARNED bei Disconnect; perm/perm_once/sysop bleiben.
+
+
+------------------------------------------------------------------------
+AXTCP/KISSTCP: Permissions & Learning (Zusammenfassung)
+------------------------------------------------------------------------
+  - axip-learn on|once|off auf TCP-Interfaces uebertragen.
+  - Zentrale Schreibstelle analog axip_route_add(), LEARNED/SYSOP/RESOLVE.
+  - Unbekannte Calls nur lernbar bei learn on/once.
+  - Learn once -> perm_once, Adress/Verbindung einfrieren (TUF).
+
+
+------------------------------------------------------------------------
+ifconfig: was "tot" zaehlt, und der AX.25-Zaehler, der fehlt
+------------------------------------------------------------------------
+  - BEFUND, und die Ausgangslage ist besser als gedacht: "tot" IST bereits
+    der Rahmenzaehler.  Es gibt keine zweite Ebene darunter, die man
+    zusaetzlich bauen muesste - es fehlt nur die Auskunft, was er auf dem
+    jeweiligen Port zaehlt.
+
+  - Wo die vier Zahlen kommen, vollstaendig:
+      ipsndcnt    iproute.c:359   in q_pkt(), einmal je IP-Datagramm
+      rawsndcnt   je Port-Treiber, dort wo der Rahmen auf die Leitung geht:
+                  axip.c:759, tcpsock.c:1734, ni.c:58, nrs.c:77,
+                  sixpack.c:152, tun.c:230, bpqether.c:737, ethertap.c:122
+                  und :167, ipip.c:60, slip.c:119, krnlif.c:355 und :376,
+                  netrom.c:2442 (in nr_send), loopback ueber ip.c:109
+      iprecvcnt   iproute.c:66    einmal je empfangenem IP-Datagramm
+      rawrecvcnt  iface.c:395     zentral, im Netztask, fuer ALLE Ports
+                  die ueber net_route() laufen: axip.c:1332, tcpsock.c:259,
+                  ni.c:97, nrs.c:274, tun.c:316, ipip.c:153, slip.c:347,
+                  bpqether.c, ethertap.c, krnlif.c
+                  NET/ROM nimmt den Umweg nicht und zaehlt selbst:
+                  netrom.c:2245.  KEINE Doppelzaehlung - der Hopper-Weg
+                  und der NET/ROM-Weg schliessen sich aus.
+
+  - 1:1 und damit vergleichbar: ipsndcnt zu rawsndcnt ist genau ein
+    Datagramm zu einem Rahmen, es sei denn, der Port traegt etwas, das
+    kein IP-Datagramm ist (weiterleitete UI-Rahmen, Keepalive).  Also:
+    "sent: ip 964 tot 335822" heisst 964 Datagramme und 335822 Rahmen auf
+    demselben Port - und diese beiden Zahlen gehoeren nicht zusammen, wenn
+    man sie als eine liest.
+
+  - WAS "tot" AUF DEM PORT ZAEHLT, haengt vom Porttyp ab, und das steht
+    nirgends:
+      AX.25-Ports (is_ax25(), iface.c:1297)   einen AX.25-Rahmen
+      NET/ROM                                 einen NETROM-UI-Rahmen
+      Encap/Loopback                          einen IP-Rahmen
+    Drei verschiedene Dinge unter demselben Wort.  Ein Sysop, der
+    "tot" zwischen einem axudp-Port und einem NET/ROM-Port vergleicht,
+    vergleicht verschiedene Groessen.
+
+  - rawrecvcnt zaehlt VOR der Adresspruefung.  Ein Rahmen mit kaputtem
+    Kopf, ein Frame an eine fremde Adresse und ein Rundspruk zaehlen mit.
+    Fuer "wie viel kam ueber die Leitung" ist das richtig; wer daraus
+    "wie viel kam fuer mich" lesen will, bekommt die falsche Zahl und
+    hat keine zweite.
+
+  - LUECKEN, die konkret sind:
+    1. iface->ax25errors (iface.h:317, gesetzt ax25.c:804) wird gezaehlt
+       und NIRGENDS angezeigt.  Der Zaehler existiert, ihm fehlt nur die
+       Zeile - und ausgerechnet der wuerde auf db0fhn sagen, ob die 516981
+       empfangenen Rahmen alle sauber waren.
+    2. Es gibt keinen Zaehler fuer "Rahmen fuer mich" gegen "Rahmen ueber
+      haupt", und Ax_echoes (ax25.c:1350, gesetzt :796) ist global, nicht
+       je Interface - bei mehreren AX.25-Ports nicht zuordenbar.
+    3. rawrecvcnt und lastrecv werden fuer axip/axudp/tcpsock zentral in
+       iface.c:395/:396 gesetzt, also EINE Zeile fuer alle Porttypen.  Wer
+       dort einen AX.25-spezifischen Wert will, kann ihn an der
+       zentralen Stelle nicht bekommen.
+
+  - ENTSCHIEDEN (Thomas): drei unterscheidbare Zahlen, nicht eine.  "sent:
+    ip 964 tot 335822" ist unuebersichtlich, weil man tot - ip rechnen
+    muss, um die AX.25-Rahmen zu sehen - und nicht darauf kommt, dass ax25
+    = tot - ip ist.  Ein Feld, das AX25 heisst, ist selbsterklaerend; eine
+    Rechnung, die man machen muss, nicht.  Also ein eigener Zaehler.
+
+  - Wie er aussehen muss, damit die drei Zahlen etwas bedeuten und nicht
+    nur drei Zahlen sind: auf einem AX.25-Port gilt die Invariante
+        tot == ip + ax25
+    Jeder Rahmen auf einem AX.25-Port ist ein AX.25-Rahmen, und jeder
+    AX.25-Rahmen auf diesem Port traegt entweder ein IP-Datagramm oder
+    nichts.  Damit ist die Invariante CHECKBAR, und das ist der ganze Wert
+    des dritten Feldes: sie merkt es sofort, wenn einer der drei Zaehler
+    luegt.  Ohne sie waeren es drei Zahlen, von denen niemand weiss, welche
+    die richtige ist - und das ist genau der Zustand, aus dem heraus
+    "tot 516981" nicht lesbar war.
+
+  - Zaehlpunkte, alle gefunden und benannt.  Empfang: EIN Punkt, iface.c:395,
+    direkt neben "ifp->rawrecvcnt++", unter "if(is_ax25(ifp))".  Das deckt
+    jeden AX.25-Port mit, weil sie alle ueber net_route() in den Hopper
+    laufen.  Verschiebt man es in die einzelnen Treiber, sind es acht
+    Stellen und man vergisst eine.
+    Sendung: DREI Punkte.
+      ax_output()   in ax25.c - das ist der gemeinsame Rahmen-Ausgang fuer
+                    alle sieben AX.25-iftype (AX25UI, AX25I, 6PACKUI, 6PACKI,
+                    KISSUI, KISSI, NRS stehen alle mit ax_output in
+                    config.c:487ff), also ein Punkt fuer asy, KISS, 6PACK
+                    und NRS zusammen.
+      axip_raw()    axip.c:759, direkt neben dem rawsndcnt++, das dort
+                    schon steht - deckt axip und axudp.
+      tcpsock_raw() tcpsock.c:1734, dito - deckt axtcp und kisstcp.
+    Der Empfang hat einen Punkt und das Senden drei; das ist kein Zufall,
+    sondern liegt daran, dass es auf der Sende-Seite keinen zentralen Ort
+    gibt, an dem man schon vorbeikommt.
+
+  - ANZEIGE: neben "ip ... tot ...", auch im Kurz-"ifconfig" ohne Argument.
+    Und das Feld nur dort, wo es etwas zaehlt - auf tun, ipip, Encap und
+    Loopback nicht, nach derselben Regel wie bei den Routen weiter unten
+    ("das Bemerkenswerte steht da, der Normalfall schweigt").  Sonst steht
+    ueberall eine Null, und eine Null, die immer da ist, ist keine Angabe.
+
+  - NOCHZUENTSCHEIDEN, klein: wo das Feld steht.  "ip 964 ax25 334858 tot
+    335822" liest sich, bricht aber die Position von "tot" - und die
+    Position ist eine Schnittstelle: ax25cmd.c:243 liest aus derselben
+    Zeile, und die Testfahrzeuge filtern darauf.  "ip 964 tot 335822 ax25
+    334858" laesst die Maschinen unangetastet und den Menschen trotzdem
+    raten, welche Zahl die AX.25 ist.  Ein Testlauf ueber die vorhandenen
+    Fahrzeuge entscheidet das mit, nicht der Geschmack.
+
+
+----------------------------------------------------------------------
+AXUDP-KEEPALIVE GEGEN NAT (gebaut, 2026-10-07)
+----------------------------------------------------------------------
+Zweck: auf einem axudp-Port die NAT-Abbildung warm halten, damit der
+Partner uns unter demselben Quellport erreicht (siehe oben, "axudp UND
+DAS NAT-ZEITFENSTER").  TCP-Ports hatten das schon:
+tcpsock_keepalive_send(), tcpsock.c:403.
+
+Verhalten, alles gemessen:
+  - Befehl: "ifconfig <iface> keepalive <sekunden>" (iface.c:1341).
+    Erlaubt auf axtcp/kisstcp (tcpsock) und axudp; andere Ports lehnt
+    er ab: "Interface %s is not a TCP or axudp port; keepalive means
+    nothing there."
+  - Ohne Ziel wird der Wert trotzdem angenommen, mit der Warnung
+    "%s: keepalive set, but this port has no destination to keep alive
+    yet" - Routen koennen spaeter kommen.  "keepalive 0" stoppt den
+    Takt.
+  - Rahmen: leere UI, 16 Byte, dest == src == eigener Ruf, ctl 03,
+    pid f0; dest-E clear, src-E gesetzt (Bytes 6/13).  Er adressiert
+    niemanden und darf darum KEINE Antwort sein (siehe unten,
+    Shared-Key-Auth).
+  - Zielauswahl: nur Routen MIT rdev == diesem Port ("axip route add
+    <call>:<iface> ..."); ohne Suffix bleibt rdev == 0 und der Keepalive
+    sendet nichts.  Zwei Routen auf EINEN Ort zaehlen einmal
+    (axip_route_preceded_by_same_target()).
+  - Benannte Routen (FQDN) fragt der Takt VOR dem Senden nach,
+    axip_lookup_one() (axip.c:448) auf dem axip-dns-Intervall: einem
+    Dyndns-Partner folgt der Keepalive.
+  - Takt: AXIP_KEEPALIVE_TICK 10000L (axip.h:61), selbststoppend
+    (axip_keepalive_tick(), axip.c:1140), je Port mit Ziel gestartet
+    durch axip_keepalive_start() (axip.c:1180).  Kein Reiter auf
+    axip_timer(): zehn Sekunden hier, sechzig dort (naechster Block).
+  - lastsent setzt der Takt selbst; sendto() ist synchron (axip.c:1058).
+  - rp->stime setzt der Keepalive bewusst NICHT - entschieden
+    (2026-10-08), seit der Routen-Timer laeuft (naechster Block): die
+    Stille-Frist misst max(htime, stime), den letzten VERKEHR.  Der
+    Keepalive adressiert niemanden und ist keiner; wuerde er stime
+    setzen, schiene eine Route, deren einziger Verkehr er ist, ewig
+    aktiv, und die Frist wuerde gerade die benannten NAT-/Dyndns-
+    Partner nie wieder im Hintergrund fragen - fuer die das
+    axip-dns-interval gedacht ist.  Eine keepalive-einsame Route gilt
+    also weiter als still und wird je Intervall nachgefragt: Absicht
+    und Vorgabe, keine Last.
+
+----------------------------------------------------------------------
+AXIP: DER NAME EINER FQDN-ROUTE (BEFUND, behoben 2026-10-07)
+----------------------------------------------------------------------
+Gemessen: "axip route add dl9xs:ga db0fhn.hamnet.network 9393" wurde
+angenommen und aufgeloest (192.68.17.66) - aber der NAME fehlte im
+Listing.  Ursache: axip_is_literal() (axip.c:390) pruefte die FORM der
+AUFGELOESTEN Zeichenkette ("192.68.17.66" ist lauter Ziffern und
+Punkte) und stufte so einen Namen, der auf eine saubere IPv4-Adresse
+(oder IPv6) aufloest, als Literale ein.  Der Name wurde verworfen und
+die FQDN-Wiederaufloesung konnte nie laufen.  Der Kommentar davor
+(axip.c:429) schreibt die richtige Regel bereits vor: aufgeloeste
+Zeichenkette mit der EINGEGEBENEN vergleichen, nicht die Form
+ansehen.  Korrigiert, axip.c:434:
+
+    return strcmp(abuf, host) == 0;
+
+"localhost" ist damit wieder ein Name; "[2001:db8::1]" weiterhin eine
+Adresse (der Doppelpunktweg bleibt, axip.c:425).
+
+Verhalten jetzt (gemessen, 15/15): der Parser nimmt den FQDN an, das
+Listing zeigt Adresse, port, via und den Namen; "axip stats" zaehlt
+die Nachfragen ("lookups %ld (%ld failed)", axip.c:2625); nach dem
+ersten Keepalive-Tick steht "resolved ... ago" auf der Zeile.  Ein Name,
+der sich nicht aufloesen laesst, wird beim Anlegen abgewiesen:
+"Unknown host <name>" (Badhost, main.c:50).
+
+----------------------------------------------------------------------
+AXIP/AXUDP UND AXTCP/KISSTCP: WAS DIE KONSOLE NICHT SAGT
+----------------------------------------------------------------------
+  1. axip_timer() (axip.c:548) hatte keinen ersten Start - der
+     DNS-Nachfrage-Takt existierte im Code, aber kein Aufruf stiess
+     ihn an; die Namensfrage lief nur auf dem Sendeweg (axip_raw)
+     und seit 2026-10-07 auf dem Keepalive-Tick.  BEHOBEN
+     2026-10-08: "axip route add" mit Namen stoesst ihn an
+     (axip.c:2467) - eine Route mit Namen entsteht nur dort -, und er
+     stoppt sich selbst (keep), wenn keine benannte Route ihn mehr
+     braucht.  Gemessen: benannte Route auf einem axudp-Port mit
+     axip-dns-interval und -silence je 1 Minute, 200 s GAR KEIN
+     Paket - "axip stats" zaehlte lookups 0 -> 3.  Das axip-dns-
+     interval ist damit wieder die Regel aus dem Hilfetext, und die
+     Stille-Frist, deren einzige Abfragestelle in axip_timer() sitzt
+     (axip.c:606), greift jetzt.  Die damit faellige Entscheidung
+     steht im Keepalive-Block: keepalive bleibt "kein Verkehr"
+     (rp->stime setzt er weiterhin nicht).  "resolved ... ago"
+     (axip.c:2268) ist jetzt von einem weckenden Timer begleitet.
+  2. Der axudp-Keepalive umgeht axip_raw(); sendto() direkt
+     (axip.c:1058ff).  Gemessen: auf "ifconfig ga" bleibt
+     "sent: ip 0 ax25 0 tot 0" stehen, waehrend "idle" weiterlaeuft
+     (lastsent setzt der Takt).  Die Konsole zeigt also Aktivitaet
+     (idle) ohne jeden Rahmenzaehler - absichtlich, der Rahmen
+     adressiert niemanden.
+  3. Damit haelt der Keepalive die Invariante "tot == ip + ax25"
+     (Block oben zum ax25-Zaehler) ein: er zaehlt in KEINEM der drei
+     Felder.  Wer "tot" als Verkehrszaehler liest, unterschlaegt ihn
+     - gut so.
+
+----------------------------------------------------------------------
+AXIP/AXUDP: IPv6-LITERALE UND NAMEN IN KLAMMERN
+----------------------------------------------------------------------
+Wo IPv6-Adressen und -Namen im Parser auseinandergehen:
+  - bind= und Host-Wort: eine IPv6-LITERALE steht in eckigen Klammern,
+    sonst abgewiesen ("\"%s\": an IPv6 literal is written in brackets",
+    sockaddr_util.c:198).  Der Zoneindex steht IN der Klammer mit
+    "%" dahinter ("[fe80::1%2]") und wird ueber if_nametoindex()
+    aufgeloest (sockaddr_util.c:205ff); genau EINE Zone, und nur auf
+    IPv6.
+  - "axip route add": "[2001:db8::1]" ist eine Adresse, "[name]" ein
+    Name zum Nachfragen (axip.c:400-441).  Eine NACKTE IPv6-Literal
+    ist mehrdeutig und wird fuer diese Frage wie eine Adresse behandelt
+    (der Doppelpunkt steht ohnehin fuer IPv6, axip.c:415-442).
+  - "Adresse oder Name" entscheidet der Vergleich der aufgeloesten
+    Zeichenkette mit der EINGABE (siehe Block oben, axip.c:434),
+    nicht die Form der Antwort.
+
+----------------------------------------------------------------------
+SHARED-KEY-AUTH: AUSGEHEND (axtcp/kisstcp, client) GEBAUT, 2026-10-08
+----------------------------------------------------------------------
+Konfiguration: das Wort "shared-key <code>" darf ueberall auf der
+"attach axtcp|kisstcp"-Zeile stehen (wie "keepalive"; gelesen und
+entfernt in tcpsock_take_sharedkey(), tcpsock.c:1953).  Der Code ist
+rufzeichenfoermig: hoechstens 6 Zeichen, ein schlichtes Wort ohne
+Bindestrich und ohne Stern - er reist in einem AX.25-Adressfeld.
+GEBAUT:
+  - AUSGEHEND, Client-Modus: genau EIN leerer UI-Rahmen je Sitzung,
+    dest = Code, src = ifp->hwaddr.  Gesendet in dem Moment, in dem der
+    Verbindungsaufbau fertig wird (tcpsock_auth_send(), tcpsock.c:455,
+    Aufruf in tcpsock_on_write(), tcpsock.c:556), NOCH VOR dem
+    Keepalive.  Grund: der Anwender weiss nicht, ob die tcp-Verbindung
+    zur Gegenseite neu aufgebaut wurde und ein neues Auth-Paket
+    noetig ist; der Aufbau ist dieselbe Stelle fuer den ersten Aufbau
+    und fuer jeden Wieder-Hochbau.  Der Rahmen ist derselbe wie der
+    des axip-Keepalives, adressiert aber den Code und zaehlt nie als
+    Antwort.  Anzeige: "shared-key:<code>" in "attach axtcp|kisstcp
+    stat" (tcpsock.c:1885).
+OFFEN (NOT BUILT; Standortbestimmung axip.c:836-898 und tcpsock.c:1104):
+  - EINGEHEND (alle vier Ports): Schluesselwort am Port, Pruefung des
+    ERSTEN Pakets mit addreq()-Logik (keine eigene Maske bauen),
+    axip.c:857.
+  - AUSGEHEND fuer axip/axudp: an die konfigurierte Ziel-IP; es gibt
+    dort keine Sitzung, an die "einmal je Sitzung" gehaengt werden
+    kann, der Ausloeser ist offen (axip.c:872).
+  - Der Keepalive (Block oben) adressiert niemanden und muss von dem
+    Antwortrahmen unterscheidbar bleiben: dest == src und E-Clear ist
+    sein Abdruck (axip.c:884).  Er darf nie als Antwort zaehlen.
+
+----------------------------------------------------------------------
+AXTCP/KISSTCP: DIESELBEN KOMMANDOS WIE AXUDP (AENDERUNG 2026-10-07)
+----------------------------------------------------------------------
+FUND (gemessen): drei Gates verweigerten axtcp/kisstcp alles, was an
+die Routentabelle gehoert.  axip_isport() (axip.c:271) prueft nur
+raw == axip_raw, und damit fielen:
+  - "if <tcpport> axip-learn" -> "foo is not an axip or axudp
+    interface - it has no callsigns to learn" (axip.c:2661).
+  - "if <tcpport> axip-dns-interval|axip-dns-silence" -> gleiche
+    Meldung, kuerzere Fassung (axip.c:2700, 2718).
+  - "axip route add <call>:<tcpport> <host>" -> "<tcpport> is not an
+    axip or axudp interface" (axip_split_call, axip.c:2318).
+GELERNT WAR AUF DIESEN PORTS ABER SCHON: tcpsock_input() ruft
+axip_learn_transport() (tcpsock.c:245), und die fragt axip_may_learn()
+- dieselbe ifp->axip_learn, die nur niemand setzen konnte.
+axip.h:104 sagte es schon: die Tabelle ist auch die der TCP-Ports.
+GEAENDERT (axip_iscarrier(), axip.c:300): raw == axip_raw ODER ==
+tcpsock_raw, und die drei Gates fragen das.  axip_isport() behaelt
+seine Bedeutung (Sockel-Bloecke in axip_show_verbose(), axip.c:2741,
+und der axudp-Keepalive).
+ROUTEN AUF EINEM TCP-PORT: die Route nennt dort kein Ziel - die
+Verbindung ist die Adresse.  tcpsock_raw() wertet sie trotzdem aus,
+wenn genau EINE Sitzung am Port haengt (axip_sysop_route_on(),
+axip.c:2016; tcpsock_single_session(), tcpsock.c:763; Aufruf
+tcpsock.c:1724).  Mit zwei Sitzungen bleibt sie wirkungslos, weil
+"welcher der beiden" die Route nicht fragt und ein Rahmen beim
+Nachbarn die falsche Antwort waere.  Reihenfolge im Sendeweg:
+gelernte Route, dann Client-Sitzung, dann geschriebene Route.  Eine
+Route OHNE <iface> (rdev == 0) gilt auf einem TCP-Port nicht - sie
+gehoerte sonst auch axudp-Ports mit an.
+FUND (gemessen): tcpsock_single_session() zaehlte dabei AUCH den
+Port-Eintrag selbst (fd:-1, listens:2, flags:listen, tcpsock.c:1863)
+- eine haengende Sitzung sah aus wie zwei, und der Rahmen blieb vor
+tcpsock_send() liegen.  "ifconfig" zeigte ax25 1 (= ax25sndcnt,
+ax25.c:644) und tot 0 (= rawsndcnt, tcpsock.c:1734), auf dem Draht
+war nichts.  Bei NULL Sitzungen waere es umgekehrt gewesen: der
+reine Listener haette als "die eine" gegolten, waere in den
+TCF_LISTEN-Zweig von tcpsock_send() (tcpsock.c:282) gelaufen und
+dort verworfen worden, mit gezaehltem rawsndcnt.  Gezaehlt wird
+jetzt nur TCF_CONNECTED (tcpsock.c:771).  Nachgewiesen in Abschnitt
+8 von drive_axroute_iface.py: eine Sitzung traegt den SABM, zwei
+schweigen, das Schliessen der zweiten beendet das Schweigen.
+WEITER GEAENDERT: "asked ... ago" heisst jetzt "resolved ... ago"
+(axip.c:2268) - das Alter der letzten NAMENS-Aufloesung (rtime, nur
+bei Namen, steht auch bei Fehlschlag); kein Stopf fuer den
+Keepalive-Tick und keins fuer "die Route wurde benutzt" (das ist
+sent: bzw. heard).  "keepalive 300" nennt jetzt die Einheit,
+"keepalive 300 s" (iface.c:1351).  attach axtcp|kisstcp mit "listen"
+oder "client" als ERSTEM Wort sagte vorher nur "Interface listen
+already exists"; jetzt nennt die Meldung den Grund - das Wort ist
+hier der Name (axtcp.c:342, kisstcp.c:445).
+
+FLEXNET: ZWEI LINKS ZUR SELBEN STATION - "NEUE IGNORIEREN" JETZT,
+"BEIDE ZULASSEN" GEPARKT (Thomas, 2026-10-09)
+
+Gemessen: zwei Verbindungen mit DEMSELBEN Source-Call zu zwei SSIDs
+desselben Ziel-Hosts (unser Knoten ruft DB0FHN-10 und DB0FHN-11, beide
+unter DL9SAU) erzeugen eine unendliche Protokoll-Paketflut.  Ein Peer
+ist bei uns pro GEGENSTELLE verschluesselt (find_peer(src),
+flexnet.c:1719; struct peer haelt genau ein ax25_cb *axp), und FlexNet
+kennt eine Station als Callsign + SSID-Spanne.  Bei gleichem src fallen
+beide Links auf der Gegenseite in EINEN Peer; jedes Frame ueber den
+"anderen" axp lief in den setaxp()-Zweig, Antworten gingen immer nur
+ueber pp->axp, der andere Link hungerte und wiederholte auf LAPB-Ebene.
+Mit VERSCHIEDENEN src-SSIDs (addreq vergleicht die SSID mit,
+ax25subr.c:357) sind es zwei Peers, und der Fehler bleibt aus - deshalb
+verbarg die "Fehlkonfiguration" das Problem.
+
+GEAENDERT (flexnet.c:1726): kommt ein Frame auf einem axp, der NICHT
+der Link des Peers ist, wird der NEUE Link ignoriert - keine Antwort,
+kein Peer-Zustand, der etablierte Link bleibt.  Ausnahme: ist pp->axp
+ein Block, der nicht mehr in der Tabelle steht (ax25_alive()), wurde
+der Link neu aufgebaut, und setaxp() uebernimmt ihn und gruesst neu -
+wie vorher.  Das vermeidet das Flip-Flap, das ein Trennen der ALTEN
+Verbindung im Netz ausgeloest haette (Station ab- und wieder angemeldet,
+Routen ueber den Link weg).
+
+OFFEN / GEPARKT: "beide zulassen" - ein Peer pro LINK statt pro
+Callsign, der eigentliche Mesh-Gedanke.  Invasiv (struct peer,
+Dests/quality und das Ein-Spanne-Modell haengen daran).  Vorerst nicht:
+auch auf AX.25/LAPB-Ebene klappt es noch nicht - getestet, eine zweite
+Sitzung ueber ein anderes iface wird nicht etabliert (das UA wird
+ignoriert).  Erst wenn das steht, lohnt der FlexNet-Teil.

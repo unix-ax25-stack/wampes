@@ -118,6 +118,71 @@ struct mbuf **bpp
 		free_p(bpp);
 		return;
 	}
+	/* THE CRC DECISION, and the type byte below has three incompatible readers
+	 * in the wild.  They disagree, and the disagreement is the entire reason
+	 * multiport is not supported on this path yet, so it is worth writing down
+	 * before anyone tries to add it.
+	 *
+	 * THE PARAMETERS, each verified against the published check value for the
+	 * string "123456789":
+	 *
+	 *   CRC_16    SMACK   poly 0x8005 reflected, init 0x0000, no final xor,
+	 *                    two bytes, LOW byte first, residue 0x0000.
+	 *                    Check value 0xbb3d - this is CRC-16/ARC.
+	 *   CRC_RMNC  RMNC    poly 0x1021 reflected, init 0xffff, no final xor,
+	 *                    two bytes, HIGH byte first, residue 0x7070.
+	 *                    Check value 0x9fb5.
+	 *   CRC_CCITT         poly 0x1021 reflected, init 0xffff, final xor
+	 *                    0xffff, two bytes, LOW byte first, residue 0xf0b8.
+	 *                    Check value 0x906e - this is CRC-16/X-25, the AX.25
+	 *                    FCS.  It is unreachable from here; see crccontrol in
+	 *                    kisstcp.c for why it has no KISS existence at all.
+	 *
+	 * Note the shape of that: RMNC and the AX.25 FCS share BOTH polynomial and
+	 * init and differ only in the final xor and the residue, while SMACK
+	 * differs from both in the polynomial.  So "the KISS CRC" is not one
+	 * family with three sizes - it is two polynomials, and the 0x1021 one is
+	 * reached with two different sets of parameters.  The Crc_*_table in
+	 * crc.c are the canonical tables for exactly the parameters above, and
+	 * Crc_rmnc_table is byte for byte the same array as the one in tnn's
+	 * os/linux/l1linux.c and the one mkiss builds as crctab in ax25-tools.
+	 *
+	 * WHERE THE FLAG LIVES - the three answers:
+	 *
+	 *   SMACK (symek.de/g/smack.html) puts the flag in bit 7 and keeps the
+	 *   port in bits 6..4, so both fit into the one byte.  tnn spells that out
+	 *   literally in its receive state machine: (ch & 0x8F) == 0x80, and then
+	 *   rx_port = (ch & 0x70) >> 4.  SMACK and multiport therefore coexist by
+	 *   construction - 0x90 is port 1 with a checksum.
+	 *
+	 *   RMNC consumes the WHOLE type byte.  tnn tests (ch & 0xFF) == 0x20 and
+	 *   hardwires rx_port = 0; mkiss sends CRCTYP 0x20 for the same dialect.
+	 *   There is no port field to collide with, so RMNC and multiport exclude
+	 *   each other by construction, not by accident.
+	 *
+	 *   The third answer dodges the collision instead of solving it: mkiss
+	 *   composes the type byte as (cmd & 0x0F) | (port << 4) and negotiates
+	 *   the CRC mode out of band, so there is no flag bit to sit next to a
+	 *   port bit.  That is the same layout the KISS TCP dialect uses (Dire
+	 *   Wolf: chan = (kiss_msg[0] >> 4) & 0xf), and it is why "crc == off" is
+	 *   the right precondition for multiport here: of the KISS CRCs, only the
+	 *   ones that push their flag INTO the port field would cost us the
+	 *   channel, and RMNC costs it even when it is switched off.
+	 *
+	 * ONE DEFECT VISIBLE FROM HERE, not fixed because it needs a decision
+	 * first: the two tests below run before the command nibble is looked at.
+	 * mkiss's G8BPQ mode makes an exception for this - it drops the checksum
+	 * for every command except data and ACKREQ, on transmit AND on receive -
+	 * so a host may legitimately put bit 7 on a TXDELAY frame.  tnn's SMACK
+	 * mode makes no such exception and would reject the same frame.  The two
+	 * real implementations thus disagree, which means a checksummed
+	 * non-data frame has no defined behaviour on this path today: we would
+	 * check it against a checksum that is not there, drop it, and count it in
+	 * crcerrors.  The 0x20 test below is loose in the same spirit - it is a
+	 * mask, where tnn does an exact comparison - so a plain-KISS multiport
+	 * frame for port 2 (type byte 0x20, no CRC at all) would be run through
+	 * check_crc_rmnc() here.
+	 */
 	if(bp && (*bp->data & 0x80)){
 		if(check_crc_16(bp)){
 			iface->crcerrors++;

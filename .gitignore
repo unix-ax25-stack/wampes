@@ -41,3 +41,11 @@ util/qth
 
 # session notes
 readme-session.txt
+
+# Der Editor des Nutzers, nicht unser.
+.DS_Store
+
+# Restsicherungen von Hand.  src/n8250.c.orig ist eine Sicherung aus einer
+# Sitzung und keine Quelldatei - die gehoert nicht eingecheckt.
+*.orig
+*.rej

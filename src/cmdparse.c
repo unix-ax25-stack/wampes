@@ -345,6 +345,23 @@ void *p)
 	}
 	if (query_arg(cmdp, argc, argv))
 		return 0;
+	/* A QUESTION ANYWHERE ON THE LINE, and not only as the whole rest of
+	 * it.  query_arg() answers "command ?"; here the "?" comes after words
+	 * that were already being read - "attach axtcp axtcp client host ?" -
+	 * and without this it would travel on until a walker refused it with
+	 * "... and "?" is one word too many."  Answer with the entry's own
+	 * usage text, or with its subcommand list where there is none.
+	 */
+	for (i = 1; i < argc; i++)
+		if (strcmp(argv[i], "?") == 0) {
+			if (cmdp->argc_errmsg != NULL)
+				printf("Usage: %s\n", cmdp->argc_errmsg);
+			else if (cmdp->subtab != NULL) {
+				printf("\"%s\" subcommands:\n", argv[0]);
+				print_help(cmdp->subtab);
+			}
+			return 0;
+		}
 	if(argc < cmdp->argcmin){
 		return print_usage(cmdp);
 	}
@@ -363,13 +380,51 @@ void *p)
 	}
 }
 
+#define HELP_WIDTH	16		/* field width of one name in a help list */
+
 static int print_help(
 struct cmds *cmdp)
 {
 	int i;
+	int spill = 0;			/* the name just printed filled its field */
 
-	for (i = 0; cmdp->name; cmdp++, i++)
-		printf((i % 5) < 4 ? "%-16s" : "%s\n", cmdp->name);
+	/* A NAME THAT FILLS THE FIELD LEAVES THE NEXT COLUMN NOTHING.
+	 *
+	 * The field is HELP_WIDTH and two names in the ifconfig table do not fit
+	 * it: "axip-dns-interval" is 17, "axip-dns-silence" is exactly 16.  A
+	 * "%-16s" pads to 16 but never overflows a field, so the 17 went past its
+	 * column, the 16 filled its own to the last character, and the two stood
+	 * against each other:
+	 *
+	 *     axip-dns-intervalaxip-dns-silence
+	 *
+	 * That is not a shortened name.  It is the NEXT name, and a reader
+	 * counting the list counts four words where there are two.
+	 *
+	 * So the column stays where it has always been - a list that fits today
+	 * looks exactly as it did - and a name that reached the end of its field
+	 * leaves a space for the one after it.  Widening the column instead would
+	 * move all five columns of every table for the sake of one, and five of
+	 * them wider than 16 no longer fit in 80 anyway.
+	 *
+	 * The space is owed in front of the name that follows, so it belongs at
+	 * the top of the loop and not at the end of the branch - the fifth name
+	 * of a row is a next name too, and it is exactly where the two glued in
+	 * the ifconfig list ("axip-dns-silence" is 16 and filled its column, and
+	 * the fifth, "hf-datarate", landed on its last character).  After the
+	 * fifth there is a newline, and a space there would be blanks at the end
+	 * of the line.
+	 */
+	for (i = 0; cmdp->name; cmdp++, i++) {
+		if (spill) putchar(' ');
+		if ((i % 5) == 4) {
+			printf("%s\n", cmdp->name);
+			spill = 0;
+			continue;
+		}
+		spill = (int) strlen(cmdp->name) >= HELP_WIDTH;
+		printf("%-*s", HELP_WIDTH, cmdp->name);
+	}
 	if (i % 5) putchar('\n');
 	putchar('\n');
 	return 0;

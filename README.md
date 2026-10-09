@@ -7,17 +7,32 @@ AX.25 networking for Unix — userspace and kernelspace, with connector to the o
 - **libax25 / ax25apps / ax25tools** — the classic AX.25 library, applications, and tools
 - **wampes** — a `net` derivative (ka9q nos) with a full userspace AX.25 stack
 
-## What's new
+
+## Status 2026-10-03 
+
+programs like call, beacon, ax25d/axspawn, ax25netd, etc. are working.
+
+Many other tools, scenarios, etc. are tested, and many are untested. The toolset of
+ax25-apps/-tools is very large.
+
+See the Non-kernelmod-packet-config-scenarios.odp in the Documentation repo for more details.
+
+More as a proof of concept: in production on **DB0FHN** since August 2026.
+
+Testing and bug reports are welcome; so are ideas — use GitHub Discussions.
+
+
+## About the new concept
 
 The suite used to run on Linux only, tied to the in-kernel AX.25 stack. Today
 *libax25* also runs without it (`--enable-userspace-ax25`) and talks directly
 to WAMPES' userspace *net* stack — bringing AX.25 to other Unices for the
 first time (tested on macOS). Kernel-mode AX.25 remains fully supported.
 
-## Status
+This project has now a home at https://github.com/unix-ax25-stack
 
-Proof of concept, in production on **DB0FHN** since August 2026. Testing and
-bug reports are welcome; so are ideas — use GitHub Discussions.
+See Annoucement in https://github.com/orgs/unix-ax25-stack/discussions/1
+
 
 ## Background
 
@@ -33,7 +48,7 @@ long days this would probably still be in the planning stage.
 
 ## Configuration is trivial
 
-### The example below is for the wampes connector.
+### The example below is for the WAMPES connector.
 
 The Unix side — `/etc/ax25/axports`:
 
@@ -69,7 +84,7 @@ library has changed a lot. Compile details incl. `--enable-userspace-ax25`:
 ### The example below is for the AGWPE connector, with direwolf for the upstream connection
 
 
-(/usr/local/)etc/ax25/agwpe.conf:
+/etc/ax25/ax25netd_agwpe.conf:
 ```
 auth    extern
 autoroute yes
@@ -78,7 +93,7 @@ loop    -    -
 ```
 
 
-(/usr/local/)axports:
+/etc/ax25/axports:
 ```
 direwolf      DL9SAU-2  0  256  7   Direwolf channel 0
 ```
@@ -223,10 +238,10 @@ $ call -r wampes:xnet db0fhn
 <details>
 <summary><b>AGWPE notes</b> — status & open questions</summary>
 
-The AGWPE branch in libax25 is a bit untested, in favor of wampes.
+The AGWPE branch in libax25 is a bit untested, in favor of WAMPES.
 AGWPE is tested basically and works, i.e. with direwolf as backend.
 Untested:
-AGWPE clients, and whether the direwolf-backend or the AGWPE-client path to wampes works. Feedback is very
+AGWPE clients, and whether the direwolf-backend or the AGWPE-client path to WAMPES works. Feedback is very
 welcome.
 
 </details>
@@ -235,10 +250,25 @@ welcome.
 <summary><b>Compilation example</b></summary>
 
 Quick example how to compile and install libax25 ax25-apps ax25-tools and wampes
-after git clone:
+First, get the packages with git clone:
+```
+  git clone https://github.com/unix-ax25-stack/libax25.git
+  git clone https://github.com/unix-ax25-stack/ax25-apps.git
+  git clone https://github.com/unix-ax25-stack/ax25-tools.git
+```
+Additionally, if you like to use or test libax25 via
+  - wampes connector:
+```
+      git clone https://github.com/unix-ax25-stack/wampes.git
+```
+  or
+  - AGWPE-connector: i.e. direwolf:
+```
+      git clone https://github.com/wb2osz/direwolf.git
+```
 
 Check if installed:  make autoconf automake (>1.9) zlib1g-dev libtool and libncursesw6-dev (previously libncurses-dev) and optionaly libfltk1.3-dev (for ax25-tools/hdlcutil). Parts of the ax25-tools package will also need fltk and fltk development packages (and are silently skipped on compile if these packages are not installed).
-wampes also needs libgdbm-dev.
+WAMPES also needs libgdbm-dev.
 
 ```
 Debian, Ubuntu, Raspberry Pi OS   apt install libgdbm-compat-dev libgdbm-dev libncurses-dev
@@ -247,16 +277,27 @@ Arch                              pacman -S gdbm ...
 Alpine                            apk add gdbm-dev ...
 ```
 
-David Ranch KI6ZHD provided a build-script: build-unix-ax25-stack.sh: https://github.com/unix-ax25-stack/.github/blob/main/build-unix-ax25-stack.sh
-
-
+David Ranch KI6ZHD provided a build-script: build-unix-ax25-stack.sh:
 ```
-cd wampes.git; make install; cd ..
-for i in libax25.git ax25-apps.git ax25-tools.git; do
+  https://github.com/unix-ax25-stack/documentation/blob/main/build-unix-ax25-stack.sh
+```
+
+Then compile and install:
+```
+for i in libax25 ax25-apps ax25-tools; do
+  # linux:
   cd $i ; autoreconf --install --force ; ./configure --enable-userspace-ax25 --prefix=/usr --sysconfdir=/etc --localstatedir=/var --mandir=/usr/share/man; make clean; make install
-  # For first-time-install of the configuration files: make installconf
+  # macos
+  # cd $i ; autoreconf --install --force ; ./configure ; make install
+  # For first-time-install of the configuration files:
+  # make installconf
   cd ..
 done
+```
+
+If you like to use WAMPES' net ax25-stack:
+```
+cd wampes; make install; cd ..
 ```
 
 

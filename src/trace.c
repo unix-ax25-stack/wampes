@@ -30,6 +30,19 @@ static void showtrace(struct iface *ifp);
  */
 static char nospace[] = "No space!!\n";
 
+/* THE WORDS, and the order of the two numbers matters: the SECOND is what the
+ * word sets and the THIRD is what it clears.  "-input" sets 0 and clears IN,
+ * which is the whole meaning of the dash.
+ *
+ * "ascii" and "hex" are the two halves of one bit pair, so each clears the
+ * other: which one is wanted is a choice, not something to have both of.  The
+ * pair is not cosmetic, because dump() looks at IF_TRACE_ASCII FIRST and only
+ * falls through to IF_TRACE_HEX when ASCII is not set - with both bits set the
+ * ASCII dump wins, so a word that meant "hex" would deliver ASCII.
+ *
+ * "-hex" cleared nothing and set ASCII, which is the same mistake from the
+ * other side: it turned a hex trace into an ASCII one instead of off.
+ */
 struct tracecmd Tracecmd[] = {
 	{ "input",        IF_TRACE_IN,    IF_TRACE_IN },
 	{ "-input",       0,              IF_TRACE_IN },
@@ -42,7 +55,7 @@ struct tracecmd Tracecmd[] = {
 	{ "ascii",        IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX },
 	{ "-ascii",       0,              IF_TRACE_ASCII|IF_TRACE_HEX },
 	{ "hex",          IF_TRACE_HEX,   IF_TRACE_ASCII|IF_TRACE_HEX },
-	{ "-hex",         IF_TRACE_ASCII, IF_TRACE_ASCII|IF_TRACE_HEX },
+	{ "-hex",         0,              IF_TRACE_HEX },
 	{ "off",          0,              0xffff },
 	{ NULL,   0,              0 }
 };
@@ -177,7 +190,11 @@ struct mbuf **bpp)
 }
 /* Print a buffer up to 16 bytes long in formatted hex with ascii
  * translation, e.g.,
- * 0000: 30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f  0123456789:;<=>?
+ * 0000  30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f      0123456789:;<=>?
+ *                                  ^ the address is written as two bytes in
+ *                                  network order, so a frame longer than 255
+ *                                  bytes counts 0100, 0200 and not 100, 200
+ *                                  (Thomas).
  */
 static void
 fmtline(
@@ -225,6 +242,8 @@ void *p)
 {
 	struct iface *ifp;
 	struct tracecmd *tp;
+	const char *path = 0;
+	int i;
 
 	if(argc < 2){
 		for(ifp = Ifaces; ifp != NULL; ifp = ifp->next)
@@ -239,24 +258,54 @@ void *p)
 		showtrace(ifp);
 		return 0;
 	}
-	/* MODIFY THIS TO HANDLE MULTIPLE OPTIONS */
-	if(argc >= 3){
+	/* EVERY WORD COUNTS, and each is one of three things.
+	 *
+	 * "file=<path>" says where the trace goes.  It is the only way to say it,
+	 * and it is new: as a bare word the file used to be whatever followed the
+	 * FIRST option, so "trace foo in ascii output ascii" stored 0x0010, wrote
+	 * the trace into a file called "ascii" in the node's directory, and threw
+	 * "output" and the second "ascii" away without a word of complaint.  That
+	 * is the worst of both: a command that looks like it says three things,
+	 * says one, and leaves a file behind as evidence.
+	 *
+	 * A word from the table above sets and clears its bits.  A word beginning
+	 * with a digit is a trace word read as HEX - htoi() has always done that,
+	 * so "trace foo 111" stores 0x0111 and not 111: input, output and the
+	 * ASCII dump, which is a coincidence that made the number look like it
+	 * worked.  Said here because the next person to be surprised by it will
+	 * read it here and not in a comment about ASCII.
+	 *
+	 * Anything else is refused by name, because a word that is neither is
+	 * something the sysop meant and we did not understand, and silently
+	 * ignoring it is how "the trace does not work" becomes a mystery.
+	 */
+	for(i = 2; i < argc; i++){
+		if(!strncmp(argv[i],"file=",5)){
+			path = argv[i] + 5;
+			continue;
+		}
 		for(tp = Tracecmd;tp->name != NULL;tp++)
-			if(strncmp(tp->name,argv[2],strlen(argv[2])) == 0)
+			if(strncmp(tp->name,argv[i],strlen(argv[i])) == 0)
 				break;
 		if(tp->name != NULL)
 			ifp->trace = (ifp->trace & ~tp->mask) | tp->val;
-		else
-			ifp->trace = htoi(argv[2]);
+		else if(isdigit((unsigned char) argv[i][0]))
+			ifp->trace = htoi(argv[i]);
+		else{
+			printf("\"%s\" is not a trace option - "
+			       "trace <iface> [input|output|ascii|hex|raw|broadcast|off]\n"
+			       "                     [file=<path>]\n",argv[i]);
+			return 1;
+		}
 	}
 	if(ifp->trfp != NULL && ifp->trfp != stdout){
 		/* Close existing trace file */
 		fclose(ifp->trfp);
 	}
 	ifp->trfp = stdout;
-	if(argc >= 4){
-		if((ifp->trfp = fopen(argv[3],APPEND_TEXT)) == NULL){
-			printf("Can't write to %s\n",argv[3]);
+	if(path != NULL){
+		if((ifp->trfp = fopen(path,APPEND_TEXT)) == NULL){
+			printf("Can't write to %s\n",path);
 			ifp->trfp = stdout;
 		}else{
 			/* A trace file is something one watches while the node
@@ -286,7 +335,13 @@ showtrace(struct iface *ifp)
 		if(ifp->trace & IF_TRACE_NOBC)
 			printf(" - no broadcasts");
 
-		if(ifp->trace & IF_TRACE_HEX)
+		/* BOTH WORDS ARE TRUE OF A HALF-SET PAIR TOO, and saying only
+		 * one of them is how "hex" came to deliver ASCII: dump() reads
+		 * IF_TRACE_ASCII first, so ASCII wins when both are set.
+		 */
+		if((ifp->trace & IF_TRACE_ASCII) && (ifp->trace & IF_TRACE_HEX))
+			printf(" (ASCII, so the HEX dump is not used)");
+		else if(ifp->trace & IF_TRACE_HEX)
 			printf(" (Hex/ASCII dump)");
 		else if(ifp->trace & IF_TRACE_ASCII)
 			printf(" (ASCII dump)");
@@ -295,10 +350,15 @@ showtrace(struct iface *ifp)
 
 		if(ifp->trace & IF_TRACE_RAW)
 			printf(" Raw output");
-
-		printf("\n");
 	} else
-		printf(" tracing off\n");
+		printf(" tracing off");
+	/* AND THE NUMBER, which is the only part of this that cannot be wrong
+	 * about itself.  The words above cannot: a word that sets no direction
+	 * stores a value that traces nothing at all - "trace foo hex" is 0x0200
+	 * and not one line ever appears - and there is no way to see that from
+	 * the words alone.  ifconfig <iface> verbose prints the same number.
+	 */
+	printf("  trace 0x%04x\n",(unsigned) ifp->trace);
 }
 
 /* shut down all trace files */

@@ -43,7 +43,24 @@ $(LIBRARY): $(OBJS)
 
 install:;
 
-clean:; @rm -f *.o *.a configure.h configure.mak *~ \#*\#
+# clean removes what a build produces: the objects, the library and the
+# probe result in configure.h, which is regenerated from a compile test on
+# every build and so follows the platform and the flags.  It deliberately
+# keeps configure.mak, which is not build output but the recorded answer to
+# a question - it is the only place a TCPDIR that was not a default exists,
+# and "make clean; make" has to keep installing where the last build
+# installed.  Dropping it there would mean the one command an operator runs
+# between trying a change and keeping it forgets the change.
+#
+# distclean is the one that forgets.  It means "take this tree back to what a
+# fresh checkout looks like, and let the next build ask again", so a TCPDIR
+# that was not a default is gone and the platform default comes back.  Same
+# name as the autotools target, because it means the same thing: clean, plus
+# everything a configure run left behind.
+distclean: clean
+	@rm -f configure.mak
+
+clean:; @rm -f *.o *.a configure.h *~ \#*\#
 ###
 buildsaddr.o:\
 	buildsaddr.c\

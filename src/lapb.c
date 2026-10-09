@@ -15,6 +15,7 @@
 #include "slhc.h"
 #include "pidfilter.h"
 #include "framefilter.h"
+#include "trace.h"
 #include "xid.h"
 
 static void handleit(struct ax25_cb *axp,int pid,struct mbuf **bp);
@@ -2310,11 +2311,21 @@ struct mbuf **bpp
 ){
 	struct iface *ifp;
 	struct mbuf *bp;
+	int dpid = -1;
 
 	if(bpp == NULL){
 		bp = NULL;
 		bpp = &bp;
 	}
+	/* READ THE PROTOCOL ID WHILE IT IS STILL AT THE FRONT.  Only an I
+	 * frame carries one - its control octet has bit 0 clear - and for an
+	 * I frame from send_ax25() the pid is the first byte of the
+	 * information field, here, before the control field and then the
+	 * addresses are pushed in front of it.  A pure control frame has
+	 * none, and -1 lets it count as plain AX.25.
+	 */
+	if((ctl & 1) == 0 && *bpp != NULL && (*bpp)->cnt > 0)
+		dpid = (*bpp)->data[0];
 	/* Pushed first so that it ends up behind ctl, which is pushed next */
 	if(ctlx != -1){
 		pushdown(bpp,NULL,1);
@@ -2332,6 +2343,23 @@ struct mbuf **bpp
 			ifp = ifp->forw;
 		logsrc(ifp,ifp->hwaddr);
 		logdest(ifp,axp->hdr.nextdigi != axp->hdr.ndigis ? axp->hdr.digis[axp->hdr.nextdigi] : axp->hdr.dest);
+		/* WHICH OF THE THREE NUMBERS THIS FRAME BELONGS TO.  Answered
+		 * from the pid read on entry, the last moment it could be told
+		 * apart from data.
+		 *
+		 * An I frame carrying an IP datagram belongs to ipsndcnt: q_pkt()
+		 * counted the datagram before this frame existed.  One carrying
+		 * a segment belongs to whoever sliced the datagram - the sender
+		 * still knew what was inside, this frame only says PID_SEGMENT.
+		 *
+		 * Everything else is a plain AX.25 frame and is counted here:
+		 * every link control frame (SABM, UA, DM, RR, RNR, REJ), a
+		 * keepalive, own text, and each segment of it.  So "tot == ip +
+		 * ax25" holds.  A retransmission counts like any other; it is a
+		 * frame the driver counts in rawsndcnt too.
+		 */
+		if(dpid != PID_SEGMENT && !ax25_pid_is_ip(dpid))
+			ifp->ax25sndcnt++;
 		return (*ifp->raw)(ifp,bpp);
 	}
 	free_p(bpp);
@@ -2503,6 +2531,9 @@ struct mbuf **bpp
 				*bpp = axp->rxasm;
 				axp->rxasm = NULL;
 				pid = PULLCHAR(bpp);
+				/* The wire showed fragments; this is the
+				 * datagram they add up to. */
+				ax25_dump_reasm(axp->iface,&axp->hdr,pid,bpp);
 				handleit(axp,pid,bpp);
 			}
 		} else {
@@ -2568,8 +2599,11 @@ uint ssize              /* Max size of frame segments */
 		return NULL;
 	}
 	/* The segment counter is the first byte OF the information field, so
-	 * it comes out of paclen.  The PID_SEGMENT byte does not - that one
-	 * is header again.  Hence one, not two.
+	 * it comes out of paclen.  The PID_SEGMENT byte does not - §3.4: the
+	 * PID is not counted in the information field, it is header.  Hence
+	 * one, not two.  Appendix C6.1 instead reads its two octet header as
+	 * N1-2 octets of data and would charge both; we keep the extra byte
+	 * on purpose, see doc/AX25-MTU-SEGMENTATION.md.
 	 */
 	ssize -= 1;
 	segments = 1 + (len - 1) / ssize;       /* # segments  */
@@ -2674,6 +2708,24 @@ struct mbuf **bpp
 			break;
 	}
 	if(ipp->funct != NULL){
+		/* The counterpart of the ax25recvcnt++ in ax_recv(), and needed for
+		 * the same reason: that one counted the frame on its way in
+		 * before anything was known about it, and ip_route() inside the
+		 * handler below counts the datagram in iprecvcnt, so the same
+		 * frame would stand in both numbers.
+		 *
+		 * Once per DATAGRAM, not once per frame, and that is what makes
+		 * a segmented one come out right: the segments were counted
+		 * separately as they arrived, only the last of them carried the
+		 * frame through here, and so N frames leave N-1 in ax25recvcnt
+		 * against the one in iprecvcnt - which is what tot says.
+		 *
+		 * The pid is read from the reassembled data, which is the
+		 * point: it says nothing at all while the frame says
+		 * PID_SEGMENT.  See ax25_pid_is_ip().
+		 */
+		if(ax25_pid_is_ip(pid) && axp->iface != NULL)
+			axp->iface->ax25recvcnt--;
 		(*ipp->funct)(axp->iface,axp,axp->hdr.dest,axp->hdr.source,bpp,0);
 	}
 	else

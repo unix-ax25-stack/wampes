@@ -1949,6 +1949,20 @@ static void nrpipe_close_upcall(struct circuit *pc)
 
 /*---------------------------------------------------------------------------*/
 
+/* Why the last nrserv_listen_start() could not hand a session on.  Kept here,
+ * next to the reasons, so nrserv_state_upcall() - which is where it matters
+ * whether the session is dropped or the login takes over - can say it once,
+ * without a second pass over the same conditions.  Empty when no target is
+ * configured, or when the target took the session.
+ */
+
+static char nrserv_listen_why[160];
+
+const char *nrserv_listen_reason(void)
+{
+  return nrserv_listen_why;
+}
+
 int nrserv_listen_start(struct circuit *pc)
 {
 
@@ -1957,6 +1971,7 @@ int nrserv_listen_start(struct circuit *pc)
   struct axlisten *lp;
   struct axpipe *pp;
 
+  nrserv_listen_why[0] = '\0';
   if (!(lp = axlisten_netrom())) return 0;      /* nothing configured */
   if (lp->kind == LK_LOGIN) return 0;           /* the node's own login */
 
@@ -1965,7 +1980,11 @@ int nrserv_listen_start(struct circuit *pc)
 
     pax25(user, pc->cuser);
     pax25(node, pc->node);
-    if ((fd = axspawn_fd(lp, user, 1, "netrom", node, 0)) < 0) return 0;
+    if ((fd = axspawn_fd(lp, user, 1, "netrom", node, 0)) < 0) {
+      snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	       "the program %s did not start", lp->target);
+      return 0;
+    }
   }
 
   /* "client:<call>" - the session goes to the program holding that callsign,
@@ -1980,8 +1999,11 @@ int nrserv_listen_start(struct circuit *pc)
     struct axlisten *cp;
 
     if (!(cp = axlisten_find(lp->call, PID_NO_L3, 0)) ||
-	cp->kind != LK_CLIENT || cp->clientfd < 0)
+	cp->kind != LK_CLIENT || cp->clientfd < 0) {
+      snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	       "no client is holding %s", pax25(called, lp->call));
       return 0;
+    }
     /* The node the user sits on goes where a digipeater would, because that
      * is what it is: the way the call came.  parse_call() at the far end
      * reads it as one, so the program sees "DL1ABC-7 via DB0XYZ" calling
@@ -1991,10 +2013,19 @@ int nrserv_listen_start(struct circuit *pc)
     snprintf(line, sizeof(line), "netrom %s,%s > %s",
 	     pax25(user, pc->cuser), pax25(node, pc->node),
 	     pax25(called, lp->call));
-    if (axserv_handover(cp, line, &fd) < 0) return 0;
+    if (axserv_handover(cp, line, &fd) < 0) {
+      snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	       "the client holding %s did not take the session",
+	       pax25(called, lp->call));
+      return 0;
+    }
   }
 
-  if (!(pp = axpipe_new(lp, fd))) return 0;
+  if (!(pp = axpipe_new(lp, fd))) {
+    snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	     "the target %s could not be connected", lp->target);
+    return 0;
+  }
   pp->pc = pc;
   pc->user = (char *) pp;
   pc->r_upcall = nrpipe_recv_upcall;
@@ -2008,6 +2039,58 @@ int nrserv_listen_start(struct circuit *pc)
     append(&pp->sndq, &bp);
   }
   axpipe_start(pp);
+  return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Is a NET/ROM target configured that is not the node's own login?  The L4
+ * accept gate asks this.  A configured target is what makes the node
+ * responsible for incoming transport connections, exactly as a
+ * "listen ax25 add" entry is for AX.25; "start netrom" is only the login
+ * behind it, and an operator who just forwards to a program wants that
+ * login left off.
+ */
+int nrserv_listen_configured(void)
+{
+  struct axlisten *lp;
+
+  if (!(lp = axlisten_netrom())) return 0;
+  return lp->kind != LK_LOGIN;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Can the configured target take a session right now?  The accept gate in
+ * circuit_manager() asks this before it answers a connect request.  A
+ * "client:" target whose callsign nobody holds is a refusal we can see
+ * coming, and saying CHOKE there is cleaner than accepting and disconnecting
+ * at once: the caller never builds a circuit whose far side is already gone,
+ * and never has to be told to take it down again.
+ *
+ * A program or socket target is dialled only when the session arrives, so
+ * there is nothing to ask beforehand; it counts as ready and refuses in
+ * nrserv_listen_start() if the dial fails.  The node's own login is not a
+ * forwarding target - "start netrom" turns it on - so it never answers here.
+ *
+ * A "no" leaves its reason where nrserv_listen_reason() finds it, the same
+ * one the drop path prints, so both refusals read the same.
+ */
+int nrserv_listen_ready(void)
+{
+  char call[AXBUF];
+  struct axlisten *lp, *cp;
+
+  nrserv_listen_why[0] = '\0';
+  if (!(lp = axlisten_netrom())) return 0;
+  if (lp->kind != LK_CLIENT)
+    return lp->kind == LK_PROGRAM || lp->kind == LK_SOCKET;
+  if (!(cp = axlisten_find(lp->call, PID_NO_L3, 0)) ||
+      cp->kind != LK_CLIENT || cp->clientfd < 0) {
+    snprintf(nrserv_listen_why, sizeof(nrserv_listen_why),
+	     "no client is holding %s", pax25(call, lp->call));
+    return 0;
+  }
   return 1;
 }
 

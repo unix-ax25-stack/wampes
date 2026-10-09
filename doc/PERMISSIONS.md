@@ -207,6 +207,61 @@ what protects anything here.  What does need to be tighter than 755 is
 any file holding credentials - a property of the file, not of the
 directory, and it has to say so itself: 640 or 600, owned by root.
 
+### Where a group change leaves you, in practice
+
+`chgrp hams $TCPDIR/sockets` is the one line, and the mode it meets is
+worth looking at, because the group of a new directory is inherited and
+the two platforms inherit it differently.
+
+    0750  root:hams   the shape most stations want.  hams may traverse,
+                      find the socket and connect; nobody else may do
+                      any of the three
+
+    0710  root:hams   the same, less: hams may traverse and connect but
+                      not list, so the name of the socket stays unread-
+                      able to them as well
+
+    0755  root:staff   the accident macOS makes on its own.  `staff` is
+                      every local account, so 750 already admits
+                      everyone, and the "750 is restrictive" note in the
+                      Makefile is not true on that platform
+
+**0705 does not do what it looks like.**  It reads as "group nothing,
+world a little", and for a directory the group is where the people who
+are supposed to reach the node are.  `chgrp hams` at 0705 leaves hams
+with no access at all - the mode of the socket is then beside the point,
+because nobody in the group can reach the file to ask.  If the intent was
+"they may see that it exists", that is 0755 plus a socket the others
+cannot connect to, and that is a decision about the socket.
+
+What the directory mode actually does was measured on the same socket,
+same owner, only the directory changing:
+
+    0755  0750  0705  0710  0500    connect OK
+    0600  0400                        EACCES
+
+Two things fall out of that, and both are worth having been checked
+instead of assumed:
+
+* **`r` on the directory is not read by anything.**  `0500` - search and
+  no read, so the directory cannot even be listed - connects exactly as
+  well as `0755`.  Only `x` is consulted, and only along the path.
+* **`x` on every component, not just the last.**  `0600` is not a lock
+  on the directory, it is a lost node: the path cannot be walked, and
+  the socket's own `0666` never comes into it.  Which is also why the
+  mistake shows up as a plain `EACCES` and reads like a wrong group.
+
+`make install` does not perform the `chgrp`.  It cannot know who is meant
+to have the radio, and an install that reaches into the account database
+is not one anybody should want to have run by accident.  It also does not
+create the group.  So this is the one line a sysop has to think about
+once, by hand:
+
+    chgrp <group> $TCPDIR/sockets
+
+and if the result is that nothing connects afterwards, `0705` and a group
+that does not exist are the two things to look at first.
+
 ## What that admission is worth
 
 Everything above decides **who gets in**.  This is the other half, and a

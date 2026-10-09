@@ -39,7 +39,7 @@ data path.
 The service socket is `$TCPDIR/sockets/ax25` (mode 0660, group `hams` where
 that group exists), and the same service is reachable over TCP on 127.0.0.1
 and ::1 after `axsock tcp-listen on` (or `axsock tcp-listen port <n>`),
-default 8010, which is off unless `net.rc` asks for it.  It is a setting on
+default 8213, which is off unless `net.rc` asks for it.  It is a setting on
 `axsock` and not a `start`, because the Unix sockets are always there: what
 this switches on is a second way in, not the service.
 
@@ -88,7 +88,7 @@ the pid, both for a claim and for a connect.
 `libax25/wampes.c`, hooked into `axsock.c` at seven places.  Which ports it
 serves comes out of `wampes.conf`, see below.  The outgoing direction:
 
-* `socket(AF_AX25, …)` returns a placeholder descriptor - an unbound unix
+* `socket(AF_AX25, ...)` returns a placeholder descriptor - an unbound unix
   socket.  It has to be a real descriptor because the application gets the
   number now and the connection only exists later.
 * `bind()` carries two different things in one address.  `sax25_call` is the
@@ -99,7 +99,7 @@ serves comes out of `wampes.conf`, see below.  The outgoing direction:
 * `connect()` holds the conversation above and then `dup2()`s the real socket
   onto the number the application already has.  From there nothing of ours is
   in the way.
-* `setsockopt(SOL_AX25, …)` answers success and changes nothing.  The channel
+* `setsockopt(SOL_AX25, ...)` answers success and changes nothing.  The channel
   parameters belong to the node's interface configuration; a program that
   checks the return value must not be told its window size was refused.
 
@@ -124,10 +124,10 @@ callsigns, and every WAMPES interface has a callsign of its own anyway.  The
 two fit together without changing the file format.
 
 Where each node listens is named in `wampes.conf`, one node per line, in the
-shape `agwpe.conf` has:
+shape `ax25netd_agwpe.conf` has:
 
     wampes    /usr/local/wampes/sockets/ax25    the node on this machine
-    db0aaa    [fd00::5]:8010                    the club node, over IPv6
+    db0aaa    [fd00::5]:8213                    the club node, over IPv6
 
 That file is also what makes an entry a WAMPES entry.  A port belongs to a
 WAMPES node when the name before the colon appears there, so no name is
@@ -232,7 +232,7 @@ What preloading cannot reach, on either system:
 * setuid and setgid programs - the loader drops the variables in secure
   execution mode.  Run them as root without the setuid bit instead.
 * statically linked programs - there is nothing to override.
-* a program calling `syscall(SYS_socket, …)` directly.
+* a program calling `syscall(SYS_socket, ...)` directly.
 * on macOS additionally anything protected by SIP, which strips every
   `DYLD_*` variable.
 

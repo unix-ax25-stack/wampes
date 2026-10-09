@@ -24,6 +24,8 @@
 #include "lapb.h"
 #include "pidfilter.h"
 #include "framefilter.h"
+#include "timer.h"
+#include "trace.h"
 
 /* List of AX.25 multicast addresses in network format (shifted ascii).
  * Only the first entry is used for transmission, but an incoming
@@ -52,6 +54,45 @@ long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
 static int ax_user_to_user(struct iface *iface, struct ax25 *hdr,
 			   const uint8 *idest, const uint8 *isrc,
 			   struct mbuf **bpp);
+
+/*---------------------------------------------------------------------------*/
+
+/* TRAEGT DIESE PID EIN IP-DATAGRAMM?  Nicht "ist sie PID_IP" - das ist die
+ * Frage, an der die drei Zahlen eines AX.25-Ports haengen, und sie hat mehr
+ * als eine richtige Antwort.
+ *
+ * Ein Datagramm, das als PID_VJCOMP oder PID_VJUNCOMP ankommt, ist ein ganz
+ * gewoehnliches IP-Datagramm, nur Van-Jacobson-komprimiert: ax_rx_vjcomp()
+ * und ax_rx_vjuncomp() blasen es auf und geben es an ip_route(), und das
+ * zaehlt in ipsndcnt und iprecvcnt.  Wuerde man es hier fuer "kein IP"
+ * halten, stuende dasselbe Datagramm in ax25sndcnt UND in ipsndcnt, und die
+ * Summe waere um eins zu gross fuer jedes komprimierte TCP-Segment.  Die
+ * beiden stehen unter #ifdef AX25_VJCOMP in Axlink (config.c), und ohne die
+ * Zeilen hat das Frame keinen Handler und kommt in free_p() - dann ist es
+ * auch kein IP-Datagramm, deshalb die gleiche Bedingung hier.
+ *
+ * PID_ARP ist KEIN IP-Datagramm und steht deshalb nicht hier: axarp() faengt
+ * es, ohne dass iproute.c etwas zaehlt.  Es ist ein AX.25-Rahmen, der etwas
+ * anderes transportiert, und genau so soll ifconfig es zeigen.
+ *
+ * PID_SEGMENT steht auch nicht hier, und aus einem anderen Grund: es sagt
+ * nichts darueber aus, was in ihm ist (lapb.c, segmenter()).  Es traegt nie
+ * ein Datagramm, sondern die Stuecke eines - und die gehoeren in
+ * ipsndcnt/iprecvcnt, nicht in ax25sndcnt/ax25recvcnt.  segmenter() ist die
+ * einzige Stelle, die es erzeugt, und sie rechnet selbst.
+ */
+int
+ax25_pid_is_ip(
+int pid
+){
+	if(pid == PID_IP)
+		return 1;
+#ifdef	AX25_VJCOMP
+	if(pid == PID_VJCOMP || pid == PID_VJUNCOMP)
+		return 1;
+#endif
+	return 0;
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -184,9 +225,51 @@ uint8 tos
 	/* Insert the PID */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = pid;
+	if(!ax25_segments_pid(iface,pid)){
+		/* The operator has turned segmentation off for this port.  A
+		 * datagram that still fits goes as it always would; one that
+		 * does not cannot be sent - it may not be cut (an IP datagram
+		 * is not a byte stream) and there is no segmenter to carry it
+		 * - so it is dropped, as when segmenter() itself refuses.
+		 */
+		if(len_p(*bpp) > axp->paclen + 1){
+			free_p(bpp);
+			return -1;
+		}
+		tbp = *bpp;
+		*bpp = NULL;
+		return send_ax25(axp,&tbp,-1);
+	}
 	if((tbp = segmenter(bpp,axp->paclen)) == NULL){
 		free_p(bpp);
 		return -1;
+	}
+	/* SEGMENTED, AND THE SEGMENTS ARE COUNTED HERE BECAUSE ONLY HERE THE
+	 * COUNT IS STILL TO BE HAD.
+	 *
+	 * sendframe() deliberately ignores a frame whose pid is
+	 * PID_SEGMENT: the pid says nothing about what is in the frame, so
+	 * from there on nobody could tell a segmented IP datagram from a
+	 * segmented FlexNet one - and one of them belongs to ipsndcnt, the
+	 * other to ax25sndcnt.  Both have just been q_pkt()'d as IP
+	 * datagrams, and this is the last function that knows it.
+	 *
+	 * So the segments are counted here, ONE SHORT of their number.  The
+	 * datagram itself already stands in ipsndcnt, and "tot == ip +
+	 * ax25" can only hold if exactly one of its N frames is not counted
+	 * as AX.25 - and which of them that is carries no meaning, because
+	 * the far end throws them together before it looks at any.
+	 *
+	 * The common case is untouched: segmenter() hands a datagram back
+	 * whole when it fits the path (lapb.c, "Too small to segment"), and
+	 * then there is one segment, nothing is added here, and sendframe()
+	 * reads the real pid off the front of it.
+	 */
+	if(axp->iface != NULL){
+		uint nseg = len_q(tbp);
+
+		if(nseg > 1)
+			axp->iface->ax25sndcnt += nseg - 1;
 	}
 	return send_ax25(axp,&tbp,-1);
 }
@@ -399,6 +482,25 @@ struct mbuf **bpp
 
 	idest = (hdr->ndigis != 0 && hdr->nextdigi != hdr->ndigis) ?
 		hdr->digis[hdr->nextdigi] : hdr->dest;
+	/* The second UI exit, and counted the same way as axsend()'s - from
+	 * the pid argument, which is still in hand here.  This one is not
+	 * dead code with a single user: a DAMA master polls through it, and
+	 * remote_net.c sends a bridged datagram through it, and only the
+	 * first of those is certainly not an IP datagram.
+	 */
+	if(!ax25_pid_is_ip(pid)){
+		/* Counted BEFORE the DAMA deferral below, because that does not
+		 * cancel the frame, it postpones it: dama_ui_flush() hands
+		 * every queued frame to the driver later on, and by then the
+		 * pid is behind two address fields and unreadable.  Counting
+		 * after would leave the sum short by every frame that waited
+		 * for a poll window.
+		 */
+		if(iface->forw != NULL)
+			iface->forw->ax25sndcnt++;
+		else
+			iface->ax25sndcnt++;
+	}
 	if(iface->forw != NULL){
 		logsrc(iface->forw,iface->forw->hwaddr);
 		logdest(iface->forw,idest);
@@ -482,6 +584,28 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	struct iface *ifp;
 	uint8 *idest;
 	int rval;
+	int carries_ip;
+
+	/* Is this frame an IP datagram in an AX.25 envelope, or a plain AX.25
+	 * frame?  Asked HERE, on entry, because this is the last moment the
+	 * pid can still be read off the front: ax_output() pushed it there
+	 * and pushdown() below moves the addresses in front of it.  Further
+	 * down it is indistinguishable from a keepalive's.
+	 *
+	 * The answer goes to ifp->ax25sndcnt, the AX.25 half of "tot".  It is
+	 * read here rather than in ax_output() because ax_output() can hand
+	 * this function more than one frame to send - the "collision domain"
+	 * patch builds a frame per digipeater for a multicast - and each of
+	 * them is a frame on the wire, each counted in the driver's rawsndcnt,
+	 * so each needs its turn of the counter.  Counting on entry to
+	 * ax_output() would have made the sum short by one per digipeater.
+	 *
+	 * A PID_IP frame is an IP datagram: it belongs to ipsndcnt, which
+	 * q_pkt() counted before ax_output() ever saw it.  Everything else -
+	 * PID_NO_L3 from a "connect", a keepalive, whatever a program sent -
+	 * is a plain AX.25 frame.
+	 */
+	carries_ip = (*bpp != NULL && ax25_pid_is_ip((*bpp)->data[0]));
 
 	/* If the source addr is unspecified, use the interface address */
 	if(source[0] == '\0')
@@ -526,6 +650,12 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	if(iface->forw != NULL){
 		logsrc(iface->forw,iface->forw->hwaddr);
 		logdest(iface->forw,idest);
+		/* Counted on the interface that puts the frame on the wire -
+		 * the one whose driver will bump rawsndcnt - and not on iface,
+		 * which only passes it on.
+		 */
+		if(!carries_ip)
+			iface->forw->ax25sndcnt++;
 		rval = (*iface->forw->raw)(iface->forw,bpp);
 	} else {
 		logsrc(iface,iface->hwaddr);
@@ -536,6 +666,8 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 		 */
 		if(dama_defer_ui(iface,bpp))
 			return 0;
+		if(!carries_ip)
+			iface->ax25sndcnt++;
 		rval = (*iface->raw)(iface,bpp);
 	}
 	return rval;
@@ -633,6 +765,232 @@ struct mbuf *bp
 	return axroute_learnable(ctl, pid);
 }
 
+/*---------------------------------------------------------------------------*/
+
+/* UI reassembly.  A segmented datagram says nothing about what it carries -
+ * the segment's pid is 0x08 and the real one travels in the first segment -
+ * so the pieces are joined here, before the pid gate and before any
+ * consumer, exactly as procdata() does it for a connection.  The difference
+ * is the state: a UI frame has no control block, so there is one reassembly
+ * per (destination, source) pair instead of one per link.
+ *
+ * TR210 is 60 seconds, restarted by every in-order segment, so a stalled
+ * reassembly cannot hold its buffer for ever.  Out-of-order is fatal: UI
+ * offers no retransmission to close a gap, and the segment counter cannot
+ * ask for a missing piece.  When a sequence goes wrong, the whole thing -
+ * including anything already collected - is dropped, as in connected mode.
+ */
+struct axreasm {
+	struct axreasm *next;
+	struct timer timer;             /* TR210 */
+	uint8 dest[AXALEN];
+	uint8 source[AXALEN];
+	int segremain;                  /* Segments still to come */
+	struct mbuf *rxasm;             /* Data collected so far */
+};
+
+#define AXREASM_TR210   60000L          /* ms */
+
+static struct axreasm *Axreasmq;
+
+static struct axreasm *
+axreasm_lookup(
+const uint8 *dest,
+const uint8 *source
+){
+	struct axreasm *rp;
+
+	for(rp = Axreasmq;rp != NULL;rp = rp->next)
+		if(addreq(rp->dest,dest) && addreq(rp->source,source))
+			return rp;
+	return NULL;
+}
+
+static void
+axreasm_free(
+struct axreasm *rp
+){
+	struct axreasm *p;
+	struct axreasm *prev = NULL;
+
+	for(p = Axreasmq;p != NULL;prev = p,p = p->next)
+		if(p == rp)
+			break;
+	if(p == NULL)
+		return;                 /* not on the list */
+	stop_timer(&rp->timer);
+	if(prev != NULL)
+		prev->next = rp->next;
+	else
+		Axreasmq = rp->next;
+	free_p(&rp->rxasm);
+	free(rp);
+}
+
+static void
+axreasm_timeout(
+void *arg
+){
+	axreasm_free((struct axreasm *)arg);
+}
+
+/* Feed one UI segment to the reassembler.  Returns 0 when the frame was
+ * consumed here (the sequence is still incomplete, or it was discarded),
+ * and 1 when a complete datagram is ready: *bpp then holds the payload and
+ * *pidp the protocol id that travelled in its first segment.  The joined
+ * datagram is traced here, where it exists for the first time.
+ */
+static int
+ax25_ui_reasm(
+struct iface *iface,
+struct ax25 *hdr,
+int *pidp,
+struct mbuf **bpp
+){
+	struct axreasm *rp;
+	int pid;
+	int seq;
+
+	if((seq = PULLCHAR(bpp)) == -1)
+		return 0;               /* Counter missing: nothing to join */
+
+	rp = axreasm_lookup(hdr->dest,hdr->source);
+
+	if(seq & SEG_FIRST){
+		/* A new sequence.  A leftover one for the same pair never
+		 * finished, or this is a duplicate first segment; either
+		 * way it is superseded and goes. */
+		if(rp != NULL)
+			axreasm_free(rp);
+		if((rp = calloc(1,sizeof *rp)) == NULL){
+			free_p(bpp);
+			return 0;
+		}
+		memcpy(rp->dest,hdr->dest,AXALEN);
+		memcpy(rp->source,hdr->source,AXALEN);
+		rp->segremain = seq & SEG_REM;
+		rp->rxasm = *bpp;
+		*bpp = NULL;
+		set_timer(&rp->timer,AXREASM_TR210);
+		rp->timer.func = axreasm_timeout;
+		rp->timer.arg = rp;
+		start_timer(&rp->timer);
+		rp->next = Axreasmq;
+		Axreasmq = rp;
+	} else {
+		/* A continuation, and it has to be the next one. */
+		if(rp == NULL || (seq & SEG_REM) != rp->segremain - 1){
+			if(rp != NULL)
+				axreasm_free(rp);
+			free_p(bpp);
+			return 0;
+		}
+		append(&rp->rxasm,bpp);
+		rp->segremain = seq & SEG_REM;
+		stop_timer(&rp->timer);
+		start_timer(&rp->timer);
+	}
+
+	if(rp->segremain != 0)
+		return 0;               /* More to come */
+
+	/* Complete.  The real protocol id is the first byte of the joined
+	 * data, exactly as the segmenter wrote it. */
+	*bpp = rp->rxasm;
+	rp->rxasm = NULL;
+	axreasm_free(rp);
+	if((pid = PULLCHAR(bpp)) == -1)
+		return 0;               /* Nothing but a pid: drop it */
+	*pidp = pid;
+	ax25_dump_reasm(iface,hdr,pid,bpp);
+	return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Cut a repeated UI frame to the outgoing port's paclen.
+ *
+ * *bpp is the headerless frame as ntohax25() left it - control, pid, data.
+ * The result is a queue of frames of that same shape, one per segment, each
+ * still without its header: ax_recv() builds the header per frame, because
+ * only it knows which digi the frame leaves by.  NULL means nothing can go.
+ *
+ * Only UI is a datagram that may be cut; an I-frame is LAPB and must not be
+ * turned into UI fragments, so it is handed back unchanged.  A frame that
+ * already carries a segment header is not cut again either: its counter says
+ * how many follow and cannot be recounted, so such a frame either fits the
+ * outgoing paclen or is dropped.  That is the one place the splitter must not
+ * fire twice - see doc/AX25-MTU-SEGMENTATION.md.
+ */
+static struct mbuf *
+ax25_repeat_segments(
+struct iface *ifp,
+struct mbuf **bpp
+){
+	uint paclen = ifp->paclen ? ifp->paclen : Paclen;
+	struct mbuf *list;
+	struct mbuf *head = NULL;
+	struct mbuf *tail = NULL;
+	struct mbuf *seg;
+	uint8 control;
+
+	if(*bpp == NULL)
+		return NULL;
+	control = (*bpp)->data[0];
+
+	if((control & ~PF) != UI){
+		/* Not a datagram: repeated as it came, in one piece. */
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+		return list;
+	}
+	/* The control byte is the same on every fragment and is not part of
+	 * what the segmenter cuts, so it comes off and goes back on in front.
+	 */
+	(void) PULLCHAR(bpp);
+	if(*bpp == NULL){
+		/* A control byte and nothing else: can only go as it is. */
+		pushdown(bpp,NULL,1);
+		(*bpp)->data[0] = control;
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+		return list;
+	}
+	if((*bpp)->data[0] == PID_SEGMENT){
+		/* Already cut, and it stays that way.  len_p() counts the
+		 * segment's pid, which is header, so the information field that
+		 * paclen bounds is one byte shorter.
+		 */
+		if(len_p(*bpp) > paclen + 1){
+			free_p(bpp);
+			return NULL;
+		}
+		list = *bpp;
+		*bpp = NULL;
+		list->anext = NULL;
+	} else {
+		if((list = segmenter(bpp,paclen)) == NULL)
+			return NULL;
+	}
+	/* Put the control byte back in front of every fragment.  pushdown()
+	 * may replace the head, so the anext chain is rebuilt by hand rather
+	 * than walked while it is being changed.
+	 */
+	while((seg = dequeue(&list)) != NULL){
+		pushdown(&seg,NULL,1);
+		seg->data[0] = control;
+		seg->anext = NULL;
+		if(tail != NULL)
+			tail->anext = seg;
+		else
+			head = seg;
+		tail = seg;
+	}
+	return head;
+}
+
 /* Process incoming AX.25 packets.
  * After optional tracing, the address field is examined. If it is
  * directed to us as a digipeater, repeat it.  If it is addressed to
@@ -648,6 +1006,26 @@ struct mbuf **bpp
 	uint8 (*mpp)[AXALEN];
 	int mcast;
 	uint8 *isrc,*idest;     /* "immediate" source and destination */
+
+	/* THE INCOMING HALF OF ifp->ax25recvcnt, and counted HERE rather than in
+	 * every driver for two reasons.
+	 *
+	 * ax_recv() is the rcvf of every AX.25 port there is - the seven serial
+	 * ones out of config.c, and axip/axudp, axtcp/kisstcp and bpqether by
+	 * way of setencap(ifp, "AX25UI") - so this is the one place where the
+	 * whole family passes.  The alternative is eight driver hooks and a
+	 * ninth port type later nobody remembers.
+	 *
+	 * It is counted before ANY check, because iface.c has already counted
+	 * the frame in ifp->rawrecvcnt, and the two have to agree: a frame
+	 * with a broken header, a frame for somebody else, and our own echo
+	 * all stand in "tot", and the sum has to hold for them too.  So the
+	 * count goes up first and comes down again below, in the one place
+	 * where it turns out to be an IP datagram - a frame that carries one
+	 * belongs in iprecvcnt instead, and the reader is entitled to see
+	 * that only one of the two counters moved.
+	 */
+	iface->ax25recvcnt++;
 
 	/* Loop-Schutz: ein UI-Rahmen, den wir selbst gerade byte-identisch
 	 * ausgesendet haben, ist unser Echo (Bruecke, Digi, Datagramm-Loop).
@@ -764,6 +1142,8 @@ struct mbuf **bpp
 			   addreq(hdr.source, hdr.dest)) {
 				struct iface *ifp;
 				struct iface *sel;   /* Repeat-Interface (1. Auswahl) */
+				struct mbuf *frames;  /* Warteschlange der Segmente */
+				struct mbuf *f;
 				int kp;         /* keep the path? */
 				int dout;       /* output interface choice */
 				/* DER WEG, WIE DIE FRAGE ANKAM - fuer den Fall,
@@ -796,6 +1176,7 @@ struct mbuf **bpp
 				 * auf, weil A an Bs eigenem Port haengt.
 				 */
 				struct ax25 arrived = hdr;
+				int isui;       /* control byte == UI */
 
 				/* Per-port or global digiout: normal picks an
 				 * interface from the routing table; same-iface keeps
@@ -848,15 +1229,17 @@ struct mbuf **bpp
 					axroute(&hdr, &ifp, 0);
 					ifp = sel;      /* ... erhaelt es */
 				}
-				htonax25(&hdr,bpp);
-				/* Loop-Schutz: das Wiederholen ist unsere Aussendung -
-				 * merke sie genauso wie jede andere, sonst kaeme ein
-				 * inkarnationstreuer Rueckkehrer des Digis wieder herein.
-				 * Nur UI: ein via-digi leitet auch I-Rahmen weiter und die
-				 * Wiederholung davon ist LAPB-Timing, kein Echo.
+				/* Repeating does not exempt a frame from the
+				 * outgoing port's paclen.  A packet that was not
+				 * segmented when it arrived is cut here; one that
+				 * already carries a segment header is left alone,
+				 * or dropped when it does not fit.  See
+				 * doc/AX25-MTU-SEGMENTATION.md.
+				 *
+				 * The control byte is still first here - the header
+				 * goes on per frame below, because each frame needs
+				 * its own copy of it.
 				 */
-				if(*bpp && control == UI)
-					ax_dup_remember(ax_fingerprint(*bpp));
 				/* AX.25 2.2 over the DIGIPEATED LEG (point D).
 				 *
 				 * Only at digipeat 2 (not at 1: there the frame
@@ -1233,19 +1616,46 @@ struct mbuf **bpp
 						}
 					}
 				}
-				if (ifp && *bpp) {
-					/* *bpp: point D may have swallowed the
-					 * frame on the way here, and a frame
-					 * we did not send is not one to log
-					 * as sent. */
+				isui = (*bpp && (*(*bpp)->data & ~PF) == UI);
+				frames = ifp ? ax25_repeat_segments(ifp,bpp) : NULL;
+				if(ifp == NULL)
+					free_p(bpp);
+				while((f = dequeue(&frames)) != NULL){
+					htonax25(&hdr,&f);
+					/* Loop-Schutz: das Wiederholen ist unsere
+					 * Aussendung - merke sie genauso wie jede
+					 * andere, sonst kaeme ein inkarnationstreuer
+					 * Rueckkehrer des Digis wieder herein.  Nur UI:
+					 * ein via-digi leitet auch I-Rahmen weiter und
+					 * die Wiederholung davon ist LAPB-Timing, kein
+					 * Echo.
+					 */
+					if(isui)
+						ax_dup_remember(ax_fingerprint(f));
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
+					/* A frame WE repeat is a frame we SEND, and
+					 * the interface it leaves by counts it as
+					 * one - so its own ax25sndcnt has to move as
+					 * well, or the sum tot == ip + ax25 on that
+					 * port goes wrong by exactly the frames this
+					 * digipeater repeated.  Every segment is such
+					 * a frame, so a cut datagram counts once per
+					 * segment.
+					 *
+					 * Before the DAMA test rather than inside
+					 * it, for the reason given in
+					 * ax_send_ui(): a deferred frame is
+					 * still a frame that goes out.
+					 */
+					ifp->ax25sndcnt++;
 					/* Nur UI wird hier ueberhaupt wiederholt
 					 * (digipeat 2); auf einem DAMA-Kanal
 					 * darf auch das auf das Fenster warten.
 					 */
-					if(!dama_defer_ui(ifp,bpp))
-						(*ifp->raw)(ifp, bpp);
+					if(!dama_defer_ui(ifp,&f))
+						(*ifp->raw)(ifp, &f);
+					free_p(&f);
 				}
 			} else {
 				lapb_input(iface,&hdr,bpp);
@@ -1307,6 +1717,15 @@ struct mbuf **bpp
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
 			return;         /* No PID */
+		/* A segmented datagram is put back together before anything
+		 * else looks at it.  The segment's own pid says nothing about
+		 * what it carries - that is the whole point of it - so a port
+		 * gate or a consumer asked here would be shown PID_SEGMENT
+		 * and never see the real datagram.  The joined whole then
+		 * travels the ordinary path below, under its true pid.
+		 */
+		if(pid == PID_SEGMENT && !ax25_ui_reasm(iface,&hdr,&pid,bpp))
+			return;
 		/* Does this protocol get in here at all?  Above everything
 		 * else, clients included: a port gate is about the port.  We
 		 * are past digipeating at this point, so what is merely
@@ -1329,9 +1748,23 @@ struct mbuf **bpp
 			if(ipp->pid == pid)
 				break;
 		}
-		if(ipp->funct != NULL)
+		if(ipp->funct != NULL){
+			/* An IP datagram in an AX.25 frame is counted by
+			 * ip_route() in iprecvcnt, so the count we put up on
+			 * the way in has to come back down - otherwise the same
+			 * frame stands in both numbers and the sum the reader
+			 * checks counts it twice.
+			 *
+			 * Only here and not at the pid: a datagram client that
+			 * claimed this pid above is NOT ip_route(), and nobody
+			 * has counted such a frame in iprecvcnt.  And only when
+			 * there is a handler at all - a frame that ends in
+			 * free_p() has not been an IP datagram for anybody.
+			 */
+			if(ax25_pid_is_ip(pid))
+				iface->ax25recvcnt--;
 			(*ipp->funct)(iface,NULL,hdr.source,hdr.dest,bpp,mcast);
-		else
+		} else
 			free_p(bpp);
 		return;
 	}
@@ -1833,7 +2266,7 @@ uint32 ax_fingerprint_data(const uint8 *data, int len)
 }
 
 /* Ist der Rahmen ein UI (Datagramm)?  Laeuft durch das Adressfeld bis zum
- * Kontrollbyte und prüft es - den ganzen Kopf zu bauen nur fuer diese Frage
+ * Kontrollbyte und prueft es - den ganzen Kopf zu bauen nur fuer diese Frage
  * waere verschwendet.  Nur UI wird auf Inhalt verworfen: connected-mode
  * sendet identische Wiederholungen (RR+/I/SABM) als Protokoll-Timing, die
  * duerfen nie unter die Inkarnation-Logik fallen.
@@ -1914,20 +2347,23 @@ struct mbuf **bpp
 		return 0;               /* woanders zuhause, und keine Bruecke dorthin */
 	if(out->raw == NULL)
 		return 0;
-	/* Wie in ax_recv(): nach htonax25() zeigt data[] auf den Kopf. */
 	{
-		int is_ui = *bpp != NULL && (*(*bpp)->data & ~PF) == UI;
+		/* Das Kontrollbyte ist jetzt noch das erste; htonax25()
+		 * schiebt gleich den Kopf davor.  Der Echo-Test unten muss es
+		 * also vorher abgreifen - hinterher laese er das erste
+		 * Adressbyte und traefe nie.
+		 */
+		uint8 control = (*bpp != NULL) ? (*bpp)->data[0] : 0;
 
 		htonax25(hdr,bpp);
-		if(is_ui){
+		if(*bpp != NULL && (control & ~PF) == UI){
 			uint32 h = ax_fingerprint(*bpp);
 
-			/* SCHON EINMAL VON UNS GEWESEN - das ist unser
-			 * Echo, und weiterreichen waere die Schleife.  Der
-			 * Rahmen wird verworfen: der Aufrufer tut das, wenn
-			 * wir 0 liefern.  Nur UI: ein I- oder RR+-
-			 * Doppelschlag ist Protokoll-Timing der
-			 * LAPB-Endstellen, nicht unsere Schleife.
+			/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
+			 * weiterreichen waere die Schleife.  Der Rahmen wird
+			 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
+			 * Nur UI: ein I- oder RR+-Doppelschlag ist Protokoll-Timing
+			 * der LAPB-Endstellen, nicht unsere Schleife.
 			 */
 			if(ax_dup_recent(h))
 				return 0;
@@ -1936,6 +2372,12 @@ struct mbuf **bpp
 	}
 	logsrc(out,out->hwaddr);
 	logdest(out,(uint8 *)idest);
+	/* A bridge between two AX.25 ports: whatever the frame carried, it
+	 * leaves this port as an AX.25 frame, and ip_proc() never had a hand
+	 * in it - on the input side it was already counted in iface->ax25recvcnt,
+	 * and this is its counterpart for the output side.
+	 */
+	out->ax25sndcnt++;
 	(*out->raw)(out,bpp);
 	return 1;
 }

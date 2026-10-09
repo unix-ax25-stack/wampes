@@ -158,3 +158,5 @@ int time1(int argc,char *argv[],void *p);
 int tun_attach(int argc,char *argv[],void *p);
 
 #endif  /* _COMMANDS_H */
+int axtcp_attach(int argc,char *argv[],void *p);
+int kisstcp_attach(int argc,char *argv[],void *p);

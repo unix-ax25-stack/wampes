@@ -44,6 +44,7 @@ static int domycall(int argc,char *argv[],void *p);
 static int don2(int argc,char *argv[],void *p);
 static int dopaclen(int argc,char *argv[],void *p);
 static int dopthresh(int argc,char *argv[],void *p);
+static int dosegmentation(int argc,char *argv[],void *p);
 static int dot1(int argc,char *argv[],void *p);
 static int dot2(int argc,char *argv[],void *p);
 static int dot3(int argc,char *argv[],void *p);
@@ -150,6 +151,15 @@ static struct cmds Axcmds[] = {
 	{ "reset",        doaxreset,      0, 2, "ax25 reset <axcb>" },
 	{ "retry",        don2,           0, 0, NULL },
 	{ "route",        doaxroute,      0, 0, NULL },
+	{ "segmentation", dosegmentation, 0, 0,
+	  "ax25 segmentation off|on|exempt-l3\n"
+	  "  Whether the node segments its OWN packets when the MTU is larger\n"
+	  "  than paclen.  off: never.  on: every protocol.  exempt-l3: every\n"
+	  "  protocol except plain text (PID 0xf0) - the default.\n"
+	  "  Received segments are always reassembled, and a repeated frame is\n"
+	  "  always segmented to fit the outgoing port; neither is configured\n"
+	  "  here.  A port can override this with\n"
+	  "  \"ifconfig <iface> segmentation\"." },
 	{ "status",       doaxstat,       0, 0, NULL },
 	{ "t1",           dot1,           0, 0, NULL },
 	{ "t2",           dot2,           0, 0, NULL },
@@ -298,7 +308,15 @@ struct iface *ifp)
 	struct lq *lp,*lp1;
 	struct ld *ld,*ld1;
 
+	/* The SEND counters, all three, and not only "tot" as it was before
+	 * ax25sndcnt existed.  Zeroing the total on its own left the sum
+	 * rawsndcnt == ipsndcnt + ax25sndcnt false from the next packet on,
+	 * which is exactly the one moment a reader checks it - right after
+	 * he cleared it and wants to see it grow again.
+	 */
 	ifp->rawsndcnt = 0;
+	ifp->ipsndcnt = 0;
+	ifp->ax25sndcnt = 0;
 	for(lp = Lq;lp != NULL;lp = lp1){
 		lp1 = lp->next;
 		free(lp);
@@ -645,6 +663,30 @@ void *p)
 		}
 		Xid_probe_time = minutes * 60;
 	}
+	return 0;
+}
+/* Whether the node segments its own packets - see ax25.h.  off: never;
+ * on: every protocol; exempt-l3: every protocol except plain text (PID
+ * 0xf0), which is the default.  This is the node default; a port can
+ * override it with "ifconfig <iface> segmentation".
+ */
+static int
+dosegmentation(
+int argc,
+char *argv[],
+void *p)
+{
+	int mode;
+
+	if(argc < 2){
+		printf("Segmentation: %s\n", axseg_name(Ax25_segmentation));
+		return 0;
+	}
+	if((mode = axseg_word(argv[1])) == 0){
+		printf("Valid options: off on exempt-l3\n");
+		return 1;
+	}
+	Ax25_segmentation = mode;
 	return 0;
 }
 /* Set limit on retransmission backoff */

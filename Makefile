@@ -43,13 +43,34 @@ complete:; @-chmod 755 cc
 install: all
 	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
+	@. lib/configure.mak; $(MAKE) _doc
 	@. lib/configure.mak; $(MAKE) _secure
 
 install-complete: complete
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i install ); fi
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
+	@. lib/configure.mak; $(MAKE) _doc
 	@. lib/configure.mak; $(MAKE) _secure
+
+# The documentation belongs next to the node, not only in the source tree:
+# a sysop who has just run install and is now wondering who may use the
+# transmitter should not have to find a source checkout to find out.  Mode
+# 0755 like the other directories, which _secure fixes up afterwards, and
+# the files are world readable - they describe the node, and nothing here
+# is a secret.
+_doc:
+	@if [ -z "$(TCPDIR)" ]; then \
+		echo "TCPDIR is empty - run make at the top level"; exit 1; fi
+	@if [ ! -d doc ]; then \
+		echo "no doc directory, nothing to install"; exit 0; fi
+	@mkdir -p $(TCPDIR)/doc
+	@for f in doc/*.md doc/*.txt; do \
+		test -f "$$f" || continue; \
+		echo " cp $$f $(TCPDIR)/doc/"; \
+		cp "$$f" "$(TCPDIR)/doc/" || exit 1; \
+		chmod 644 "$(TCPDIR)/doc/`basename $$f`"; \
+	done
 
 # The node usually runs as root, and it reads net.rc, in which "!" runs a
 # shell command.  Anything under TCPDIR that a non-root user may write is
@@ -161,6 +182,16 @@ distrib:
 
 clean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i clean ); done
 	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i clean ); fi
+	@-rm -f wampes-??????.t*
+	@-find . -name .pure -exec rm {} \;
+	@-find . -name .trimtime -exec rm {} \;
+# Everything clean does, plus the recorded configure answers.  Only lib runs
+# a configure, so it is the only one with a distclean that does more than
+# clean; the other directories answer distclean with clean, which is all it
+# means for them.  Every directory in DIRS has the target, so this needs no
+# fallback and no silenced errors.
+distclean:; @-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i distclean ); done
+	@-if [ -d tools ]; then  ( cd tools; $(MAKE) -i distclean ); fi
 	@-rm -f wampes-??????.t*
 	@-find . -name .pure -exec rm {} \;
 	@-find . -name .trimtime -exec rm {} \;

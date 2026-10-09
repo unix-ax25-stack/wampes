@@ -85,7 +85,11 @@ static int ipip_send(struct mbuf **bpp, struct iface *ifp, int32 gateway, uint8 
   } else
     addr.sin_port = htons(edv->port);
 
-  sendto(edv->fd, buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
+  /* One socket, always: this tunnel is IPv4 only and "attach ipip" has no
+   * bind= to make a second one out of.  It is in the list anyway, so that the
+   * struct is one struct - a second field saying "the fd" next to a list saying
+   * which fd is one field too many. */
+  sendto(edv->socks->fd, buf, l, 0, (struct sockaddr *) &addr, sizeof(addr));
 
   return l;
 }
@@ -110,7 +114,8 @@ static void ipip_receive(void *argp)
   ifp = (struct iface *) argp;
   edv = (struct edv_t *) ifp->edv;
   addrlen = sizeof(addr);
-  l = recvfrom(edv->fd, (char *) (bufptr = buf), sizeof(buf), 0, (struct sockaddr *) &addr, &addrlen);
+  l = recvfrom(edv->socks->fd, (char *) (bufptr = buf), sizeof(buf), 0,
+	       (struct sockaddr *) &addr, &addrlen);
   if (edv->type == USE_IP) {
     /* cast: l is int and recvfrom() returns -1 on error, which against an
      * unsigned sizeof would convert to SIZE_MAX and pass the test. */
@@ -294,8 +299,11 @@ int ipip_attach(int argc, char *argv[], void *p)
    * malloc() no learned source port would ever be dropped again.
    */
   edv->dport = dport;
-  edv->fd = fd;
-  edv->family = AF_INET;
+  edv->socks = (struct axip_sock *) malloc(sizeof(struct axip_sock));
+  memset(edv->socks, 0, sizeof(*edv->socks));
+  edv->socks->ifp = ifp;
+  edv->socks->fd = fd;
+  edv->socks->family = AF_INET;
   edv->uhnp = 0;
   edv->uhnp_time = secclock();
   ifp->edv = edv;

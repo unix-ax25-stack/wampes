@@ -267,6 +267,89 @@ struct sockaddr *build_sockaddr(const char *name, int *addrlen)
 
 /*---------------------------------------------------------------------------*/
 
+/* Split "host", "host:service", "[host]" or "[host]:service" into its parts.
+ *
+ * The brackets mean here what they mean in build_sockaddr(): they keep a
+ * literal's own colons apart from the one in front of the service, and they ask
+ * for IPv6.  host comes back WITHOUT them, because getaddrinfo() does not take
+ * them - it wants "::1", not "[::1]" - and a caller that kept them would see
+ * "Cannot resolve" for an address that is perfectly good.
+ *
+ * serv is "" when the spelling carried no service.  Returns 0 on success and -1
+ * when the spelling cannot be split unambiguously.  The one spelling that cannot
+ * be is a bare "2001:db8::1:3600": there is no way to tell the port from the
+ * literal, and splitting at the last colon hands back "::1:3600" - silently
+ * wrong, and wrong in the direction that costs an afternoon.  So it is refused,
+ * and the caller can say to write [2001:db8::1]:3600 instead.
+ */
+int build_hostport(const char *arg, char *host, size_t hostsz, char *serv,
+    size_t servsz, int *family)
+{
+
+  const char *colon;
+  size_t len;
+
+  if (!arg || !*arg || !host || !serv || !hostsz || !servsz) return -1;
+  host[0] = 0;
+  serv[0] = 0;
+  if (family) *family = AF_UNSPEC;
+
+  if (*arg == '[') {
+    /* Only the service's colon may follow the closing bracket - not another
+     * bracket, not a second address.
+     */
+    const char *end = strchr(arg, ']');
+
+    if (!end || (end[1] != ':' && end[1] != '\0')) return -1;
+    len = end - arg - 1;
+    if (len >= hostsz) return -1;
+    memcpy(host, arg + 1, len);
+    host[len] = 0;
+    if (strchr(host, '[') || strchr(host, ']')) return -1;
+    /* Past the service's colon, or nowhere: the unbracketed branch below
+     * leaves colon in the same place, and both are copied the same way.
+     */
+    colon = end[1] ? end + 2 : 0;
+#if HAS_AF_INET6
+    if (family) *family = AF_INET6;
+#else
+    /* Built without IPv6: the brackets stay a way of writing here, and the
+     * name behind them is looked up the way it always was.  Saying AF_INET6
+     * would only hand the resolver a family it has nothing for.
+     */
+#endif
+  } else {
+    colon = strchr(arg, ':');
+    if (colon && strchr(colon + 1, ':'))
+      return -1;               /* a bare IPv6 literal - it needs brackets */
+    if (colon) {
+      len = colon - arg;
+      if (len >= hostsz) return -1;
+      memcpy(host, arg, len);
+      host[len] = 0;
+      colon++;
+    } else {
+      len = strlen(arg);
+      if (len >= hostsz) return -1;
+      memcpy(host, arg, len + 1);
+    }
+  }
+
+  if (!*host) return -1;
+  if (colon) {
+    /* "host:" is not a service, and treating it as the default port would be
+     * a guess about what the sysop meant.
+     */
+    if (!*colon) return -1;
+    len = strlen(colon);
+    if (len >= servsz) return -1;
+    memcpy(serv, colon, len + 1);
+  }
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
 /* Work out family and address, then build the matching sockaddr and put the
  * port into the right field.  Shared by both entry points above.
  */

@@ -74,6 +74,7 @@ $(TCPDIR)/bbs/bbs_import: bbs_import
 	$(RMTARGET)
 	cp $? $@
 
+distclean:; @$(MAKE) clean
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
 bbs_import.o:\

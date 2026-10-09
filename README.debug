@@ -2,8 +2,7 @@ Debug and sanitizer builds
 ==========================
 
 lib/configure honours three environment variables.  All of them are unset by
-default, so a plain "./configure" produces exactly the same configure.mak as
-before.
+default, so a plain build produces exactly the same configure.mak as before.
 
   EXTRA_CFLAGS    appended to CFLAGS.  Also reaches the linker, because
                   LDFLAGS starts with $(CFLAGS).
@@ -11,7 +10,7 @@ before.
   STRIPFLAG       link-time strip flag, "-s" by default.  Set it empty to
                   keep symbols.
 
-Pass them to make, not to a separate ./configure run.  The "all" target in
+Pass them to make, not to a separate lib/configure run.  The "all" target in
 lib/Makefile re-runs configure on every build, so flags handed to configure
 directly are overwritten again a moment later.  Putting them in make's
 environment works because make passes its environment on to the recipe that

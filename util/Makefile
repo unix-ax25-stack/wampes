@@ -65,6 +65,7 @@ _install:
 	@# skips a name whose target does not exist.
 	@sh ../lib/publiclink "$(BINDIR)" "$(PUBLICBINDIR)" cnet path qth
 
+distclean:; @$(MAKE) clean
 clean:; @rm -f *.o $(TARGETS) *~ \#*\#
 ###
 bridge.o:\

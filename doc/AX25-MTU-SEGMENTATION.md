@@ -39,6 +39,13 @@ field is a counter: how many segments still follow, with bit 7
 the segment header - it is the first byte of the reassembled payload, so
 it travels inside the first segment's data.
 
+The specification does not actually say where that protocol id goes.  It
+does not have to: Figure 6.2 gives the header as `0x08` and the counter
+and nothing else, C6.2 has the reassembler join the segments and deliver
+"the original larger data unit", and the only place left for the id is the
+front of the first segment's data.  That is where WAMPES puts it, and the
+first segment therefore carries one byte less payload than the rest.
+
 Two bytes are easily confused here, and both are accounted for:
 
 | byte | where | counts toward N1 | paid for by |
@@ -52,9 +59,29 @@ datagram of exactly `paclen` bytes still fits: the PID it carries is not
 part of the information field.  Once segmenting starts, the counter is
 payload and the `-= 1` pays for it.
 
-`ssize -= 1` is correct and has been since 2016 (`0ecbf55`).  Before
-that, from 1993 on, it read `ssize -= 2`, which produced information
-fields of 255 bytes - one short of N1.
+`ssize -= 1` has been the code since 2016 (`0ecbf55`); before that, from
+1993 on, it read `ssize -= 2`.  That one byte is a deliberate deviation
+from the specification, and the reason is worth writing down.
+
+Appendix C6.1 of AX.25 2.2 says: "If the quantity of data to be
+transmitted exceeds the data link parameter N1, the segmenter chops up
+the data into segments of length **N1-2 octets**.  Each segment is
+prepended with a two octet header."  The header is Figure 6.2's `0x08`
+PID plus the counter.  Read literally, both octets come out of N1, so a
+segment carries 254 bytes at N1 = 256 and the information field stops at
+255 - which is where `ssize -= 2` came from.
+
+We keep `-= 1` on purpose, on §3.4: "The PID itself is not included as
+part of the octet count of the information field."  The `0x08` is header
+in the same sense as the address and control fields and does not come out
+of paclen; only the counter does, because it sits in the information
+field.  That fills the information field to N1 exactly - the measurement
+above - and carries one byte more of payload per segment than C6.1's
+arithmetic.  It interops either way: paclen is a local preference and not
+a buffer size the far end negotiated, this reassembler takes its length
+from the counter and imposes no fixed segment size, and a peer that
+followed C6.1 to the letter would still reassemble our segments - it
+would merely have sent slightly shorter ones of its own.
 
 The reassembler in `procdata()` imposes no size limit of its own and
 accepts a full 256, and `ax25subr.c` frees a partial reassembly when the
@@ -171,14 +198,18 @@ below IP.
     AX.25 segments:    [0x08|6|IP|TCP|data…] [0x08|5|data…] …
                        reassembled by the neighbour, 1 counter byte each
 
-Segmentation exists **only in connected mode**.  The UI branch of
-`axui_send()` returns before the segmenter is reached, and an incoming UI
-frame is dispatched by PID through the `Axlink` table, which has no entry
-for `0x08` - such a frame would be freed without comment.  That is not an
-oversight: `procdata()` requires the segments strictly in order and
-without gaps, and discards the whole reassembly at the first deviation.
-Only LAPB guarantees that.  On a UI link the sole mechanism is IP
-fragmentation, with nothing underneath it to repeat a loss.
+Segmentation the node **originates** runs only in connected mode.  The UI
+branch of `axui_send()` returns before the segmenter is reached, so a UI
+datagram the node itself sends is never cut on the way out; that, its own UI
+send path, is still a decided design, see the last section.  A frame the
+node *repeats* is a different matter and is cut to fit the outgoing port
+(also in the last section).  On the receive side
+a segmented UI frame is put back together like a connected one
+(`ax25_ui_reasm()`): the segments are joined per (destination, source)
+before the pid gate.  Connected mode can require them strictly in order and
+without gaps because LAPB guarantees that; UI cannot, so there an
+out-of-order segment drops the whole sequence.  Reliability on a UI link is
+still IP's alone - nothing underneath repeats a loss.
 
 ## So which MTU
 
@@ -410,6 +441,65 @@ multiply into more queued data than either number suggests.
                                whenever offset or the MF flag is set
 
 If neither appears, the datagram fitted in one frame.
+
+## Into UI, and into the node's own text
+
+Everything above is what the code did before this was taken further:
+`segmenter()` was reached from `axui_send()` alone, so segmentation was IP
+and connected-mode only.  Two pieces have been added, and two are still a
+decided shape rather than code.
+
+**The node's own stream (built).**  What the node itself initiates - a text
+session, the TCP gate, an axsock forwarder - is where the operator decides,
+because the far end is not guaranteed to be the original sender's peer.
+One setting, three answers, at the node or per port:
+
+    off         never segment the node's own packets
+    on          segment every protocol
+    exempt-l3   segment every protocol except PID 0xf0 (plain text)
+
+    ax25 segmentation off | on | exempt-l3
+    ifconfig <iface> segmentation off | on | exempt-l3 | default
+
+`exempt-l3` is the default, because it is the shape that changes nothing:
+IP and every other protocol segment when the MTU exceeds the paclen, as
+before, and text keeps the classic packetizing - one frame of paclen bytes
+per write, every frame carrying PID `0xf0`.  `on` pulls text into the
+segmenter as well.  `off` turns the node's own segmentation off entirely;
+a datagram that then does not fit the port is dropped rather than cut,
+because an IP datagram is not a byte stream, while a byte stream is simply
+packetized as it always was.
+
+`0xf0` is the one protocol set apart, and for one reason: it is the PID
+most likely to meet a station that does not reassemble.  A segment arrives
+as PID `0x08`; a station that implements this reassembler turns it back
+into text, but a plain AX.25 socket - Linux's, for one - hands `0x08` up as
+a protocol of its own and the text never appears.  A BBS or a TNC on the
+other side can be such a station, and text is what talks to BBSes.
+
+**Receiving and repeating (both built).**  Segmented data is
+reassembled like any other protocol - a segment says nothing about what it
+carries, the real PID travels in the first segment and comes out again when
+the pieces are joined.  Connected mode does that in `procdata()`: one
+reassembly per link, strictly in order, and a link teardown frees a partial
+one.  UI mode does it in `ax25_ui_reasm()` (ax25.c): one reassembly per
+(destination, source) pair, joined before the pid gate, with a timer TR210
+of 60 seconds that every in-order segment restarts, so a stalled reassembly
+cannot hold its buffer for ever.  An out-of-order segment drops the whole
+sequence, as in connected mode; UI has no retransmission with which to ask
+for the missing piece.
+
+A frame the node *repeats* is not covered by the setting above: there the
+far end is by construction the receiver of the original packet, and it
+reassembles like any PID.  `ax25_repeat_segments()` (ax25.c) cuts a
+digipeated UI frame to the outgoing port's paclen, with nothing to
+configure - the receiver gets back exactly the bytes, and the length, that
+the original sender put on the air, which the sender chose for a reason.  A
+packet that arrives not yet segmented is segmented here.  A packet that
+arrives *as a segment* is not segmented further: its counter says how many
+follow, and that cannot be recounted, so such a packet is dropped when the
+outgoing paclen is smaller than the segment.  This is the one place the
+splitter must not fire twice.
 
 ## Where this came from
 

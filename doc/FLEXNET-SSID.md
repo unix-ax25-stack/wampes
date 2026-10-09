@@ -96,7 +96,7 @@ outside what we announce"* states a fact - a range with gaps is ordinary.
 *"n ranges for one node"* is a fault, because to everybody else that is n
 stations.
 
-## Two things it does not do, and why
+## Three things it does not do, and why
 
 **It does not touch links that reach us.**  A partner who calls us reaches
 whichever callsign he dialled, and the answer must carry that or he will not
@@ -105,6 +105,18 @@ does not arise: a partner is configured with the one callsign the node uses
 (`rou flex add 3 igateb`), so a link arriving anywhere else is a
 misconfiguration at his end.  The display marks such a link with *"he called
 this callsign"* rather than hiding it.
+
+**It does not answer a SECOND link from a station that already has one.**  A
+peer *is* a callsign and holds one link (`struct peer` carries one
+`ax25_cb *axp`, and `find_peer()` keys on the source).  Two connections that
+carry the same source call - which is what happens when a partner opens two
+links to us to different SSIDs, since in FlexNet every link of his runs under
+his one callsign - would otherwise fight over that single link: each frame on
+the "other" one re-greeted and re-pointed the peer, every reply left on
+whichever link won, and the loser retransmitted without end.  The established
+link stays; the newcomer's frames are dropped and no peer state is built for
+it.  Two links at once would need a peer *per link* instead of per callsign -
+a mesh idea noted in `TODO.txt`, not something this peer table can hold.
 
 **It does not re-announce to links that are already up.**  Sending
 `FLEX_INIT` again would look tidier and is a trap: `recv_init()` at the far

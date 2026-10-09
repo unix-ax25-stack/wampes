@@ -139,6 +139,30 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 
 	ax25_resolve_path(hdr,&ifp,opts);
 	axp = find_ax25(hdr->source,hdr->dest);
+	/* THE PORT WAS NAMED, AND THE LINK STANDS ON ANOTHER ONE.  A link is
+	 * named by both addresses - one pair, one port - so a second link "on
+	 * the side" over the named port is impossible, and adopting the
+	 * existing one would be a lie about the command: "c axtcp:db0fhn-12"
+	 * would be answered by a session on kisstcp with nothing on the screen
+	 * to say where the frames actually go, which is exactly what happened
+	 * (Thomas).  So this is refused, and the message names the port that
+	 * HAS the link - go with it, or take it down first and then dial the
+	 * one you asked for.
+	 *
+	 * WHERE NO PORT WAS NAMED the standing link stays the answer on
+	 * whatever port carries it, as before: a route table that changed
+	 * under a living link must not turn a plain "connect" into a refusal.
+	 */
+	if(axp != NULL && opts != NULL && opts->iface != NULL
+	   && axp->iface != opts->iface){
+		char abuf[AXBUF];
+
+		printf("%s is already connected via %s\n",
+		       pax25(abuf,hdr->dest),
+		       axp->iface != NULL ? axp->iface->name : "?");
+		Net_error = CON_EXISTS;
+		return NULL;
+	}
 	/* Taken, and a consumer is not the only way to be taken: IP in
 	 * connected mode runs over the Axlink table and attaches none at all,
 	 * so a link carrying it looks free by that question alone.  Whoever
@@ -246,6 +270,37 @@ int pid
 		if(pid_blocked(axp->iface,PF_OUT,pid)){
 			free_p(bpp);
 			return -1;
+		}
+		/* Segment when the operator asks for it and the packet is
+		 * larger than one frame.  The port decides (ax25.h, "ax25
+		 * segmentation" / "ifconfig <iface> segmentation"); the default
+		 * exempts PID 0xf0, so text keeps the classic behaviour unless
+		 * it is asked for.  segmenter() hands a packet that fits back
+		 * whole, so the common case does not change at all.
+		 */
+		if(ax25_segments_pid(axp->iface,pid)){
+			struct mbuf *tbp;
+			uint nseg;
+
+			pushdown(bpp,NULL,1);
+			(*bpp)->data[0] = pid;
+			if((tbp = segmenter(bpp,axp->paclen)) == NULL){
+				free_p(bpp);
+				return -1;
+			}
+			/* The frames of a real segmentation carry PID_SEGMENT,
+			 * which sendframe() does not count.  An IP datagram
+			 * this stands for is already in ipsndcnt (as in
+			 * axui_send), so only the rest are AX.25; for anything
+			 * else the datagram is not counted anywhere else and
+			 * every one of its frames is.
+			 */
+			nseg = len_q(tbp);
+			if(nseg > 1 && axp->iface != NULL)
+				axp->iface->ax25sndcnt +=
+				 ax25_pid_is_ip(pid) ? nseg - 1 : nseg;
+			enqueue(&axp->txq,&tbp);
+			return lapb_output(axp);
 		}
 		offset = 0;
 		len = len_p(*bpp);

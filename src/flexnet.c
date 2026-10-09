@@ -1723,7 +1723,27 @@ void flexnet_input(struct iface *iface, struct ax25_cb *axp, uint8 *src, uint8 *
 		call[ALEN + 1] = call[ALEN];
 		if (!(pp = create_peer(call, 0)))
 			goto discard;
-	} else if (pp->id != axp->id) {
+	} else if (pp->axp != axp) {
+		/* A SECOND link from the same station.  FlexNet knows a
+		 * station as a callsign, and a peer holds exactly one link (one
+		 * axp), so there is no room for a second one: answering it too
+		 * would make the two links fight over pp->axp, and every reply
+		 * would go out on whichever won while the other starved and
+		 * retransmitted - a protocol packet storm, measured with two
+		 * connections that carried the same source call.  The
+		 * established link stays; the newcomer is ignored, its frames
+		 * dropped and no peer state built for it.
+		 *
+		 * "Both links at once" is a mesh idea for the TODO list, not
+		 * something this peer table can hold.
+		 *
+		 * The exception is a link that was REBUILT: the peer's old axp
+		 * is then a block no longer in the table, and the frame
+		 * arriving on the new one is the first of a new link -
+		 * setaxp() adopts it and greets afresh, as before.
+		 */
+		if (ax25_alive(pp->axp))
+			goto discard;
 		setaxp(pp);
 	}
 	/* Where he is, for a filter written per port.  Kept up to date rather
