@@ -2,7 +2,6 @@
 
 #include <ctype.h>
 #include <stdio.h>
-#include <syslog.h>
 
 #include "global.h"
 #include "netuser.h"
@@ -3453,7 +3452,10 @@ static void nrserv_close_upcall(void *arg)
 }
 
 static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, enum netrom_state newstate)
-{  switch (newstate) {
+{
+  char msg[200];
+
+  switch (newstate) {
   case NR4STCON:
     /* A configured target first - "listen netrom add ..." - and only then the
      * node's own login, which needs "start netrom".  The accept gate let the
@@ -3466,9 +3468,12 @@ static void nrserv_state_upcall(struct circuit *pc, enum netrom_state oldstate, 
       pc->user = (char *) login_open(nr_addr2str(pc), "NETROM", nrserv_send_login_upcall, nrserv_close_upcall, pc);
       if (pc->user) break;
     }
-    if (nrserv_listen_configured())
-      syslog(LOG_ERR, "netrom: %s: the configured target could not take the "
-	     "session", nr_addr2str(pc));
+    if (nrserv_listen_configured()) {
+      snprintf(msg, sizeof(msg), "NET/ROM: %s: %s", nr_addr2str(pc),
+	       nrserv_listen_reason());
+      printf("%s\n", msg);
+      logmsg(NULL, "%s", msg);
+    }
     close_nr(pc);
     break;
   case NR4STDISC:
