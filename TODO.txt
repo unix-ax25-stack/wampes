@@ -10525,3 +10525,35 @@ sent: bzw. heard).  "keepalive 300" nennt jetzt die Einheit,
 oder "client" als ERSTEM Wort sagte vorher nur "Interface listen
 already exists"; jetzt nennt die Meldung den Grund - das Wort ist
 hier der Name (axtcp.c:342, kisstcp.c:445).
+
+FLEXNET: ZWEI LINKS ZUR SELBEN STATION - "NEUE IGNORIEREN" JETZT,
+"BEIDE ZULASSEN" GEPARKT (Thomas, 2026-10-09)
+
+Gemessen: zwei Verbindungen mit DEMSELBEN Source-Call zu zwei SSIDs
+desselben Ziel-Hosts (unser Knoten ruft DB0FHN-10 und DB0FHN-11, beide
+unter DL9SAU) erzeugen eine unendliche Protokoll-Paketflut.  Ein Peer
+ist bei uns pro GEGENSTELLE verschluesselt (find_peer(src),
+flexnet.c:1719; struct peer haelt genau ein ax25_cb *axp), und FlexNet
+kennt eine Station als Callsign + SSID-Spanne.  Bei gleichem src fallen
+beide Links auf der Gegenseite in EINEN Peer; jedes Frame ueber den
+"anderen" axp lief in den setaxp()-Zweig, Antworten gingen immer nur
+ueber pp->axp, der andere Link hungerte und wiederholte auf LAPB-Ebene.
+Mit VERSCHIEDENEN src-SSIDs (addreq vergleicht die SSID mit,
+ax25subr.c:357) sind es zwei Peers, und der Fehler bleibt aus - deshalb
+verbarg die "Fehlkonfiguration" das Problem.
+
+GEAENDERT (flexnet.c:1726): kommt ein Frame auf einem axp, der NICHT
+der Link des Peers ist, wird der NEUE Link ignoriert - keine Antwort,
+kein Peer-Zustand, der etablierte Link bleibt.  Ausnahme: ist pp->axp
+ein Block, der nicht mehr in der Tabelle steht (ax25_alive()), wurde
+der Link neu aufgebaut, und setaxp() uebernimmt ihn und gruesst neu -
+wie vorher.  Das vermeidet das Flip-Flap, das ein Trennen der ALTEN
+Verbindung im Netz ausgeloest haette (Station ab- und wieder angemeldet,
+Routen ueber den Link weg).
+
+OFFEN / GEPARKT: "beide zulassen" - ein Peer pro LINK statt pro
+Callsign, der eigentliche Mesh-Gedanke.  Invasiv (struct peer,
+Dests/quality und das Ein-Spanne-Modell haengen daran).  Vorerst nicht:
+auch auf AX.25/LAPB-Ebene klappt es noch nicht - getestet, eine zweite
+Sitzung ueber ein anderes iface wird nicht etabliert (das UA wird
+ignoriert).  Erst wenn das steht, lohnt der FlexNet-Teil.
