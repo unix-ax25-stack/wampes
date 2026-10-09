@@ -279,16 +279,53 @@ struct iface {
 				 * the port, so repeating it for every caller
 				 * adds nothing and on a busy user access it
 				 * would be a nuisance. */
+	int ax25_v2;            /* AX.25 2.2, the XID knob - the same shape
+				 * as eax25, see doc/AX25-2.2-GAP.md. */
+	/* HAT EINER an diesem Port "ax25-v2.2 ..." gesagt?
+	 *
+	 * Nur dann, wenn ja.  Der globale Befehl "ax25 ax25-v2.2 off" ist
+	 * eine VORGABE fuer alle Ports - auch fuer die, die schon laufen,
+	 * denn ein Operator, der ihn gibt, meint den Knoten und nicht eine
+	 * Datei, die er spaeter neu liest.  Aber er darf einem Port, der
+	 * eine AUSDRUECKLICHE Einstellung hat, nicht ins Gehege kommen:
+	 * "b1 initiate, alles andere off" ist eine Anweisung, und das
+	 * Verhalten des Knotens soll sich nicht aendern, nur weil jemand
+	 * den globalen Knopf spiegelt.
+	 *
+	 * Deshalb steht hier ein Bit und nicht etwa ein Sonderwert in
+	 * ax25_v2: der angehaengte Port erbt Ax25_v2_default (main.c), und
+	 * das Erben ist ausdruecklich KEINE eigene Einstellung - sonst
+	 * wuerde der erste globale Befehl nach dem Start jede Vorgabe
+	 * einfrieren und genau das wiederholen, was er beheben soll.
+	 */
+	int ax25_v2_set;
 /* Zero is the default on purpose: an unconfigured port answers modulo-128
  * when it is offered and never asks for it, so nothing changes for anyone
  * who has not asked for it.  Probing costs 19 s against a peer that ignores
  * SABME, once per station, and that is not a cost to hand to every
- * installation by surprise.
+ * installation by surprise.  A port that only answers does send a SABME of
+ * its own once the route knows the far end speaks it - the E in
+ * "ax25 route list", learned from his SABME or from his UA to ours.
  */
-#define EAX25_ACCEPT    0       /* answer SABME, never send one */
+#define EAX25_ACCEPT    0       /* answer SABME, never send one unprovoked */
 #define EAX25_OFF       1       /* never - answer SABME with DM */
-#define EAX25_CALLER    2       /* follow the caller; ask when we originate */
-#define EAX25_ALWAYS    3       /* also upgrade a caller who asked for AX.25 */
+#define EAX25_INITIATE  2       /* ask; also upgrade a caller who asked for AX.25 */
+#define EAX25_ALWAYS    3       /* as far as the modulus goes, like initiate */
+
+/* AX.25 2.2 support on this port (doc/AX25-2.2-GAP.md, the F1 section).
+ * Zero is the default on purpose, exactly as for eax25: an unconfigured
+ * port answers an XID that is offered - that binds nothing and the answer
+ * is the same list of capabilities either way - and never starts one.
+ * initiate probes once per unknown station before the SABM; always
+ * enforces, and a peer that refuses the negotiation ends the connect
+ * attempt there (LB_NEGOTIATION).  off is the full switch: the port
+ * neither starts an XID nor answers one, so a prober hears silence and
+ * falls back to SABM, exactly as against a plain AX.25 2.0 station.
+ */
+#define AX25V2_ACCEPT   0
+#define AX25V2_OFF      1
+#define AX25V2_INITIATE 2
+#define AX25V2_ALWAYS   3
 
 	/* Which protocols may cross this port, one bit per protocol id and
 	 * direction - see pidfilter.c.  The count is there so that the send

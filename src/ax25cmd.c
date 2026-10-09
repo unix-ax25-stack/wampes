@@ -14,6 +14,7 @@
 #include "dama.h"
 #include "lapb.h"
 #include "slhc.h"
+#include "pktdrvr.h"
 #include "pidfilter.h"
 #include "cmdparse.h"
 #include "socket.h"
@@ -34,6 +35,9 @@ static int doblimit(int argc,char *argv[],void *p);
 static int dodigipeat(int argc,char *argv[],void *p);
 static int dodigikeepad(int argc,char *argv[],void *p);
 static int dodigiout(int argc,char *argv[],void *p);
+static int doax25v2(int argc,char *argv[],void *p);
+static int doxidprobe(int argc,char *argv[],void *p);
+
 static int domaxframe(int argc,char *argv[],void *p);
 static int doemaxframe(int argc,char *argv[],void *p);
 static int domycall(int argc,char *argv[],void *p);
@@ -48,6 +52,7 @@ static int dot5(int argc,char *argv[],void *p);
 static int doversion(int argc,char *argv[],void *p);
 static int doaxloop(int argc,char *argv[],void *p);
 static int dorouteadd(int argc,char *argv[],void *p);
+static int doroutedel(int argc,char *argv[],void *p);
 static void doroutelistentry(struct ax_route *rp);
 static int doroutelist(int argc,char *argv[],void *p);
 static int doroutestat(int argc,char *argv[],void *p);
@@ -99,6 +104,27 @@ static struct cmds Axcmds[] = {
           "  This sets the global default. Defaults to 'normal'. You can fine-tune it per\n"
           "  interface, i.e. with 'ifconfig <iface> digiout same-iface.'\n"
         },
+	{ "ax25-v2.2",    doax25v2,       0, 1,
+	  "ax25 ax25-v2.2 [off|accept|initiate|always]\n"
+	  "  Set the factory default of the global AX.25-v2.2 knob,\n"
+	  "  lived-in by new ax25 ports; per-port override is\n"
+	  "  ifconfig <iface> ax25-v2.2.  off = never send XID (pure AX.25\n"
+	  "  2.0 style and the way to force a v2.2 initiator ALL THE\n"
+	  "  WAY back to SABM negotiation, both our own and the\n"
+	  "  stranger's (see \"ax25-v2.2 pirate\" below).\n"
+	  "  accept = answer XID for calls not marked AX25V2_OFF.\n"
+	  "  initiate = also send XID first.  always =\n"
+	  "  new sessions of a stranger that once answered take\n"
+	  "  his SABM straight into SABM negotiation too.\n"
+	},
+	{ "xid-probe-time", doxidprobe,    0, 1,
+	  "ax25 xid-probe-time <minutes>\n"
+	  "  Set the global factory default for how long a station\n"
+	  "  that does not talk XID keeps its \"wont check the knob\"\n"
+	  "  verdict.  After it, a connect has another go.  Fresh\n"
+	  "  FRMR (or SABM) verdicts reset it.  Default: 60 minutes.\n"
+	  "  Per route: ax25 route add \"<call> via <digis>\" xid-time.\n"
+	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
 	{ "ignoretos",    doaxigntos,     0, 0, NULL },
@@ -314,7 +340,7 @@ void *p)
 	if(argc < 2){
 		printf("   &AXCB Rcv-Q Unack  Rt  Srtt Mod State          Remote\n");
 		for(axp = Ax25_cb;axp != NULL; axp = axp->next){
-			printf("%08lx %5u%c%3u/%u%c %2d%6lu %3d %-13s  %s\n",
+			printf("%08lx %5u%c%3u/%u%c %2d%6lu %3d %-13s  %s",
 			 (long) axp,
 			 axservice_pending(axp),
 			 axp->flags.rnrsent ? '*' : ' ',
@@ -326,6 +352,12 @@ void *p)
 			 axp->mmask + 1,
 			 Ax25states[axp->state],
 			 ax25hdr_to_string(&axp->hdr));
+			/* Was der Peer in der XID nannte, kappt unser Senden -
+			 * nur dann zeigen, wenn es das wirklich tut. */
+			if(axp->peer_n1 || axp->peer_k)
+				printf("  XID N1rx=%u k=%u",
+				 axp->peer_n1, axp->peer_k);
+			printf("\n");
 			/* A session that never leaves the node is shown, and
 			 * shown as what it is: it has no port, no timers and
 			 * no sequence numbers, so the figures on its line say
@@ -368,6 +400,9 @@ struct ax25_cb *axp)
 	printf(" %02u/%02u",axp->retries,axp->n2);
 	printf(" %s\n",Ax25states[axp->state]);
 	printf("modulo %u\n",axp->mmask + 1);
+	if(axp->peer_n1 || axp->peer_k)
+		printf("peer XID: N1rx %u bytes, k %u frames (clamp)\n",
+		 axp->peer_n1, axp->peer_k);
 
 	printf("srtt = %lu mdev = %lu ",(unsigned long)axp->srt,
 	 (unsigned long)axp->mdev);
@@ -507,6 +542,110 @@ void *p)
 	}
 	printf("Valid options: normal same-iface\n");
 	return 1;
+}
+/* Set the global factory default of the AX.25 v2.2 knob that new AX.25
+ * ports inherit when they are attached.  "ifconfig <iface> ax25-v2.2"
+ * overrides it per port; the words mirror the ifconfig syntax so they
+ * mean the same everywhere.Printing it with no argument shows the
+ * current default.  "off" (the pure AX.25 2.0 behaviour, the state of a
+ * port whose operator never went v2.2) is also the one way to force a
+ * v2.2 initiator ALL THE WAY back to SABM negotiation, both our own and
+ * the stranger's (see "ax25-v2.2 pirate" below).  "accept" answers XID
+ * for calls not privately marked AX25V2_OFF; "initiate" also sends XID
+ * first, as the same-named per-link knob would.
+ *
+ * ES GILT AUCH FUER DIE LAUFENDEN PORTS.  Bis hierher anderte der Befehl
+ * nur Ax25_v2_default, und die Ports, die schon angehaengt waren, nahmen
+ * davon nichts mit - der Befehl kam zurueck, ohne eine Meldung, und im
+ * Labor blieb das Verhalten genau das, was man ihm abzuschalten versucht
+ * hatte.  Ein Operator, der "ax25 ax25-v2.2 off" gibt, meint den Knoten;
+ * "ab jetzt neu angehaengte Ports" ist eine Vermutung, die er nie
+ * ausgesprochen hat.
+ *
+ * ABER NICHT UEBER EINE EIGENE EINSTELLUNG HINWEG.  Wer "b1 initiate"
+ * gesagt hat, hat das gewollt; der globale Knopf darf es nicht beim
+ * naechsten Befehl wieder rueckgaengig machen (ax25_v2_set in iface.h).
+ * Deshalb steht am Ende, was er getan hat - ein Befehl, der eine Station
+ * nicht erreicht und einer, der eine auslaesst, sehen auf der Konsole
+ * gleich aus, wenn man nichts sagt.
+ */
+static int
+doax25v2(
+int argc,
+char *argv[],
+void *p)
+{
+	struct iface *ifp;
+	const char *word;
+	int value;
+	int changed = 0, kept = 0;
+
+	if(argc < 2){
+		printf("AX.25 v2.2 factory default: %s\n",
+		 Ax25_v2_default == AX25V2_OFF ? "off" :
+		 Ax25_v2_default == AX25V2_ACCEPT ? "accept" :
+		 Ax25_v2_default == AX25V2_INITIATE ? "initiate" : "always");
+		return 0;
+	}
+	if(!stricmp(argv[1],"off")){
+		value = AX25V2_OFF; word = "off";
+	} else if(!stricmp(argv[1],"accept")){
+		value = AX25V2_ACCEPT; word = "accept";
+	} else if(!stricmp(argv[1],"initiate")){
+		value = AX25V2_INITIATE; word = "initiate";
+	} else if(!stricmp(argv[1],"always")){
+		value = AX25V2_ALWAYS; word = "always";
+	} else {
+		printf("Valid options: off accept initiate always\n");
+		return 1;
+	}
+	Ax25_v2_default = value;
+
+	for(ifp = Ifaces; ifp != NULL; ifp = ifp->next){
+		if(ifp->iftype == NULL || ifp->iftype->type != CL_AX25)
+			continue;
+		if(ifp->ax25_v2_set){
+			kept++;
+			continue;
+		}
+		ifp->ax25_v2 = value;
+		changed++;
+		printf("ax25: port %s follows the new default: ax25-v2.2 %s\n",
+		       ifp->name, word);
+	}
+	if(changed == 0 && kept != 0)
+		printf("ax25: every AX.25 port has its own setting;"
+		       " nothing was changed\n");
+	return 0;
+}
+/* Set the global factory default of the XID re-probe interval (in
+ * minutes).  A route that does not answer XID, or whose FRMR verdict
+ * says "never ask again", has its knob re-checked when a new connect
+ * wants the v2.2 service; this is how often that re-check may happen.
+ * Fresh FRMR or SABM verdicts and per-port and per-route settings reset
+ * the clock before it runs out.  The value lives in seconds; 60 minutes
+ * of it is the historic default of one probe per hour.
+ */
+static int
+doxidprobe(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("XID re-probe interval: %ld minute%s\n",
+		 Xid_probe_time / 60, Xid_probe_time == 60 ? "" : "s");
+		return 0;
+	}
+	{
+		long minutes = atol(argv[1]);
+		if(minutes < 1){
+			printf("XID re-probe time must be at least 1 minute\n");
+			return 1;
+		}
+		Xid_probe_time = minutes * 60;
+	}
+	return 0;
 }
 /* Set limit on retransmission backoff */
 static int
@@ -679,6 +818,7 @@ void *p)
      * dann kommt doroutelist() gar nicht mehr zum Zug - "?" soll aber die
      * Legende zeigen, nicht eine Zeile ueber sich selbst.
      */
+    { "del",  doroutedel,  0, 1, "ax25 route del all|<call> [<digis>...]" },
     { "list", doroutelist, 0, 0, NULL },
     { "stat", doroutestat, 0, 0, NULL },
 
@@ -773,6 +913,84 @@ void *p)
 			    // ^ dl9sau bugfix: 1, not 0
   axrp->vjcomp = vj;
 #endif
+  /* UND DIE DATEI MIT, SOFORT.  Der Grund ist derselbe wie bei
+   * "ax25 route del": was dem Betreiber eben gesagt wurde, soll beim
+   * naechsten Start auch dastehen.  Ohne das schreibt die Datei erst der
+   * naechste axroute_savefile()-Anlauf, und ein Eintrag, den jemand
+   * gerade mit der Hand gesetzt hat, ist nach einem Neustart einfach
+   * weg - bei einem Eintrag, den man sich aus der Konfiguration
+   * sparen will, weil der naechste Start sie ohnehin liest, faellt
+   * das nicht auf, bei einem nicht auf, wenn man es nicht erwartet.
+   * (axroute_flush() ist derselbe Aufruf, den del macht; die
+   * Bildunterschrift in ax25file.c sagt genau das und tat es nicht.)
+   */
+	axroute_flush();
+  return 0;
+}
+
+/* "ax25 route del all", or "ax25 route del <call> [<digis>...]".
+ *
+ * OHNE Rueckfrage, und die Datei ist danach SOFORT neu.  Beides aus demselben
+ * Grund: die Befehlskanal- und Skript-Antwort von wampes ist das, woran
+ * jemand merkt, ob eine Aenderung gewirkt hat - wenn danach "ax25 route list"
+ * noch den alten Eintrag zeigt, ist die Aenderung nicht erfolgt, egal was die
+ * Meldung eben gesagt hat.  Und eine Datei, die den geloeschten Eintrag noch
+ * traegt, holt ihn beim naechsten Start zurueck: der Aufrufer hat ihn
+ * vergessen, der Aufrufer der Datei nicht.
+ */
+static int
+doroutedel(
+int argc,
+char *argv[],
+void *p)
+{
+  struct ax25 hdr;
+  const uint8 *digis[MAXDIGIS];
+  uint8 call[AXALEN];
+  char buf[1024];
+  int i, n;
+
+  (void) p;
+
+  argc--;
+  argv++;
+  if (argc < 1) {
+    printf("Usage: ax25 route del all|<call> [<digis>...]\n");
+    return 1;
+  }
+
+  if (!strcmp(*argv, "all")) {
+    n = axroute_delall();
+    axroute_flush();
+    printf("%d route%s forgotten.\n", n, n == 1 ? "" : "s");
+    return 0;
+  }
+
+  if (ax25args_to_hdr(argc, argv, &hdr))
+    return 1;
+  addrcp(call, hdr.dest);
+  for (i = 0; i < hdr.ndigis; i++)
+    digis[i] = hdr.digis[i];
+
+  if (!axroute_del(call, digis, hdr.ndigis)) {
+    pax25(buf, call);
+    printf("*** Not in table *** %s", buf);
+    for (i = 0; i < hdr.ndigis; i++) {
+      pax25(buf, digis[i]);
+      printf(" via %s", buf);
+    }
+    printf("\n");
+    return 1;
+  }
+
+  axroute_flush();
+  pax25(buf, call);
+  printf("%s forgotten", buf);
+  for (i = 0; i < hdr.ndigis; i++) {
+    pax25(buf, digis[i]);
+    printf(" via %s", buf);
+  }
+  printf("\n");
   return 0;
 }
 
@@ -780,7 +998,6 @@ static void
 doroutelistentry(
 struct ax_route *rp)
 {
-
 	char *cp;
 	char buf[1024];
 	int i;

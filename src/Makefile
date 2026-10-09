@@ -187,7 +187,8 @@ OBJS          = adjtime.o \
 		udpdump.o \
 		udphdr.o \
 		uhnp.o \
-		version.o
+		version.o \
+		xid.o
 
 PROGRAM       = net
 

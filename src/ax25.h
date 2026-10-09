@@ -41,6 +41,8 @@ extern uint8 Ax25multi[][AXALEN];
 extern int Digipeat;
 extern int Digi_keep_path;
 extern int Digiout;
+extern int Ax25_v2_default;         /* globaler Factory-Default fuer ax25-v2.2 */
+extern long Xid_probe_time;         /* Frist vor erneutem XID-Probe, Sekunden */
 extern int Ax25mbox;
 extern int Axigntos;
 
@@ -127,6 +129,33 @@ struct ax_route {
 	 */
 	int eax25_fails;
 	int eax25_skips;
+	/* What a station told us - or what it did not answer - about
+	 * AX.25 2.2 XID.  Same shape as eax25 and reset with it whenever
+	 * the route moves (see axroute_add()): XID capability belongs to a
+	 * path, not to a callsign.  Not persisted, for the same reason.
+	 */
+	int xid;
+	/* WANN "kann kein XID" FESTGESTELLT WURDE, und WARUM.  Ohne die beiden
+	 * waere eine "kann nicht"-Auskunft eine Sackgasse: der naechste Connect
+	 * wuerde sie nie hinterfragen, bis die Route nach AXROUTE_HOLDTIME
+	 * (24.8 Tage) verfaellt.  Die Trennung muss eine FRMR-Antwort von
+	 * Schweigen unterscheiden - denn eines ist eine Auskunft des Peers, das
+	 * andere nur unsere Vermutung:
+	 *
+	 *   xid_time  Zeitpunkt, zu dem der letzte XID-Probe unbeantwortet blieb.
+	 *             Nach Xid_probe_time wird wieder gefragt - der Peer koennte
+	 *             sich geaendert haben.
+	 *   xid_frmr  Der Peer antwortete auf ein XID unsererseits mit FRMR: er
+	 *             spricht definitiv kein XID (und sagt es uns).  Dann wird
+	 *             NIE wieder gefragt, nicht nach einer Frist.  FRMR schlaegt
+	 *             also die Uhr.
+	 *
+	 * Beide werden wie xid selbst vergessen, wenn die Route umzieht
+	 * (axroute_add), und nicht persistiert (ax25file.c) - beim Neustart ist
+	 * frisches Fragen ohnehin richtig.
+	 */
+	long xid_time;                  /* Sekunden, secclock() */
+	int xid_frmr;                   /* Peer antwortete mit FRMR: nie wieder */
 	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
 	 * one.  Learned from what arrives, so that we can answer to the one
 	 * machine instead of shouting at the whole segment.
@@ -182,6 +211,116 @@ struct ax_route {
 #define AXR_EAX25_UNKNOWN        0
 #define AXR_EAX25_YES            1
 #define AXR_EAX25_NO           (-1)
+/* AX.25 2.2 XID capability of a station, learned from XID traffic and
+ * reset exactly like the eax25 field: when the route moves, everything
+ * learned about the old path goes.  See doc/AX25-2.2-GAP.md.
+ */
+#define AXR_XID_UNKNOWN          0
+#define AXR_XID_YES              1
+#define AXR_XID_NO             (-1)
+/* Nur fuer die Anzeige in "ax25 route list": xid_frmr setzen, damit das
+ * gezeigte Zeichen "F" meint und nicht "x" - im struct selbst ist der
+ * Zustand zweigeteilt.
+ */
+#define AXR_XID_FRMR           (-2)
+
+/* AX.25 2.2 XID over a DIGIPEATED LEG (point D, ax25 digipeat 2).
+ *
+ * We are B, and A and C are connected through us.  A sends us a XID
+ * probe that is meant to reach C.  Two things then have to be answered
+ * separately, and both with different parameters:
+ *
+ *   - The probe to C goes out over the OUTGOING port B->C, so it carries
+ *     that port's paclen/window/modulo.
+ *   - The answer to A goes out over the PORT we speak to A on, so it
+ *     carries that port's parameters.
+ *
+ * The answer to A is WITHHELD until C has answered (or the timer runs
+ * out): otherwise we would confirm to A a capability for the path to C
+ * that C does not have - the answer to A would name a station that does
+ * not exist.
+ *
+ * THIS block is the job during which the answer stays silent.  It belongs
+ * to the DIGIPEATED path, not to an ax25_cb: there is no LAPB connection
+ * to C here, only an outgoing probe on a port.
+ */
+struct ax25_xid_leg {
+	struct ax25_xid_leg *next;	/* next job waiting */
+	/* WHO waits: the station whose XID we are answering (A).  Its
+	 * answer goes back over ans_iface - NOT over the outgoing port,
+	 * because that is the path to it. */
+	uint8 answer_to[AXALEN];		/* A */
+	struct iface *ans_iface;		/* port B->A: its parameters */
+	/* WHERE we probe: the next hop on the path (C) over the outgoing
+	 * port.  leg_iface carries its parameters. */
+	uint8 probe_to[AXALEN];		/* C */
+	struct iface *leg_iface;		/* port B->C */
+	/* the header for the later answer to A: seen from B the source is B
+	 * itself, the destination A, and the digipeater path is empty - A
+	 * sees the answer straight from B, not by the roundabout way. */
+	struct ax25 *anshdr;		/* header for the answer to A */
+	/* THE OTHER KIND OF JOB: not a question on somebody's behalf, but
+	 * the opening of the second leg of a relayed call.  A's SABM has
+	 * to be followed by a SABM(E) of OURS towards C, and the only way
+	 * to learn what C can is to ask C - which the point D case above
+	 * never did, because there the answer was to go to A and C never
+	 * heard us ask.  So the probe leaves as B->C (link_to's port
+	 * callsign as the source) and its answer lands here, and this job
+	 * then carries on with the leg instead of writing to A: anshdr is
+	 * null and answer_to is empty.
+	 *
+	 * It belongs to the SESSION, not to a frame: if that leg is gone
+	 * by the time the answer comes, the job is simply dropped. */
+	struct ax25_cb *link_to;		/* second leg we are opening */
+	uint8 srej;               /* what his answer said in PI=3 */
+	/* AND WHAT HE WILL TAKE: N1 (bits, PI=6) and window (frames, PI=8)
+	 * from C's answer, to clamp the leg's own sending to - the same
+	 * per-link clamp an own connect gets (ax25_apply_peer_xid).  Zero
+	 * until an answer fills it. */
+	unsigned n1rx;
+	unsigned window;
+	/* AND WHAT HE SAID ABOUT MODULO 128.  The answer that goes to A in
+	 * C's name has to carry C's values and not ours: A builds its link
+	 * to C from it, and a C that never answered can do no modulo 128
+	 * - which is the whole verdict of a silent C.  Zero until an answer
+	 * from C fills it, so a job that gives up says so. */
+	uint8 mod128;
+	/* HAT C GEANTWORTET?  Null heisst "nein": der Auftrag ist dann
+	 * ueber die Frist abgelaufen, und das Verstummen beweist gar
+	 * nichts - weder Modulo 128 noch SREJ noch 2.2.  Der Auftrag
+	 * braucht das, weil er beim zweiten Bein sonst aus dem Nichts
+	 * eine Faehigkeit behauptete: proto = V2_2 und ein SABME an
+	 * eine Station, die sich nie gemeldet hat. */
+	uint8 heard;
+	struct timer timer;		/* how long we wait for C, then give up */
+};
+extern struct ax25_xid_leg *Ax25_xid_legs;
+
+/* HOW LONG we wait for C's XID before answering A anyway (ms).  One T1,
+ * as for the connection probe: a silent C costs us exactly one wait, and
+ * that is also where we learn that he does not speak XID.
+ */
+#define XID_LEG_TIMEOUT	10000
+
+/* In lapb.c: */
+void xid_leg_served(struct ax25_xid_leg *lp);
+/* The job is through: its question was answered, or it is given up on.  The
+ * answer is sent on, the leg is opened - ax25.c calls this itself when the
+ * route already holds everything the answer would say, so that the station
+ * waiting for it is not made to sit out our own Warter first. */
+void xid_leg_done(struct ax25_xid_leg *lp);
+struct ax25_xid_leg *xid_leg_find(uint8 *call, const struct iface *ifp);
+void xid_leg_timeout(void *p);
+/* The leg a job was opened for is being taken away - drop the job with it,
+ * before its owner turns into freed memory. */
+void xid_leg_drop(struct ax25_cb *owner);
+/* Is somebody already asking this station, on this port?  The answer means
+ * there is a question on the air and a job that will be told the outcome -
+ * a second waiter must join it, not open a second one. */
+int xid_leg_pending(uint8 *call, const struct iface *ifp);
+/* Open a second leg with a question of our own, the way a connect that
+ * starts here does - see struct ax25_xid_leg, link_to. */
+int xid_leg_open(struct ax25_cb *axp);
 
 /* Siehe eax25_fails / eax25_skips oben. */
 #define EAX25_MAXFAILS           3      /* Rueckfaelle in Folge bis "kann nicht" */
@@ -249,6 +388,19 @@ int axsend(struct iface *iface,uint8 *dest,uint8 *source,
 int valid_remote_call(const uint8 *call);
 struct ax_route *ax_routeptr(const uint8 *call, int create);
 void axroute_add(struct iface *iface, struct ax25 *hdr, int perm);
+/* Forget a route.  "ax25 route del" needs the same surgery axroute_add()
+ * does, and a caller that only wants to drop a path must not be left
+ * guessing at the chain order.  digis[] is the path in command order - the
+ * next hop first, as in "ax25 route del CB1 B2" - and ndigis 0 means the
+ * whole entry, every path to that destination.
+ */
+int axroute_del(const uint8 *call, const uint8 *const digis[], int ndigis);
+int axroute_delall(void);
+/* Sever the digi references from other entries that point to a node about
+ * to leave the table - see axroute_unref() in ax25.c.  Used by axroute_del
+ * and by the aging pass of axroute_write() (ax25file.c).
+ */
+void axroute_unref(struct ax_route *rp, struct ax_route *instead);
 
 /* The ethernet address of a station on a BPQether port.  <call> is the one
  * that put the frame on the wire - the last repeater that has already
@@ -318,6 +470,7 @@ char *ax25hdr_to_string(struct ax25 *hdr);
 
 /* In ax25file.c: */
 void axroute_savefile(void *arg);
+void axroute_flush(void);                /* write now, do not arm the timer */
 void axroute_loadfile(void);
 
 /* In axserver.c: */	// dl9sau

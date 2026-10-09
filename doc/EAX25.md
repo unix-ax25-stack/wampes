@@ -42,15 +42,19 @@ So modulo-128 is for the fast interlink, and `emaxframe 63` is for a fast
 interlink carrying long transfers.  The default is 32, which is what the
 Linux kernel uses as `AX25_DEF_EWINDOW`.
 
-The other half of the trade is loss.  AX.25 has no SREJ - `SREJ` does not
-appear anywhere in this source - so a single lost frame costs a
-retransmission of the whole outstanding window.  Measured at 3 % loss and
+The other half of the trade is loss.  AX.25 has no SREJ - plain AX.25 v1/v2.0
+has no selective retransmission at all - so on a link that does not speak
+2.2 a single lost frame costs a retransmission of the whole outstanding
+window.  (`SREJ` does appear in this source, but only for a peer that has
+proved it: a SREJ needs a window the specification's v1/v2.0 window rules
+cannot carry.  A station that only claims it in a XID gets a REJ until it has
+answered one - see `doc/AX25-2.2-GAP.md`, F2.)  Measured at 3 % loss and
 a 100 ms round trip, the advantage falls from 2.26x to **1.28x**.  A big
 window on a lossy channel is not a gain.
 
 ## Configuration
 
-    ifconfig <iface> eax25 off | accept | caller | always   (default: accept)
+    ifconfig <iface> eax25 off | accept | initiate | always   (default: accept)
     ifconfig <iface> paclen | maxframe | emaxframe <n>      (0 = node's own)
     ax25 emaxframe <1..63>                                  (default: 32)
 
@@ -60,13 +64,26 @@ peer that ignores SABME - once per station, but that is not a cost to hand
 to every installation by surprise.  An unconfigured node behaves as it
 always did, which is the same rule `doc/ROUTE-FILTER.md` follows.
 
+**One exception, and it is the XID** (measured 2026-09-25, see
+`doc/AX25-2.2-GAP.md`).  If a XID *answer* offered modulo-128, the link
+opened right behind it runs modulo-128 - at `accept` as much as at
+`initiate`.  What `accept` refuses is to *start* a negotiation: a SABME
+against a peer that cannot follow is an unanswered frame plus a wait.  A
+XID answer is the cheap way round that, because it is a frame we would
+have sent anyway and the wait is already paid for by the time it comes
+back.  Accept-or-XID.  A port that wants neither has two knobs, not one:
+`eax25 off` (nothing in the answer is read) or `ax25-v2.2 off` (no XID is
+sent *and none is answered*, so there is no answer to read).  What the
+answer offers besides the modulus - N1, k - is parsed and kept, not yet
+applied.
+
 It has one cost, and it is the one Thomas named: an operator who does not
 read this page never learns the feature is there.  So the node says so.
 The first time a modulo-128 call is heard on a port that does not ask for
 one, it reports it - with the packet header, so it says who was heard and
 over which path:
 
-    EAX25 heard on ax0. Consider "ifconfig ax0 eax25 caller".
+    EAX25 heard on ax0. Consider "ifconfig ax0 eax25 initiate".
       Packet: DB0AAA-5->TEST-1
 
 It goes to the console **and** to the log, because neither reaches
@@ -88,36 +105,47 @@ replaced.  That turns the conservative default into one
 that advertises itself, from what the node actually heard rather than from
 documentation.
 
-**An interlink therefore wants `caller` at least**, because we open those
+**An interlink therefore wants `initiate` at least**, because we open those
 links ourselves - `netrom links ... permanent`, `flexnet link add` - and
-under `accept` we never ask.  That is also the right way to think about
+under `accept` we never ask, unless the route already knows the partner
+speaks it.  That is also the right way to think about
 such a link: it carries NET/ROM *and* FlexNet *and* IP *and* plain text,
 so its modulus is a property of the **link**, not of any one session.
 `always` on an exclusive interlink is not an aggressive setting, it is
-simply the statement "this link runs modulo-128".
+simply a second name for `initiate` while it lasts.
 
 `off` - never.  An incoming SABME is answered with DM, and we never send
 one.  For an interlink whose partner is known not to speak it, so that not
 a single probe is wasted.  It is not a way to save bandwidth: the extra
 cost of modulo-128 is one octet per I and S frame, 0.4 % at `paclen` 256.
 
-`caller` - ask once when the connect starts here, and when relaying, do
-what the caller asked for: **a caller who asked for plain AX.25 is carried
-onward as plain AX.25**.  Not because asymmetry is
-harmful in itself - we terminate and acknowledge hop by hop, so the two
-halves are independent anyway - but because of where the control sits.  If
-we upgraded his link on the leg beyond us and that leg then misbehaved, he
-could do nothing about it: he already used the most conservative thing he
-has.  Downgrading is always safe, upgrading is not.  A connect that starts
-here has no caller to follow and tries modulo-128 once.
+`initiate` - ask.  Once when the connect starts here, and also when we are
+the relay and the leg beyond us is ours to open: **a port at `initiate`
+asks for modulo-128 on every leg it opens, including the second leg of a
+digipeated call**.  It used to carry the caller's choice onward instead - "a
+caller who asked for plain AX.25 is carried onward as plain AX.25" - and the
+reasoning behind that was sound even though the conclusion was not: if the
+onward leg then misbehaved, the caller could do nothing about it, and he had
+already used the most conservative thing he has.  True, and it left a relay
+port unable to use its own capability at all, on a leg we terminate
+ourselves.  The onward half is acknowledged hop by hop and is ours to run;
+what it does not get to decide is what the far end can do, and that is
+answered by the route rather than by the caller (see below).  (Thomas,
+2026-09-25, from the two-node rig: a second connect came in as a plain SABM
+and the leg toward the far end stayed modulo-8 the whole way.)
 
-`always` - upgrades him anyway.  This is for an exclusive interlink at a
-higher bit rate, where the wider window is worth most and the operator
-knows the partner.  **Do not put it on a port whose routes run through
-digipeaters**: our fallback timing scales with the digi count of *our*
-path while the caller's patience scales with *his*, and if ours is the
-longer one he gives up before we have fallen back.  Same class of
-configuration error as `advert no` on a node with several uplinks.
+Note where the probe ends: a SABME that stays unanswered is the proof that
+he cannot follow, and that proof is still taken from the wire.  When he
+*answers*, the XID has already said so, and the link goes modulo-128
+straight away instead of waiting for a DM.  A relayed leg is opened the way a
+local connect is opened, question and all: the second leg of a digipeated
+call asks XID and sends SABME exactly as we would for ourselves, and the
+caller's own modulus is no longer part of the decision.
+
+`always` - no longer a third answer here.  It used to be the one that
+upgraded a caller who had not asked for it, and that is now what `initiate`
+does; the two differ in name only, and `always` goes away with the `ax25
+version` axis (TODO.txt).  Say `initiate`.
 
 Where that begins to bite is arithmetic, not judgement.  Three probes cost
 `T1 (1 + 1.25 + 1.5625)` with `T1 = 5 s x (1 + 2 x digis)` counted on *our*
@@ -130,10 +158,11 @@ onward path, against a caller who spends ten retries on his:
 | 4 | 171 s | 166 s |
 | 8 | 324 s | 166 s |
 
-So one or two digipeaters are survivable and four are not.  It is also the
-one place where `always` differs from `caller` in kind rather than in
-degree: under `caller` a plain caller is never probed at all, so the
-question does not arise.
+So one or two digipeaters are survivable and four are not.  The table was
+measured while the second leg still followed the caller, so its first column
+only described a leg we opened for ourselves; since `initiate` opens it that
+way anyway, those seconds are now spent against the caller's patience rather
+than beside it.
 
 `paclen`, `maxframe` and `emaxframe` can now be set **per port** as well,
 with 0 meaning "use the node's".  They are properties of the channel, and
@@ -252,6 +281,9 @@ once more.  `ax25 route list ?` prints the legend.
 
 Rig: `testtools/eaxpeer.py`, which plays the far end in four ways -
 calling us with SABME or SABM, and answering ours with UA, DM or silence.
+The XID rows are the exception: they were taken on 2026-09-25 with two
+nodes joined by a tty-pair, and the ones marked otherwise follow from the
+code rather than from a log.
 
 | | result |
 | --- | --- |
@@ -268,6 +300,10 @@ calling us with SABME or SABM, and answering ours with UA, DM or silence.
 | 24 setups logged end to end | period **17 = 3 + 14**, twice through |
 | `eax25 off`, outgoing | SABM at once, never a probe |
 | `eax25 off`, incoming SABME | answered with DM |
+| `eax25 accept`, XID answer offers modulo-128 | **SABME at once** - accept-or-XID, *expected, not yet measured* |
+| `eax25 off`, XID answer offers modulo-128 | ignored, SABM - the knob is absolute, *from the code* |
+| XID answer, before the 2026-09-25 fix | answer read, then SABM - the round trip paid for nothing |
+| XID answer never comes (peer at `ax25-v2.2 off`) | SABM after one T1, as before |
 | plain AX.25, 20 % loss | unchanged - 13 893 bytes in 55 frames |
 | `-fsanitize=undefined` over all of it | no findings |
 
@@ -316,6 +352,38 @@ between them.
 | `caller` | SABME | SABME | modulo-128, modulo-128 |
 | `always` | SABM | **SABME** | modulo-8, **modulo-128** |
 
+The first two rows are how the relay behaved while it still carried the
+caller's choice onward, and they are kept as the measurement they are.  With
+`initiate` opening the second leg for itself, the first row is gone: an
+`initiate` port sends the XID question and the SABME whatever the caller
+asked for, and the pair comes up modulo-8, modulo-128.  The row to replace
+them with belongs to the next run of the rig.
+
+**The second leg asks as itself, and the answer is the one that counts.**
+The digipeat branch used to assemble the second leg by hand - modulus
+decided, SABM sent, T1 started - which is `est_link()` minus the part where
+the far end gets *asked* first.  It calls `est_link()` now, so a port with
+`ax25-v2.2` above `off` sends one XID probe towards the far end before the
+SABM, and **it leaves as us, not in the caller's name**: source and
+destination are both ours on the leg's own path, so the answer comes back to
+the digipeater and is a first-hand finding about the far end - the one that
+is written into `ax25 route list`.  A question in the caller's name would
+have the far end answer the caller, and the caller would read a XID that
+belongs to nobody in that conversation.
+
+Where the caller's own XID question arrives at a digipeat it is *answered
+there* - with the parameters of the port that leads to the caller, which are
+ours - and the question about the far end is raised separately, once, for
+all the callers waiting on it: A, A-1 and a direct caller at the same moment
+share one probe and learn the same thing.  If the far end stays silent the
+leg opens with the modulus the *outgoing port* decided, exactly as if no
+question had been asked: `eax25 off`/`accept` open plainly with SABM,
+`initiate`/`always` go out with SABME and let the ordinary fallback (three
+probes, `recover()`) settle it.  Nothing is ever sent in the far end's name
+- the caller has a timer of that kind of its own.  (Until 2026-10-09 the
+silence forced MMASK here, so switching `ax25-v2.2` on turned an
+`eax25 initiate` leg into a SABM leg - Thomas.)
+
 Through the upgraded relay: 200 frames of 256 bytes, 51 200 bytes, counting
 straight through with `N(S)` past 127 and round again.  `ax25 status` shows
 `Mod 128` and `Unack 0/32` on the second leg beside `Mod 8` on the first,
@@ -325,7 +393,7 @@ there too:
 | far end | what happens | the caller |
 | --- | --- | --- |
 | answers DM | SABME → DM → SABM → UA, no delay at all | connected at once |
-| stays silent | SABME, then the plain SABM at 19 s | connected at 20.2 s |
+| stays silent | SABME, then the plain SABM after the usual three probes | connected at 20.2 s |
 | after either | `e` in the route table | next call goes straight to SABM |
 
 **One probe, not three, on a relayed leg** - and this is worth knowing

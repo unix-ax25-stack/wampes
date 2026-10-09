@@ -122,7 +122,7 @@ static struct rfentry *Rfentries;
 	"          learns that we are here, so he can reach us\n" \
 	"\n" \
 	"  The most specific rule wins: the callsign, else the port, else\n" \
-	"  \"default\", else what the node always did.  See doc/ROUTE-FILTER.md."
+	"  \"default\", else what the node always did."
 
 char Rf_usage_flexnet[] = RF_USAGE("flexnet");
 char Rf_usage_netrom[]  = RF_USAGE("netrom")

@@ -11,6 +11,7 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "iface.h"
+#include "lang.h"
 #include "ip.h"
 #include "ax25.h"
 #include "netuser.h"
@@ -287,7 +288,8 @@ static int droplearn(int argc, char *argv[])
 	int want;
 
 	if (argc < 2 || (want = atoi(argv[1])) < 1) {
-		printf("ip learn drop <n>, die Nummer aus \"ip learn\"\n");
+		printf(_LANG("ip learn drop <n>, die Nummer aus \"ip learn\"\n",
+			     "ip learn drop <n>, the number from \"ip learn\"\n"));
 		return 1;
 	}
 	for (pp = &Iplearn, n = 1; *pp != NULL; pp = &(*pp)->next, n++) {

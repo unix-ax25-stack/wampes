@@ -108,19 +108,57 @@ del_ax25(struct ax25_cb *conn)
 	if(axp == NULL)
 		return; /* Not found */
 
+	/* RAUS AUS DER LISTE, BEVOR IRGENDETWAS ANDERES LAEUFT.
+	 *
+	 * Das war der Fehler, und er ist erst beim Relaybetrieb aufgefallen:
+	 * der Block wurde erst ganz unten aus der Liste gehoben, nach dem
+	 * peer und nach dem fernen Bein - und beides kann del_ax25() wieder
+	 * aufrufen.  Deren Aufruf durchsucht die Liste und nimmt SEINEN
+	 * axlast mit; faellt einer der beiden Bloecke ausgerechnet auf den
+	 * Vorgaenger oder den Nachfolger dieses hier, ist der Zeiger danach
+	 * Zeiger auf freien Speicher.  "axlast->next = axp->next" schreibt
+	 * dann in die Asche, und der Block, der eigentlich raus sollte,
+	 * bleibt in der Liste hängen: ein Block, auf den niemand mehr zeigt,
+	 * aber der noch traversiert wird.
+	 *
+	 * Zwei Folgen, beide in Szenario 4 ("A, A-1 und Y auf derselben
+	 * Seite")gemessen:
+	 *
+	 *   - die Liste selbst bekommt einen Zyklus, und der naechste
+	 *     del_ax25() haengt sich in einer Endlosschleife fest,
+	 *   * oder der Schreibzugriff landet in einem struct timer, und die
+	 *     Timerliste ebenfalls - dann dreht start_timer() beim EINHAENGEN
+	 *     eines Timers endlos, der Knoten steht bei 100% CPU, antwortet
+	 *     auf kein Kommando mehr und reicht keine Rahmen weiter.  Genau
+	 *     das sah der Test vorher als "B sieht Y auf b3" und wertete es
+	 *     als Digipeat-Fehler.
+	 *
+	 * VORHER aus der Liste zu gehen ist zugleich der Schutz, den der
+	 * Kommentar unten beschreibt: ein Aufrufer, der ueber eine
+	 * Upcall zurueckkommt, findet diesen Block nicht mehr und kann ihn
+	 * also weder ein zweites Mal aushängen noch ein zweites Mal
+	 * freigeben.
+	 */
+	if(axlast != NULL)
+		axlast->next = axp->next;
+	else
+		Ax25_cb = axp->next;
+	axp->next = NULL;      /* ein Block im Sterben ist kein Listenmitglied */
+
 	/* Half a link that stays in the node is no link at all, so the other
 	 * half goes too.  Here and not only in disc_ax25(), because a block
 	 * can be taken away without ever being disconnected - "reset" does
 	 * exactly that - and the far half would then sit there as "Connected"
 	 * with nobody at the other end.
 	 *
-	 * REMEMBERED HERE AND USED AT THE END, after this block is out of the
-	 * list and freed.  Taking the far half down runs consumers' upcalls,
-	 * and one of those may well come back through del_ax25() for THIS
-	 * block - which would find it still listed, unlink it a second time
-	 * and free it twice.  Unlinking the pair first stops the far half
-	 * from finding its way back, but not a path that has the pointer
-	 * already.
+	 * The block is already out of the list - see above, where that
+	 * happens now, and not at the end.  Taking the far half down runs
+	 * consumers' upcalls, and one of those may well come back through
+	 * del_ax25() for THIS block; finding it unlisted, it returns at once
+	 * and can neither unlink it a second time nor free it twice.  The
+	 * pair is also unlinked from each other before the far half goes
+	 * down, which stops the far half from finding its way back through
+	 * peer - but not a path that already holds the pointer.
 	 */
 	peer = conn->loop;
 	if(peer != NULL){
@@ -129,11 +167,51 @@ del_ax25(struct ax25_cb *conn)
 		peer->reason = LB_NORMAL;
 	}
 
-	/* Remove from list */
-	if(axlast != NULL)
-		axlast->next = axp->next;
-	else
-		Ax25_cb = axp->next;
+	/* UND DIE FERNE HAELFTE EINES DIGIPEAT-BEINS, das ist axp->peer:
+	 * derselbe Block in die andere Richtung, aus lapb_input() heraus
+	 * gebaut, und im Relay-Betrieb haeufiger als loop.  Sie blieb hier
+	 * einfach liegen, und damit zwei Dinge schief: der stehen
+	 * gebliebene haelt peer->peer auf einen Block, den es nicht mehr
+	 * gibt - wer ihn anfasst (lapb_input() liest axp->peer->state fuer
+	 * den naechsten Frame dieses Paares) liest freigegebenen Speicher -
+	 * und er steht als "verbunden" im Weg, bis er seinen T3 abwartet.
+	 *
+	 * WIR NEHMEN IHN MIT, statt ihn zu verwaeistern: die Frage, die er
+	 * beantworten sollte, geht mit diesem Block zu Ende, und eine
+	 * halbe Verbindung, die ohne Gegenstelle weiterlaeuft, ist keine.
+	 * Fuer die Relayed-SABME bedeutet das: kommt As SABM an, während die
+	 * XID-Antwort gerade ihren Weg macht, dann ist der Digipeat danach
+	 * wirklich frei fuer diesen Anruf - sonst haette der stehen
+	 * gebliebene Block den Aufruf mit "DM" abgewiesen oder gar nichts
+	 * getan, und der Anruf waere nach dem XID erledigt.
+	 *
+	 * DERSELBE GEDANKE WIE OBEN, und aus demselben Grund: der
+	 * Zeiger wird VOR dem free() gesaeitigt, weil das Herunterfahren
+	 * der fernen Haelfte Aufrufer wecken kann, die durch
+	 * del_ax25() fuer DIESEN Block zurueckkommen - der Block ist dann
+	 * nicht mehr in der Liste und wird nicht ein zweites Mal
+	 * freigegeben.
+	 */
+	if(conn->peer != NULL){
+		struct ax25_cb *far = conn->peer;
+
+		conn->peer = NULL;
+		far->peer = NULL;
+		far->reason = LB_NORMAL;
+		/* Die Haelfte ist draussen, bevor ihre Timer und ihre
+		 * Warteschlange mitgehen. */
+		lapbstate(far,LAPB_DISCONNECTED);
+		del_ax25(far);
+	}
+
+	/* A XID question may be on the air FOR this block - a second leg of a
+	 * relayed call is opened with one, and the job waiting for C's answer
+	 * points here.  This block is about to be freed, so the job goes with
+	 * it: carrying the pointer on would be carrying a free()d address into
+	 * a timer callback.  Nothing is lost by that - what the job was going
+	 * to continue is exactly what is being lost here.
+	 */
+	xid_leg_drop(axp);
 
 	/* Timers should already be stopped, but just in case... */
 	stop_timer(&axp->t1);
@@ -144,7 +222,7 @@ del_ax25(struct ax25_cb *conn)
 	stop_timer(&axp->loop_timer);
 
 	/* Free allocated resources */
-	for (i = 0; i < 8; i++)
+	for (i = 0; i <= EMMASK; i++)
 		free_p(&axp->reseq[i].bp);
 	free_q(&axp->txq);
 	free_q(&axp->rxasm);
@@ -589,10 +667,31 @@ struct ax25 *hdr)
 	printf("Too many digipeaters (max %d)\n",MAXDIGIS);
 	return 1;
       }
-      if (setcall(hdr->digis[hdr->ndigis++],*argv)) {
+      if (setcall(hdr->digis[hdr->ndigis],*argv)) {
 	printf("Invalid call \"%s\"\n",*argv);
 	return 1;
       }
+      /* Ein Digi ist nur noetig, wenn er weiterfuehrt: das Ziel
+       * selbst, ein schon genanntes Glied oder unser eigenes
+       * Rufzeichen wuerde der Kette nichts hinzufuegen, und so ein
+       * Pfad gehoert nicht in den Kopf. */
+      if (addreq(hdr->digis[hdr->ndigis],hdr->dest)) {
+	printf("Digipeater same as destination \"%s\"\n",*argv);
+	return 1;
+      }
+      if (addreq(hdr->digis[hdr->ndigis],Mycall)) {
+	printf("Digipeater same as own callsign \"%s\"\n",*argv);
+	return 1;
+      }
+      {
+	int i;
+	for (i = 0; i < hdr->ndigis; i++)
+	  if (addreq(hdr->digis[hdr->ndigis],hdr->digis[i])) {
+	    printf("Digipeater \"%s\" already in path\n",*argv);
+	    return 1;
+	  }
+      }
+      hdr->ndigis++;
     }
   }
   return 0;

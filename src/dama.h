@@ -34,6 +34,13 @@
  */
 #define DAMA_GAP_DEFAULT        1000L   /* ms */
 
+/* Die Zufallszeit, die ein Fremder in dieser Luecke braucht, damit der
+ * Kanal ihm gehoert.  Sie steht hier, weil "ifconfig <iface> dama-gap 0"
+ * die Rechnung dem Bediener vorlesen muss, und iface.c kann sie nicht
+ * selbst erfinden.  Die Herleitung gehoert zu dama_gap_time().
+ */
+#define DAMA_GAP_CSMA           300L    /* ms */
+
 /* Roles. */
 #define DAMA_OFF        0
 #define DAMA_SLAVE      1

@@ -89,16 +89,39 @@ static int fkbd = -1;
  * hang the node in accept() on the wrong socket.
  */
 struct listener {
-  const char *name;                     /* in build_sockaddr() notation */
+  char *name;                           /* in build_sockaddr() notation */
   int restricted;                       /* service socket, not command channel */
   int fd;
 };
 
+/* The paths are in the node's directory, which "-d" chooses and TCPDIR is the
+ * default for - see Node_dir in main.c.  They cannot be written here as
+ * literals: at this point the node's directory is not known yet, and a
+ * listener's name is also the socket's path that the axsock command reports
+ * on.  listener_paths() fills them in, once, before the first is used.
+ */
+static char Netcmd_path[512];
+static char Axsock_path[512];
+static char Axsock_name[512];
 static struct listener Listeners[] = {
-  { "unix:" TCPDIR "/.sockets/netcmd", 0, -1 },
-  { "unix:" TCPDIR "/sockets/ax25",    1, -1 },
-  { 0,                                 0, -1 }
+  { NULL, 0, -1 },
+  { NULL, 1, -1 },
+  { NULL, 0, -1 }
 };
+
+static void
+listener_paths(void)
+{
+  char path[512];
+
+  if (Netcmd_path[0] != '\0') return;
+  nodedir_path(path, sizeof(path), ".sockets/netcmd");
+  snprintf(Netcmd_path, sizeof(Netcmd_path), "unix:%s", path);
+  nodedir_path(Axsock_path, sizeof(Axsock_path), "sockets/ax25");
+  snprintf(Axsock_name, sizeof(Axsock_name), "unix:%s", Axsock_path);
+  Listeners[0].name = Netcmd_path;
+  Listeners[1].name = Axsock_name;
+}
 
 /* The loopback listeners are not among them: they stay closed unless net.rc
  * says so, because a TCP port carries no rights of its own.  Switching it on
@@ -1243,8 +1266,6 @@ static void set_service_rights(const char *path)
  * belongs in net.rc, where it runs after the socket exists.
  */
 
-static const char Axsock_path[] = TCPDIR "/sockets/ax25";
-
 int doaxsock(int argc, char *argv[], void *p)
 {
   struct group *gr;
@@ -1254,6 +1275,7 @@ int doaxsock(int argc, char *argv[], void *p)
 
   (void) p;
 
+  listener_paths();
   if (argc < 2) {
     if (stat(Axsock_path, &st)) {
       printf("%s: not there\n", Axsock_path);
@@ -1476,6 +1498,7 @@ void remote_net_initialize(void)
 
   openlog("wampes-net", LOG_PID, LOG_DAEMON);
 
+  listener_paths();
   for (l = Listeners; l->name; l++)
     open_listener(l, 1);
 }

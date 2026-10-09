@@ -8,6 +8,7 @@
 #include "mbuf.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "xid.h"
 #include "trace.h"
 #include "socket.h"
 
@@ -23,6 +24,7 @@ int check       /* Not used */
 	char tmp[AXBUF];
 	//char frmr[3];
 	char frmr[5];
+	uint8 xidf[4];	/* XID: FI(1) GI(1) GL(2, big-endian) */
 	int control,controlx,pid,seg;
 	uint type;
 	int unsegmented;
@@ -161,6 +163,74 @@ int check       /* Not used */
 		if(frmr[eax25 ? 4 : 2] & Z)
 			fprintf(fp," Invalid seq number");
 		fputs(s_ext, fp);
+	} else if(type == XID && pullup(bpp,xidf,4) == 4){
+		uint gl, pv;
+		int pi,pl,b;
+		/* XID-Negotiationsfelder nach ISO 8885 / AX.25 2.2 §2.5.7.1:
+		 * auf FI und GI folgt GL (die Gesamtlaenge der nachfolgenden
+		 * Parameterliste, two octets big-endian), darauf ein oder
+		 * mehrere (PI,PL,PV)-Tripel.  Genau diese Tripel sind es, die
+		 * man beim Einwand "mir fehlt eine Bestaetigung" begreifen
+		 * muss: wer hier blind ratioet, sah in Wahrheit nur die
+		 * eigenen Wunschwerte.  linux listen druckt fuer XID nicht
+		 * einmal das Wort XID - die Luecke war im wampes genauso.
+		 */
+		gl = (xidf[2] << 8) | xidf[3];
+		if(eax25 ? (xidf[0] == XID_FI_GENERAL) : 1)
+			fprintf(fp," FI=0x%x",xidf[0]);
+		else
+			fprintf(fp," FI=0x%x",xidf[0]);
+		if(xidf[1] == XID_GI_PARAMS)
+			fprintf(fp," GI=0x%x",xidf[1]);
+		fprintf(fp," GL=%u",gl);
+		while(gl >= 2){
+			if((pi = PULLCHAR(bpp)) == -1 || (pl = PULLCHAR(bpp)) == -1)
+				break;
+			gl -= 2;
+			if(pl > gl)
+				break;	/* das Feld ist laut Draht nicht ok */
+			gl -= pl;
+			pv = 0;
+			while(pl-- > 0){
+				if((b = PULLCHAR(bpp)) == -1)
+					break;
+				pv = (pv << 8) | b;
+			}
+			switch(pi){
+			case XID_PI_OPTIONS:
+				fprintf(fp," OPT=0x%x%s%s%s",
+					(unsigned)pv,
+					(pv & XID_OPT_SREJ) ? " SREJ" :
+					(pv & XID_OPT_REJ) ? " REJ" : "",
+					(pv & XID_OPT_MOD128) ? " mod128" :
+					(pv & XID_OPT_MOD8) ? " mod8" : "",
+					(pv & XID_OPT_SEGMENT) ? " SEG" : "");
+				break;
+			case XID_PI_WINDOWRX:
+				fprintf(fp," k=%u",(unsigned)pv);
+				break;
+			case XID_PI_IFIELDRX:
+				fprintf(fp," N1rx=%u",(unsigned)pv);
+				break;
+			case XID_PI_IFIELDTX:
+				fprintf(fp," N1tx=%u",(unsigned)pv);
+				break;
+			case XID_PI_WINDOWTX:
+				fprintf(fp," kTx=%u",(unsigned)pv);
+				break;
+			case XID_PI_ACKTIME:
+				fprintf(fp," T1=%ums",(unsigned)pv);
+				break;
+			case XID_PI_RETRIES:
+				fprintf(fp," Retries=%u",(unsigned)pv);
+				break;
+			default:
+				fprintf(fp," PI=%u PL=%u PV=0x%x",
+					pi,pl,pv);
+				break;
+			}
+		}
+		fputs(s_ext, fp);
 	} else
 		/* AUCH HIER die DAMA-Marke, und das war eine Luecke genau an
 		 * der wichtigsten Stelle: das ganze Poll-Verfahren besteht aus
@@ -198,6 +268,8 @@ decode_type(uint type)
 		return "FRMR";
 	case UI:
 		return "UI";
+	case XID:
+		return "XID";
 	default:
 		return "[invalid]";
 	}

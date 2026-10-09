@@ -31,6 +31,7 @@
 #define RR      0x01    /* Receiver ready */
 #define RNR     0x05    /* Receiver not ready */
 #define REJ     0x09    /* Reject */
+#define SREJ    0x0d    /* Selective reject */
 #define U       0x03    /* Unnumbered frames */
 #define SABM    0x2f    /* Set Asynchronous Balanced Mode, modulo-8 */
 #define SABME   0x6f    /* Set Asynchronous Balanced Mode, modulo-128 */
@@ -38,7 +39,9 @@
 #define DM      0x0f    /* Disconnected mode */
 #define UA      0x63    /* Unnumbered acknowledge */
 #define FRMR    0x87    /* Frame reject */
+#define XID     0xaf    /* Exchange identification */
 #define UI      0x03    /* Unnumbered information */
+#define TEST    0xe3    /* Test */
 #define PF      0x10    /* Poll/final bit */
 #define PF_EAX25 0x01   /* Poll/final bit in extra eax25 byte */
 
@@ -63,7 +66,14 @@ struct axreseq {
 
 enum lapb_version {
 	V1=1,                   /* AX.25 Version 1 */
-	V2                      /* AX.25 Version 2 */
+	V2,                     /* AX.25 Version 2.0 */
+	V2_2                    /* AX.25 Version 2.2 - a 2.0 peer proved it by
+				 * ANSWERING a XID in this session.  Never
+				 * set from a knob: a port that says 2.2 is
+				 * no evidence, a V2 peer with SREJ and no XID
+				 * would then be asked a question it does not
+				 * know.  The timer rules test for V1, so a
+				 * 2.2 link is timed like a 2.0 one. */
 };
 
 enum lapb_state {
@@ -161,6 +171,10 @@ struct ax25_cb {
 	struct {
 		int32 remotebusy;               /* Remote sent RNR */
 		unsigned int rejsent:1;         /* REJ frame has been sent */
+		unsigned int peer_srej:1;       /* Peer handles SREJ (XID PI=3);
+						 * set to NO unless negotiated */
+		unsigned int neg_wait:1;        /* An XID probe is on the wire and
+						 * the connect waits for its answer */
 		unsigned int rtt_run:1;         /* Round trip "timer" is running */
 		unsigned int retrans:1;         /* A retransmission has occurred */
 		unsigned int clone:1;           /* Server-type cb, will be cloned */
@@ -227,6 +241,7 @@ struct ax25_cb {
 #define LB_NORMAL       0               /* Normal close */
 #define LB_DM           1               /* Received DM from other end */
 #define LB_TIMEOUT      2               /* Excessive retries */
+#define LB_NEGOTIATION  3               /* Peer refused to negotiate */
 
 /*      uint8 response;                    Response owed to other end */
 	uint8 vs;                       /* Our send state variable */
@@ -235,6 +250,13 @@ struct ax25_cb {
 	int maxframe;                   /* Transmit flow control level, frames */
 	uint paclen;                    /* Maximum outbound packet size, bytes */
 	uint window;                    /* Local flow control limit, bytes */
+	/* What the peer declared in its XID answer: the N1 (bytes) it will
+	 * receive and the window k (frames) it will buffer.  Ours to clamp
+	 * our sending to, for THIS link only - not remembered per route
+	 * (xid.h, ax25_apply_peer_xid).  Zero means "he said nothing".
+	 */
+	uint peer_n1;
+	uint peer_k;
 	enum lapb_version proto;        /* Protocol version */
 	uint pthresh;                   /* Poll threshold, bytes */
 	unsigned retries;               /* Retry counter */
@@ -402,7 +424,17 @@ void eax25_remember(uint8 *call,int verdict);
 void eax25_failed(uint8 *call);
 int ax25_maxframe(struct ax25_cb *axp);
 void ax25_apply_iface_limits(struct ax25_cb *axp);
+/* Uebernimm die vom Peer in seiner XID-Antwort genannten Empfangsgrenzen
+ * (N1 in Bits, Fenster k in Rahmen) als Obergrenze fuer UNSER Senden - nur
+ * fuer diese eine Verbindung, nicht pro Route gemerkt (xid.h).
+ */
+void ax25_apply_peer_xid(struct ax25_cb *axp,unsigned n1_bits,unsigned k);
 void eax25_fallback(struct ax25_cb *axp);
+/* Welchen Modulus eine eigene (oder als Relais gefuehrte) XID-Frage an dest
+ * ueber ifp anbietet - dieselbe Regel fuer Verbindung, Relais-Bein und
+ * Selbst-Sonde (lapb.c).
+ */
+int eax25_wanted(struct iface *ifp,uint8 *dest);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
 int busy(struct ax25_cb *cp);
 /* Die faellige Quittung jetzt senden - REJ, wenn etwas fehlt, sonst

@@ -13,12 +13,15 @@
 #include <stdio.h>
 #include <time.h>
 #include <ctype.h>
+#include <limits.h>
+#include <errno.h>
 #include "global.h"
 #include <stdarg.h>
 #include "mbuf.h"
 #include "timer.h"
 #include "proc.h"
 #include "iface.h"
+#include "pktdrvr.h"
 #include "arp.h"
 #include "ip.h"
 #include "tcp.h"
@@ -57,6 +60,71 @@ int main_exit = FALSE;                  /* from main program (flag) */
 int Debug;
 int Mode;
 uint Lport = 1024;
+
+/* THE NODE'S DIRECTORY.
+ *
+ * Everything a node writes while it runs and would not want to find again on
+ * the next start - the command socket, the service socket, the learned AX.25
+ * routes - belongs to the node, not to whoever happens to run it.  It used to
+ * be written straight into TCPDIR, which is right for the one node a machine
+ * has and wrong for everything else: two nodes on one machine, which is what
+ * a test of the AX.25 layer is made of, then share a command socket and a
+ * route file, and the second one to start is simply refused.
+ *
+ * So the directory is chosen at the start and defaults to TCPDIR, which is
+ * where a real node keeps it.  Everything else about the node stays as it
+ * was: same names, same modes, same order of creation.
+ */
+static char Node_dir[PATH_MAX] = TCPDIR;
+
+const char *
+nodedir(void)
+{
+	return Node_dir;
+}
+
+void
+nodedir_path(char *buf, size_t len, const char *leaf)
+{
+	snprintf(buf, len, "%s/%s", Node_dir, leaf);
+}
+
+/* The two socket directories are made by "make install" in a real node's
+ * tree.  A node started with -d somewhere else has no install step, so it
+ * makes them itself - with the same modes, and only when they are not there
+ * already.  Nothing else in the directory is created: the startup file, the
+ * log and the route file are the operator's or the node's own business.
+ */
+static void
+nodedir_setup(void)
+{
+	static const char *const dirs[] = { ".sockets", "sockets", NULL };
+	char path[PATH_MAX];
+	struct stat st;
+	int i;
+
+	if(stat(Node_dir, &st) == -1){
+		if(mkdir(Node_dir, 0755) == -1 && errno != EEXIST){
+			printf("Can't create %s: ",Node_dir);
+			perror("");
+			return;
+		}
+		printf("%s: node directory created\n",Node_dir);
+	}
+	for(i = 0; dirs[i] != NULL; i++){
+		nodedir_path(path, sizeof(path), dirs[i]);
+		if(stat(path, &st) == -1){
+			mode_t mode = (i == 0) ? 0700 : 0750;
+
+			if(mkdir(path, mode) == -1 && errno != EEXIST){
+				printf("Can't create %s: ",path);
+				perror("");
+				continue;
+			}
+			printf("%s: created\n",path);
+		}
+	}
+}
 int stop_repeat;
 
 char Prompt[] = "%s> ";
@@ -124,8 +192,8 @@ static void
 check_permissions(const char *startup)
 {
 	static const char *const under[] = {
-		TCPDIR, TCPDIR "/.sockets",
-		TCPDIR "/sbin", TCPDIR "/bin", NULL
+		"", ".sockets",
+		"sbin", "bin", NULL
 	};
 	char path[1024];
 	size_t n;
@@ -142,25 +210,32 @@ check_permissions(const char *startup)
 	 * the permissions on /usr/local/wampes are beside the point.  That is
 	 * the usual finding on macOS.
 	 */
-	n = strlen(TCPDIR);
-	while(n > 0 && TCPDIR[n-1] != '/')
+	n = strlen(Node_dir);
+	while(n > 0 && Node_dir[n-1] != '/')
 		n--;
 	if(n > 1 && n <= sizeof(path)){
-		memcpy(path,TCPDIR,n-1);        /* without the trailing slash */
+		memcpy(path,Node_dir,n-1);        /* without the trailing slash */
 		path[n-1] = '\0';
 		bad += perm_check(path);
 	}
-	for(i = 0; under[i] != NULL; i++)
-		bad += perm_check(under[i]);
+	for(i = 0; under[i] != NULL; i++){
+		if(under[i][0] == '\0')
+			bad += perm_check(Node_dir);
+		else{
+			nodedir_path(path, sizeof(path), under[i]);
+			bad += perm_check(path);
+		}
+	}
 	if(startup != NULL)
 		bad += perm_check(startup);
 
 	if(bad){
+		/* The rule and the repair commands are in doc/PERMISSIONS.md. */
 		printf("  Anyone who can write those can run commands as root, through\n");
 		printf("  %s or through the command channel.  Nothing was changed\n",
 		 startup != NULL ? startup : "the startup file");
-		printf("  here on purpose - see doc/PERMISSIONS.md, or run \"make\n");
-		printf("  install\" as root, which sets them.\n\n");
+		printf("  here on purpose.  Run \"make install\" as root, which\n");
+		printf("  sets them.\n\n");
 	}
 }
 
@@ -171,6 +246,7 @@ main(int argc,char *argv[])
 	struct daemon *tp;
 	int c;
 	char cmdbuf[256];
+	size_t n;
 
 #ifdef macII
 	setposix();
@@ -184,8 +260,23 @@ main(int argc,char *argv[])
 	time((time_t *) &StartTime);
 	Hostname = strdup("net");
 
-	while((c = getopt(argc,argv,"ghv")) != EOF){
+	while((c = getopt(argc,argv,"d:ghv")) != EOF){
 		switch(c){
+		case 'd':
+			/* A trailing slash would show up in every path built
+			 * from it later, so take it off once here.  An empty
+			 * argument is refused rather than turned into the root
+			 * directory by accident.
+			 */
+			if(*optarg == '\0'){
+				printf("%s: -d wants a directory, not nothing\n",argv[0]);
+				exit(1);
+			}
+			n = strlen(optarg);
+			while(n > 1 && optarg[n-1] == '/')
+				optarg[--n] = '\0';
+			snprintf(Node_dir, sizeof(Node_dir), "%s", optarg);
+			break;
 		case 'g':
 			Debug = 1;
 			break;
@@ -201,7 +292,10 @@ main(int argc,char *argv[])
 			 * everything else is a command, and the ones that
 			 * take an address or a port are asked for inside.
 			 */
-			printf("Usage: %s [-g] [-h] [-v] [<config file>]\n"
+			printf("Usage: %s [-d <dir>] [-g] [-h] [-v] [<config file>]\n"
+			       "  -d  the node's directory: command socket, service\n"
+			       "      socket and learned AX.25 routes go there.\n"
+			       "      Default: %s\n"
 			       "  -g  debug: keep the terminal, do not detach\n"
 			       "  -v  verbose: say what the config file does\n"
 			       "  -h  this\n"
@@ -212,11 +306,12 @@ main(int argc,char *argv[])
 			       "  \"?\" lists them, and \"<command> ?\" explains\n"
 			       "  one.  The service socket over TCP, for\n"
 			       "  instance, is \"axsock tcp-listen on\".\n",
-			       argv[0]);
+			       argv[0], TCPDIR);
 			exit(c == 'h' ? 0 : 1);
 			break;
 		}
 	}
+	nodedir_setup();
 	kinit();
 	ioinit();
 	netrom_initialize();
@@ -349,7 +444,18 @@ keyboard(void *arg)
 
 	stop_repeat = 1;
 	n = read(0, p = buf, sizeof(buf));
-	if (n <= 0) dobye(0, 0, 0);
+	if (n <= 0) {		/* EOF: Konsole weg.  EOF auf einem Tty ist
+				 * "sticky": select() meldet fd 0 in jeder Runde
+				 * lesbar, und ohne off_read() (das dobye() nur
+				 * fuer den entfernten "console"-Handover tut)
+				 * dreht der Knoten bei 100% CPU.  freopen()
+				 * schliesst das tote pty und laesst fd 0 nicht
+				 * von einem spaeteren open() wiederbenutzen.
+				 */
+		off_read(0);
+		freopen("/dev/null", "r+", stdin);
+		dobye(0, 0, 0);
+	}
 	while (--n >= 0) {
 		process_char(*p++ & 0xff);
 		while (Fkey_ptr && *Fkey_ptr)
@@ -529,10 +635,29 @@ void *p
 	/* Whatever appeared at the head of the list is what this attach made -
 	 * every attach function links its port in there.  Done here rather than
 	 * in each of them, which is a dozen places that would have to agree.
+	 *
+	 * An AX.25 port also inherits the global ax25-v2.2 factory default here
+	 * ("ax25 ax25-v2.2 ..." before the attach, in net.rc).  "ifconfig
+	 * <iface> ax25-v2.2" after the attach overrides it per port.
 	 */
-	for(ifp = Ifaces; ifp != NULL && ifp != before; ifp = ifp->next)
+	for(ifp = Ifaces; ifp != NULL && ifp != before; ifp = ifp->next){
 		if(ifp->attached_as == NULL && argc > 1)
 			ifp->attached_as = strdup(argv[1]);
+		/* A freshly attached AX.25 port takes the node's AX.25 2.2
+		 * default AS IT IS, word for word.  There used to be a step
+		 * here that turned "accept" into "initiate" (main.c:553-556),
+		 * so that a new port would reach a 2.2 station at all.  The
+		 * price was that "ax25 ax25-v2.2" and "if verbose" told
+		 * opposite stories before a single frame had been sent - the
+		 * first said "accept", the second said "initiate" (Thomas,
+		 * 2026-09-25).  A default that is not the default is worth
+		 * less than a conservative one, and the question this step
+		 * was answering is answered by "ax25 version 1|2|2.2"
+		 * (TODO.txt) where there is nothing left to guess.
+		 */
+		if(ifp->iftype != NULL && ifp->iftype->type == CL_AX25)
+			ifp->ax25_v2 = Ax25_v2_default;
+	}
 	return result;
 }
 /* Manipulate I/O device parameters */

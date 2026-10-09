@@ -8,6 +8,7 @@
 #include "mbuf.h"
 #include "proc.h"
 #include "iface.h"
+#include "lang.h"
 #include "dama.h"
 #include "ip.h"
 #include "icmp.h"
@@ -53,6 +54,7 @@ static int ifbridge(int argc,char *argv[],void *p);
 static int is_ax25(struct iface *ifp);
 static int ifdigiarp(int argc,char *argv[],void *p);
 static int ifeax25(int argc,char *argv[],void *p);
+static int ifax25v2(int argc,char *argv[],void *p);
 static int ifpaclen(int argc,char *argv[],void *p);
 static int ifmaxframe(int argc,char *argv[],void *p);
 static int ifemaxframe(int argc,char *argv[],void *p);
@@ -159,9 +161,17 @@ char Noipaddr[] = "IP address field missing, and ip address not set\n";
 struct cmds Ifcmds[] = {
 	{ "arp",                  ifarp,          0,      1, NULL },
 	{ "hf-datarate",          ifhfdatarate,   0,      1,
+	  _LANG(
 	  "ifconfig <iface> hf-datarate <bit/s>   (0 = unbekannt)\n"
-	  "  Die Geschwindigkeit AUF DER LUFT, nicht die zum TNC.  DAMA rechnet\n"
-	  "  daraus seine Fristen; ohne sie bleibt es bei den Vorgaben." },
+	  "  Die Geschwindigkeit AUF FUNK, nicht die zum TNC.  DAMA rechnet daraus\n"
+	  "  seine Zeiten.  Ohne hf-datarate gelten als Vorgabe: dama-gap 1000 ms,\n"
+	  "  answer 5000 ms, turn 5000 ms; mit hf-datarate wird aus der Rate auf\n"
+	  "  Funk und dem TX-Delay des Ports gerechnet.",
+	  "ifconfig <iface> hf-datarate <bit/s>   (0 = unknown)\n"
+	  "  The speed ON THE RADIO, not the one to the TNC.  DAMA computes its\n"
+	  "  times from it.  Without hf-datarate the defaults are: dama-gap 1000 ms,\n"
+	  "  answer 5000 ms, turn 5000 ms; with hf-datarate they are computed from the\n"
+	  "  rate on the radio and the port's TX-Delay.") },
 	{ "autoroute",            ifautoroute,    0,      2,
 	  "ifconfig <iface> autoroute on|off\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "digiarp",              ifdigiarp,      0,      2,
@@ -185,19 +195,39 @@ struct cmds Ifcmds[] = {
 	 * Polls haben es gezeigt.
 	 */
 	{ "dama-gap",             ifdamagap,      0,      1,
+	  _LANG(
 	  "ifconfig <iface> dama-gap <ms>         (0 = aus hf-datarate)\n"
-	  "  Als DAMA-MASTER die Pause zwischen zwei Zuegen.  IN DER REGEL\n"
-	  "  NICHTS ZU SETZEN: ohne Angabe wird sie aus hf-datarate und dem\n"
-	  "  TX-Delay des Ports berechnet, so wie \"answer\" und \"turn\" auch\n"
-	  "  (\"ifconfig <iface> verbose\" zeigt alle drei).\n"
-	  "  Wozu sie da ist: auf einem DAMA-Kanal sendet niemand ungefragt,\n"
-	  "  und ein Verbindungsaufbau wird nicht gepollt - er laeuft in CSMA.\n"
-	  "  Die Luecke ist das einzige Stueck Funkstille, in dem ein Fremder\n"
-	  "  hereinkommen kann; sie muss sein TX-Delay, sein CSMA-Wuerfeln und\n"
-	  "  sein SABM fassen.  Achtung: sie gilt nach JEDEM Zug, eine Runde\n"
-	  "  mit n Stationen dauert also mindestens n mal so lang." },
+	  "  Als DAMA-MASTER die Funkstille, in der ein neuer Verbindungsaufbau\n"
+	  "  beginnen kann.  IN DER REGEL NICHTS ZU SETZEN:  die Vorgabe ist die\n"
+	  "  kuerzere und wird aus hf-datarate und dem TX-Delay des Ports berechnet,\n"
+	  "  wie \"answer\" und \"turn\" auch (\"ifconfig <iface> verbose\" zeigt alle\n"
+	  "  drei).\n"
+	  "  Wozu sie da ist: auf einem DAMA-Kanal sendet niemand ungefragt, und ein\n"
+	  "  Verbindungsaufbau wird nicht gepollt - er laeuft in CSMA.  Die Luecke\n"
+	  "  ist je Runde der einzige Zeitpunkt dafuer, und sie muss gross genug sein\n"
+	  "  fuer den Verbindungsaufbau eines neuen Nutzers.\n"
+	  "  Der aktuelle Wert steht in \"ifconfig <iface> verbose\".",
+	  "ifconfig <iface> dama-gap <ms>         (0 = from hf-datarate)\n"
+	  "  As DAMA-MASTER the radio silence in which a new connection setup can\n"
+	  "  begin.  IN GENERAL, NOTHING TO SET:  the default is the shorter one and\n"
+	  "  is computed from hf-datarate and the port's TX-Delay, just as \"answer\"\n"
+	  "  and \"turn\" are (\"ifconfig <iface> verbose\" shows all three).\n"
+	  "  What it is for: on a DAMA channel nobody sends unasked, and a connection\n"
+	  "  setup is not polled - it runs in CSMA.  Once per round the gap is the only\n"
+	  "  opportunity for that, and it must be large enough for a new user's\n"
+	  "  connection setup.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\".") },
 	{ "eax25",                ifeax25,        0,      2,
-	  "ifconfig <iface> eax25 off|accept|caller|always\n  The current value is in \"ifconfig <iface> verbose\"." },
+	  "ifconfig <iface> eax25 off|accept|initiate|always\n  The current value is in \"ifconfig <iface> verbose\"." },
+	/* AX.25 2.2 (XID) per port; the rules it negotiates are in
+	 * doc/AX25-2.2-GAP.md. */
+	{ "ax25-v2.2",            ifax25v2,       0,      2,
+	  "ifconfig <iface> ax25-v2.2 off|accept|initiate|always\n"
+	  "  AX.25 2.2 (XID) per port: off means never (neither ask nor\n"
+	  "  answer, so a prober falls back to SABM), accept answers a\n"
+	  "  prober, initiate also probes unknown peers ourselves, always\n"
+	  "  insists on modulo-128.  The current value is in \"ifconfig\n"
+	  "  <iface> verbose\"." },
 	{ "emaxframe",            ifemaxframe,    0,      2,
 	  "ifconfig <iface> emaxframe 0..63   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "encapsulation",        ifencap,        0,      2,
@@ -207,12 +237,19 @@ struct cmds Ifcmds[] = {
 	{ "paclen",               ifpaclen,       0,      2,
 	  "ifconfig <iface> paclen 0..2048   (0 = use the node's)\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "forward",              ifforw,         0,      2,
+	  _LANG(
 	  "ifconfig <iface> forward <iface>   (receive here, send there)\n"
 	  "  Der Empfang auf diesem Port bleibt, nur das SENDEN geht auf den\n"
 	  "  anderen - der Duplex-Einstieg, Eingabe und Ausgabe auf getrennten\n"
 	  "  Frequenzen.  Es ist KEINE Bruecke: fremde Rahmen werden nicht\n"
 	  "  weitergereicht, nur unsere eigenen anders hinausgelegt.\n"
-	  "  The current value is in \"ifconfig <iface> verbose\"." },
+	  "  Der aktuelle Wert steht in \"ifconfig <iface> verbose\".",
+	  "ifconfig <iface> forward <iface>   (receive here, send there)\n"
+	  "  Receiving on this port stays, only the SENDING goes out the other one -\n"
+	  "  the duplex setup, input and output on separate frequencies.  It is NOT\n"
+	  "  a bridge: foreign frames are not forwarded, only our own are sent out a\n"
+	  "  different way.\n"
+	  "  The current value is in \"ifconfig <iface> verbose\".") },
 	{ "ipaddress",            ifipaddr,       0,      2,
 	  "ifconfig <iface> ipaddress <ip address>\n  The current value is in \"ifconfig <iface> verbose\"." },
 	{ "linkaddress",          iflinkadr,      0,      2,
@@ -224,27 +261,50 @@ struct cmds Ifcmds[] = {
 	{ "pid-filter",            if_pid_filter,  0,      1,      Pid_filter_usage },
 	{ "frame-filter",          if_frame_filter, 0,      1,      Frame_filter_usage },
 	{ "bridge",               ifbridge,       0,      1,
+	  _LANG(
 	  "ifconfig <iface> bridge [<iface>|off]\n"
 	  "  Ports zusammenschliessen - beliebig viele, nicht nur zwei: der\n"
-	  "  genannte Port bestimmt die Gruppe, und wer einem beitritt, ist\n"
-	  "  mit allen darin verbunden.  Mehrere Bruecken nebeneinander gehen\n"
-	  "  auch; ein Port ist immer in hoechstens einer.  \"off\" nimmt nur\n"
-	  "  diesen Port heraus und loest die Gruppe nicht auf.  Ein Rahmen, dessen NAECHSTER HOP\n"
-	  "  auf dem anderen Port zuhause ist, geht dort hinaus - unveraendert\n"
-	  "  und ohne uns im Digipfad.  Beide Enden werden zugleich gesetzt.\n"
-	  "  Etwas anderes als \"forward\": das lenkt UNSERE eigenen\n"
-	  "  Aussendungen um und traegt fremden Verkehr gar nicht.\n"
-	  "  Unbekanntes Ziel faellt weg und wird nicht geflutet; Broadcasts\n"
-	  "  (QST, NODES) werden nie gebrueckt." },
+	  "  genannte Port bestimmt die Gruppe, und wer einem beitritt, ist mit\n"
+	  "  allen darin verbunden.  Mehrere Bruecken nebeneinander gehen auch;\n"
+	  "  ein Port ist immer in hoechstens einer.  \"off\" nimmt nur diesen\n"
+	  "  Port heraus und loest die Gruppe nicht auf.  Ein Rahmen, dessen\n"
+	  "  NAECHSTER HOP auf dem anderen Port zuhause ist, geht dort hinaus -\n"
+	  "  unveraendert und ohne uns im Digipfad.  Beide Enden werden zugleich\n"
+	  "  gesetzt.\n"
+	  "  Etwas anderes als \"forward\":  das lenkt UNSERE eigenen Aussendungen\n"
+	  "  um und traegt fremden Verkehr gar nicht.\n"
+	  "  Unbekanntes Ziel faellt weg und wird nicht geflutet;  Broadcasts (QST,\n"
+	  "  NODES) werden nie gebrueckt.",
+	  "ifconfig <iface> bridge [<iface>|off]\n"
+	  "  To join ports - any number of them, not just two:  the port named gives\n"
+	  "  the group, and whoever joins it is connected to everyone in it.  Several\n"
+	  "  side by side are fine too;  a port is always in at most one of them.\n"
+	  "  \"off\" takes only this port out and does not dissolve the group.  A\n"
+	  "  frame whose NEXT HOP is at home on the other port goes out there -\n"
+	  "  unchanged and without us in the digipeat path.  Both ends are set at\n"
+	  "  the same time.\n"
+	  "  Something else than \"forward\":  that one redirects OUR OWN\n"
+	  "  transmissions and carries no foreign traffic at all.\n"
+	  "  An unknown destination falls away and is not flooded;  broadcasts (QST,\n"
+	  "  NODES) are never bridged.") },
 	{ "user-to-user",         ifusertouser,   0,      1,
+	  _LANG(
 	  "ifconfig <iface> user-to-user [on|off]   (default off)\n"
-	  "  Duerfen sich zwei Nutzer DIESES Ports direkt erreichen, ohne uns\n"
-	  "  als Digipeater im Pfad?  Ohne den Schalter faellt ein Rahmen weg,\n"
-	  "  der weder an uns geht noch uns im Digipfad nennt.\n"
-	  "  Sinnvoll, wo die Nutzer einander NICHT hoeren: axip/axudp und\n"
-	  "  bpqether sind Punkt zu Punkt je Partner, und ein Duplex-Einstieg\n"
-	  "  ist es auch.  Auf einem Simplex-Funkkanal hoeren sie einander\n"
-	  "  ohnehin - dort waere es eine Verdopplung." },
+	  "  Duerfen zwei Nutzer DIESES Ports sich direkt erreichen, ohne uns als\n"
+	  "  Digipeater im Pfad?  Ohne diese Einstellung wird ein Paket verworfen,\n"
+	  "  das nicht an uns adressiert ist oder das wir digipeaten sollen.\n"
+	  "  Sinnvoll, wo die Nutzer einander NICHT hoeren:  axip/axudp und\n"
+	  "  bpqether sind Punkt zu Punkt je Partner, und ein Duplex-Einstieg ist\n"
+	  "  es auch.  Auf einem Simplex-Funkkanal hoeren sie einander ohnehin -\n"
+	  "  dort waere es eine Verdopplung.",
+	  "ifconfig <iface> user-to-user [on|off]   (default off)\n"
+	  "  May two users of THIS port reach each other directly, without us as\n"
+	  "  digipeater in the path?  Without this setting a packet is dropped that\n"
+	  "  is not addressed to us or that we are to digipeat.\n"
+	  "  It makes sense where the users do NOT hear each other:  axip/axudp and\n"
+	  "  bpqether are point to point per partner, and so is a duplex setup.  On\n"
+	  "  a simplex radio channel they hear each other anyway - there it would be\n"
+	  "  a duplication.") },
 	{ "digi-keep-path",       ifdigikeepad,    0,      1,
 	  "ifconfig <iface> [digi-keep-path on|off|default]\n"
 	  "  on:  repeat frames OUT OF THIS PORT with the whole digi path still\n"
@@ -586,8 +646,9 @@ ifhfdatarate(int argc,char *argv[],void *p)
 	return 0;
 }
 
-/* DIE PAUSE ZWISCHEN ZWEI ZUEGEN, und sie war bis hierher ein festes
- * #define.  Thomas beim Mitlesen einer Messung: "Poll im Sekundentakt?
+/* DIE LUECKE, UND SIE LIEGT JE RUNDE EINMAL AN, nicht nach jeder
+ * Aussendung - daher der Name und nicht "interleaving gap" ueberall.
+ * Thomas beim Mitlesen einer Messung: "Poll im Sekundentakt?
  * Veraendert sich das, wenn wir 16 User haben?  16 Polls passen nicht in 1s."
  *
  * Nein, veraendert sich nicht - und die Spezifikation will das Gegenteil
@@ -615,31 +676,42 @@ ifdamagap(int argc,char *argv[],void *p)
 	}
 	if(argc < 2){
 		if(ifp->dama_gap)
-			printf("%s: dama-gap %ldms (gesetzt)\n", ifp->name,
-			       (long) ifp->dama_gap);
+			printf(_LANG(
+			       "%s: dama-gap %ldms (gesetzt)\n",
+			       "%s: dama-gap %ldms (set)\n"),
+			       ifp->name, (long) ifp->dama_gap);
 		else
-			printf("%s: dama-gap %ldms, berechnet aus hf-datarate "
-			       "und TX-Delay\n", ifp->name,
-			       (long) dama_gap_time(ifp));
+			printf(_LANG(
+			       "%s: dama-gap %ldms, berechnet aus hf-datarate und TX-Delay\n",
+			       "%s: dama-gap %ldms, computed from hf-datarate and TX-Delay\n"),
+			       ifp->name, (long) dama_gap_time(ifp));
 		return 0;
 	}
 	n = atol(argv[1]);
 	if(n < 0 || n > 30000L){
-		printf("dama-gap wants milliseconds, 0 to 30000 "
-		       "(0 = Vorgabe %ld)\n", (long) DAMA_GAP_DEFAULT);
+		printf(_LANG("dama-gap wants milliseconds, 0 to 30000 "
+			     "(0 = Vorgabe %ld)\n",
+			     "dama-gap wants milliseconds, 0 to 30000 "
+			     "(0 = default %ld)\n"), (long) DAMA_GAP_DEFAULT);
 		return 1;
 	}
-	/* NULL IST ERLAUBT, aber gemessen: ohne Pause rast die Runde - mit
-	 * EINEM Slave am Loopback 221794 Polls in 25 Sekunden.  Auf der Luft
-	 * bremst die Sendezeit, aber der Verbindungsaufbau in CSMA findet
-	 * dann keine Luecke mehr.  Wer es einstellt, soll wissen warum.
+	/* NULL IST ERLAUBT, und es bedeutet NICHT "keine Luecke":  ifdamagap()
+	 * liest ifp->dama_gap > 0, und dama_gap_time() rechnet dann aus
+	 * hf-datarate und TX-Delay.  "0" heisst also: die Formel, nicht nichts -
+	 * zur Rechnung selbst dort, und dort auch, wo sie herkommt.
+	 *
+	 * Die Meldung muss NACH dem Setzen kommen, sonst rechnet sie noch mit
+	 * dem alten Wert, und bei "0" ist "alt" genau der Wert, von dem man
+	 * gerade wegging.
 	 */
-	if(n == 0 && argv[1][0] == '0')
-		printf("%s: dama-gap 0 - kein Abstand zwischen zwei Zuegen.  "
-		       "Gemessen rast die\n  Runde dann; und der "
-		       "Verbindungsaufbau, der in CSMA laeuft, findet keine "
-		       "Luecke.\n", ifp->name);
 	ifp->dama_gap = (int32) n;
+	if(n == 0 && argv[1][0] == '0')
+		printf(_LANG(
+		       "%s: dama-gap 0 - zurueck auf die Vorgabe, berechnet als TX-Delay,\n"
+		       "  %ld ms Zufallszeit und 136 Bit auf Funk; ohne hf-datarate %ld ms.\n",
+		       "%s: dama-gap 0 - back to the default, computed as TX-Delay,\n"
+		       "  %ld ms of random delay and 136 bits on the radio; without hf-datarate %ld ms.\n"),
+		       ifp->name, (long) DAMA_GAP_CSMA, (long) DAMA_GAP_DEFAULT);
 	return 0;
 }
 
@@ -661,7 +733,7 @@ static void bridge_members(const struct iface *ifp, char *buf, size_t len)
 		strcat(buf, p->name);
 	}
 	if (!n)
-		strcpy(buf, "(allein)");
+		strcpy(buf, _LANG("(allein)", "(alone)"));
 }
 
 static int
@@ -681,7 +753,9 @@ ifbridge(int argc,char *argv[],void *p)
 	if(argc < 2){
 		if(ifp->bridgegroup){
 			bridge_members(ifp, buf, sizeof(buf));
-			printf("%s: bridge group %d, together with %s\n",
+			printf(_LANG(
+			       "%s: bridge group %d, zusammen mit %s\n",
+			       "%s: bridge group %d, together with %s\n"),
 			       ifp->name, ifp->bridgegroup, buf);
 		} else
 			printf("%s: bridge off\n", ifp->name);
@@ -691,7 +765,7 @@ ifbridge(int argc,char *argv[],void *p)
 		/* NUR DIESEN PORT HERAUSNEHMEN, nicht die Gruppe aufloesen -
 		 * bei mehr als zwei Ports waere das Zweite eine Ueberraschung.
 		 * Bleibt einer allein zurueck, ist seine Gruppe wirkungslos,
-		 * aber nicht falsch; die Anzeige sagt "(allein)".
+		 * aber nicht falsch; die Anzeige sagt, dass er allein ist.
 		 */
 		ifp->bridgegroup = 0;
 		return 0;
@@ -939,7 +1013,7 @@ ifcrc(int argc,char *argv[],void *p)
  *            one - for the interlink whose partner is known not to speak it,
  *            so not a single probe is wasted, and for a slow channel where
  *            the wider window buys almost nothing anyway.
- *   caller   the default.  A caller who asked for plain AX.25 is carried
+ *   initiate the default.  A caller who asked for plain AX.25 is carried
  *            onward as plain AX.25 - if the upper leg then misbehaves he is
  *            the one who could do nothing about it.  A connect that starts
  *            here tries modulo-128 once and remembers the answer.
@@ -957,21 +1031,62 @@ ifeax25(int argc,char *argv[],void *p)
 		printf("EAX25 (modulo-128): %s\n",
 		 ifp->eax25 == EAX25_OFF ? "off" :
 		 ifp->eax25 == EAX25_ALWAYS ? "always" :
-		 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
+		 ifp->eax25 == EAX25_INITIATE ? "initiate" : "accept");
 		return 0;
 	}
 	if(!stricmp(argv[1],"off"))
 		ifp->eax25 = EAX25_OFF;
 	else if(!stricmp(argv[1],"accept"))
 		ifp->eax25 = EAX25_ACCEPT;
-	else if(!stricmp(argv[1],"caller"))
-		ifp->eax25 = EAX25_CALLER;
+	else if(!stricmp(argv[1],"initiate"))
+		ifp->eax25 = EAX25_INITIATE;
 	else if(!stricmp(argv[1],"always"))
 		ifp->eax25 = EAX25_ALWAYS;
 	else {
-		printf("Valid options: off accept caller always\n");
+		printf("Valid options: off accept initiate always\n");
 		return 1;
 	}
+	return 0;
+}
+
+/* The AX.25 2.2 knob (XID), same shape and same naming as eax25.  See
+ * doc/AX25-2.2-GAP.md for what each value starts.  off is the full switch:
+ * the port neither sends an XID of its own nor answers an incoming one, so
+ * a prober hears silence and falls back to SABM, exactly as against a plain
+ * AX.25 2.0 station.  accept answers an incoming XID but never asks;
+ * initiate also asks; always insists on modulo-128.
+ */
+static int
+ifax25v2(int argc,char *argv[],void *p)
+{
+	struct iface *ifp = (struct iface *) p;
+
+	if(argc < 2){
+		printf("AX.25 2.2 (XID): %s\n",
+		 ifp->ax25_v2 == AX25V2_OFF ? "off" :
+		 ifp->ax25_v2 == AX25V2_ALWAYS ? "always" :
+		 ifp->ax25_v2 == AX25V2_INITIATE ? "initiate" : "accept");
+		return 0;
+	}
+	if(!stricmp(argv[1],"off"))
+		ifp->ax25_v2 = AX25V2_OFF;
+	else if(!stricmp(argv[1],"accept"))
+		ifp->ax25_v2 = AX25V2_ACCEPT;
+	else if(!stricmp(argv[1],"initiate"))
+		ifp->ax25_v2 = AX25V2_INITIATE;
+	else if(!stricmp(argv[1],"always"))
+		ifp->ax25_v2 = AX25V2_ALWAYS;
+	else {
+		printf("Valid options: off accept initiate always\n");
+		return 1;
+	}
+	/* AB HIER IST ES EINE EIGENE EINSTELLUNG.  Nur dann darf der globale
+	 * Befehl diesen Port nicht mehr anfassen - siehe ax25_v2_set in
+	 * iface.h.  Ohne dieses Bit wuerde "ax25 ax25-v2.2 off" die Reihenfolge
+	 * der Befehle zu einer Einstellung machen: wer erst global und dann
+	 * am Port stellt, haette danach den Portwert gewollt und bekaeme
+	 * trotzdem den globalen. */
+	ifp->ax25_v2_set = 1;
 	return 0;
 }
 
@@ -1212,7 +1327,7 @@ ifforw(int argc,char *argv[],void *p)
  * encapsulation, what has gone through it - and nothing else.  The rest is
  * "ifconfig verbose" or "ifconfig <iface> verbose", and there each line is
  * printed only where it MEANS something: a tun interface used to be told it
- * had "eax25: caller", a crc setting and a count of bad AX.25 headers, none
+ * had "eax25: initiate", a crc setting and a count of bad AX.25 headers, none
  * of which exists on it.  ifp->iftype->type says what a port is.
  */
 
@@ -1385,10 +1500,13 @@ showiface(struct iface *ifp, int verbose)
 		 */
 		if(inherited)
 			printf("                 (* = the node's setting, not this port's)\n");
-		printf("           ax25: eax25 %s\n",
+		printf("           ax25: eax25 %s  ax25-v2.2 %s\n",
 		 ifp->eax25 == EAX25_OFF ? "off" :
 		 ifp->eax25 == EAX25_ALWAYS ? "always" :
-		 ifp->eax25 == EAX25_CALLER ? "caller" : "accept");
+		 ifp->eax25 == EAX25_INITIATE ? "initiate" : "accept",
+		 ifp->ax25_v2 == AX25V2_OFF ? "off" :
+		 ifp->ax25_v2 == AX25V2_ALWAYS ? "always" :
+		 ifp->ax25_v2 == AX25V2_INITIATE ? "initiate" : "accept");
 	}
 
 	/* Die Groessengrenze gilt fuer JEDEN Port, der eine hat - auch fuer

@@ -16,6 +16,7 @@
 #include "slip.h"
 #include "ax25.h"
 #include "lapb.h"
+#include "xid.h"
 #include "dama.h"
 #include "netrom.h"
 #include "ip.h"
@@ -42,6 +43,8 @@ struct iface *Axroute_default_ifp;
 int Digipeat = 2;       /* Controls digipeating */
 int Digi_keep_path = 0; /* 0 = strip passed digis, 1 = keep the path */
 int Digiout = DIGIOUT_ROUTE;    /* normal or same-iface */
+int Ax25_v2_default = AX25V2_ACCEPT;    /* Factory-Default fuer ax25-v2.2 */
+long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
 
 /* Weiter unten, bei axroute() - dort steht auch, warum es NICHT axroute()
  * benutzt.
@@ -508,8 +511,14 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	htonax25(&addr,bpp);
 	/* Loop-Schutz: nur UI merken.  Ein I- oder RR+-Rahmen wird nicht
 	 * gemerkt - dessen identische Wiederholung ist LAPB-Timing, kein Echo.
+	 *
+	 * GEPROFFT WIRD "ctl", NICHT DER RAHMEN: htonax25() schiebt den Kopf mit
+	 * pushdown() VOR das Steuerfeld, danach zeigt data[0] auf das erste
+	 * Byte der Zieladresse.  Ein Vergleich von data[0] mit UI hat also
+	 * selten zufaellig recht - und wenn, dann an der falschen Stelle, was
+	 * schlimmer ist als nie.
 	 */
-	if(((*bpp)->data[0] & ~PF) == UI)
+	if((ctl & ~PF) == UI)
 		ax_dup_remember(ax_fingerprint(*bpp));
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
@@ -670,6 +679,18 @@ struct mbuf **bpp
 		free_p(bpp);
 		return;
 	}
+	/* Das Steuerfeld liegt jetzt vorn - und wird es nicht bleiben:
+	 * htonax25() schiebt den Kopf per pushdown() DAVOR, danach zeigt
+	 * (*bpp)->data auf das erste Adressbyte und nicht mehr auf die
+	 * Kontrolladresse.  Wer den Rahmentyp nach dem Umbau abfragt,
+	 * vergleicht eine Zieladresse mit XID und haelt sich fuer
+	 * grundsatzlich nicht zustaendig: der Point-D-Block und die
+	 * UI-Schleifensicherung im Wiederhol-Zweig waren auf diese Weise
+	 * nie erreichbar.  Also einmal hier lesen und danach nur noch die
+	 * Variable benutzen.
+	 */
+	if(*bpp != NULL)
+		control = *(*bpp)->data & ~PF;
 	/* If there were digis in this packet and at least one has
 	 * been passed, then the last passed digi is the immediate source.
 	 * Otherwise it is the original source.
@@ -725,11 +746,56 @@ struct mbuf **bpp
 			hdr.nextdigi++;
 			if(Digipeat == 1 ||
 			   (*bpp && (*(*bpp)->data & ~PF) == UI) ||
+			   /* Point D: a XID meant for a station BEYOND us is
+			    * ours to answer, not to pass on - see the block
+			    * below.  It has to be named here, because the
+			    * alternative was lapb_input() further down, and
+			    * that answers any XID command it is handed, in
+			    * the name of the frame's destination: B would
+			    * have put a XID of its own on the wire as C.
+			    * The last clause keeps a XID that is meant for
+			    * US out of it - we are a real XID peer then, not
+			    * a leg. */
+			   (Digipeat == 2 && *bpp &&
+			    ((*(*bpp)->data & ~PF) == XID) &&
+			    !addreq(hdr.nextdigi < hdr.ndigis ?
+				    hdr.digis[hdr.nextdigi] : hdr.dest,
+				    hdr.digis[hdr.nextdigi - 1])) ||
 			   addreq(hdr.source, hdr.dest)) {
 				struct iface *ifp;
 				struct iface *sel;   /* Repeat-Interface (1. Auswahl) */
 				int kp;         /* keep the path? */
 				int dout;       /* output interface choice */
+				/* DER WEG, WIE DIE FRAGE ANKAM - fuer den Fall,
+				 * dass wir sie schlucken (unten, "AX.25 2.2
+				 * over the DIGIPEATED LEG").
+				 *
+				 * Die Kopie entsteht VOR jedem axroute(),
+				 * und das ist der ganze Punkt: axroute()
+				 * verkuerzt den Weg um unsere Position
+				 * herum ("remove all digipeaters before
+				 * me", axroute() weiter unten) und stempelt
+				 * danach erst wieder beim Senden.  Was
+				 * danach noch im Kopf steht, ist nur noch
+				 * unser eigener Eintrag - der Digipeater
+				 * zwischen A und uns ist spurlos
+				 * verschwunden.
+				 *
+				 * Fuer das Wiederholen ist genau das richtig
+				 * (schnellstes Weiterleiten, und D hat
+				 * seine Antwort auf seinen Hub
+				 * gekriegt).  Fuer die Antwort an A ist es
+				 * der Tod: ihr Weg ist die Umkehrung des
+				 * WEGES DER FRAGE, und der ist nach dem
+				 * Strip nur noch [B].  Eine Antwort mit
+				 * [B] geht an D hinaus, D findet sich
+				 * nicht in der Liste und laesst sie
+				 * fallen - A wartet weiter auf eine
+				 * Station, die ihm nie geantwortet hat.
+				 * Im Labor mit einem Hop fiel das nicht
+				 * auf, weil A an Bs eigenem Port haengt.
+				 */
+				struct ax25 arrived = hdr;
 
 				/* Per-port or global digiout: normal picks an
 				 * interface from the routing table; same-iface keeps
@@ -789,9 +855,389 @@ struct mbuf **bpp
 				 * Nur UI: ein via-digi leitet auch I-Rahmen weiter und die
 				 * Wiederholung davon ist LAPB-Timing, kein Echo.
 				 */
-				if(*bpp && (*(*bpp)->data & ~PF) == UI)
+				if(*bpp && control == UI)
 					ax_dup_remember(ax_fingerprint(*bpp));
-				if (ifp) {
+				/* AX.25 2.2 over the DIGIPEATED LEG (point D).
+				 *
+				 * Only at digipeat 2 (not at 1: there the frame
+				 * is repeated as-is and that behaviour is left
+				 * alone), and only if the OUTGOING port can do
+				 * 2.2: then XID is part of the protocol and
+				 * travels the path we relay.
+				 *
+				 * We are B, the frame is a XID probe from A
+				 * meant for C.  We swallow it here: C is
+				 * probed over the outgoing port with a probe
+				 * of our own, and A gets its answer only
+				 * once C has answered (or the timer runs
+				 * out) - carrying the parameters of port
+				 * B->A, while the probe to C carried those
+				 * of port B->C.
+				 */
+				if (Digipeat == 2 && ifp != NULL &&
+				    ifp->ax25_v2 != AX25V2_OFF &&
+				    *bpp != NULL && control == XID) {
+					uint8 probe_to[AXALEN];
+					struct mbuf *pbp = NULL;
+					struct ax25_cb *paxp;
+					struct ax_route *prp;
+					int probe_c = YES;
+					int i;
+
+					/* C is the station the probe is
+					 * meant for: always the DESTINATION
+					 * of the swallowed frame.  A digipeater
+					 * still to come is not C - it is a
+					 * walker on the way to C - and the
+					 * probe carries the rest of the path
+					 * (from nextdigi on) in its own digis,
+					 * see the copy loop below.  The old
+					 * code read THAT slot instead: on a
+					 * longer path (A - B - D - C) the probe
+					 * asked D, the next digipeater, not C -
+					 * and D, never asked, could not answer.
+					 * On the direct path the slot did not
+					 * exist and the comparison silently fell
+					 * back to the destination, which is the
+					 * only case that ever worked. */
+					addrcp(probe_to, hdr.dest);
+					/* RATE LIMIT (60 min, Xid_probe_time):
+					 * we usually know the path to C already.
+					 * Without this bound B would probe C
+					 * again on EVERY XID frame from A -
+					 * several times a minute on an APRS
+					 * port.  A path we have just learned
+					 * is not asked again; A still gets
+					 * its answer, only without a second
+					 * probe. */
+					prp = ax_routeptr(probe_to,0);
+					if(prp != NULL && prp->xid != AXR_XID_UNKNOWN
+					   && secclock() - prp->xid_time < Xid_probe_time)
+						probe_c = NO;
+					/* NOCH EINE FRAGE IN DER LUFT?  Dann
+					 * wartet schon jemand auf C - der
+					 * Warter, den wir gleich anlegen, steckt
+					 * bei dem mit drin und wird von dessen
+					 * Antwort mitbedient (xid_leg_open
+					 * macht es beim Bein genauso).  Ohne das
+					 * haette jeder gleichzeitige Anrufer
+					 * seine eigene Sonde. */
+					if(xid_leg_pending(probe_to,ifp))
+						probe_c = NO;
+					/* Note the job first: it is A's probe,
+					 * and A is waiting for an answer we are
+					 * withholding.  It goes before the probe
+					 * to C on purpose - if the job cannot be
+					 * created, A's frame is left alone
+					 * entirely and C is not asked a question
+					 * nobody here would account for. */
+					{
+						struct ax25_xid_leg *lp;
+						struct ax25_xid_leg **pp;
+
+						lp = (struct ax25_xid_leg *)
+						    callocw(1, sizeof(*lp));
+						if (lp != NULL) {
+							addrcp(lp->answer_to,
+							       hdr.source);
+							lp->ans_iface = iface;
+							addrcp(lp->probe_to,
+							       probe_to);
+							lp->leg_iface = ifp;
+							lp->anshdr = (struct ax25 *)
+							    callocw(1, sizeof(struct ax25));
+							if (lp->anshdr != NULL) {
+								/* DER KOPF, WIE ER HEREINKAM.
+								 *
+								 * Hier standen lange vier Zeilen, die
+								 * Quell- und Zielrufzeichen
+								 * vertauschten und dann ndigis auf
+								 * null setzten - die Antwort an A
+								 * bekam also gar keinen Weg: kein
+								 * Digipeater, kein Wiederholt-Bit,
+								 * und bei einem Digipeater
+								 * zwischen A und B ueberhaupt
+								 * kein Ziel, denn der Rahmen ging
+								 * an D hinaus, D fand sich in
+								 * einer leeren Adressenliste
+								 * nicht und liess ihn fallen.
+								 * Im Labor mit einem Hop fiel das
+								 * nicht auf, weil A an Bs
+								 * eigenem Port haengt.
+								 *
+							 * Der Weg gehoert in den Kopf
+							 * hinein, denn er IST der
+							 * Rueckweg.  Aus ihm baut
+							 * xid_leg_answer() die Antwort
+							 * mit build_path(..., YES, ...),
+							 * demselben Weg, den eine
+							 * Station nimmt, deren Frage
+							 * wirklich bei ihr ankam.
+							 *
+							 * "arrived", nicht "hdr": der Weg
+							 * MUSS der vollstaendige sein,
+							 * und hdr ist an dieser Stelle
+							 * schon verkuerzt - D waere
+							 * nicht mehr darin und die
+							 * Antwort kaeme als [B] heraus,
+							 * also als Antwort an niemanden.
+							 */
+								*lp->anshdr = arrived;
+
+							}
+							lp->timer.func = xid_leg_timeout;
+							lp->timer.arg = lp;
+							set_timer(&lp->timer, XID_LEG_TIMEOUT);
+							for (pp = &Ax25_xid_legs;
+							     *pp != NULL; pp = &(*pp)->next)
+								;
+							*pp = lp;
+							start_timer(&lp->timer);
+							/* Probe to C, with the
+							 * parameters of the outgoing
+							 * port.  No connection is
+							 * set up: just that one
+							 * probe. */
+							if (probe_c) {
+								paxp = cr_ax25(probe_to);
+								if (paxp != NULL) {
+									struct ax25 ph;
+									memset(&ph, 0, sizeof(ph));
+									/* The probe is
+									 * OURS: it leaves
+									 * by the outgoing
+									 * port under this
+									 * station's call, or
+									 * C would see his
+									 * own callsign
+									 * asking him a
+									 * question. */
+									addrcp(ph.source, ifp->hwaddr);
+									addrcp(ph.dest, probe_to);
+								/* NUR DER REST DES WEGES,
+								 * UND ER
+								 * FUENGT VORN AN.
+								 *
+								 * Die Sonde ist eine
+								 * eigene Verbindung
+								 * von B nach C,
+								 * raus ueber ifp.
+								 * Der Kopf, aus dem
+								 * sie entstanden
+								 * ist, beschreibt
+								 * den Weg A - B - C;
+								 * fuer uns ist der
+								 * bis ein -
+								 * schliesslich
+								 * unser eigener
+								 * Platz - verbraucht,
+								 * und genau dort
+								 * steht das
+								 * Wiederholt-Bit
+								 * schon.  Uebernommen
+								 * wurde er
+								 * trotzdem
+								 * vollstaendig, und
+								 * C sah daraufhin:
+								 *
+								 *   DB0BBB* -> DB0CCC
+								 *
+								 * B als sein eigener
+								 * Digipeater, mit
+								 * Stern.  Zwei
+								 * Aerger's: der Stern
+								 * ohne Wiederholung
+								 * ist nach 7.1 genau
+								 * das, was nicht
+								 * vorkommen darf, und
+								 * ein Digipeater, den
+								 * niemand bestellt
+								 * hat, ist eine
+								 * Adresse, an die
+								 * niemand antworten
+								 * muss.
+								 *
+								 * Was von der Sonde
+								 * wirklich uebrig
+								 * bleibt, ist der Weg
+								 * HINTER uns: die
+								 * Digis ab nextdigi,
+								 * nach vorn
+								 * geschoben, mit
+								 * nextdigi = 0.  Im
+								 * Laborfall A - B - C
+								 * ist das die leere
+								 * Liste, und die
+								 * Sonde geht direkt
+								 * an C.  Laeuft der
+								 * Weg weiter (A - B
+								 * - D - C), dann
+								 * beginnt sie mit D -
+								 * was die alte
+								 * Fassung auch
+								 * nicht tat: sie
+								 * schickte sie
+								 * ueber B, also ueber
+								 * sich selbst.
+								 *
+								 * Die Antwort an A
+								 * weiter oben macht
+								 * es richtig vor:
+								 * ndigis = 0, weil
+								 * dort der Weg
+								 * genauso wenig
+								 * gehoert. */
+								for (i = hdr.nextdigi; i < hdr.ndigis; i++)
+									addrcp(ph.digis[ph.ndigis++],
+									       hdr.digis[i]);
+								ph.nextdigi = 0;
+
+									paxp->hdr = ph;
+									paxp->iface = ifp;
+									xid_our_info(ifp,
+										     eax25_wanted(ifp, probe_to),
+										     YES, &pbp);
+									sendframe(paxp, LAPB_COMMAND,
+										  XID | PF, -1, &pbp);
+									del_ax25(paxp);
+								}
+								/* Remember when we last
+								 * asked C - even if he
+								 * does not answer. */
+								if(prp == NULL)
+									prp = ax_routeptr(probe_to,1);
+								if(prp != NULL)
+									prp->xid_time = secclock();
+							}
+							/* DIE ANTWORT, DIE
+							 * DA SCHON LIEGT.
+							 * Die Ratenbegrenzung
+							 * oben heisst nicht
+							 * "A kriegt nichts",
+							 * sondern "C wird
+							 * nicht noch einmal
+							 * gefragt" - und was
+							 * wir ueber C wissen,
+							 * hat C uns gerade
+							 * erst gesagt.  A
+							 * wartet auf diese
+							 * Antwort, also
+							 * geben wir sie ihm
+							 * jetzt, aus dem
+							 * Eintrag statt aus
+							 * einer zweiten
+							 * Sonde: sonst
+							 * liesse man ihn
+							 * unseren eigenen
+							 * Warter auslaufen
+							 * (XID_LEG_TIMEOUT),
+							 * zehn Sekunden
+							 * Warten fuer eine
+							 * Antwort, die
+							 * laengst da ist.
+							 * Der Auftrag hat
+							 * danach nichts mehr
+							 * zu tun; xid_leg_done
+							 * nimmt ihn von der
+							 * Liste und
+							 * beantwortet A -
+							 * genau der Weg,
+							 * den sein Timer
+							 * spaeter genommen
+							 * haette, nur ohne
+							 * das Warten und
+							 * ohne C zu
+							 * verleumden (der
+							 * Timer setzt
+							 * AXR_XID_NO).
+							 *
+							 * NUR WENN WIR C
+							 * WIRKLICH
+							 * KENNEN.  Die
+							 * zweite
+							 * probe_c-Reason
+							 * oben (xid_leg_pending
+							 * ) heisst "es
+							 * fragt schon
+							 * jemand" und
+							 * nicht "ich weiss
+							 * es": dort will der
+							 * Warter die
+							 * Antwort abwarten,
+							 * und beide werden
+							 * von ihr bedient. */
+							if(!probe_c && prp != NULL &&
+							   prp->xid == AXR_XID_YES){
+								/* Was der
+								 * Eintrag
+								 * weiss,
+								 * traegt
+								 * die Antwort
+								 * weiter: sonst
+								 * bekaeme A
+								 * fuer seinen
+								 * zweiten
+								 * Anruf ein
+								 * "nein" und
+								 * fuer seinen
+								 * ersten ein
+								 * "ja".
+								 *
+								 * NUR ein
+								 * gemessenes
+								 * JA faellt
+								 * darunter.
+								 * Ein Eintrag
+								 * auf NO ist
+								 * die Abwesenheit
+								 * einer
+								 * Antwort, und
+								 * als solche
+								 * wird zu A
+								 * geschwiegen -
+								 * wie es C
+								 * auf der Luft
+								 * auch tut.
+								 * Wuerde B hier
+								 * "NO" in Cs
+								 * Namen
+								 * sagen, waere
+								 * das eine
+								 * Antwort fuer
+								 * einen, der
+								 * gerade
+								 * schweigt:
+								 * As eigener
+								 * T1 wuerde
+								 * nie anlaufen
+								 * (lapb.c) und
+								 * A sende
+								 * seinen
+								 * Rueckfall
+								 * nie. */
+								lp->mod128 = (prp->eax25
+									   == AXR_EAX25_YES);
+								lp->heard = YES;
+								xid_leg_done(lp);
+							}
+							/* A's own XID frame is
+							 * swallowed here: B raises
+							 * the probe to C itself,
+							 * else C would see the
+							 * same question twice -
+							 * and, worse, B would
+							 * have answered in C's
+							 * name (see the condition
+							 * above). */
+							*bpp = NULL;
+						}
+					}
+				}
+				if (ifp && *bpp) {
+					/* *bpp: point D may have swallowed the
+					 * frame on the way here, and a frame
+					 * we did not send is not one to log
+					 * as sent. */
 					logsrc(ifp,ifp->hwaddr);
 					logdest(ifp,hdr.nextdigi != hdr.ndigis ? hdr.digis[hdr.nextdigi] : hdr.dest);
 					/* Nur UI wird hier ueberhaupt wiederholt
@@ -824,6 +1270,8 @@ struct mbuf **bpp
 	if(control == UI){
 		int pid;
 		struct axlink *ipp;
+		struct ax25_cb *axp;
+		int pollit = (*(*bpp)->data & PF);
 
 		/* A port that admits no UI frames says so before the pid is
 		 * even drawn - see framefilter.c.
@@ -831,6 +1279,30 @@ struct mbuf **bpp
 		if(frame_blocks(iface,PF_IN,FRF_UI)){
 			free_p(bpp);
 			return;
+		}
+		/* A UI command with the P bit set is a poll and has to be
+		 * answered (4.3.3.6): with DM when we are not in information
+		 * transfer with the sender, with RR (or RNR when we are busy)
+		 * when we are.  It stays a poll, and an answer, even when the
+		 * pid below would go nowhere - which is why it precedes the
+		 * pid gate.  Only an addressed frame is answered: answering a
+		 * multicast would have every listener shouting at once.
+		 */
+		if(pollit && !mcast){
+			axp = find_ax25(hdr.dest,hdr.source);
+			if(axp != NULL &&
+			   (axp->state == LAPB_CONNECTED || axp->state == LAPB_RECOVERY)){
+				sendctl(axp,LAPB_RESPONSE,busy(axp) ? RNR|PF : RR|PF);
+			} else {
+				/* No link standing: a fresh block does the
+				 * reverse header and the interface, exactly
+				 * the way lapb_input() builds its DM.
+				 */
+				axp = cr_ax25(NULL);
+				build_path(axp,iface,&hdr,1,0);
+				sendframe(axp,LAPB_RESPONSE,DM|PF,-1,NULL);
+				del_ax25(axp);
+			}
 		}
 		(void) PULLCHAR(bpp);
 		if((pid = PULLCHAR(bpp)) == -1)
@@ -960,6 +1432,9 @@ int perm)
 	for (i = ncalls - 1; i >= 0; i--) {
 		rp = ax_routeptr(calls[i], 1);
 		if (perm || !rp->perm) {
+			struct ax_route *old_digi = rp->digi;
+			struct iface *old_ifp = rp->ifp;
+
 			if (lastnode) {
 				rp->digi = lastnode;
 				rp->ifp = 0;
@@ -1014,18 +1489,143 @@ int perm)
 				    rp->ifp->bridgegroup &&
 				    rp->ifp->bridgegroup == iface->bridgegroup &&
 				    secclock() - rp->iftime < AXROUTE_PIN) {
-					/* festgeklopft */
+					/* festgeklopft - die Route bleibt, wo
+					 * sie ist, und mit ihr das Gelernte:
+					 * die Station ist nicht umgezogen.
+					 * (doc/AX25-2.2-GAP.md, Pfadwechsel)
+					 */
 				} else {
 					rp->ifp = iface;
 					rp->iftime = secclock();
 				}
 			}
 			rp->perm = perm;
+			/* The route actually moved, or the digi path before
+			 * us changed: everything learned about the OLD path
+			 * is a lie for the NEW one (AX.25 2.2 work - C can
+			 * be a WAMPES while the next hop on this port, D,
+			 * is plain modulo-8).  Forget eax25 and XID and let
+			 * the next connect find out anew.  A frame that
+			 * merely renews the same route must not reset - the
+			 * flapping station on two ports would else probe on
+			 * every single exchange (see the GAP document).
+			 */
+			if (rp->digi != old_digi || rp->ifp != old_ifp) {
+				rp->eax25 = AXR_EAX25_UNKNOWN;
+				rp->eax25_fails = 0;
+				rp->eax25_skips = 0;
+				rp->xid = AXR_XID_UNKNOWN;
+				rp->xid_time = 0;
+				rp->xid_frmr = 0;
+			}
 		}
 		rp->time = secclock();
 		lastnode = rp;
 	}
 	axroute_savefile(NULL);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* FORGET A ROUTE.  "ax25 route add" had a way in from the first day; the way
+ * out was missing, and leaving an entry out of the table is not the same as
+ * having decided it: a learned route that nobody can remove stays until it
+ * ages out, and for a test - or for an operator who has just watched a
+ * station move - "until it ages out" is not an answer.
+ *
+ * A path is a chain from the destination towards the first digipeat, so
+ * "del CB1" removes the path C via B1 and "del C" removes the entry with
+ * every path in it.  A digipeat that is left behind as a node of its own
+ * ages out on its own time: it may be a next hop for someone else, and the
+ * table does not count references to say so.
+ */
+int
+axroute_del(
+const uint8 *call,
+const uint8 *const digis[],
+int ndigis)
+{
+	struct ax_route **tp, *rp, *prev, *digi;
+	int i;
+
+	tp = Ax_routes + (axroute_hash(call) % AXROUTESIZE);
+	for(prev = NULL, rp = *tp; rp; prev = rp, rp = rp->next)
+		if(addreq(rp->target, call))
+			break;
+	if(rp == NULL)
+		return 0;
+
+	if(ndigis > 0){
+		/* Only this path, and only if it is the path that is there.
+		 * A caller that guessed wrong is told so by the return value
+		 * rather than by a route that is quietly gone.
+		 */
+		for(digi = rp->digi, i = 0; i < ndigis; i++){
+			if(digi == NULL || !addreq(digi->target, digis[i]))
+				return 0;
+			digi = digi->digi;
+		}
+		rp->digi = digi;
+	}
+
+	if(prev != NULL)
+		prev->next = rp->next;
+	else
+		*tp = rp->next;
+	/* NUR DER FREI AN SICH IST NICHT DIE GEFAHR - sondern die Zeiger,
+	 * die noch auf diesen Eintrag zeigen.  Jedes Kettenglied ist auch ein
+	 * eigener Tabelleneintrag: loescht man ein Glied, das als naechster
+	 * Sprung eines anderen Weges eingetragen ist, zeigt dessen Kette noch
+	 * auf den freigegebenen Knoten, und der naechste Weg (Liste, Senden)
+	 * liest freien Speicher.  Der Weg selbst bleibt: er faehrt an dem
+	 * Knoten weiter, auf den der geloeschte gezeigt hat.
+	 */
+	axroute_unref(rp, rp->digi);
+	free(rp);
+	return 1;
+}
+
+/* Die Zeiger, die bei einem geloeschten Knoten noch von anderen Wegen
+ * auf ihn zeigen, abloesen.  Ein Weg X via <geloeschter Knoten> steht als
+ * X->digi == rp in der Tabelle; er wird auf "instead" umgebogen - beim
+ * Senden ist das der naechte Sprung hinter dem Geloeschten, in der
+ * Alterung (axroute_write) bewusst NULL, weil dort auch der naechste
+ * Sprung alt sein kann und kein toter Zeiger zurueckbleiben darf.
+ */
+void
+axroute_unref(
+struct ax_route *rp,
+struct ax_route *instead)
+{
+	struct ax_route *q;
+	int i;
+
+	for(i = 0; i < AXROUTESIZE; i++)
+		for(q = Ax_routes[i]; q; q = q->next)
+			if(q->digi == rp)
+				q->digi = instead;
+}
+
+/* Every entry, learned and permanent.  "all" means all: a permanent route
+ * that is wanted again belongs in the config file, which is read on every
+ * start - a permanent route in the RAM is a thing the operator can inspect
+ * but not keep.
+ */
+int
+axroute_delall(void)
+{
+	struct ax_route *rp, *next;
+	int i, n = 0;
+
+	for(i = 0; i < AXROUTESIZE; i++)
+		for(rp = Ax_routes[i]; rp != NULL; rp = next){
+			next = rp->next;
+			free(rp);
+			n++;
+		}
+	for(i = 0; i < AXROUTESIZE; i++)
+		Ax_routes[i] = NULL;
+	return n;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1314,19 +1914,25 @@ struct mbuf **bpp
 		return 0;               /* woanders zuhause, und keine Bruecke dorthin */
 	if(out->raw == NULL)
 		return 0;
-	htonax25(hdr,bpp);
-	if(*bpp && (*(*bpp)->data & ~PF) == UI){
-		uint32 h = ax_fingerprint(*bpp);
+	/* Wie in ax_recv(): nach htonax25() zeigt data[] auf den Kopf. */
+	{
+		int is_ui = *bpp != NULL && (*(*bpp)->data & ~PF) == UI;
 
-		/* SCHON EINMAL VON UNS GEWESEN - das ist unser Echo, und
-		 * weiterreichen waere die Schleife.  Der Rahmen wird
-		 * verworfen: der Aufrufer tut das, wenn wir 0 liefern.
-		 * Nur UI: ein I- oder RR+-Doppelschlag ist Protokoll-Timing
-		 * der LAPB-Endstellen, nicht unsere Schleife.
-		 */
-		if(ax_dup_recent(h))
-			return 0;
-		ax_dup_remember(h);
+		htonax25(hdr,bpp);
+		if(is_ui){
+			uint32 h = ax_fingerprint(*bpp);
+
+			/* SCHON EINMAL VON UNS GEWESEN - das ist unser
+			 * Echo, und weiterreichen waere die Schleife.  Der
+			 * Rahmen wird verworfen: der Aufrufer tut das, wenn
+			 * wir 0 liefern.  Nur UI: ein I- oder RR+-
+			 * Doppelschlag ist Protokoll-Timing der
+			 * LAPB-Endstellen, nicht unsere Schleife.
+			 */
+			if(ax_dup_recent(h))
+				return 0;
+			ax_dup_remember(h);
+		}
 	}
 	logsrc(out,out->hwaddr);
 	logdest(out,(uint8 *)idest);
@@ -1341,6 +1947,8 @@ struct iface **ifpp,
 int keep_path)
 {
 	int depth;
+	int added;
+	int n0;
 
 	uint8 *idest;
 	int d;
@@ -1384,6 +1992,8 @@ int keep_path)
 	/*** Add necessary digipeaters and find interface ***/
 
 	ifp = 0;
+	added = 0;
+	n0 = hdr->ndigis;
 	idest = hdr->nextdigi < hdr->ndigis ? hdr->digis[hdr->nextdigi] : hdr->dest;
 	/* A digipeater chain comes from the route file or from "ax route add",
 	 * and nothing there stops it from pointing back at itself.  It can
@@ -1396,8 +2006,23 @@ int keep_path)
 				addrcp(hdr->digis[i+1], hdr->digis[i]);
 			hdr->ndigis++;
 			addrcp(hdr->digis[hdr->nextdigi], rp->digi->target);
+			added++;
 		}
 		ifp = rp->ifp;
+	}
+	if (!ifp && added) {
+		/* Die Kette endete ohne Port: ihre Glieder gehoeren nicht in den
+		 * Kopf - wer zum Digipeater weiterreicht, soll nur bestellen, was
+		 * er selbst bedienen kann.  Zurueckgezogen wird nur das angehaengte
+		 * Stueck; der vom Benutzer vorgegebene Pfad bleibt versucht.
+		 */
+		char callname[64];
+		pax25(callname, hdr->dest);
+		for (i = hdr->nextdigi + added; i < hdr->ndigis; i++)
+			addrcp(hdr->digis[i - added], hdr->digis[i]);
+		hdr->ndigis = n0;
+		printf("ax25 route: %s has a digipeater chain without a port -"
+		       " sending directly.\n", callname);
 	}
 	if (!ifp)
 		ifp = Axroute_default_ifp;

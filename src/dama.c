@@ -70,6 +70,7 @@
 #include "mbuf.h"
 #include "timer.h"
 #include "iface.h"
+#include "lang.h"
 #include "ax25.h"
 #include "lapb.h"
 #include "cmdparse.h"
@@ -1212,8 +1213,10 @@ static void dama_settle_turn(struct iface *ifp)
  * und das ist vor allem der VERBINDUNGSAUFBAU: eine Station ohne Link steht
  * in keiner Poll-Liste und kann nach der Spezifikation nur in CSMA
  * hereinkommen.  Solange Stationen verbunden sind, ist die Luecke das
- * einzige Stueck Funkstille auf dem Kanal.  Auf null gesetzt kommt kein
- * Fremder mehr herein.
+ * einzige Stueck Funkstille auf dem Kanal.  Wer sie auf null stellt,
+ * schliesst damit jedem neuen Nutzer den Kanal - nicht "Fremden", denn auf
+ * einem DAMA-Kanal ist der Verbindungsaufbau kein Eindringen, sondern das
+ *Geschaeft eines Teilnehmers.
  *
  * TNN sagt dasselbe im Klartext, an seiner Zusatzpause (l2dama.c): "Diese
  * Zusatzpause gibt die Frequenz fuer neue Stationen frei."
@@ -1221,7 +1224,7 @@ static void dama_settle_turn(struct iface *ifp)
  * WORAUS SIE BESTEHT, und damit ist auch die Zahl beantwortet - es ist
  * dasselbe Muster wie bei dama_answer_time():
  *
- *   TX-Delay des Fremden   seine Einschwingzeit, haengt NICHT an der Bitrate
+ *   TX-Delay des Nutzers   seine Einschwingzeit, haengt NICHT an der Bitrate
  *   CSMA-Wuerfeln          slottime mal ein paar Slots, bis er drankommt
  *   sein SABM              17 Oktette, und die haengen an der Bitrate
  *
@@ -1239,9 +1242,10 @@ static void dama_settle_turn(struct iface *ifp)
  * auf einem Port MIT Kanalzugriff (dama_slot_save/dama_persist_save, gesetzt
  * wenn dama_ca_set).  Das ist derselbe Porttyp, den wir hier nicht pruefen
  * koennen - siehe C.9, vertagt auf den echten Betrieb.  Eine Rechnung, die
- * niemand nachmessen kann, ist schlechter als eine benannte Zahl.
+ * niemand nachmessen kann, ist schlechter als eine benannte Zahl.  Sie
+ * heisst seit dem Ausgabeumbau DAMA_GAP_CSMA und steht in dama.h, weil
+ * iface.c dieselbe Zahl dem Bediener nennen muss.
  */
-#define DAMA_GAP_CSMA   300L    /* ms, Wuerfelzeit des Fremden */
 
 int32 dama_gap_time(struct iface *ifp)
 {
@@ -1265,10 +1269,14 @@ int32 dama_gap_time(struct iface *ifp)
 /* DIE KURZE PAUSE ZWISCHEN ZWEI ZUEGEN INNERHALB EINER RUNDE.
  *
  * Sie hat einen ganz anderen Zweck als die Luecke am Rundenende und
- * deshalb eine ganz andere Groesse.  Die Luecke muss einen fremden
- * VERBINDUNGSAUFBAU fassen - TX-Delay, CSMA-Wuerfeln, SABM.  Hier ist
- * nichts davon noetig: wir pollen bloss den naechsten, und unser eigenes
- * TX-Delay laeuft beim Tasten ohnehin.
+ * deshalb eine ganz andere Groesse.  Die Luecke muss den VERBINDUNGSAUFBAU
+ * eines neuen Nutzers fassen - TX-Delay, CSMA-Wuerfeln, SABM; 17 Oktette
+ * sind bei 1200 Baud schon fuer sich allein 113 ms, diese 100 also nicht.
+ * Hier ist nichts davon noetig: wir pollen bloss den naechsten, und unser
+ * eigenes TX-Delay laeuft beim Tasten ohnehin.  Wer in diesen 100 ms einen
+ * CSMA-Versuch startet, wird vom naechsten Poll mitten hinein abgeschnitten
+ * - die kurze Pause ist eine SCHUTZpause zwischen zwei Polls, keine
+ * Gelegenheit.
  *
  * WOZU SIE DANN UEBERHAUPT DA IST: auf einer Strecke ohne Sendezeit -
  * Loopback, axip im LAN - raste die Runde sonst.  Gemessen war das
@@ -1300,7 +1308,7 @@ static void dama_master_gap(struct dama_m *mp)
 	dama_ui_flush(mp->ifp);
 	/* DIE GROSSE LUECKE NUR AM RUNDENENDE, dazwischen die kurze Pause.
 	 *
-	 * Der Zweck der Luecke - einem Fremden den Verbindungsaufbau
+	 * Der Zweck der Luecke - einem neuen Nutzer den Verbindungsaufbau
 	 * ermoeglichen - ist EINMAL JE RUNDE erfuellt und nicht einmal je
 	 * Zug; TNN legt seine Zusatzpause aus demselben Grund ans Rundenende
 	 * ("Diese Zusatzpause gibt die Frequenz fuer neue Stationen frei").
@@ -2096,15 +2104,28 @@ int ifdama(int argc, char *argv[], void *p)
 				ifp->dama_policy = DAMA_PERMISSIVE;
 			else if (!strcmp(argv[2], "enforce"))
 				ifp->dama_policy = DAMA_ENFORCE;
-			else {
-				printf("ifconfig %s dama master "
-				       "[lazy|permissive|enforce]\n"
-				       "  lazy        nimmt jeden stillschweigend an\n"
-				       "  permissive  informiert per UI, trennt nicht (default)\n"
-				       "  enforce     verwarnt und trennt nach %d Verstoessen\n",
-				       ifp->name, DAMA_MAXVIOL);
-				return 1;
-			}
+		else {
+			/* Die Liste ist in allen drei Faellen gleich, nur die
+			 * Woerter nicht - deshalb je Zeile ein _LANG() und
+			 * nicht einer um den ganzen Block.  Die Zahl ist das
+			 * einzige %d und bleibt deshalb IM FORMAT:  ein %d
+			 * in einem _LANG-Argument kaeme nie zur Ausgabe.
+			 */
+			printf("ifconfig %s dama master "
+			       "[lazy|permissive|enforce]\n"
+			       "  %s\n"
+			       "  %s\n"
+			       "  %s %d\n",
+			       ifp->name,
+			       _LANG("lazy        nimmt jeden stillschweigend an",
+				     "lazy         accepts everyone silently"),
+			       _LANG("permissive  informiert per UI, trennt nicht (default)",
+				     "permissive   informs by UI, does not disconnect (default)"),
+			       _LANG("enforce     verwarnt und trennt nach",
+				     "enforce      warns and disconnects after"),
+			       DAMA_MAXVIOL);
+			return 1;
+		}
 		}
 		dama_assume_rate(ifp);
 		ifp->dama = DAMA_MASTER;

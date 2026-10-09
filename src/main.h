@@ -15,6 +15,13 @@ extern int main_exit;                   /* from main program (flag) */
 extern int stop_repeat;
 extern long StartTime;                  /* time that NOS was started */
 
+/* The node's directory - "wampes -d <dir>", TCPDIR by default.  Everything a
+ * node keeps while it runs belongs there: see the comment on Node_dir in
+ * main.c.  A leaf name is joined with nodedir_path(), not by hand.
+ */
+const char *nodedir(void);
+void nodedir_path(char *buf, size_t len, const char *leaf);
+
 void keyboard(void *arg);
 
 #endif  /* _MAIN_H */

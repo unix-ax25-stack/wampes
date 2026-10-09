@@ -55,7 +55,10 @@ recover(void *p)
 		if(axp->unack){
 			axp->retries++;
 			if(axp->n2 != 0 && axp->retries > axp->n2){
-				sendctl(axp,LAPB_RESPONSE,DM|PF);
+				/* No protest has been polled: the peer asked
+				 * nothing, so the DM carries no final either.
+				 */
+				sendctl(axp,LAPB_RESPONSE,DM);
 				free_q(&axp->txq);
 				axp->reason = LB_TIMEOUT;
 				lapbstate(axp,LAPB_DISCONNECTED);
@@ -77,6 +80,42 @@ recover(void *p)
 
 	switch(axp->state){
 	case LAPB_SETUP:
+		/* The XID probe that opened this setup has gone unheard:
+		 * the peer does not speak AX.25 2.2 (or does not answer at
+		 * all).  Exactly ONE probe, then the verdict is written
+		 * into the route.  initiate carries on with the ordinary
+		 * SABM - the confrontation is over.  always enforces and
+		 * ends the attempt instead (doc/AX25-2.2-GAP.md, F1).
+		 */
+		if(axp->flags.neg_wait){
+			struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
+			axp->flags.neg_wait = NO;
+			if(rp != NULL){
+				rp->xid = AXR_XID_NO;
+				/* Wann dieses "kann (noch) nicht" feststand: erst
+				 * nach Ablauf von Xid_probe_time wird in
+				 * est_link() wieder gefragt - der Peer koennte
+				 * sich geaendert haben (doc/AX25-2.2-GAP.md).
+				 */
+				rp->xid_time = secclock();
+			}
+			/* Auch hier gilt: keine Antwort heisst auch kein
+			 * Modulo 128 - und der Eintrag ist das, was der
+			 * naechste Versuch liest (eax25_remember() zaehlt
+			 * die Versuche zurueck). */
+			eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
+			if(axp->iface->ax25_v2 == AX25V2_ALWAYS){
+				free_q(&axp->txq);
+				axp->reason = LB_NEGOTIATION;
+				lapbstate(axp,LAPB_DISCONNECTED);
+				return;
+			}
+			/* initiate: the SABM gets its full N2 from zero. */
+			axp->retries = 0;
+			sendctl(axp,LAPB_COMMAND,SABM|PF);
+			start_timer(&axp->t1);
+			return;
+		}
 		/* Three SABMEs and not a sound.  A peer that cannot do
 		 * modulo-128 usually answers DM, and lapb_input() falls back on
 		 * that at once; the older ones simply drop the frame, and then
@@ -123,8 +162,10 @@ recover(void *p)
 	case LAPB_CONNECTED:
 	case LAPB_RECOVERY:
 		if(axp->n2 != 0 && axp->retries > axp->n2){
-			/* Give up */
-			sendctl(axp,LAPB_RESPONSE,DM|PF);
+			/* Give up.  Nobody polled us, so no final bit - a
+			 * response with F set must be answering a poll.
+			 */
+			sendctl(axp,LAPB_RESPONSE,DM);
 			free_q(&axp->txq);
 			axp->reason = LB_TIMEOUT;
 			lapbstate(axp,LAPB_DISCONNECTED);

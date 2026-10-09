@@ -584,6 +584,19 @@ int cnt)
 		ap->rxenx++;
 		off_read(ap->fd);
 		return 0;
+	} else if (cnt == 0) {
+		/* Pure EOF on a local device: the far end hung up (a closed
+		 * pty master, a dropped line).  Same trap as the ENXIO case
+		 * above: the descriptor stays readable for select() for ever,
+		 * so read() would come back and spit 0 out at full speed.
+		 * Withdraw the read interest like ENXIO does - the watchdog
+		 * re-arms one fresh read per second, so a line that comes
+		 * back is picked up on the next tick and a dead one simply
+		 * stops shouting.
+		 */
+		ap->rxenx++;
+		off_read(ap->fd);
+		return 0;
 	} else if (cnt < 0) {
 		/* A local serial device truly vanishing brings it down.  The
 		 * reset cycle this arms reopens the device once the

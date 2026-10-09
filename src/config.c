@@ -300,11 +300,14 @@ struct cmds Attab[] = {
 	"  exercise: every link then has its own collision domain, and the\n"
 	"  switch keeps them apart the way a radio channel does." },
 
+#ifdef	linux
 	{ "ethertap", ethertap_attach, 0, 2,
 	"attach ethertap <linux-name> [mtu] [label]\n"
 	"  [label] is our own name for it, see \"attach tun\".  It comes after\n"
 	"  the mtu, which has to be given along with it - two optional words in\n"
 	"  a row could not be told apart." },
+#endif
+
 
 	{ NULL }
 };

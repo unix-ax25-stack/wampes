@@ -10003,3 +10003,669 @@ genuegen also.
     und die Stunde des MAC-Lernens ist mehr als noetig - zumal Thomas beim
     Testen SSIDs und Ports wechselt und dann nicht minutenlang auf die
     falsche Seite geschickt werden will.
+
+------------------------------------------------------------------------
+DER KNOPF "ax25-v2.2 always" FAELLT WEG, UND DIE ACHSE HEISST KUNFTIG
+"ax25-version 1|2|2.2" (2026-09-25, von Thomas zum Zusammenlegen
+entschieden)
+------------------------------------------------------------------------
+ZWEI SACHEN, DIE NICHT GETRENNT GEHOEREN.  Thomas hat sie ausdruecklich an
+einen Posten gehaengt, und der Grund ist derselbe: BEIDE sind eine Antwort
+auf die Frage "welche Version sprechen wir auf diesem Bein - und wie
+erfahren wir es?".  Wer "always" streicht, ohne die Achse umzubenennen,
+laesst die Bedienung fuer den Anwender schlechter zurueckgehen, weil dann
+nur noch eine neue Option "digest" im Raum steht und die alte Achse
+zusaetzlich stehen bleibt.
+
+DIE ENTSCHEIDUNG ZU "always" (2026-09-25, aus dem Test mit zwei Knoten):
+Es ist die ENTFALLENE Variante.  "initiate" plus der Rueckfall deckt ihren
+Zweck bereits ab, und zwar ohne die Sonderbehandlung an den Stellen, an
+denen "always" heute gesondert behandelt wird:
+
+  lapb.c:750   der Antwortweg auf ein SABM - "always" nimmt SABM an und
+               geht selbst mit SABME hinaus, "initiate" laesst den Rufenden
+               kommen und antwortet mit UA.
+  lapb.c:926   der Rueckfall: "always" wartet nicht auf das Alter, es
+               wartet gar nicht.
+  lapb.c:1391  der Aufbau: "always" schickt SABME, "initiate" SABM.
+  lapb.c:1405  dieselbe Entscheidung noch einmal, fuer den zweiten Versuch.
+  lapbtime.c:102  der Timeout setzt xid_time, damit der naechste Ruf nicht
+               wieder probt.
+  iface.c:1000  die Anzeige,  iface.c:1011  das Setzen,
+  iface.c:1434  die zweite Stelle in der ifconfig-Verarbeitung.
+  ax25cmd.c:572 die Werkseinstellung.  main.c:551-559 die Abbildung im
+               doattach (dort ist ALWAYS heute noch der dritte Zweig).
+  iface.h:307   das ENUM AX25V2_ALWAYS selbst.
+
+  Die Messwerte zu "always" sind NICHT verloren, sie stehen in
+  doc/EAX25.md im Abschnitt "always, and the relay it needs" und im
+  Abschnitt "EAX25: 'always' IST GEMESSEN (2026-08-17)" hier oben.  Vor dem
+  Streichen sichern, denn beim Umbau der Achse ist das die einzige Stelle,
+  an der das Verhalten festgehalten ist.
+
+DIE NEUE ACHSE.  Statt der Vierfach-Achse
+      ifconfig <if> ax25-v2.2 off|accept|initiate|always
+kommt eine Achse, die die Version selbst benennt und die Betriebsart
+ableitet:
+
+      ifconfig <if> ax25-version 1|2|2.2
+
+  1     Wir sprechen AX.25 2.0.  Kein XID, kein modulo-128, SABM/UA wie
+        heute "off".  Fuer Geraete, die bei einem XID(R) oder SABME
+        stumm bleiben oder abbrechen.
+  2     Wir sprechen AX.25 2.0 und nehmen 2.2, wenn sie sich zeigt.  Das ist
+        der Normalfall und der heutige "initiate"/"accept": XID(P) senden,
+        XID(F) auswerten, SREJ gilt als Beweis, modulo-128 uebernehmen
+        nur nach eigener Pruefung.  Der Unterschied zwischen "initiate"
+        und "accept" (heute: wer die Frage stellt) bleibt als
+        getrennte UNTER-Achse oder als Zaehler erhalten - er ist eine
+        Frage der Rollenverteilung, nicht der Version.
+  2.2   Wir sind 2.2.  Das heutige "always" in der einen Richtung und
+        "eax25 accept" in der anderen: XID beantworten, ohne es zu erfragen.
+
+  Die heimliche Kopplung, die heute ueberrascht, verschwindet damit: wer
+  "ax25-v2.2 initiate" auf einer Station konfiguriert, deren iface auf
+  "eax25 accept" steht, erhaelt beim NAECHSTEN Ruf trotzdem eine XID(P)-Frage
+  und dann modulo-128.  Genau das hat Thomas beim Testen am 2026-09-25
+  irritiert ("interessant, ich dachte wir haetten accept als default"), und
+  es ist KEIN Fehler, sondern die Abbildung in doattach: die
+  Werkseinstellung Ax25_v2_default steht auf "accept" (ax25.c:45), und
+  doattach macht aus "accept" ausdruecklich "initiate" (main.c:553-556),
+  damit ein neu angehaengter Port eine vorhandene EAX25-Gegenstelle
+  ueberhaupt erst einmal erreicht.  Mit "ax25-version" ist die Frage
+  gestellt und die Antwort da, also muss sie nicht mehr erraten werden.
+
+  ZUSAMMEN MIT DIESER ACHSE GEHT DIE ANDERE, WEIL SIE GLEICHEN NAMENS-
+  RAUM TEILEN: "ifconfig <if> eax25 off|accept|caller|always".  Beide
+  Achsen beschreiben, was der Bein auf dem Draht tut, und beide haben heute
+  je ein "always".  Solange zwei gleichnamige Schalter fuer zwei
+  verschiedenen Dinge existieren, ist die Verwechslung beim Testen
+  vorprogrammiert - und genau daran ist der Test vom 2026-09-25 fast
+  gescheitert (eax25 accept auf der einen, ax25-v2.2 initiate auf der
+  anderen Seite derselben Station, mit zwei verschiedenen Default-
+  Wirkungen).
+
+  ORDNUNG DER ARBEIT, falls jemand sie aufgreift: erst die Entscheidungen
+  festschreiben (welcher Wert erbt welche Wirkung, was passiert beim
+  Wechsel von 1 auf 2 im laufenden Betrieb), dann die Enum-Werte in
+  iface.h und ax25.h, dann die acht Fundstellen oben, dann die
+  Bedienhilfen in ax25cmd.c, dann doc/EAX25.md und doc/AX25-2.2-GAP.md.
+
+------------------------------------------------------------------------
+DIE XID-ANTWORT WURDE GELESEN UND WEGGEWORFEN (2026-09-25, gemessen)
+------------------------------------------------------------------------
+GEMESSEN an zwei Knoten ueber ein tty-Paar, und deshalb zuerst das
+gute: die Antwort stimmt.  Der Prober fragt, das Gegenstueck sagt
+"mod128 N1rx=2048 k=32", und N1rx ist damit die 256 Byte des Knotens in
+Bit (256*8) und k die 32 des Knotens - die 0 und die 4 aus dem alten
+Trace sind weg.  Genau dafuer war der Erbweg in xid.c gebaut worden, und
+er greift.
+
+  AX25: DB0AAA->DL9SAU   XID(P) ... SREJ mod8   N1rx=2048 k=7
+  AX25: DL9SAU->DB0AAA   XID(F) ... SREJ mod128 N1rx=2048 k=32
+
+  Und der Gegensatzfall verhaelt sich, wie er soll: steht die
+  Gegenseite auf "ax25-v2.2 off", kommt keine Antwort, und der Ruf geht
+  nach einem T1 mit SABM weiter.  Kein Fehler, sondern der Rueckfall.
+
+DER FEHLER: Danach ging SABM raus.  Nicht SABME.  Die Antwort war da,
+sie sagte modulo-128, und sie wurde ausgewertet an genau zwei Stellen -
+dem SREJ-Bit und dem gemerkten "xid = YES" fuer die Route - an der
+Modulus-Aussage aber nicht.  Ein dreizeiliger Eingriff an der dritten
+Stelle (lapb.c, der Zweig "eigene Probe beantwortet und neg_wait
+gesetzt") haette es behoben: mmask = EMMASK, eax25_mark(), und
+est_link_sabm() schickt ueber sendctl() ein SABME.
+
+  lapb.c:1406-1417 behauptete dazu im Kommentar, die XID verhandle
+  "capability, not the connection's parameters".  Fuer die ANFRAGE stimmt
+  das, fuer die ANTWORT nicht, und das war der Irrtum.
+
+DIE GATTE, und warum "eax25 != off" und nicht "!= off/accept" (2026-09-25,
+von Thomas entschieden, mit Begruendung): accept ist nicht "eax25 aus",
+sondern "ich frage nicht".  Und es lohnt sich bei accept auch nicht zu
+FRAGEN, denn eine SABME-Sondierung gegen eine Gegenseite, die es nicht
+kann, ist ein unbeantwortetes Paket plus Wartezeit - das war der ganze
+Sinn von accept.  Antwortet aber ein XID und sagt modulo-128, ist die
+Probe schon bezahlt und die Faehigkeit bewiesen: sofort los.  Damit ist
+accept ein "accept-oder-XID".  Wer beides nicht will, hat zwei Schrauben:
+"eax25 off" (die Antwort wird nicht gelesen) oder "ax25-v2.2 off" (es
+wird gar keine XID-Frage gestellt, also gibt es nichts auszuwerten).
+Genau diese zwei Schrauben hat Thomas benannt - und beide sind
+wesentlich, weil es vorher nur eine gab.
+
+DIE ZWEITE HAElfte, die mitkam, war der Beweis, dass die Antwort keinen
+Platz in der Routentabelle verdient - und der Grund ist seiner, nicht
+meiner.  Man koennte das angebotene Modul pro Route merken.  Aber: die
+XID, die ueber einen NextHop bei uns ankommt, ist nicht die des NextHops.
+  * Digipeat Modus 2: der NextHop bestaetigt, was wir senden, aber der
+    letzte Adressplatz enthaelt dann die XID des ZIELES.
+  * Modus 1 (transparent weiterleiten): der NextHop fasst nichts an, und
+    wir sehen ebenfalls die XID des ZIELES.
+Also waere ein per NextHop gemerkter Befund fuer das naechste Ziel auf
+demselben Weg falsch - und die anderen Parameter (N1, k, Faehigkeiten)
+gehoeren zu einem anderen Benutzer als der erste.  EIN proprietaerer
+Satz-Bit, der "ich bin ein 2.2-faehiger Hop" bedeutet, wuerde es loesen,
+gelernt werden duerfte er aber nur aus einer VERHANDLUNG DIREKT MIT IHM -
+und danach muessten erst alle via-Wege ueber ihn korrigiert werden, was
+eigenlich ein eigener Posten ist.  Wunschliste, niedrigste Prioritaet,
+und deshalb ausdruecklich NICHT gebaut.  doc/AX25-2.2-GAP.md sagt es
+auch, damit es nicht wieder von unten her erfunden wird.
+
+N1 UND k: werden geparst (xi.n1rx, xi.window) und liegen da.  Sie werden
+noch nicht angewandt - sie zu nehmen waere kein Zwang dem anderen gegen-
+ueber, sondern unser eigenes clampen auf das kleinere von zweien, und nur
+beim Modulus sieht man dem anderen die Diskrepanz auf dem Draht an.  Als
+erstes sinnvolles Ziel: N1 auf min(eigen, sein), Fenster auf min(eigen,
+sein).  Auch das eine Wunschliste, aber eine mit echtem Nutzen, weil
+unsere I-Felder dann nie zu lang fuer den Empfaenger sind.
+
+NEBENBEOBACHTUNG fuer spaeter: doc/EAX25.md schreibt die Achse noch als
+"eax25 off | accept | caller | always", der Code nimmt seit dem
+Umbau "initiate".  Das ist aelter als dieser Posten und hat es nur
+nicht auf die Liste geschafft.
+
+------------------------------------------------------------------------
+POINT D WAR TOTER CODE, UND WENN ER LIEF, LOG ES SICH (2026-09-25)
+------------------------------------------------------------------------
+GEMESSEN, zwei Knoten ueber tty-Paar, digipeat 2, hf1 auf
+"ax25-v2.2 initiate".  A (TE0ST) fragt C (TE4ST-1) per XID, ueber B
+(DL9SAU).  C IST NICHT ERREICHBAR.  Und was B tat:
+
+  /dev/ttywf recv:  TE0ST->TE4ST-1 v DL9SAU  XID(P) ... mod8
+  /dev/ttywf sent:  TE4ST-1->TE0ST v DL9SAU* XID(F) ... mod128
+  /dev/hf1 sent:    (nichts - keine Sonde an C)
+
+Das "sent" ist die Vorstellung, um die es hier geht: ABSENDER TE4ST-1,
+also C, und C ist nicht da.  B hat sich als C ausgegeben.  A hat es
+glaubt (der accept-or-XID-Zweig aus dem vorigen Posten tat daraufhin
+genau das, was er soll: SABME), und B hat selbst kein XID an C
+geschickt.  Genau das war der Fall, den wir unterbinden wollten.
+
+VIER FEHLER, alle in ax25.c, alle gefunden im selben Zug:
+
+  1. DER BLOCK LAG IN DER FALSCHEN KLAMMER.  Die Wiederholbedingung lautet
+     "Digipeat == 1 || UI || addreq(source,dest)".  Ein XID-Befehl ist
+     keines von dreien, also fiel er bei digipeat 2 in das else und damit
+     in lapb_input() - und lapb_input() beantwortet JEDEN XID-Befehl, den
+     es bekommt, mit dem Ziel des Rahmens als Absender (ph.source =
+     hdr.dest).  Das ist die erfundene Antwort.  BEHEBEN: das XID steht
+     jetzt selbst in der Bedingung (ax25.c:741-745), mit einer letzten
+     Klausel, die ein an UNS gerichtetes XID ausspart - dann sind wir
+     ein echter XID-Peer und kein Bein.
+
+  2. C WAR DAS FALSCHE FELD.  Der Block nahm hdr.digis[hdr.nextdigi] und
+     bewachte sich selbst mit hdr.nextdigi < hdr.ndigis.  Mit EINEM Digi
+     - uns selbst, dem Normalfall - ist nextdigi nach dem Hochzaehlen
+     aber schon gleich ndigis, die Bedingung also falsch, und C ist
+     schlicht hdr.dest.  Der Block konnte in der genau einen Konstellation
+     nie laufen, in der er gebraucht wird.  BEHOBEN: C ist digis[nextdigi],
+     wenn noch ein Digi kommt, sonst hdr.dest.
+
+  3. DIE SONDE FRAG ALS SICH SELBST.  ph.source stand auf hdr.dest, also
+     ging "TE4ST-1 -> TE4ST-1" raus.  BEHOBEN: ph.source ist die
+     Rufnummer des Ausgangsports.  Nebenbei bleibt der Rest des Weges auf
+     der Sonde (ndigis/nextdigi von hdr uebernommen), statt ihn auf 0 zu
+     setzen - sonst frage B C direkt, obwohl noch ein Digi dazwischen
+     liegt.
+
+  4. DIE SONDE KAM VOR DEM AUFTRAG.  Speichererschoepfung haette eine
+     unbeantwortete Frage an C erzeugt UND A's Frame durchgelassen, also
+     genau das doppelte Fragen, das der Block vermeiden soll.  BEHOBEN:
+     der Auftrag zuerst; gelingt er nicht, bleibt A's Frame unangetastet
+     und C wird gar nicht gefragt.
+
+  Dazu eine Kleinheit, die derselbe Eingriff brauchte: Senden und
+  Loggen der Wiederholung haetten den geschluckten Rahmen mitgenommen
+  ("sent" fuer etwas, das nicht gesendet wurde) - jetzt an *bpp
+  gekoppelt.
+
+WICHTIG FUER DEN TEST: "ax25 digipeat <0|1|2>".  Bei 1 wird der Rahmen
+unveraendert weitergereicht - keine Sonde, keine Antwort in fremdem
+Namen, und das Verhalten bleibt so.  Point D ist ausschliesslich die
+Variante 2, in der B selbst weiterruft.  Wer die alte Spur mit dem
+unveraendert weitergereichten XID hat, hatte 1 laufen.
+
+ZURUCKGENOMMEN, was ich hier zuerst schrieb: ich hatte aus einer
+grep-Ausgabe in ax25.c die Stelle "wir setzen uns NICHT hinein - das ist
+der Unterschied zum Digipeaten" zitiert und daraus einen Widerspruch zu
+Bau-on-behalf-of-A gebaut.  Falsch zweimal: der Satz steht NICHT im TODO,
+sondern in ax25.c:1331, und er gehoert zu "ifconfig <iface>
+user-to-user on" - zwei Nutzer auf DEMSELBEN Port, bei denen der Rahmen
+unveraendert und ohne Wiederholt-Bit hinausgeht.  Das ist ein anderes
+Feature und sagt ueber den Digipeat nichts.
+
+  Was B tut, ist genau der Bau, und er ist gemessen und beschrieben
+  (doc/EAX25.md, "always, and the relay it needs"): "WAMPES does not
+  repeat a connected frame: it terminates both halves and calls onward
+  itself (Digipeat == 2 in ax25.c), carrying the caller's callsign as the
+  source of the second leg, so the far end sees him via us."  Also XID
+  A->C via B und SABM(E) A->C via B, und die Adressen bleiben A und C -
+  so, wie Thomas es am 2026-09-25 beschrieben hat.
+
+  Dass auf dem zweiten Bein ein SABM herauskam, als A einen SABME
+  schickte, ist ebenfalls der Bau und nicht der neue Fund: das Modul des
+  zweiten Beins entscheidet eax25_wanted(iface, dest, from), und "from"
+  heisst "dem Anrufer folgen" bei initiate, MMASK bei accept.  Ein
+  Herunterstufen ist laut doc/EAX25.md immer erlaubt, ein Heraufstufen
+  nicht - "downgrading is always safe, upgrading is not".  Unveraendert.
+
+ ------------------------------------------------------------------------
+DAS GELERNTE E ZAEHLT, UND "initiate" HOERT AUF, DEM ANRUFER ZU FOLGEN
+(2026-09-25, von Thomas aus dem Zwei-Knoten-Test entschieden)
+
+DIE MESSUNG: die erste Verbindung lief wie dokumentiert - XID, XID-Antwort
+mit modulo-128, dann SABME, dann UA, und danach steht das E in
+"ax25 route list".  Die ZWEITE Verbindung, 13 s spaeter, kam als nackter
+SABM heraus.  Grund: eax25_wanted() sah am Port "accept" und ging mit MMASK
+raus, und der Vermerk "E" wurde nirgends gelesen.  Das E war also bis hier
+nur eine Anzeige fuer den Operator - es hat noch nie etwas gesteuert.
+
+1. EMMASK, WENN DAS E DA STEHT, und zwar bei JEDEM eax25-Wert ausser
+   "off" - also auch bei "accept".  Das ist die direkte Folge der Frage
+   nach dem accept-Port, der nichts fragen darf: er hat jetzt wenigstens
+   einen Beleg, aus dem er ohne Frage handeln darf.  "off" bleibt
+   absolut; wer ausdruecklich nein sagt, wird nicht von einem alten
+   Vermerk ueberstimmt.  Die Frage "und wenn das E NO sagt?" bleibt wie
+   gehabt: nach EAX25_RETRY Verbindungen wird wieder gefragt.
+
+2. "initiate" STEUERT AUCH DAS ZWEITE BEIN, UND ES FOLGT DEM ANRUFER NICHT
+   MEHR.  Die Begruendung dahinter war nicht falsch, das Ergebnis schon:
+   der Anrufer kann an der Strecke jenseits von uns nichts machen, und er
+   hat das Konservativste genutzt, was er hat.  Nur stand danach ein
+   Relay-Port auf seiner eigenen Faehigkeit - auf einem Bein, das wir ohnehin
+   selbst terminieren.  "from" ist aus eax25_wanted() raus.  "always"
+   verhaelt sich danach genauso und ist damit ein Synonym zu "initiate";
+   es hat sonst nirgends mehr eine Sonderstellung (der Sonderfall im
+   SABM-Antwortweg ist schon lange weg), also kann es mit der
+   ax25-version-Achse gemeinsam weg.  Als REIHENFOLGE bleibt eine offene
+   Frage: der Digipeat-Zweig in lapb.c schickt das SABME heute noch ohne
+   XID davor - die eigene Frage des zweiten Beins kommt erst mit
+   est_link(peer) (Schritt 2).
+
+3. DER PORT ERBT DAS FACTORY-DEFAULT WORTGETREU.  In doattach() stand ein
+   Schritt, der "accept" in "initiate" umbenannte.  Damit hat der Knoten
+   "ax25 ax25-v2.2 accept" gesagt und "if verbose" "initiate" - zwei
+   widersprechende Angaben, bevor ein einziges Paket geflogen ist.  Ein
+   Default, der nicht der Default ist, ist schlechter als ein
+   konservativer.  Wer wirklich fragen will, sagt es am Port.
+
+WIDERLEGT, und zwar durch Thomas' eigenes Beispiel, war meine Sorge, das
+gelernte E koenne auf einem FALSCHEN Weg landen.  Sie faellt in zwei Stuecke:
+
+  * Die Gueltig-Abschaltung gibt es bereits: ax25.c loescht eax25 und xid,
+    sobald sich ifp oder digi des Eintrags aendern, und ein blosses
+    Auffrischen desselben Eintrags loescht nichts.  Steht dort schon, mit
+    seinem Kommentar, und deckt genau den Fall ab: Z hinter C kann modulo-128
+    (C antwortet), derselbe Z hinter einem einfachen Digi D nicht.  Das
+    ax25-2.2-GAP-Dokument traegt es jetzt als Regel 3.
+  * Eine Umleitung des Vermerks auf einen anderen Weg gibt es nicht und es
+    kann sie nicht geben: der Vermerk sitzt im Eintrack, nicht in einer
+    Liste daneben.  Ein Eintrag IST ein Weg.  Neu gelernt wird nur, wenn
+    A selbst an uns hoert - also ueber unsern eigenen Verkehr mit ihm, und
+    das auch wieder nur, solange der Weg steht.
+
+ZU SCHRITT 3 (die Routendatei) bleibt die Trennung, die Thomas selbst
+gezogen hat, und sie ist genau die Trennung zwischen "Beleg" und "Befehl":
+  * A->T0T und A->B via T0T: T0T steht in der Datei, sein Port gibt es
+    nicht mehr, die Kette wurde gefunden und hat keinen lebenden Port.
+    Verwerfen, mit einer Meldung beim Laden der Datei.
+  * A->T0T via AL1VE und A->B via AL1VE,T0T: der Befehl nennt einen Weg, den
+    es gibt.  idest ist AL1VE, die T0T-Route wird gar nicht abgefragt, also
+    geht der Rahmen raus, ueber die Default-Route oder ueber ALIVEs eigenen
+    Port.  Dieses Verhalten darf Schritt 3 nicht zerstoeren - es ist das
+    Umleren von Hand und der Grund, warum man die toten Zeilen aus der
+    Datei loeschen kann, statt sie reparieren zu muessen.
+  * Ohne Eintrag ueberhaupt bleibt die Default-Route Fang, wie bisher.
+
+DAS ZWEITE BEIN FRAGT JETZT SELBST (2026-09-25, Schritt 2 von 4)
+  Der Digipeater B hat den Aufbau des zweiten Beins von Hand gemacht: mmask
+  gesetzt, ein SABM raus, Timer an.  Damit stand dort nie eine Frage - und
+  eine Station, die sich in einem einzigen Austausch erklaeren haette, wurde
+  durchprobiert statt gefragt.  est_link() war die Stelle, an der die Frage
+  entsteht, und sie stand dort nicht.  Jetzt laeuft der Digipeat-Zweig ueber
+  est_link(peer), und das verlangt drei Dinge, die vorher nicht noetig waren:
+    * Die Sonde geht als B->C raus, mit B als Source und dem Weg des Beins
+      (xid_leg_open in lapb.c).  Als Sonde in A's Namen waere sie eine
+      Frage, die C A stellt - und A haette die Antwort eines Dritten
+      gelesen.  Genau das ist der Rahmen, den ax25.c im Digipeat-Zweig
+      zurueckhaelt, von der anderen Seite gesehen.
+    * Sie geht nur raus, wenn die Verhandlung ueberhaupt stattfindet, also
+      ax25-v2.2 nicht auf off.  Die F1-Regel bleibt eine Regel fuer Fragen,
+      die jemand fuer sich selbst stellt; das Bein dahinter ist eine
+      Verbindung wie jede andere und wird wie jede andere eroeffnet.
+    * Kommt keine Antwort, geht das Bein mit dem SABM weiter, den die
+      Wartezeit ohnehin hervorgebracht haette.  Es wird NICHTS in C's Namen
+      erfunden: A hat seinen eigenen Timer, und fuer C sagen wir nichts, was
+      wir nicht von ihm gehoert haben.
+  GEFUNDEN, BEIM DURCHLESEN: eine Sonde geht als B->C hinaus, und Cs Antwort
+  ist an B adressiert - sie landet also im ganz normalen Empfang und hat
+  vorher einen ax25_cb gebraucht, den niemand bestellt hat.  Der Block blieb
+  liegen und wurde fuer ax_answers_to() zu "C ist unsere Station auf dem
+  Port".  Jetzt wird ein Block, den diese Antwort angelegt hat, wieder
+   mitgenommen (made_here), und ein vorhandener nicht angefasst.  Das war im
+   Digipeat-Zweig von ax25.c genauso true - nur fiel es dort keinem auf, weil
+   es niemand bemerkt hat.
+  DIE LEBENSDAUER DES ZEIGERS: der Job zeigt auf den Block des Beins, und
+  del_ax25() gibt den frei.  Also loest der Besitzer den Job ab (xid_leg_drop,
+  aufgerufen aus del_ax25, solange der Zeiger noch gueltig ist).  Ohne das
+  traegt der Timer-Callback die Adresse von freigemachtem Speicher.
+   DER TIMER BRAUCHTE EINE DAUER: set_timer() vor start_timer(), wie beim
+   Digipeat-Auftrag.  Ohne Dauer startet der Timer gar nicht (timer.c) und das
+  Bein haette ewig auf sein eigenes Bein gewartet.
+  DER ZWEITE UND DRITTE WEG, PROTO = V2_2 ZU SETZEN: nicht nur die
+  XID-Antwort, sondern ein SREJ, das er selbst schickt.  Beides ist ein
+  Beweis vom Draht dieser Sitzung - eine Behauptung ist nur das XID PI=3,
+  und das wird darum gar nicht erst gelernt, sondern nur bei einer Antwort
+  gelesen.  srej_ok() verlangt peer_srej UND proto == V2_2, an einer Stelle.
+  Eine Station, die sich mit SREJ bruest und dann eine Luecke bekommt,
+  bekommt darum ein REJ, bis sie einmal geantwortet hat - das ist der Preis
+  dafuer, dass wir ihr nicht ein Fenster anbieten, das sie nicht versteht.
+  OFF HEISST NICHT SCHWEIGEN (zwei Stellen in lapb.c): eine eingehende XID
+  wird auch dann beantwortet, wenn der Port auf ax25-v2.2 off steht.  Off
+  heisst "ich frage nicht".  Schweigen hiesse, A immer wieder fragen zu
+  lassen, ohne dass die Antwort kommt.  Was die Antwort nicht behauptet, ist
+  eine Faehigkeit, die der Port abgeschaltet hat - das entscheidet eax25,
+  getrennt davon.
+  EINE FRAGE FUER N WARTER: xid_leg_find() vergleicht jetzt den Port mit,
+  nicht nur das Rufzeichen - C kann auf zwei Wegen erreichbar sein, und eine
+  Antwort auf dem einen sagt nichts ueber den anderen.  Die Antwort bedient
+  ALLE Jobs zu dieser Frage, nicht den ersten gefundenen (A, A-1 und Y
+ koennen im selben Moment denselben unbekannten C wollen; sie kosten eine
+  Sonde und erfahren alle dasselbe).  xid_leg_pending() verhindert, dass
+  der naechste Warter eine zweite aufmacht - so im Bein wie im Digipeat-Zweig
+  von ax25.c.
+  DIE SOFORTBEDIENUNG BRAUCHT KEINEN CODE: sie steht im Routeneintrag.  Wenn
+  C schon verifiziert geantwortet hat, sagt est_link() nein zum XID und
+  nimmt den SABM direkt - kein Job, kein Timer, keine Sonde.  Ein Eintrag
+  ist ein Weg, deshalb genuegt der Vermerk im Eintrag.
+  DIE REIHENFOLGE BEI "always" (2026-09-25, beim Lesen gefunden, nicht beim
+  Testen - und genau die Sorte Fehler, die ein Test spaer findet und ein
+  Uebersehen erst nach Stunden):
+    est_link() lehnt ein Bein ab, indem es den Block auf LOEST - und wenn
+    das Gegenstueck keine Dienste hat, auch das Gegenstueck mit.  Im Digipeat-
+    Zweig ist aber das Gegenstueck der gerade laufende Rahmen, in dem wir
+    stehen.  Ein Aufrufer, der danach noch weitermacht, benutzt freien
+    Speicher - und ein zweiter solcher Aufrufer gleich mit.
+    Die Frage steht deshalb VOR est_link(): ax25_v2_refused() ist eine reine
+    Zustandsfrage ohne Nebenwirkung, und die Absage wird im Digipeat-Zweig
+    gegeben (DM an den Anrufer).  Der Abbau unter dem switch nimmt dann beide
+    Bloecke mit - der war schon da und wird nicht angefasst.
+    Und die Haelfte zum Anrufer bleibt dabei DISCONNECTED, nicht SETUP:
+    gaengig waere, sie vorher auf SETUP zu setzen, dann nimmt der Abbau sie
+    nicht mit.  Dann aber beantwortet ein weiteres SABM des Anrufers den
+    Zustands-Dispatch mit einem UA, statt wieder hier hereinzukommen und das
+    Bein neu aufzubauen - und genau dieses Wiederholen ist der dokumentierte
+    Weg, auf dem "ein zweites SABM schickt den zweiten SABM" passiert.
+    SPEICHERMANGEL LEHNT NIE AB: xid_leg_open() kann an calloc() scheitern,
+    und dann waere "always" eine Ablehnung, die 40 Byte Speicher kostet.  Dann
+    geht der einfache SABM, auch bei "always".  Eine unbeantwortete Frage ist
+    ueberhaupt keine Ablehnung - abgelehnt wird nur, was schon beantwortet
+    wurde (frisches "nein" oder FRMR).  Das steht jetzt an EINER Stelle
+    (ax25_v2_refused), damit die Digipeat-Vorabfrage und est_link() nicht
+    auseinanderlaufen koennen.
+  EIN AUFTRAG PRO BEIN: wiederholt A sein SABM, waehrend wir noch auf C
+  warten, laeuft der Digipeat-Zweig erneut und wuerde einen ZWEITEN Auftrag
+  fuer dasselbe Bein anlegen.  Beide spaeten wuerde dieselbe Eroeffnung
+  zweimal machen, also zwei SABMs an C.  xid_leg_open() gibt einen
+  vorhandenen Auftrag fuer dasselbe Bein jetzt zurueck.
+
+ZU SCHRITT 3 (die Routendatei) - ABGEARBEITET UND DURCHGEPRUEFT (2026-09-26)
+  Die drei Faelle, die Thomas oben als Beleg und Befehl getrennt hat, stehen
+  jetzt als Szenarien 7 bis 10 in testtools/eaxmatrix.py.  Sie sind nicht
+  durchgelesen, sondern gefahren: der Aufbau ist eine Leitung aus pty-Paaren,
+  die Knoten sind die gebauten, und der Befund ist der Trace.
+
+  1. A->T0T, und T0T steht in der Datei auf einem Port, den es nicht gibt:
+     der Knoten verwirft den Eintrag beim Laden und SAGT ES (Zeile und
+     Rufzeichen), und der Rahmen geht trotzdem hinaus - ueber den FANG, ohne
+     erfundenen Digipeat.  Das ist der dritte Fall der Liste und der erste
+     in einem Durchgang: der FANG bleibt FANG, auch nachdem eine Zeile
+     verworfen wurde.
+
+  2. A->T0T via AL1VE und A->B via AL1VE,T0T: der Befehl nennt einen Weg,
+     den es gibt.  Die T0T-Route wird gar nicht abgefragt (idest ist AL1VE),
+     der Rahmen traegt den genannten Digipeat, und AL1VE wiederholt ihn -
+     am Endpunkt steht sein Call mit dem Stern dahinter.  Genau das ist das
+     Umlenzen von Hand, und genau deshalb kann man die toten Zeilen aus der
+     Datei loeschen, statt sie reparieren zu muessen.
+
+  GEFUNDEN, BEIM TESTEN (und nicht am Code):
+    * "ax25 route add" SCHRIEB DIE DATEI NICHT.  "ax25 route del" tat es
+      (axroute_flush()), und der Kommentar in ax25file.c behauptete fuer
+      "add", es tue es "fuer einen gelernten Eintrag" - der gelernte Weg lief
+      aber ueber einen Timer nach zehn Minuten, ein permanenter gar nicht.
+      Ein Eintrag, den jemand eben von Hand gesetzt hatte, war beim naechsten
+      Start weg, ohne eine Zeile.  add schreibt jetzt ebenfalls sofort, aus
+      demselben Grund wie del: was dem Betreiber eben gesagt wurde, soll der
+      naechste Start auch finden.
+    * "-g" HEISST DEBUG, UND DEBUG LIEST UND SCHREIBT DIE DATEI GAR NICHT.
+      axroute_loadfile() und axroute_savefile() kehren unter Debug sofort
+      zurueck - mit Absicht, ein Debug-Lauf soll keinen Zustand erben und
+      keinen hinterlassen.  Fuer die Routen-Szenarien heisst das: der Knoten
+      muss OHNE "-g" laufen (rig.py: debug=False je Knoten).  Wer das
+      vergisst, sieht das Verhalten nicht und bekommt einen Fehlbefund, der
+      mit dem geprueften Code nichts zu tun hat.  Genau das ist hier
+      passiert, und der erste Befund war "der Knoten sagt nichts", was
+      vollkommen wahr war und vollkommen falsch beantwortet.
+    * DIE DATEI HAELT KEIN ASCII, sondern die Adresse so, wie sie auf der
+      Leitung steht (axroute_write schreibt addrcp(rp->target) unveraendert,
+      und dort ist sie bereits verschoben).  Ein Test, der in axroute_data
+      nach "DB0CCC" sucht, findet nichts und ist gruendlich immer gruen -
+      "steht nicht drin" beweist nichts, wenn es nie drinstand.  Die Pruefung
+      auf ein Rufzeichen in dieser Datei baut die Bytes (on_air()).
+    * WAMPES STREICHT BEIM WIEDERHOLEN DIE DIGIS VOR SICH, NICHT SEIN EIGENES
+      ("Remove all digipeaters before me", axroute() mit keep_path=0, d =
+      nextdigi-1; nach dem nextdigi++ im Digipeat-Zweig ist d = 0, es wird
+      also nichts gestrichen).  Der eigene Call bleibt im gefahrten Rahmen
+      stehen, mit dem Wiederholt-Bit.  Ein Test, der auf eine kuerzere
+      Digiliste wartet, haelt einen arbeitenden Digipeat fuer einen, der
+      nicht wiederholt - und umgekehrt.
+
+  GEFUNDEN, BEIM DURCHLESEN (und diesmal gefixt):
+    * axsend() verglich NACH htonax25() das erste Byte des Rahmens mit UI.
+      Nach htonax25() liegt dort das erste Adressbyte, nicht das
+      Steuerfeld - dieselbe Falle, die den Empfangspfad lahm gemacht hat
+      (ax_recv(), ax_user_to_user(); dort steht es jetzt richtig, mit dem
+      Kommentar, warum).  Die Wirkung: die Bedingung konnte fuer eine
+      gewoehnliche Adresse nie wahr sein.  Jedes Byte einer Rufzeichenadresse
+      ist nach dem Schieben gerade, & ~PF laesst die Paritaet unveraendert,
+      und UI = 0x03 ist ungerade - axsend() hat also nie einen UI gemerkt.
+      Das war der Loopschutz auf der Sendeseite, und er hat nie
+      ausgeloest; gefangen hat der Rahmen bisher die Empfangsseite
+      (ax_user_to_user() merkt richtig, vor dem Umbau).  Jetzt wird "ctl"
+      benutzt, das ohnehin da ist.
+
+  DIE ENTSCHEIDUNG, DIE DIE SZENARIEN 2 UND 3 FESTSCHREIBEN (Thomas, der
+  Test hat sie erzwungen, und sie stand nirgends):  das zweite Bein traegt
+  As Quellrufzeichen.  C antwortet, und die UA kommt bei A an; ein schweigendes
+  C laesst A mit einem SABM ohne UA sitzen, und A meldet es ueber seinen
+  eigenen Timer.  Das ist das transparente Relais (R+), nicht der
+  abschliessende Digipeat.  Letzterer - B antwortet A selbst in Cs Namen
+  und haelt die Verbindung, bis sie faellt - ist eine andere Auslegung mit
+  anderen Folgen fuer Rufzeichen und Wiederholungen, und er ist NICHT
+  gebaut.  Als offene Auslegung steht er hier; wer ihn will, sagt es, und
+  dann gehoert er mit Vorwurf, Protokollzustand und Abbruchregel geschrieben
+  und nicht nebenbei hineingebaut.
+
+  STILLE IST STILLE (Thomas, aus dem Trace vom 27.09.):  der Digipeat
+  schrieb nach 10 s (XID_LEG_TIMEOUT) eine XID-Antwort in Cs Namen, obwohl C
+  nie geantwortet hatte - inklusive Modulo 128 aus Bs eigenem Port, k und
+  N1rx likewise.  Zwei Aenderungen:  nach dem Verstummen wird gar nichts
+  gesendet (A wartet seinen T1 und sendet dann selbst, und B nimmt die
+  Verbindung danach auf Modulo 8 zur Kenntnis - das ist die Lernwirkung,
+  nicht der Wunsch nach einer bestimmten Moduloentscheidung), und der
+  GECACHTE Befund darf weiter antworten ("kein XID auf diesem Pfad",
+  ax25.c:1127):  das ist keine Vermutung, sondern eine Beobachtung von B,
+  und ohne sie kaeme der naechste Aufruf gar nicht mehr zustande.  Szenario
+  13 schreibt beide Haelften fest:  der erste Aufruf mit "always" wird
+  zu Recht abgelehnt (kein Beleg), der zweite kommt durch.  Wer daraus
+  abliest, "always" habe jetzt einen zweiten Versuch eingebaut, verwechselt
+  die Testlage mit der Einrichtung:  ausprobieren muss der Aufrufer.
+
+  DER WEG ZURUECK, UND ER WAR ZWEIMAL KAPUTT (Szenario 18):  die Antwort
+  an A bekam erst gar keinen Weg (ndigis = 0), und nach der ersten
+  Reparatur nur noch unseren eigenen Eintrag [B] - weil axroute() den Weg
+  um unsere Position herum verkuerzt ("remove all digipeaters before me",
+  ax25.c) und der gekuerzte Kopf der war, aus dem xid_leg_answer() den
+  Rueckweg baut.  Beides fiel im Labor mit EINEM Hop nicht auf, weil A an
+  Bs eigenem Port haengt und eine Antwort ohne Wegliste dort gerade noch
+  ankommt.  Mit einem zweiten Digipeater dazwischen ist sie eine Antwort an
+  niemanden:  sie ging an D hinaus, D fand sich nicht in der Liste und liess
+  sie fallen.  Die Kopie des Weges entsteht deshalb VOR dem axroute() im
+  Digipeat-Zweig (arrived), und der Rueckweg ist die Umkehrung dieses Weges
+  - nicht eine aus der Routing-Tabelle zusammengebaute (ax25.c, ax_recv()).
+  Szenario 18 haelt beides fest:  die Sonde bleibt ueber den zweiten Hop
+  hinweg sauber (C sieht Bs eigene Frage, ohne Digis), und bei A kommt D
+  mit dem Wiederholt-Bit an - B fehlt dort mit Recht, denn auf dem
+  Rueckweg steht er VOR D, und ein Digipeat streicht die Digis vor sich.
+
+  OFFENE AUSLEGUNG, NICHT GEBAUT (Thomas, aus demselben Gespraech):  ein
+  Digipeat, der das AX.25 2.2 auch in eigener Sache beantworten kann.
+  Der erste WAMPES-Hop eines Weges koennte eine Frage nach dem Gespraech
+  und nach der Faehigkeit des jeweils naechsten Beins stellen und beides
+  weiterreichen - oder auch:  "ich habe das Bein schon geprueft".  Heute
+  beantwortet nur der Digipeat unmittelbar vor C, und nur wenn er auf
+  ax25-v2.2 nicht auf off steht.  Zwei Punkte, die dabei festzulegen
+  waeren:  (1)  die Parameter der Antwort gehoeren zu B->C, waehrend der
+  Weg und die Wiederholungsbits zu B->A - genau diese Trennung macht
+  xid_leg_answer() heute schon richtig, und sie ist die Voraussetzung fuer
+  alles Weitere;  (2)  die Weitergabe des hop2hop-Bits gehoert zu einem
+  Digipeat auf MODUS 2 (ax25 Digipeat == 2, der Digipeat-Zweig in ax25.c und
+  lapb.c).  Auf Modus 1 -
+  der einfache Digipeat, der den Rahmen nur wiederholt - darf der erste
+  WAMPES-Hop dieses Bit nicht setzen:  dort wird nichts beantwortet und
+  nichts gelernt, und ein gesetztes Bit waere eine Behauptung ueber ein
+  Bein, das er gar nicht kennt.  Wer das will, sagt es; es gehoert nicht
+  neben die Reparatur oben, sondern als eigener Entwurf mit eigener
+  Szenarienreihe.
+
+  HOP2HOP-ACK ALS XID-ERWEITERUNG (Thomas, 27.09., aus der verlorenen
+  Notiz, wiedergegeben und geprueft):
+
+  EINE AUSHANDLUNG MIT B IST NICHT AUF C UEBER B ODER D UEBER B,C
+  UEBERTRAGBAR.  Genau deshalb geht heute je Ziel eine Sonde raus, und
+  genau deshalb ist der Befund im Routeneintrag eines Ziels fuer den
+  naechsten Zielpunkt wertlos - er "gehoert zu einem Weg, nicht zu einem
+  Rufzeichen" (ax25.h).  Mein neues Feature wuerde das uebertragbar
+  machen: weiss A, dass B selbst aushandeln wird, gilt die Auskunft fuer
+  alles, was dahinter liegt.
+
+  DER GEWINN, und warum er erheblich ist:  man spart sich die ganze
+  XID-Prueferei fuer JEDEN zu connectenden, wenn man weiss, dass der
+  Einstiegsdigi B ohnehin hop2hop ack macht.  Und im Fall B ist digimode
+  1 bzw. kann kein hop2hop, C aber schon: dann weiss man, dass alles
+  ueber B,C als ausgehandelt gilt - mit den Timing- und
+  Faehigkeitsparametern von C, denn B ist ja ein "dummer" Repeater.
+
+  DER LAUF ueber die Digikette, am Beispiel A -> D via B,C.  A sieht
+  jeden Digi im Pfad an: ist er bekannt und hop2hop-faehig, ist die Suche
+  fertig und A rechnet mit dessen Faehigkeiten.  Ist er nicht bekannt,
+  geht - so jenseits des Ratenlimit-Fensters - ein XID auf dieses Digi,
+  und die Antwort wird gelernt.  Sagt B nein oder schweigt er, geht A
+  zum naechsten, C.  Findet sich auch dort nichts, fragt A das Ziel
+  selbst, wie heute.
+
+  NICHT VORWAERTS VERERBT wird die Erkenntnis eines Digis, der selbst
+  kein hop2hop kann.  Kann B keines, gilt Cs Wissen nicht fuer alles
+  dahinter:  will A sich mit A -> Y via B connecten, muss er Y via B
+  fragen.  "Nicht uebertragbar" heisst also:  auf jedem Weg wird neu
+  gefragt, bis einer der Abschluss-Hops zustimmt.
+
+  UNSER HOP2HOP-ACK BEHANDELT DIE VERBINDUNG VIA UNS SO, WIE SIE ZU UNS
+  WAERE.  Es erklaert unsere Faehigkeiten und Timer - ohnehin nicht die von
+  D.  Die von D betreffen die Linkstrecke, und die ist eine andere.  Die
+  Aushandlung gilt also PRO BEIN:  der Fuss A<->B ist die eine
+  Verhandlung, B<->C bzw. B<->D die andere.  Zu der Frage, wer SREJ
+  announced:  SREJ wird fuer den Fuss A<->B ausgehandelt, das Bein zu C
+  oder D hat seine eigene Verhandlung.  Wer die Strecke als eine
+  Verhandlung fuer A liest, verwechselt die beiden Fuesse.
+
+  WAS ICH DAZU GEMESSEN UND NACHGESCHLAGEN HABE - und dieser Teil ist
+  Befund, nicht Absicht, und der Befund steht der Absicht insofern
+  entgegen, als die Norm das Feld nicht kennt:
+
+  DIE SPEC, und zwar als Text und nicht als PDF:  AX.25 2.2 Revision 4
+  vom 27.10.2025, nachbearbeitet als Markdown, daraus die PI-Tabelle in
+  Figure 4.5 im Wortlaut.  "hop-to-hop" und "hop2hop" kommen im gesamten
+  Dokument NULL Mal vor.  "digipeat" erscheint ausschliesslich als
+  Prioritaets- und Wiederholfunktion der Physical Layer, nirgends als
+  aushandelbare Faehigkeit.  Der 2.3-Entwurf aus demselben Repository
+  fuehrt es auch nicht.  Figure 4.5 kennt acht PI:  2 (Half/Full Duplex),
+  3 (REJ/SREJ, Modulo 8/128, Extended Address, Segmenter), 5 (N1 Tx),
+  6 (N1 Rx), 7 (k Tx), 8 (k Rx), 9 (T1), 10 (Retries).  Verhandelt oder
+  angezeigt werden sechs Parameter - alle betreffen den DIREKTEN
+  Gegenueber.  Ein Feld dafuer gibt es nicht, in keiner der drei
+  Revisionen.
+
+  WAS DIE SPEC TROTZDEM OFFENLAESST, woertlich und in dieser Reihenfolge:
+    "A parameter field containing an unrecognized PI is ignored."
+    "The parameter fields described below represent the minimum
+     implementation and do not preclude the negotiation of other
+     parameters between consenting stations."
+  Eine private PI ist damit kein Umweg und kein Hack, sondern der von der
+  Norm selbst offengelassene Weg.  Und weil die Norm Notification und
+  Negotiation ausdruecklich unterscheidet ("Notification simply tells the
+  distant TNC some limit" - nur N1 und k), ist auch klar, was ein
+  hop2hop-Bit waere:  KEINE Verhandlung, sondern eine Mitteilung.  "Ich
+  pruefe es selbst" - genau die Formulierung aus dem ersten Teil.
+
+  ZWEI KORREKTUREN AN MIR SELBST, damit sie niemand uebernimmt:
+    -  Die Zwei-Hop-Begrenzung des Digipeatens steht im Vorwort der
+       1998er Fassung.  In Revision 4 steht sie NICHT mehr.  Sie gehoert
+       nicht als geltende Regel in diese Notiz.
+    -  Der Kommentar in src/xid.h ist an einer Stelle falsch:  dort steht
+       "PI=7 transmit length".  Nach Figure 4.5 ist PI=5 = I Field
+       Length Tx und PI=7 = Window Size Tx.  Wir werten keines von
+       beiden aus, es bricht also nichts - aber niemand soll darauf
+       aufbauen.
+
+  WAS ES AM CODE ANFAST, und das ist erfreulich wenig:  KEINE neue
+  Tabelle.  Die Digis eines Pfades sind selbst Stationen mit eigenen
+  Eintraegen in derselben Tabelle, gelernt von axroute_add() aus den
+  Rahmen, die B wiederholt, und ax_route.xid ist das Feld, in dem der
+  Befund liegt.  Der Lauf ist damit:
+
+      fuer jedes Digi im Pfad (A -> D via B,C):
+          rp = Routeneintrag des Digis, wenn vorhanden
+          rp->xid == AXR_XID_HOP2HOP  ->  fertig, mit dessen Werten
+          unbekannt oder jenseits des Ratenlimits  ->  XID auf dieses Digi
+              Antwort mit Bit  ->  AXR_XID_HOP2HOP, fertig
+              Antwort ohne Bit oder Schweigen  ->  naechstes Digi
+      kein Digi hat geliefert  ->  XID an das Ziel, wie heute
+
+  Drei Dinge also:  ein neuer Wert in der vorhandenen xid-Enum
+  (AXR_XID_UNKNOWN/YES/NO gibt es, AXR_XID_HOP2HOP kaeme dazu), das
+  private PI in Frage und Antwort, und die Auswertung dieser Schleife
+  dort, wo die Frage heute ohnehin entsteht (est_link() in axlink.c).
+  Die Stellen, wo es hingeschaurt werden muss:  ax25.h, Feld xid samt
+  Kommentar;  ax25.c:1127, der gecachte Befund mit dem Ratenlimit;  und
+  doc/AX25-2.2-GAP.md:117-125, der Wunschzettel, auf den das
+  hinauslaeuft.
+
+  EINE INVARIANTE, und es ist derselbe Fallstrick wie der SREJ-Fehler
+  von weiter oben:  das Bit darf NIE in einer Antwort stehen, die ein
+  Digipeat in Cs Namen schreibt.  Diese Antwort beschreibt den
+  Ziel-Digi;  ein darin gesetztes Bit wuerde A belehren, DAS ZIEL sei
+  hop2hop - eine Behauptung ueber einen Dritten.  Das Bit gehoert
+  ausschliesslich in die Antwort, die eine Station fuer sich selbst gibt.
+  Und Schweigen bleibt unbekannt, nie hop2hop - sonst wird aus einem
+  ausbleibenden Frame eine Behauptung.  Auf MODUS 1 bleibt es verboten,
+  wie oben.
+
+  WAS ES NICHT LOEST, ehrlich gesagt:  der erste Versuch benutzt die
+  Werte des abschliessenden Digis, das Bein endet aber physikalisch beim
+  Ziel.  Bei abweichendem Modulo antwortet das Ziel mit DM, und A macht
+  es ueber die vorhandene eax25-Logik mit SABM nochmal - drei
+  Rueckfaelle in Folge, dann heisst es "kann nicht".  Beim SREJ gaebe es
+  einen unerwarteten REJ auf der ersten P/F=1-Austauschung.  Das Bit
+  ersetzt die FRAGE, nicht den VERSUCH;  der Versuch bleibt
+  selbstpruefend.  Wer auch das noch weghaben will, braucht die grosse
+  Variante:  dass der abschliessende Digi den Aufbau selbst beantwortet
+  und die Verbindung haelt.  Die ist als Auslegung notiert, nicht gebaut,
+  und sie gehoert nicht neben diese Reparatur.
+
+  Weder der Bau noch eine Szenarienreihe sind Teil der Reparatur.
+
+  DIE QUELLE fuer den zweiten Teil, damit sie nicht wieder verloren geht
+  und niemand die 1998er Liste erneut zitiert:
+  https://github.com/packethacking/ax25spec/blob/d8f67ad60ae8d3ef436f4d3fd30a02cf60a83786/doc/ax.25.2.2.4_Oct_25.md
