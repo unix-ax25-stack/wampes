@@ -120,7 +120,7 @@ static struct cmds Axcmds[] = {
 	  "  did not answer an AX.25-2.2 XID (capabilities exchange)\n"
 	  "  keeps its \"no XID\" verdict.  After that time, a new connect\n"
 	  "  may probe again.  A fresh FRMR or SABM verdict resets it.\n"
-	  "  Default: 60 minutes.  Per route: ax25 route add \"<call> via <digis>\" xid-time.\n"
+	  "  Default: 60 minutes."
 	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
