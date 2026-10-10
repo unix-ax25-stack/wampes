@@ -1381,7 +1381,10 @@ struct mbuf **bpp
 							 * port.  No connection is
 							 * set up: just that one
 							 * probe. */
-							if (probe_c) {
+							if (probe_c && ifp != NULL &&
+							    ifp->ax25_v2 != AX25V2_OFF &&
+							    (ifp->ax25_v2 == AX25V2_INITIATE ||
+							     ifp->ax25_v2 == AX25V2_ALWAYS)) {
 								paxp = cr_ax25(probe_to);
 								if (paxp != NULL) {
 									struct ax25 ph;

@@ -1959,6 +1959,22 @@ xid_leg_open(struct ax25_cb *axp)
 	 * Fall angehaengt; eine Kopie von hier waere nur eine zweite, schlechtere
 	 * Quelle fuer dasselbe.
 	 */
+	/* Only initiate a probe if this port is set to do so.  'accept'
+	 * means answer only - it must not send the first XID. */
+	if(lp->leg_iface != NULL &&
+	   lp->leg_iface->ax25_v2 != AX25V2_INITIATE &&
+	   lp->leg_iface->ax25_v2 != AX25V2_ALWAYS){
+		stop_timer(&lp->timer);
+		for(pp = &Ax25_xid_legs; *pp != NULL; pp = &(*pp)->next){
+			if(*pp == lp){
+				*pp = lp->next;
+				break;
+			}
+		}
+		free(lp->anshdr);
+		free(lp);
+		return 0;
+	}
 	paxp->hdr = ph;
 	paxp->iface = lp->leg_iface;
 	xid_our_info(lp->leg_iface,
