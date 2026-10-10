@@ -105,26 +105,22 @@ static struct cmds Axcmds[] = {
           "  This sets the global default. Defaults to 'normal'. You can fine-tune it per\n"
           "  interface, i.e. with 'ifconfig <iface> digiout same-iface.'\n"
         },
-	{ "ax25-v2.2",    doax25v2,       0, 1,
+  { "ax25-v2.2",    doax25v2,       0, 1,
 	  "ax25 ax25-v2.2 [off|accept|initiate|always]\n"
-	  "  Set the factory default of the global AX.25-v2.2 knob,\n"
-	  "  lived-in by new ax25 ports; per-port override is\n"
-	  "  ifconfig <iface> ax25-v2.2.  off = never send XID (pure AX.25\n"
-	  "  2.0 style and the way to force a v2.2 initiator ALL THE\n"
-	  "  WAY back to SABM negotiation, both our own and the\n"
-	  "  stranger's (see \"ax25-v2.2 pirate\" below).\n"
-	  "  accept = answer XID for calls not marked AX25V2_OFF.\n"
-	  "  initiate = also send XID first.  always =\n"
-	  "  new sessions of a stranger that once answered take\n"
-	  "  his SABM straight into SABM negotiation too.\n"
+	  "  Set the global factory default for AX.25-2.2 (inherited by new ax25\n"
+	  "  ports; override per port with 'ifconfig <iface> ax25-v2.2').\n"
+	  "  off      never send or invite XID; force pure SABM negotiation.\n"
+	  "  accept   answer XID probes, do not send our own.\n"
+	  "  initiate also send XID first (negotiate the best common denominator).\n"
+	  "  always   like 'initiate', and do not refuse on a fresh silent 'no'.\n"
 	},
 	{ "xid-probe-time", doxidprobe,    0, 1,
 	  "ax25 xid-probe-time <minutes>\n"
-	  "  Set the global factory default for how long a station\n"
-	  "  that does not talk XID keeps its \"wont check the knob\"\n"
-	  "  verdict.  After it, a connect has another go.  Fresh\n"
-	  "  FRMR (or SABM) verdicts reset it.  Default: 60 minutes.\n"
-	  "  Per route: ax25 route add \"<call> via <digis>\" xid-time.\n"
+	  "  Set the global factory default for how long a station that\n"
+	  "  did not answer an AX.25-2.2 XID (capabilities exchange)\n"
+	  "  keeps its \"no XID\" verdict.  After that time, a new connect\n"
+	  "  may probe again.  A fresh FRMR or SABM verdict resets it.\n"
+	  "  Default: 60 minutes.  Per route: ax25 route add \"<call> via <digis>\" xid-time.\n"
 	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
@@ -564,28 +560,17 @@ void *p)
 /* Set the global factory default of the AX.25 v2.2 knob that new AX.25
  * ports inherit when they are attached.  "ifconfig <iface> ax25-v2.2"
  * overrides it per port; the words mirror the ifconfig syntax so they
- * mean the same everywhere.Printing it with no argument shows the
- * current default.  "off" (the pure AX.25 2.0 behaviour, the state of a
- * port whose operator never went v2.2) is also the one way to force a
- * v2.2 initiator ALL THE WAY back to SABM negotiation, both our own and
- * the stranger's (see "ax25-v2.2 pirate" below).  "accept" answers XID
- * for calls not privately marked AX25V2_OFF; "initiate" also sends XID
- * first, as the same-named per-link knob would.
+ * mean the same everywhere.  Printing it with no argument shows the
+ * current default.  "off" means pure AX.25 2.0 behaviour (never send or
+ * invite XID).  "accept" answers XID for calls not privately marked
+ * AX25V2_OFF; "initiate" also sends XID first.  "always" is like
+ * "initiate", but new sessions of a stranger that once answered take the
+ * negotiation as given for that route within its lifetime.
  *
- * ES GILT AUCH FUER DIE LAUFENDEN PORTS.  Bis hierher anderte der Befehl
- * nur Ax25_v2_default, und die Ports, die schon angehaengt waren, nahmen
- * davon nichts mit - der Befehl kam zurueck, ohne eine Meldung, und im
- * Labor blieb das Verhalten genau das, was man ihm abzuschalten versucht
- * hatte.  Ein Operator, der "ax25 ax25-v2.2 off" gibt, meint den Knoten;
- * "ab jetzt neu angehaengte Ports" ist eine Vermutung, die er nie
- * ausgesprochen hat.
- *
- * ABER NICHT UEBER EINE EIGENE EINSTELLUNG HINWEG.  Wer "b1 initiate"
- * gesagt hat, hat das gewollt; der globale Knopf darf es nicht beim
- * naechsten Befehl wieder rueckgaengig machen (ax25_v2_set in iface.h).
- * Deshalb steht am Ende, was er getan hat - ein Befehl, der eine Station
- * nicht erreicht und einer, der eine auslaesst, sehen auf der Konsole
- * gleich aus, wenn man nichts sagt.
+ * ES GILT AUCH FUER DIE LAUFENDEN PORTS.  The command changes the default
+ * and also pushes it to ports that have no explicit setting (ax25_v2_set
+ * in iface.h), so running the global command affects live ports unless
+ * the operator explicitly set them per-port.
  */
 static int
 doax25v2(
@@ -637,12 +622,13 @@ void *p)
 	return 0;
 }
 /* Set the global factory default of the XID re-probe interval (in
- * minutes).  A route that does not answer XID, or whose FRMR verdict
- * says "never ask again", has its knob re-checked when a new connect
- * wants the v2.2 service; this is how often that re-check may happen.
- * Fresh FRMR or SABM verdicts and per-port and per-route settings reset
- * the clock before it runs out.  The value lives in seconds; 60 minutes
- * of it is the historic default of one probe per hour.
+ * minutes).  A route that did not answer an AX.25-2.2 XID, or whose
+ * FRMR verdict says "never ask again", has its knob re-checked when a
+ * new connect wants the v2.2 service; this is how often that re-check
+ * may happen.  Fresh FRMR or SABM verdicts and per-port and per-route
+ * settings reset the clock before it runs out.  The value lives in
+ * seconds; 60 minutes of it is the historic default of one probe per
+ * hour.
  */
 static int
 doxidprobe(
