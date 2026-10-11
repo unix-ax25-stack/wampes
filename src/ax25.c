@@ -1136,6 +1136,7 @@ struct mbuf **bpp
 			    * a leg. */
 			   (Digipeat == 2 && *bpp &&
 			    ((*(*bpp)->data & ~PF) == XID) &&
+			    hdr.cmdrsp == LAPB_COMMAND &&
 			    !addreq(hdr.nextdigi < hdr.ndigis ?
 				    hdr.digis[hdr.nextdigi] : hdr.dest,
 				    hdr.digis[hdr.nextdigi - 1])) ||
@@ -1259,13 +1260,13 @@ struct mbuf **bpp
 				 */
 				if (Digipeat == 2 && ifp != NULL &&
 				    ifp->ax25_v2 != AX25V2_OFF &&
+				    hdr.cmdrsp == LAPB_COMMAND &&
 				    *bpp != NULL && control == XID) {
 					uint8 probe_to[AXALEN];
 					struct mbuf *pbp = NULL;
 					struct ax25_cb *paxp;
 					struct ax_route *prp;
 					int probe_c = YES;
-					int i;
 
 					/* C is the station the probe is
 					 * meant for: always the DESTINATION
@@ -1284,18 +1285,23 @@ struct mbuf **bpp
 					 * back to the destination, which is the
 					 * only case that ever worked. */
 					addrcp(probe_to, hdr.dest);
-					/* RATE LIMIT (60 min, Xid_probe_time):
-					 * we usually know the path to C already.
-					 * Without this bound B would probe C
-					 * again on EVERY XID frame from A -
-					 * several times a minute on an APRS
-					 * port.  A path we have just learned
-					 * is not asked again; A still gets
-					 * its answer, only without a second
-					 * probe. */
+					/* RATE LIMIT: we usually know the
+					 * path to C already.  Without a
+					 * bound B would probe C again on
+					 * EVERY XID frame from A - several
+					 * times a minute on an APRS port.
+					 * xid_may_probe() is the same rule
+					 * est_link() uses: a measured yes,
+					 * or a FRMR, is never asked again,
+					 * a SILENT station is asked again
+					 * on the next XID_MAXTRIES frames
+					 * and after that once an hour
+					 * (Xid_probe_time).  A path we have
+					 * just learned is not asked again;
+					 * A still gets its answer, only
+					 * without a second probe. */
 					prp = ax_routeptr(probe_to,0);
-					if(prp != NULL && prp->xid != AXR_XID_UNKNOWN
-					   && secclock() - prp->xid_time < Xid_probe_time)
+					if(prp != NULL && !xid_may_probe(prp))
 						probe_c = NO;
 					/* NOCH EINE FRAGE IN DER LUFT?  Dann
 					 * wartet schon jemand auf C - der
@@ -1387,104 +1393,41 @@ struct mbuf **bpp
 							     ifp->ax25_v2 == AX25V2_ALWAYS)) {
 								paxp = cr_ax25(probe_to);
 								if (paxp != NULL) {
-									struct ax25 ph;
-									memset(&ph, 0, sizeof(ph));
-									/* The probe is
-									 * OURS: it leaves
-									 * by the outgoing
-									 * port under this
-									 * station's call, or
-									 * C would see his
-									 * own callsign
-									 * asking him a
-									 * question. */
-									addrcp(ph.source, ifp->hwaddr);
-									addrcp(ph.dest, probe_to);
-								/* NUR DER REST DES WEGES,
-								 * UND ER
-								 * FUENGT VORN AN.
-								 *
-								 * Die Sonde ist eine
-								 * eigene Verbindung
-								 * von B nach C,
-								 * raus ueber ifp.
-								 * Der Kopf, aus dem
-								 * sie entstanden
-								 * ist, beschreibt
-								 * den Weg A - B - C;
-								 * fuer uns ist der
-								 * bis ein -
-								 * schliesslich
-								 * unser eigener
-								 * Platz - verbraucht,
-								 * und genau dort
-								 * steht das
-								 * Wiederholt-Bit
-								 * schon.  Uebernommen
-								 * wurde er
-								 * trotzdem
-								 * vollstaendig, und
-								 * C sah daraufhin:
-								 *
-								 *   DB0BBB* -> DB0CCC
-								 *
-								 * B als sein eigener
-								 * Digipeater, mit
-								 * Stern.  Zwei
-								 * Aerger's: der Stern
-								 * ohne Wiederholung
-								 * ist nach 7.1 genau
-								 * das, was nicht
-								 * vorkommen darf, und
-								 * ein Digipeater, den
-								 * niemand bestellt
-								 * hat, ist eine
-								 * Adresse, an die
-								 * niemand antworten
-								 * muss.
-								 *
-								 * Was von der Sonde
-								 * wirklich uebrig
-								 * bleibt, ist der Weg
-								 * HINTER uns: die
-								 * Digis ab nextdigi,
-								 * nach vorn
-								 * geschoben, mit
-								 * nextdigi = 0.  Im
-								 * Laborfall A - B - C
-								 * ist das die leere
-								 * Liste, und die
-								 * Sonde geht direkt
-								 * an C.  Laeuft der
-								 * Weg weiter (A - B
-								 * - D - C), dann
-								 * beginnt sie mit D -
-								 * was die alte
-								 * Fassung auch
-								 * nicht tat: sie
-								 * schickte sie
-								 * ueber B, also ueber
-								 * sich selbst.
-								 *
-								 * Die Antwort an A
-								 * weiter oben macht
-								 * es richtig vor:
-								 * ndigis = 0, weil
-								 * dort der Weg
-								 * genauso wenig
-								 * gehoert. */
-								for (i = hdr.nextdigi; i < hdr.ndigis; i++)
-									addrcp(ph.digis[ph.ndigis++],
-									       hdr.digis[i]);
-								ph.nextdigi = 0;
-
-									paxp->hdr = ph;
+									/* IN A'S NAMEN, WIE DAS SABM-BEIN
+									 * SELBST.  Die Sonde ist die
+									 * Frage, die A an C gerichtet
+									 * hat - derselbe Kopf, den das
+									 * SABM-Bein gleich traegt:
+									 * Quellruf A, Ziel C, der volle
+									 * Weg mit unserem Digi-Platz als
+									 * wiederholt markiert.
+									 *
+									 * "arrived", nicht "hdr": hdr
+									 * ist hier schon verkuerzt
+									 * (axroute oben), arrived traegt
+									 * den Weg, wie er ankam.  So
+									 * sieht C denselben Anrufer wie
+									 * beim Verbindungsaufbau und
+									 * antwortet ueber denselben
+									 * Weg; wir schlucken die
+									 * Antwort und machen A's
+									 * Antwort daraus (xid_leg_find).
+									 *
+									 * Die eigene B->C-Sonde (Quell-
+									 * ruf B) ist die im TODO
+									 * vermerkte hop2hop-ack-Variante,
+									 * nicht das Standardverhalten. */
+									paxp->hdr = arrived;
 									paxp->iface = ifp;
 									xid_our_info(ifp,
 										     eax25_wanted(ifp, probe_to),
+										     (ifp->eax25 != EAX25_OFF) ? 1 : 0,
 										     YES, &pbp);
 									sendframe(paxp, LAPB_COMMAND,
 										  XID | PF, -1, &pbp);
+									/* Gefragt - also darf der
+									 * Ablauf ein Urteil sein. */
+									lp->probed = 1;
 									del_ax25(paxp);
 								}
 								/* Remember when we last
@@ -1952,6 +1895,7 @@ int perm)
 				rp->eax25_skips = 0;
 				rp->xid = AXR_XID_UNKNOWN;
 				rp->xid_time = 0;
+				rp->xid_tries = 0;
 				rp->xid_frmr = 0;
 			}
 		}

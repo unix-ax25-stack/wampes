@@ -166,10 +166,11 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 	 * der fruehe Ausstieg oben behebt (Thomas, 2026-10-09).
 	 */
 	if(lp->ans_iface->eax25 == EAX25_OFF)
-		xid_our_info(lp->ans_iface, MMASK, NO, &tbp);
+		xid_our_info(lp->ans_iface, MMASK, 0, NO, &tbp);
 	else
 		xid_our_info(lp->ans_iface,
 			     lp->mod128 ? EMMASK : MMASK,
+			     lp->mod128 ? 1 : 0,
 			     lp->srej, &tbp);
 	sendframe(axp,LAPB_RESPONSE,XID | PF,-1,&tbp);
 	del_ax25(axp);
@@ -362,9 +363,18 @@ xid_leg_timeout(void *p)
 	struct ax25_xid_leg *lp = (struct ax25_xid_leg *) p;
 	struct ax_route *rp;
 
-	if((rp = ax_routeptr(lp->probe_to,0)) != NULL){
+	/* NUR EIN AUFTRAG, DER WIRKLICH GEFRAGT HAT, URTEILT.  Punkt D legt
+	 * fuer jede geschluckte Frage von A einen Auftrag an, auch wenn die
+	 * Ratenbegrenzung die Sonde spart: der dient dann nur A's Warter.
+	 * Liesse man dessen Ablauf hier durch, schoebe jede weitere Anfrage
+	 * xid_time nach vorn und C bekaeme nie wieder eine Sonde - der
+	 * Eintrag saehe ewig "gerade erst gefragt" aus.  Gefragt hat nur,
+	 * wer gefragt hat (lp->probed).
+	 */
+	if(lp->probed && (rp = ax_routeptr(lp->probe_to,0)) != NULL){
 		rp->xid = AXR_XID_NO;
 		rp->xid_time = secclock();
+		rp->xid_tries++;
 	}
 	/* UND DAMIT AUCH EIN URTEIL UEBER MODULO 128.  Wer auf eine
 	 * XID-Anfrage nicht antwortet, kann ein SABME nicht beantworten
@@ -377,7 +387,8 @@ xid_leg_timeout(void *p)
 	 * spaeteren neuen Versuch steckt in eax25_remember() -
 	 * EAX25_RETRY
 	 */
-	eax25_remember(lp->probe_to,AXR_EAX25_NO);
+	if(lp->probed)
+		eax25_remember(lp->probe_to,AXR_EAX25_NO);
 	xid_leg_done(lp);
 }
 
@@ -540,7 +551,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		return 0;
 	}
 
-	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF){
+	if(type == SABME && iface != NULL && iface->eax25 == EAX25_OFF
+	   && !digipeat){
 		eax25_hint(iface,hdr);
 		sendctl(axp,LAPB_RESPONSE,DM | (control & PF));
 		free_p(bpp);
@@ -757,6 +769,20 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		   (rp = ax_routeptr(hdr->source,0)) != NULL){
 			rp->xid = AXR_XID_YES;
 			rp->xid_time = secclock();
+			rp->xid_tries = 0;
+			eax25_remember(hdr->source,
+				       xi.mod128 ? AXR_EAX25_YES
+						 : AXR_EAX25_NO);
+		} else if(cmdrsp == LAPB_COMMAND){
+			/* SEINE FRAGE IST AUCH EINE AUSKUNFT UEBER IHN.
+			 * Ein XID-Kommando traegt die Faehigkeit des
+			 * ABSENDERS, nicht eine Frage danach: sagt sein
+			 * mod128-Bit ja, kann er Modulo 128, und est_link()
+			 * liest das beim naechsten Aufbau - ohne ihn erst
+			 * selbst fragen zu muessen.  Das xid-Urteil bleibt
+			 * "nur eine Antwort zaehlt": wer nur fragt, hat noch
+			 * nichts beantwortet.  Der eigene Befund ueber IHN
+			 * steht aber in der Frage (Thomas). */
 			eax25_remember(hdr->source,
 				       xi.mod128 ? AXR_EAX25_YES
 						 : AXR_EAX25_NO);
@@ -885,7 +911,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * whatever the block believes.
 			 */
 			xid_our_info(iface,
-				     iface->eax25 == EAX25_OFF ? MMASK : EMMASK,YES,
+				     iface->eax25 == EAX25_OFF ? MMASK : EMMASK,
+				     iface->eax25 == EAX25_OFF ? 0 : 1,YES,
 				     &tbp);
 			sendframe(axp,LAPB_RESPONSE,XID | (pf ? PF : 0),-1, &tbp);
 		} else if(cmdrsp == LAPB_COMMAND){
@@ -1036,18 +1063,29 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			if(axp->mmask == EMMASK)
 				eax25_remember(axp->hdr.dest,AXR_EAX25_YES);
 			else if(axp->eax25_tried){
-				/* He ignored the SABMEs and answered the SABM.
-				 * Once that read like proof; it is not.  The
-				 * same picture arises when HIS UA to a SABME
-				 * was lost and reaches us after we have
-				 * fallen back - and then he is on modulo 128
-				 * while we are on 8.  Measured against TNN at
-				 * 20 % loss: the very station whose other
-				 * link was running modulo 128 got marked as
-				 * incapable.  So it is counted, not believed.
+				/* He ignored the SABMEs and answered the
+				 * SABM.  By itself that read like proof and
+				 * is not: if a SABME, or HIS UA to it, was
+				 * simply lost, the same picture arises - and
+				 * then he is on modulo 128 while we are on
+				 * 8.  Measured against TNN at 20 % loss: the
+				 * very station whose other link ran modulo
+				 * 128 got marked incapable.  So it is
+				 * counted, not believed.
+				 *
+				 * A DM FIRST changes the picture: he SAW
+				 * modulo-128 and refused it, so this UA is
+				 * the second half of that one answer and may
+				 * be believed.  That is the difference
+				 * eax25_dmed carries; without it, count.
 				 */
-				eax25_failed(axp->hdr.dest);
+				if(axp->eax25_dmed)
+					eax25_remember(axp->hdr.dest,
+						       AXR_EAX25_NO);
+				else
+					eax25_failed(axp->hdr.dest);
 				axp->eax25_tried = 0;
+				axp->eax25_dmed = 0;
 			}
 			/* Note: xmit queue not cleared */
 			stop_timer(&axp->t1);
@@ -1064,11 +1102,18 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			break;
 		case DM:        /* Connection refused */
 			if(axp->mmask == EMMASK){
-				/* Not a refusal - he simply does not speak
-				 * modulo-128 and says so.  Ask again plainly;
-				 * a DM to THAT one means there really is no
-				 * service.
+				/* Not (yet) a verdict.  A DM to a SABME
+				 * can mean "I do not speak modulo-128" -
+				 * or that there is no service at all (a
+				 * crashed ax25d answers DM to anything).
+				 * So ask again plainly and let the SABM
+				 * settle it: a DM to THAT one means no
+				 * service, a UA is proof he cannot do
+				 * modulo-128, and only then is the route
+				 * marked (see the UA case).  eax25_dmed
+				 * keeps WHICH question the DM answered.
 				 */
+				axp->eax25_dmed = 1;
 				eax25_fallback(axp);
 				free_p(bpp);
 				return 0;
@@ -1268,6 +1313,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 				if(srp != NULL && srp->xid == AXR_XID_UNKNOWN){
 					srp->xid = AXR_XID_YES;
 					srp->xid_time = secclock();
+					srp->xid_tries = 0;
 				}
 			}
 			/* A SREJ asks for exactly ONE I-frame back - the one
@@ -1721,6 +1767,27 @@ static void eax25_hint(struct iface *ifp,struct ax25 *hdr)
  * port und dem gefragten Ziel auf.
  */
 
+/* Alter the "cannot do modulo-128" verdict by ONE session.  Called at the
+ * top of est_link(), i.e. once per attempt to set up a link - and not from
+ * eax25_wanted(): that one is read by the XID probe sites as well, and a
+ * probe is part of the same attempt, not a new one.  When the count reaches
+ * EAX25_RETRY the verdict goes and the next attempt asks with SABME again;
+ * eax25_failed() says why the count exists at all.
+ */
+static void
+eax25_age(uint8 *call)
+{
+	struct ax_route *rp = ax_routeptr(call,0);
+
+	if(rp == NULL || rp->eax25 != AXR_EAX25_NO)
+		return;
+	if(++rp->eax25_skips < EAX25_RETRY)
+		return;
+	rp->eax25 = AXR_EAX25_UNKNOWN;
+	rp->eax25_fails = 0;
+	rp->eax25_skips = 0;
+}
+
 int eax25_wanted(struct iface *ifp, uint8 *dest)
 {
 	struct ax_route *rp;
@@ -1739,20 +1806,16 @@ int eax25_wanted(struct iface *ifp, uint8 *dest)
 		 */
 		if(rp->eax25 == AXR_EAX25_YES)
 			return EMMASK;
-		/* "Kann nicht" gilt nicht fuer immer.  Nach EAX25_RETRY
+		/* "Kann nicht" gilt nicht fuer immer: nach EAX25_RETRY
 		 * einfachen Verbindungen wird wieder gefragt, denn der
 		 * Vermerk kann aus verlorenen Rahmen stammen (siehe
-		 * eax25_failed).  Auf einer Strecke, die oft neu aufbaut,
-		 * kommt der naechste Versuch damit frueher - und genau dort
-		 * war die Fehldiagnose auch wahrscheinlicher.
+		 * eax25_failed).  Gezaehlt wird das EINMAL je Aufbau, in
+		 * eax25_age(), und nicht hier: diese Funktion wird auch von
+		 * den Sonden-Stellen gelesen, und dort waere jeder Aufruf ein
+		 * zweiter Zaehlimpuls fuer dieselbe Verbindung.
 		 */
-		if(rp->eax25 == AXR_EAX25_NO){
-			if(++rp->eax25_skips < EAX25_RETRY)
-				return MMASK;
-			rp->eax25 = AXR_EAX25_UNKNOWN;
-			rp->eax25_fails = 0;
-			rp->eax25_skips = 0;
-		}
+		if(rp->eax25 == AXR_EAX25_NO)
+			return MMASK;
 	}
 	/* A port that only answers sends no SABME of its own - unless it has
 	 * proof that the far end can take one. */
@@ -1763,6 +1826,29 @@ int eax25_wanted(struct iface *ifp, uint8 *dest)
 	 * away, and the "always" of this knob follows it into the
 	 * "ax25 version" axis (TODO.txt). */
 	return EMMASK;
+}
+
+/* Darf C (wieder) gefragt werden?  Je Aufbau hoechstens eine Frage, und die
+ * Regel steht an EINER Stelle, weil drei sie lesen: est_link() fuer die
+ * eigene Verbindung, und ax25.c fuer die Ratenbegrenzung der Relais-Sonde.
+ *
+ * Ein gemessenes JA und ein FRMR sind Auskuenfte und werden nicht
+ * hinterfragt.  Ein SCHWEIGEN ist nur unsere Vermutung, und auf HF geht
+ * eine Frage verloren: die ersten XID_MAXTRIES Aufbauten fragen daher von
+ * selbst wieder, je einer, und erst danach greift Xid_probe_time.
+ */
+int
+xid_may_probe(struct ax_route *rp)
+{
+	if(rp == NULL || rp->xid == AXR_XID_UNKNOWN)
+		return YES;             /* nie gefragt - oder vergessen */
+	if(rp->xid_frmr)
+		return NO;              /* er hat ausdruecklich abgelehnt */
+	if(rp->xid == AXR_XID_YES)
+		return NO;              /* er hat geantwortet, nichts zu fragen */
+	if(rp->xid_tries < XID_MAXTRIES)
+		return YES;
+	return secclock() - rp->xid_time >= Xid_probe_time;
 }
 
 /* Say on the wire which modulus this link runs on.  The bit lives in the
@@ -1851,12 +1937,15 @@ xid_leg_pending(uint8 *call, const struct iface *ifp)
  * question was not asked, so a C that could have said so in one exchange was
  * found out by trial and timeout instead.
  *
- * The question goes out as B->C - the outgoing port's callsign as the source,
- * the path exactly as the leg's own frames will carry it - so that C's
- * answer comes back to US.  A probe in A's name would be answered by A, and
- * A would read a XID that belongs to nobody in that conversation; that is
- * the frame the point D block in ax25.c refuses to pass on, and this is the
- * same thing seen from the other side.
+ * The question goes out IN A'S NAME, exactly as the leg's own SABM will go:
+ * source A, the path from the incoming frame with our own digi position
+ * marked repeated, so that C sees the same caller the link is for and the
+ * answer returns along the same way A's own frames took.  The probe is the
+ * XID the A-to-C leg would itself have sent; only the control field differs
+ * from the SABM that follows.  C's answer is swallowed here (xid_leg_find)
+ * and turned into A's answer, and the leg continues with its SABM once C has
+ * spoken.  The alternative - asking C as B->C - is the hop2hop-ack variant
+ * kept on the TODO list, not what this port does by default.
  *
  * Returns 0 if the job could not be created, and then the caller must not
  * leave the leg half-open: it either falls back to asking with the SABM or
@@ -1870,7 +1959,6 @@ xid_leg_open(struct ax25_cb *axp)
 	struct ax_route *rp;
 	struct ax25_cb *paxp;
 	struct mbuf *pbp = NULL;
-	struct ax25 ph;
 	int asking;            /* is this question already on the air? */
 
 	if(axp->iface == NULL)
@@ -1911,6 +1999,10 @@ xid_leg_open(struct ax25_cb *axp)
 	for(pp = &Ax25_xid_legs; *pp != NULL; pp = &(*pp)->next) ;
 	*pp = lp;
 	start_timer(&lp->timer);
+	/* Nur wenn die Frage nicht schon draussen ist, geht hier eine eigene
+	 * hinaus - und nur dann darf dieser Auftrag aus dem Ablauf ein
+	 * Urteil ueber C machen (xid_leg_timeout). */
+	lp->probed = asking ? 0 : 1;
 	if(asking)
 		/* Nur der Eintrag: die Frage ist draussen und ihre Antwort
 		 * bedient diesen Warter mit, denn xid_leg_find() nimmt alle
@@ -1933,31 +2025,20 @@ xid_leg_open(struct ax25_cb *axp)
 		free(lp);
 		return 0;
 	}
-	memset(&ph, 0, sizeof(ph));
-	addrcp(ph.source, lp->leg_iface->hwaddr);
-	addrcp(ph.dest, lp->probe_to);
-	/* KEIN WEG AUS DEM EINGEHENDEN RAHMEN.
+	/* IN A'S NAMEN, WIE DAS SABM-BEIN SELBST.
 	 *
-	 * Die Sonde ist eine eigene Verbindung: von B nach C, raus ueber
-	 * leg_iface.  Der Rahmen, der sie ausgeloest hat, gehoert einem anderen
-	 * Port - sein Weg fuehrt zurueck nach A, und der Digi-Platz, der uns
-	 * betrifft, ist fuer uns schon verbraucht (das Wiederholt-Bit steht
-	 * dort schon).  Uebernommen hat den Rahmen xid_leg_open() bis hierher
-	 * trotzdem, und C sah daraufhin einen Digipeater, den es nicht gab:
+	 * Die Sonde ist die Frage, die A an C gerichtet hat: Quellruf A,
+	 * Ziel C, und der Weg, den A's eigener Rahmen genommen hat, mit
+	 * unserem eigenen Digi-Platz als wiederholt markiert (der Rahmen ist
+	 * ja wirklich durch uns gegangen).  Genau diesen Kopf traegt auch das
+	 * SABM-Bein, das auf C's Antwort folgt - axp ist der Peer-Block des
+	 * Digipeat-Paares, sein hdr ist A->C ueber uns.  C sieht damit
+	 * denselben Anrufer wie beim Verbindungsaufbau und schickt seine
+	 * Antwort zurueck ueber denselben Weg; wir schlucken sie
+	 * (xid_leg_find) und machen A's Antwort daraus.
 	 *
-	 *   DB0BBB* -> DB0CCC   (B als sein eigener Digipeater, mit Stern)
-	 *
-	 * Zwei Aerger's daran.  Der erste ist der Stern ohne Wiederholung: nach
-	 * Kapitel 7.1 darf nur ein Digipeater ihn tragen, der gerade wirklich
-	 * durchgegangen ist, und wir sind gerade nirgends durchgegangen.  Der
-	 * zweite ist der Digipeater selbst - C beantwortet einen Weg, den
-	 * niemand bestellt hat, und eine Station, die darauf antwortet, tut
-	 * es fuer einen Aufrufer, den es nicht gibt.
-	 *
-	 * Einen Weg zu C, den es wirklich gibt, holt axroute() beim Senden aus
-	 * der Route.  Der steht in rp->digi und wird dort wie in jedem anderen
-	 * Fall angehaengt; eine Kopie von hier waere nur eine zweite, schlechtere
-	 * Quelle fuer dasselbe.
+	 * Die eigene B->C-Sonde (Quellruf B) ist die im TODO vermerkte
+	 * hop2hop-ack-Variante und NICHT das Standardverhalten.
 	 */
 	/* Only initiate a probe if this port is set to do so.  'accept'
 	 * means answer only - it must not send the first XID. */
@@ -1975,10 +2056,11 @@ xid_leg_open(struct ax25_cb *axp)
 		free(lp);
 		return 0;
 	}
-	paxp->hdr = ph;
+	paxp->hdr = axp->hdr;
 	paxp->iface = lp->leg_iface;
 	xid_our_info(lp->leg_iface,
 		     eax25_wanted(lp->leg_iface, lp->probe_to),
+		     (lp->leg_iface->eax25 != EAX25_OFF) ? 1 : 0,
 		     YES, &pbp);
 	sendframe(paxp, LAPB_COMMAND, XID | PF, -1, &pbp);
 	del_ax25(paxp);
@@ -2012,7 +2094,9 @@ est_link_xid(struct ax25_cb *axp)
 		 * ein Ausfall, den wir uns selbst machen. */
 		goto plain_sabm;
 	}
-	xid_our_info(axp->iface,axp->mmask,YES,&tbp);
+	xid_our_info(axp->iface,axp->mmask,
+		     (axp->iface != NULL && axp->iface->eax25 != EAX25_OFF) ? 1 : 0,
+		     YES,&tbp);
 	sendframe(axp,LAPB_COMMAND,XID|PF,-1,&tbp);
 	axp->flags.neg_wait = YES;
 	axp->retries = 0;
@@ -2086,6 +2170,10 @@ est_link(struct ax25_cb *axp)
 	clr_ex(axp);
 	axp->retries = 0;
 	axp->eax25_probes = 0;
+	/* Frischer Aufbau, frischer DM-Vermerk. */
+	axp->eax25_dmed = 0;
+	/* Ein Aufbau, ein Zaehlimpuls fuer das "kann kein Modulo 128". */
+	eax25_age(axp->hdr.dest);
 	/* Fuer diese Verbindung noch nichts geklemmt - die XID-Antwort des
 	 * Peers fuellt das (ax25_apply_peer_xid). */
 	axp->peer_n1 = 0;
@@ -2122,22 +2210,39 @@ est_link(struct ax25_cb *axp)
 	   axp->iface->ax25_v2 == AX25V2_ALWAYS){
 		struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 		if(rp != NULL && rp->xid == AXR_XID_NO){
-			/* Silently decided "cannot" - probe again once its
-			 * verdict has aged past Xid_probe_time.  Always at
-			 * initiate: a refused negotiation ends the attempt in
-			 * ALWAYS mode below, but the peer who turned silent
-			 * gets another chance instead of an instant hangup.
-			 */
-			if(!rp->xid_frmr &&
-			   secclock() - rp->xid_time >= Xid_probe_time){
+			/* Silently decided "cannot" - and NOT for good.
+			 * xid_may_probe() answers whether THIS attempt asks
+			 * again: the first XID_MAXTRIES attempts do, so a
+			 * question lost on HF does not cost a whole hour,
+			 * and after that only Xid_probe_time opens it up
+			 * once more.  Always at initiate: a refused
+			 * negotiation ends the attempt in ALWAYS mode below,
+			 * but the peer who turned silent gets another
+			 * chance instead of an instant hangup.
+			 *
+			 * FUER EIN RELAIS-BEIN GILT DER KURZE WEG NICHT.
+			 * Die Frage dieser Sitzung war die XID des Anrufers,
+			 * die wir am Punkt D geschluckt und mit einer eigenen
+			 * Sonde beantwortet haben - dieselbe Station,
+			 * dieselbe Sitzung.  Hier noch einmal zu fragen
+			 * versteckte das SABM nur hinter weiteren zehn
+			 * Sekunden fuer eine Station, die gerade geschwiegen
+			 * hat.  Es bleibt beim alten Nachfassen nach
+			 * Xid_probe_time. */
+			int ask = (axp->peer != NULL)
+				? (!rp->xid_frmr &&
+				   secclock() - rp->xid_time >= Xid_probe_time)
+				: xid_may_probe(rp);
+			if(ask){
 				est_link_xid(axp);
 				return;
 			}
 			if(ax25_v2_refused(axp->hdr.dest,axp->iface)){
-				/* always: a peer who refuses the negotiation
-				 * is not wanted here at all - no call.  FRMR
-				 * or a fresh "no" within Xid_probe_time both
-				 * qualify. */
+				/* always: a peer who REFUSED the
+				 * negotiation (FRMR) is not wanted here at
+				 * all - no call.  A peer who only kept
+				 * silent has refused nothing, and
+				 * ax25_v2_refused() says so. */
 				free_q(&axp->txq);
 				axp->reason = LB_NEGOTIATION;
 				lapbstate(axp,LAPB_DISCONNECTED);

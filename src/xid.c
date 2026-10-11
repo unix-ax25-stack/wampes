@@ -91,6 +91,7 @@ void
 xid_our_info(
 struct iface *ifp,
 int mmask,
+int mod128,
 int srej,
 struct mbuf **bpp)
 {
@@ -116,7 +117,7 @@ struct mbuf **bpp)
 	opt = XID_OPT_FIXED
 		| ((segmode != AXSEG_OFF) ? XID_OPT_SEGMENT : 0)
 		| (srej ? XID_OPT_SREJ : XID_OPT_REJ)
-		| ((mmask == EMMASK) ? XID_OPT_MOD128 : XID_OPT_MOD8);
+		| (mod128 ? XID_OPT_MOD128 : XID_OPT_MOD8);
 	/* N1, the I-field length we take, in bits (Figure 4.5).  A port
 	 * that has no paclen of its own inherits the node's, and answering
 	 * 0 here would announce "I take no information field at all" - which

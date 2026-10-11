@@ -166,12 +166,20 @@ struct ax_route {
 	 *             NIE wieder gefragt, nicht nach einer Frist.  FRMR schlaegt
 	 *             also die Uhr.
 	 *
-	 * Beide werden wie xid selbst vergessen, wenn die Route umzieht
+	 * Alle drei werden wie xid selbst vergessen, wenn die Route umzieht
 	 * (axroute_add), und nicht persistiert (ax25file.c) - beim Neustart ist
 	 * frisches Fragen ohnehin richtig.
 	 */
 	long xid_time;                  /* Sekunden, secclock() */
 	int xid_frmr;                   /* Peer antwortete mit FRMR: nie wieder */
+	/* Unbeantwortete XID-Fragen IN FOLGE, je Aufbau hoechstens eine.
+	 * Auf HF geht eine Frage verloren; ohne diesen Zaehler haette erst
+	 * Xid_probe_time wieder gefragt, und zwei verlorene Fragen kosteten
+	 * zwei Stunden, ehe XID und Modulo 128 ueberhaupt in Frage kommen.
+	 * Die ersten XID_MAXTRIES Aufbauten fragen daher von selbst wieder,
+	 * danach erst greift die Stunde.
+	 */
+	int xid_tries;
 	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
 	 * one.  Learned from what arrives, so that we can answer to the one
 	 * machine instead of shouting at the whole segment.
@@ -308,6 +316,14 @@ struct ax25_xid_leg {
 	 * eine Faehigkeit behauptete: proto = V2_2 und ein SABME an
 	 * eine Station, die sich nie gemeldet hat. */
 	uint8 heard;
+	/* HABEN WIR C AUCH GEFRAGT?  Ein Auftrag entsteht fuer jede
+	 * geschluckte Frage (Punkt D), auch wenn die Ratenbegrenzung die
+	 * Sonde spart - der Auftrag dient dann nur A's Warter.  Nur ein
+	 * Auftrag, der wirklich gefragt hat, darf aus dem Ablauf ein Urteil
+	 * ueber C machen (xid_leg_timeout): sonst schoebe jede weitere
+	 * Anfrage von A xid_time nach vorn und C bekaeme nie wieder eine
+	 * Sonde (Xid_probe_time). */
+	uint8 probed;
 	struct timer timer;		/* how long we wait for C, then give up */
 };
 extern struct ax25_xid_leg *Ax25_xid_legs;
@@ -341,6 +357,12 @@ int xid_leg_open(struct ax25_cb *axp);
 /* Siehe eax25_fails / eax25_skips oben. */
 #define EAX25_MAXFAILS           3      /* Rueckfaelle in Folge bis "kann nicht" */
 #define EAX25_RETRY             15      /* Verbindungen bis zum naechsten Versuch */
+
+/* Siehe xid_tries oben.  Hoehere Werte fragen oefter nach - drei Sonden
+ * je Aufbau eine ist die Zahl, die den HF-Verlust abfaengt, ohne die
+ * Station zu noetigen und ohne in Xid_probe_time hineinzuregieren.
+ */
+#define XID_MAXTRIES             3      /* unbeantwortete XID-Sonden in Folge */
 
 #define AXROUTESIZE     499
 extern struct ax_route *Ax_routes[];

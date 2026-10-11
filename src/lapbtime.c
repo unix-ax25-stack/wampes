@@ -92,12 +92,15 @@ recover(void *p)
 			axp->flags.neg_wait = NO;
 			if(rp != NULL){
 				rp->xid = AXR_XID_NO;
-				/* Wann dieses "kann (noch) nicht" feststand: erst
-				 * nach Ablauf von Xid_probe_time wird in
-				 * est_link() wieder gefragt - der Peer koennte
-				 * sich geaendert haben (doc/AX25-2.2-GAP.md).
+				/* Wann dieses "kann (noch) nicht" feststand,
+				 * und wie oft schon gefragt wurde: die ersten
+				 * XID_MAXTRIES Aufbauten fragen wieder, danach
+				 * erst nach Ablauf von Xid_probe_time - der
+				 * Peer koennte sich geaendert haben
+				 * (doc/AX25-2.2-GAP.md, est_link()).
 				 */
 				rp->xid_time = secclock();
+				rp->xid_tries++;
 			}
 			/* Auch hier gilt: keine Antwort heisst auch kein
 			 * Modulo 128 - und der Eintrag ist das, was der

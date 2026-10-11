@@ -300,6 +300,16 @@ struct ax25_cb {
 				 * that cannot do modulo-128 usually says DM,
 				 * but the older ones just drop the frame, and
 				 * then only the clock can tell us. */
+	uint8 eax25_dmed;       /* A DM answered our SABME, so the SABM that
+				 * followed is the second half of one refusal:
+				 * he SAW modulo-128 and said no.  A UA to
+				 * that SABM is then proof and goes straight
+				 * into the route (eax25_remember), where a
+				 * SABM that merely followed SILENCE still has
+				 * to be counted (eax25_failed) - there his
+				 * lost UA to the SABME looks exactly the
+				 * same.  A DM on the SABM itself means "no
+				 * service": no verdict at all. */
 };
 /* Linkage to network protocols atop ax25 */
 struct axlink {
@@ -438,6 +448,12 @@ void eax25_fallback(struct ax25_cb *axp);
  * Selbst-Sonde (lapb.c).
  */
 int eax25_wanted(struct iface *ifp,uint8 *dest);
+/* Wird C (wieder) gefragt?  Je Aufbau hoechstens eine Frage: die ersten
+ * XID_MAXTRIES Aufbauten fragen wieder, danach erst nach Xid_probe_time -
+ * ein FRMR schliesst es fuer immer aus.  Dieselbe Regel fuer Verbindung,
+ * Relais-Sonde und Ratenbegrenzung (lapb.c, ax25.c).
+ */
+int xid_may_probe(struct ax_route *rp);
 int sendframe(struct ax25_cb *axp,enum lapb_cmdrsp cmdrsp,int ctl,int ctl2,struct mbuf **data);
 int busy(struct ax25_cb *cp);
 /* Die faellige Quittung jetzt senden - REJ, wenn etwas fehlt, sonst

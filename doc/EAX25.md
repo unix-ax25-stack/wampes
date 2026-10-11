@@ -138,9 +138,22 @@ Note where the probe ends: a SABME that stays unanswered is the proof that
 he cannot follow, and that proof is still taken from the wire.  When he
 *answers*, the XID has already said so, and the link goes modulo-128
 straight away instead of waiting for a DM.  A relayed leg is opened the way a
-local connect is opened, question and all: the second leg of a digipeated
-call asks XID and sends SABME exactly as we would for ourselves, and the
-caller's own modulus is no longer part of the decision.
+local connect is opened, question and all - with one thing it does not copy.
+It never asks a **second** question inside a session: the caller's own XID
+was swallowed at point D and answered with a probe of ours already (same
+station, same session), and the leg lives off that verdict instead of
+hiding its SABM behind another ten seconds.  Its own probe goes out only
+when there was no question to inherit - a caller who sent no XID at all -
+and the caller's own modulus is no longer part of the decision.
+
+The one thing a relayed leg does *not* copy from a local connect is whose
+name the question carries.  A local connect asks as ourselves; a relayed leg
+asks **in the caller's name**, with his source address and the remaining via
+path - NAT with the source preserved.  C must see the same caller for the
+question as for the connection that follows, and his answer is only passed
+back to A once he has given it: a station that stays silent is never written
+about.  What is *ours* on the leg is the port's own parameters (`eax25`,
+`k`, `SREJ`), because it is the leg's arm that is speaking.
 
 `always` - no longer a third answer here.  It used to be the one that
 upgraded a caller who had not asked for it, and that is now what `initiate`
@@ -181,9 +194,17 @@ A station that cannot do modulo-128 answers the SABME with DM - or, and
 this is the older and more common kind, drops it without a word.  Both
 have to work, and the second only over the clock.
 
-* **DM or FRMR**: fall back at once.  A DM to the plain SABM that follows
-  then means what a DM normally means - no service.
-* **Silence**: fall back after **three** probes.
+* **FRMR**: fall back, and mark him `e` at once - he *accepted* the SABME
+  and then could not follow, and no lost frame can counterfeit that.
+* **DM**: fall back at once, and keep *which* question the DM answered
+  (`eax25_dmed`).  A DM to the SABME says "I saw modulo-128 and do not
+  speak it", so the UA to the SABM that follows is **believed** and turns
+  the entry to `e` at once.  A DM to the SABM *itself* says the other
+  thing - no service at all, which is what a crashed ax25d answers to
+  everything - and carries no verdict either way.
+* **Silence**: fall back after **three** probes.  The UA that follows is
+  *counted*, not believed: a lost SABME, or a lost UA to it, looks exactly
+  the same (next section).
 
 Three, and not the ten that N2 allows, because of the arithmetic on the
 other side.  With `T1init` 5000 and the 1.25 backoff in `recover()`, three
@@ -231,14 +252,22 @@ What counts as evidence:
 
 * UA to our SABME, or a SABME **from** him - he can.  The second needs no
   probe at all and is what undoes a "cannot" the moment his end is fixed.
+* An XID **command** of his, carrying his own capability in the modulo-128
+  bit: set marks him `E`, clear `e`.  It is his statement about *himself*
+  and is learned as such - unlike the relayed answer in a third party's
+  name, which is not.  The *question* verdict is stricter and still needs
+  a RESPONSE: a station that only asked has answered nothing, and its
+  `xid` field stays blank.
 * FRMR on a modulo-128 attempt - he cannot, and this one is taken at once:
   he *accepted* the SABME and then could not follow, and no lost frame can
   counterfeit that.
-* Silence, or a DM, **and then a UA to the plain SABM** - counted, not
-  believed.  Silence alone is not enough: it is equally consistent with a
-  station that is simply away, and marking an absent neighbour as
-  incapable would stick to him for as long as his route lives.  One
-  fallback is not enough either, and that is the next section.
+* Silence **and then a UA to the plain SABM** - counted, not believed.
+  Silence alone is not enough: it is equally consistent with a station
+  that is simply away, and marking an absent neighbour as incapable would
+  stick to him for as long as his route lives.  One fallback is not enough
+  either, and that is the next section.  (A **DM** first is the exception:
+  it says he saw the modulo-128 attempt, so the UA answers *that* question
+  and is believed - see "Falling back".)
 
 ### Three in a row, then fifteen off
 
@@ -271,6 +300,29 @@ is exactly when asking again is right, because the far end may have grown
 new hardware meanwhile, and one probe is all it costs.  In memory it ages
 with the route: `axroute_savefile()` frees entries untouched for
 `AXROUTE_HOLDTIME`, which is 24.8 days, and it runs every ten minutes.
+
+### A lost question costs a session, not an hour
+
+The modulus verdict ages in **connects**.  The *question* needs a count of
+its own, because it is the same picture one layer down and can run with no
+SABME at all: a station we have never asked, or asked so long ago that
+`Xid_probe_time` (60 min) has run out.
+
+    xid_tries   unanswered XID questions IN A ROW, at most one per
+                session.  The first XID_MAXTRIES (3) sessions ask again;
+                after that only `Xid_probe_time` opens it.
+
+One per **session**, and not per frame.  The same rule serves a connect of
+our own and the relay's question in the caller's name (the point-D case in
+`ax25.c`); the second leg of a relayed call is the *same* session, so it is
+not asked again there - it would only hide the SABM behind another ten
+seconds.  A silence is our guess, and on HF a question gets lost: without
+the count, two lost questions would cost two hours before XID, and with it
+modulo-128, was even back in play.  Only the silence is asked again: a real
+answer ends it for good (`xid = yes`), and a FRMR for good and all
+(`xid_frmr`).  A question we *spared* (the rate limit) is not a session
+either - the entry notes when the last real question left (`xid_time`), so
+a caller who keeps dialling cannot push the hour out in front of us.
 
 `ax25 route list` shows it as `E` (can) or `e` (cannot) next to `P` and
 `J`; blank is "not tried", which is also what the column shows again in
@@ -354,35 +406,35 @@ between them.
 
 The first two rows are how the relay behaved while it still carried the
 caller's choice onward, and they are kept as the measurement they are.  With
-`initiate` opening the second leg for itself, the first row is gone: an
-`initiate` port sends the XID question and the SABME whatever the caller
-asked for, and the pair comes up modulo-8, modulo-128.  The row to replace
-them with belongs to the next run of the rig.
+`initiate` opening the second leg on a question of its own, the first row is
+gone: an `initiate` port sends the XID question and the SABME whatever the
+caller asked for, and the pair comes up modulo-8, modulo-128.  The row to
+replace them with belongs to the next run of the rig.
 
-**The second leg asks as itself, and the answer is the one that counts.**
-The digipeat branch used to assemble the second leg by hand - modulus
-decided, SABM sent, T1 started - which is `est_link()` minus the part where
-the far end gets *asked* first.  It calls `est_link()` now, so a port with
-`ax25-v2.2` above `off` sends one XID probe towards the far end before the
-SABM, and **it leaves as us, not in the caller's name**: source and
-destination are both ours on the leg's own path, so the answer comes back to
-the digipeater and is a first-hand finding about the far end - the one that
-is written into `ax25 route list`.  A question in the caller's name would
-have the far end answer the caller, and the caller would read a XID that
-belongs to nobody in that conversation.
+**The second leg asks in the caller's name, and C's answer is the one that
+counts.**  The digipeat branch used to assemble the second leg by hand -
+modulus decided, SABM sent, T1 started - which is `est_link()` minus the part
+where the far end gets *asked* first.  It calls `est_link()` now, so a port
+with `ax25-v2.2` above `off` sends one XID probe towards the far end before
+the SABM.  That probe is **not ours**: it carries A's source address and the
+remaining via path - the very header the SABM will carry - so the far end
+answers the caller and the answer returns along the way A's own frames took
+(`xid_leg_open`, `xid_leg_find`).  NAT with the source preserved.  The relay
+never speaks in its own name on that leg, and it never writes a frame in the
+name of a station it has not heard: only once C has answered is there
+something to pass back to A.
 
-Where the caller's own XID question arrives at a digipeat it is *answered
-there* - with the parameters of the port that leads to the caller, which are
-ours - and the question about the far end is raised separately, once, for
-all the callers waiting on it: A, A-1 and a direct caller at the same moment
-share one probe and learn the same thing.  If the far end stays silent the
-leg opens with the modulus the *outgoing port* decided, exactly as if no
-question had been asked: `eax25 off`/`accept` open plainly with SABM,
-`initiate`/`always` go out with SABME and let the ordinary fallback (three
-probes, `recover()`) settle it.  Nothing is ever sent in the far end's name
-- the caller has a timer of that kind of its own.  (Until 2026-10-09 the
-silence forced MMASK here, so switching `ax25-v2.2` on turned an
-`eax25 initiate` leg into a SABM leg - Thomas.)
+Where the caller's own XID question arrives at a digipeat it is *forwarded*
+in the same name - C's answer comes back to the caller, not to us - and the
+question about the far end is raised once, for all the callers waiting on it:
+A, A-1 and a direct caller at the same moment share one probe and learn the
+same thing.  If the far end stays silent the leg opens with the modulus the
+*outgoing port* decided, exactly as if no question had been asked: `eax25
+off`/`accept` open plainly with SABM, `initiate`/`always` go out with SABME and
+let the ordinary fallback (three probes, `recover()`) settle it.  Nothing is
+ever sent in the far end's name - the caller has a timer of that kind of its
+own.  (Until 2026-10-09 the silence forced MMASK here, so switching
+`ax25-v2.2` on turned an `eax25 initiate` leg into a SABM leg - Thomas.)
 
 Through the upgraded relay: 200 frames of 256 bytes, 51 200 bytes, counting
 straight through with `N(S)` past 127 and round again.  `ax25 status` shows

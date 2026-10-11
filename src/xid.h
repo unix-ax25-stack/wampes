@@ -100,10 +100,17 @@ void xid_parse(struct mbuf **bpp,struct xid_info *xi);
 
 /* Build our own XID information field onto *bpp - empty, or with the
  * items *this* station can stand behind (see the file header).  mmask is
- * the modulus an answer speaks in (the link's, or MMASK when answering
- * something with no link yet).  srej tells whether to offer SREJ -
- * always true here, kept in the signature for the negotiated gate.
+ * the modulus whose WINDOW (k, emaxframe vs maxframe) the field speaks
+ * with.  mod128 is the OPTIONS modulus bit alone, and it is deliberately
+ * separate: the bit is a CAPABILITY (what this port can do, eax25 != off),
+ * while the window is the operational setting.  They differ on an
+ * "eax25 accept" port, which can do modulo 128 and must announce it even
+ * though it will not open a link with it by itself - a peer that reads
+ * mod8 there would never try SABME toward us.  An answer in a peer's name
+ * (xid_leg_answer) passes that peer's own bit, not ours.  srej tells
+ * whether to offer SREJ - always true here, kept in the signature for the
+ * negotiated gate.
  */
-void xid_our_info(struct iface *ifp,int mmask,int srej,struct mbuf **bpp);
+void xid_our_info(struct iface *ifp,int mmask,int mod128,int srej,struct mbuf **bpp);
 
 #endif  /* _XID_H */
