@@ -1305,16 +1305,29 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			}
 			ackours(axp,nr,0);
 			/* A SREJ did not exist before 2.2: the path is
-			 * therefore PROVEN 2.2-capable, without any XID.  Only
-			 * a still unknown path is learned this way - an XID
-			 * that said no keeps its no. */
+			 * therefore PROVEN 2.2-capable, without any XID -
+			 * and that is exactly what it is worth: the
+			 * capability, not the answer. */
 			{
 				struct ax_route *srp = ax_routeptr(hdr->source,0);
-				if(srp != NULL && srp->xid == AXR_XID_UNKNOWN){
-					srp->xid = AXR_XID_YES;
-					srp->xid_time = secclock();
+				/* EIN SREJ BEWEIST DIE FAEHIGKEIT, NICHT DIE
+				 * PARAMETER.  Dass er selektiv wiederholt,
+				 * heisst: er spricht 2.2 - bewiesen auf dem
+				 * Draht, wie ein SABME von ihm, und darum
+				 * gehoert es ins eax25-Feld.  Seine Parameter
+				 * (N1, k, das SREJ-Bit, der Segmenter) stehen
+				 * aber allein in SEINER XID-Antwort.  Ein SREJ
+				 * als "er beantwortet unsere XID" zu verbuchen
+				 * hiesse, sich das fuer immer abzuschneiden:
+				 * xid == YES faellt aus xid_may_probe() heraus,
+				 * und gefragt wuerde nie wieder.  xid bleibt
+				 * darum, was es war - nur eine echte Antwort
+				 * setzt es - und der naechste Aufbau versucht
+				 * die Frage weiter (xid_tries faengt neu an).
+				 * Auf einem Relais fragt ohnehin Punkt D. */
+				eax25_remember(hdr->source,AXR_EAX25_YES);
+				if(srp != NULL && srp->xid != AXR_XID_YES)
 					srp->xid_tries = 0;
-				}
 			}
 			/* A SREJ asks for exactly ONE I-frame back - the one
 			 * numbered N(R) - not for the run a REJ takes (3.6.4).
