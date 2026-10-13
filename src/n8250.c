@@ -3,6 +3,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -762,6 +763,40 @@ struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Is this device node the SLAVE (or master) of a BSD pty pair?
+ *
+ * On macOS the pair is /dev/ptyXX + /dev/ttyXX, and only the SLAVE side can
+ * be reopened - and only while the master is not open.  WAMPES owns the
+ * slave, so the watchdog's close+reopen can never heal a pty: it comes back
+ * EBUSY (16) as long as the peer's master is open, and the peer's master
+ * reopens freely (measured on this host, see TODO.txt).  A full queue there
+ * is backpressure, not a wedge.
+ *
+ * The tail after "/dev/pty" or "/dev/tty" decides: a pty node is SHORT and
+ * purely alphanumeric (wa, q1, s050, p0).  A real serial node carries a dot
+ * ("/dev/tty.usbserial-1420", "/dev/tty.usbmodem...") or lives under
+ * /dev/cu - those keep the transmit watchdog.
+ */
+static int
+asy_is_pty(
+const char *path)
+{
+	const char *rest;
+
+	if (path == NULL)
+		return 0;
+	if (strncmp(path, "/dev/pty", 8) == 0 || strncmp(path, "/dev/tty", 8) == 0)
+		rest = path + 8;
+	else
+		return 0;
+	if (*rest == 0)
+		return 0;
+	for (; *rest; rest++)
+		if (!isalnum((unsigned char) *rest))
+			return 0;
+	return 1;
+}
+
 /* Transmit progress watchdog, ticking once a second while a serial interface
  * is up.  Wireless TNCs with USB-CDC backends (a Kenwood TH-D75 among them)
  * can stop draining their endpoint after a burst: select() then never reports
@@ -857,6 +892,15 @@ asy_wd(void *arg)
 
 	ap->lasttx = ap->txchar;
 	ap->wdstall = 0;
+
+	/* A pty slave is a peer we do not own, not a wedged chip: hold the
+	 * queue instead of the close+reopen that can only answer EBUSY here.
+	 * select() re-arms the write when the peer drains or comes back.
+	 */
+	if (asy_is_pty(ap->devfile != NULL ? ap->devfile :
+		       (ap->iface != NULL ? ap->iface->name : NULL)))
+		return;
+
 	fprintf(stderr, "%s: serial transmit stalled, resetting the interface (fd %d, %lu bytes queued)\n",
 		ap->iface->name, ap->fd, sndq_len(ap->sndq));
 
