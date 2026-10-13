@@ -276,6 +276,15 @@ What counts as evidence:
   either, and that is the next section.  (A **DM** first is the exception:
   it says he saw the modulo-128 attempt, so the UA answers *that* question
   and is believed - see "Falling back".)
+* An **XID question of ours that no one answered** - *not* evidence, and
+  deliberately so.  Silence to a question is a different thing from
+  silence to a SABME, and the question verdict (`xid`) records only that
+  nobody answered; the modulo-128 verdict is left alone and the outgoing
+  port's `eax25` decides what the attempt sends, exactly as if no question
+  had been asked.  Until 2026-10-13 the probe's timeout wrote "cannot"
+  into the route as well, so one unanswered question turned an `eax25
+  initiate` leg into a SABM leg - and every later attempt with it, for as
+  long as the route lived (Thomas).
 
 ### Three in a row, then fifteen off
 
@@ -392,7 +401,7 @@ code rather than from a log.
 | `eax25 accept`, XID answer offers modulo-128 | **SABME at once** - accept-or-XID, *expected, not yet measured* |
 | `eax25 off`, XID answer offers modulo-128 | ignored, SABM - the knob is absolute, *from the code* |
 | XID answer, before the 2026-09-25 fix | answer read, then SABM - the round trip paid for nothing |
-| XID answer never comes (peer at `ax25-v2.2 off`) | SABM after one T1, as before |
+| XID answer never comes (peer at `ax25-v2.2 off`) | the port decides: `initiate`/`always` go SABME after one T1, `off`/`accept` SABM at once - a question unanswered writes no verdict, since 2026-10-13 |
 | plain AX.25, 20 % loss | unchanged - 13 893 bytes in 55 frames |
 | `-fsanitize=undefined` over all of it | no findings |
 
@@ -471,7 +480,11 @@ off`/`accept` open plainly with SABM, `initiate`/`always` go out with SABME and
 let the ordinary fallback (three probes, `recover()`) settle it.  Nothing is
 ever sent in the far end's name - the caller has a timer of that kind of its
 own.  (Until 2026-10-09 the silence forced MMASK here, so switching
-`ax25-v2.2` on turned an `eax25 initiate` leg into a SABM leg - Thomas.)
+`ax25-v2.2` on turned an `eax25 initiate` leg into a SABM leg - Thomas.  And
+until 2026-10-13 the probe's timeout *also* wrote "cannot" into the route,
+so even with the leg itself right the **next** attempt opened SABM - the
+same knob defeated one step later.  Neither the leg nor the route takes a
+verdict from a question nobody answered.)
 
 **One port refuses the question outright.**  An *outgoing* port at `ax25-v2.2
 off` does not speak AX.25 2.2, and a relayed XID that would have to cross it is
@@ -493,7 +506,8 @@ there too:
 | --- | --- | --- |
 | answers DM | SABME → DM → SABM → UA, no delay at all | connected at once |
 | stays silent | SABME, then the plain SABM after the usual three probes | connected at 20.2 s |
-| after either | `e` in the route table | next call goes straight to SABM |
+| after silence | no `e` - an unanswered question is not a refused SABME | the next call tries SABME again |
+| after DM | `e` in the route table | the next call goes straight to SABM |
 
 **One probe, not three, on a relayed leg** - and this is worth knowing
 before reading the table above as a contradiction.  `recover()` does not

@@ -82,10 +82,17 @@ recover(void *p)
 	case LAPB_SETUP:
 		/* The XID probe that opened this setup has gone unheard:
 		 * the peer does not speak AX.25 2.2 (or does not answer at
-		 * all).  Exactly ONE probe, then the verdict is written
-		 * into the route.  initiate carries on with the ordinary
-		 * SABM - the confrontation is over.  always enforces and
-		 * ends the attempt instead (doc/AX25-2.2-GAP.md, F1).
+		 * all).  Exactly ONE probe, then the QUESTION verdict is
+		 * written into the route.  What he CAN do is not decided
+		 * here: silence to a question is not silence to a SABME,
+		 * and a station that is merely away must not be marked
+		 * incapable for as long as his route lives.  The modulus
+		 * therefore follows the outgoing port's eax25 - exactly as
+		 * if no question had been asked.  eax25_wanted() already
+		 * put that into axp->mmask above and nothing rewrites it
+		 * here, so sendctl() below turns the SABM into a SABME when
+		 * the port asked for modulo-128.  always enforces and ends
+		 * the attempt instead (doc/AX25-2.2-GAP.md, F1).
 		 */
 		if(axp->flags.neg_wait){
 			struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
@@ -102,11 +109,16 @@ recover(void *p)
 				rp->xid_time = secclock();
 				rp->xid_tries++;
 			}
-			/* Auch hier gilt: keine Antwort heisst auch kein
-			 * Modulo 128 - und der Eintrag ist das, was der
-			 * naechste Versuch liest (eax25_remember() zaehlt
-			 * die Versuche zurueck). */
-			eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
+			/* Und KEIN Modulo-128-Urteil aus dem Schweigen.
+			 * Der Eintrag ist das, was der naechste Aufbau
+			 * liest, und er sagt hier nur, dass keine Frage
+			 * beantwortet wurde - nicht, dass er kein SABME
+			 * kann.  Ein stummes C hat nichts gesagt; was auf
+			 * diesem Bein gesendet wird, sagt deshalb der
+			 * Ausgangsport, genau wie bei einem Aufbau ganz
+			 * ohne XID-Frage ("What counts as evidence",
+			 * doc/EAX25.md; Thomas, 2026-10-13).
+			 */
 			if(axp->iface->ax25_v2 == AX25V2_ALWAYS){
 				free_q(&axp->txq);
 				axp->reason = LB_NEGOTIATION;

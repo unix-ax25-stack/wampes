@@ -375,19 +375,18 @@ xid_leg_timeout(void *p)
 		rp->xid_time = secclock();
 		rp->xid_tries++;
 	}
-	/* UND DAMIT AUCH EIN URTEIL UEBER MODULO 128.  Wer auf eine
-	 * XID-Anfrage nicht antwortet, kann ein SABME nicht beantworten
-	 * - es ist dieselbe Unhoerbarkeit, nur eine Ebene tiefer.  Das
-	 * gehoert in denselben Eintrag, denn der Eintrag ist das, was
-	 * der naechste Aufruf liest: ohne diesen Vermerk waere der
-	 * Port (initiate heisst EMMASK) beim naechsten Versuch wieder
-	 * ueberzeugt, C koenne Modulo 128, und schickte ihm ein SABME,
-	 * das niemand beantwortet.  Das Zurueckzaehlen fuer einen
-	 * spaeteren neuen Versuch steckt in eax25_remember() -
-	 * EAX25_RETRY
+	/* UND KEIN URTEIL UEBER MODULO 128.  Wer auf eine XID-Anfrage
+	 * nicht antwortet, hat damit ueber ein SABME nichts gesagt - das
+	 * ist nicht dieselbe Unhoerbarkeit, sondern eine unbeantwortete
+	 * Frage einer anderen Art.  Der Eintrag ist das, was der naechste
+	 * Aufruf liest: waere hier ein "kann nicht" vermerkt, machte das
+	 * Schweigen einer Frage aus dem Ausgangsport (initiate heisst
+	 * EMMASK) auf einmal ein SABM-Bein und behielte das bei, solange
+	 * die Route lebt - ueber eine Station, die nur weg war.  Was er
+	 * kann, entscheidet deshalb der Port dieses Beins, so wie bei
+	 * einem Aufbau ganz ohne Frage (xid_leg_done(); "What counts as
+	 * evidence", doc/EAX25.md; Thomas, 2026-10-13).
 	 */
-	if(lp->probed)
-		eax25_remember(lp->probe_to,AXR_EAX25_NO);
 	xid_leg_done(lp);
 }
 
@@ -2338,7 +2337,10 @@ est_link(struct ax25_cb *axp)
 	   axp->iface->ax25_v2 == AX25V2_ALWAYS){
 		struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 		if(rp != NULL && rp->xid == AXR_XID_NO){
-			/* Silently decided "cannot" - and NOT for good.
+			/* Silently decided "does not answer" - about the
+			 * QUESTION, not about modulo-128 (that verdict is
+			 * not written from a timeout at all; see
+			 * recover()/xid_leg_done()).  And NOT for good.
 			 * xid_may_probe() answers whether THIS attempt asks
 			 * again: the first XID_MAXTRIES attempts do, so a
 			 * question lost on HF does not cost a whole hour,
