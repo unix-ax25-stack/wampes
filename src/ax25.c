@@ -1461,13 +1461,28 @@ struct mbuf **bpp
 									lp->probed = 1;
 									del_ax25(paxp);
 								}
-								/* Remember when we last
-								 * asked C - even if he
-								 * does not answer. */
+								/* WANN die Frage
+								 * hinausging - und DASS
+								 * sie hinausging, gezaehlt
+								 * wie est_link_xid() es
+								 * fuer den eigenen Aufbau
+								 * tut.  Nur das Urteil
+								 * selbst faellt spaeter
+								 * (xid_leg_timeout): der
+								 * Zaehler darf nicht auf
+								 * den Ablauf des Beins
+								 * warten, sonst fragt ein
+								 * Anrufer, der schneller
+								 * als XID_LEG_TIMEOUT
+								 * wieder anruft, dieselbe
+								 * stumme Station erneut. */
 								if(prp == NULL)
 									prp = ax_routeptr(probe_to,1);
-								if(prp != NULL)
+								if(prp != NULL){
 									prp->xid_time = secclock();
+									if(lp->probed)
+										prp->xid_tries++;
+								}
 							}
 							/* DIE ANTWORT, DIE
 							 * DA SCHON LIEGT.

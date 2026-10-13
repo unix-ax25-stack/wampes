@@ -98,16 +98,18 @@ recover(void *p)
 			struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 			axp->flags.neg_wait = NO;
 			if(rp != NULL){
+				/* NUR DAS URTEIL, NICHT DER ZAEHLER.  Gezaehlt
+				 * wird, wenn die Frage hinausgeht
+				 * (est_link_xid), und wann sie hinausging,
+				 * steht dort als xid_time.  Hier noch einmal
+				 * zu zaehlen machte aus einem Aufbau zwei und
+				 * schoebe die Ratsgrenze um T1 nach vorn.
+				 * Die ersten XID_MAXTRIES Aufbauten fragen
+				 * von selbst wieder, danach erst nach
+				 * Xid_probe_time - der Peer koennte sich
+				 * geaendert haben (doc/AX25-2.2-GAP.md,
+				 * est_link()). */
 				rp->xid = AXR_XID_NO;
-				/* Wann dieses "kann (noch) nicht" feststand,
-				 * und wie oft schon gefragt wurde: die ersten
-				 * XID_MAXTRIES Aufbauten fragen wieder, danach
-				 * erst nach Ablauf von Xid_probe_time - der
-				 * Peer koennte sich geaendert haben
-				 * (doc/AX25-2.2-GAP.md, est_link()).
-				 */
-				rp->xid_time = secclock();
-				rp->xid_tries++;
 			}
 			/* Und KEIN Modulo-128-Urteil aus dem Schweigen.
 			 * Der Eintrag ist das, was der naechste Aufbau

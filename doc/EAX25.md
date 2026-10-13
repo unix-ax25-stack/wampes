@@ -343,6 +343,24 @@ this because it creates the entry itself, which is why only a direct call to
 a station that answers nothing showed the endless probing (Thomas,
 2026-10-13).
 
+The count is incremented when the question **goes out** (`est_link_xid()`),
+not when its time-out expires - the rule counts *sessions*, not time-outs
+("at most one per session"), and an operator who calls, sees the XID leave
+and hangs up is usually faster than `T1` (5 s).  A time-out that never fires
+would drop that session from the count entirely, and the same silent station
+would be asked again on the next call: the exact endless probing the entry
+above was laid down against.  `recover()` therefore only writes the verdict
+(`xid = NO`) and leaves the count alone (`xid_time`, `xid_tries`) to the
+moment the question left.  A station that *does* answer resets the count to
+zero on its reply (`lapb_input()`), so only silence is counted - and only at
+the first try (Thomas, 2026-10-13).
+
+A relayed leg does the same: its two probe senders count as the question
+leaves (`xid_leg_open()` for the leg B opens itself, the point-D branch in
+`ax25.c` for the question it swallows from A), and `xid_leg_timeout()` writes
+only the verdict - the counter must not wait out `XID_LEG_TIMEOUT`, or a
+caller who returns faster than that would be asked again every time.
+
 ### An answer is remembered, and it is remembered for a while
 
 What a peer says about itself in its XID reply - the I-field it will take

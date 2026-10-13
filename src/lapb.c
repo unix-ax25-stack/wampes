@@ -375,11 +375,15 @@ xid_leg_timeout(void *p)
 	 * xid_time nach vorn und C bekaeme nie wieder eine Sonde - der
 	 * Eintrag saehe ewig "gerade erst gefragt" aus.  Gefragt hat nur,
 	 * wer gefragt hat (lp->probed).
+	 *
+	 * UND NUR DAS URTEIL, NICHT DER ZAEHLER.  xid_time und xid_tries
+	 * hat schon der Absender der Frage gesetzt (xid_leg_open bzw. der
+	 * Punkt-D-Zweig in ax25.c), so wie est_link_xid() es fuer den
+	 * eigenen Aufbau tut.  Hier noch einmal zu zaehlen machte aus einer
+	 * Sitzung zwei und schoebe xid_time um XID_LEG_TIMEOUT nach vorn.
 	 */
 	if(lp->probed && (rp = ax_routeptr(lp->probe_to,0)) != NULL){
 		rp->xid = AXR_XID_NO;
-		rp->xid_time = secclock();
-		rp->xid_tries++;
 	}
 	/* UND KEIN URTEIL UEBER MODULO 128.  Wer auf eine XID-Anfrage
 	 * nicht antwortet, hat damit ueber ein SABME nichts gesagt - das
@@ -1942,12 +1946,18 @@ int eax25_wanted(struct iface *ifp, uint8 *dest)
 int
 xid_may_probe(struct ax_route *rp)
 {
-	if(rp == NULL || rp->xid == AXR_XID_UNKNOWN)
-		return YES;             /* nie gefragt - oder vergessen */
+	if(rp == NULL)
+		return YES;             /* nie gefragt */
 	if(rp->xid_frmr)
 		return NO;              /* er hat ausdruecklich abgelehnt */
 	if(rp->xid == AXR_XID_YES)
 		return NO;              /* er hat geantwortet, nichts zu fragen */
+	/* AXR_XID_UNKNOWN faellt bewusst hierher und nicht mehr in ein
+	 * pauschales JA: der Zaehler wird beim Absenden der Frage erhoeht
+	 * (est_link_xid), und ein Aufbau, der vor T1 abgebrochen wurde,
+	 * laesst xid auf UNKNOWN - gezaehlt ist seine Frage trotzdem.  Ohne
+	 * das galt so ein Aufbau als "nie gefragt" und wurde endlos
+	 * wiederholt (Thomas, 2026-10-13). */
 	if(rp->xid_tries < Xid_retries)
 		return YES;
 	return secclock() - rp->xid_time >= Xid_probe_time;
@@ -2163,6 +2173,13 @@ xid_leg_open(struct ax25_cb *axp)
 	xid_our_info(lp->leg_iface,
 		     (lp->leg_iface->eax25 != EAX25_OFF) ? 1 : 0,
 		     YES, &pbp);
+	/* DASS gefragt wurde, zaehlt hier - wie beim eigenen Aufbau
+	 * (est_link_xid).  xid_leg_timeout() schreibt spaeter nur das
+	 * Urteil; wartete der Zaehler auf dessen Ablauf, fragte ein
+	 * Anrufer, der schneller als XID_LEG_TIMEOUT erneut anruft,
+	 * dieselbe stumme Station wieder und wieder. */
+	if(rp != NULL)
+		rp->xid_tries++;
 	sendframe(paxp, LAPB_COMMAND, XID | PF, -1, &pbp);
 	del_ax25(paxp);
 	return 1;
@@ -2210,12 +2227,26 @@ est_link_xid(struct ax25_cb *axp)
 	 * Der Eintrag traegt nur Wissen ueber die STATION, keinen Weg: ifp
 	 * bleibt leer, und axroute() nimmt weiterhin den Fang
 	 * (Axroute_default_ifp), wenn kein anderer Eintrag einen Port nennt.
+	 *
+	 * GEZAEHLT WIRD HIER, WENN DIE FRAGE HINAUSGEHT - nicht erst in
+	 * recover(), wenn ihre Frist abgelaufen ist.  "Ein Aufbau, hoechstens
+	 * eine Frage, und die ersten XID_MAXTRIES Aufbauten fragen wieder"
+	 * (ax25.h) ist eine Aussage ueber die SITZUNG: die Frage ist gestellt,
+	 * sobald sie auf der Leitung war.  Wer von Hand auflegt, sieht die
+	 * XID, trennt sofort und ist damit meist schneller als T1 (5 s) -
+	 * recover() lief dann nie, der Zaehler stand wieder auf null, und
+	 * dieselbe stumme Station wurde bei jedem connect aufs Neue gefragt,
+	 * endlos (Thomas, 2026-10-13).  Eine Antwort setzt den Zaehler
+	 * ohnehin auf null zurueck (lapb_input), ein verlorenes Bein verliert
+	 * damit nichts; nur das Schweigen zaehlt so schon beim ersten Mal.
 	 */
 	{
 		struct ax_route *rp = ax_routeptr(axp->hdr.dest,1);
 
-		if(rp != NULL)
+		if(rp != NULL){
 			rp->xid_time = secclock();
+			rp->xid_tries++;
+		}
 	}
 	xid_our_info(axp->iface,
 		     (axp->iface != NULL && axp->iface->eax25 != EAX25_OFF) ? 1 : 0,
@@ -2407,7 +2438,15 @@ est_link(struct ax25_cb *axp)
 				return;
 			}
 		}
-		if(rp == NULL || rp->xid == AXR_XID_UNKNOWN){
+		/* NUR DER NOCH NICHT ENTSCHIEDENE FALL.  Ein rp mit
+		 * xid == NO ist oben schon abgehandelt - und fuer ein
+		 * Relais-Bein nach einer ANDEREN Regel (Xid_probe_time,
+		 * nicht xid_tries).  Hier trotzdem noch einmal
+		 * xid_may_probe() zu fragen ueberstimmte sie und schickte
+		 * eine zweite Sonde, wo das SABM des Anrufers laengst
+		 * durchgereicht gehoert (s2).  xid == YES fragt nie. */
+		if(rp == NULL ||
+		   (rp->xid == AXR_XID_UNKNOWN && xid_may_probe(rp))){
 			est_link_xid(axp);
 			return;
 		}
