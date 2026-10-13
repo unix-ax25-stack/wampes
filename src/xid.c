@@ -90,7 +90,6 @@ struct xid_info *xi)
 void
 xid_our_info(
 struct iface *ifp,
-int mmask,
 int mod128,
 int srej,
 struct mbuf **bpp)
@@ -128,23 +127,30 @@ struct mbuf **bpp)
 	 */
 	n1tx = (ifp->paclen ? ifp->paclen : Paclen) * 8;
 	n1rx = XID_N1RX_BYTES * 8;
-	/* k TRANSMIT: the window WE will run = the modulus' port setting.
+	/* k TRANSMIT: the window of the CAPABILITY the OPT byte announces.
+	 * A port that says "modulo 128" here would run emaxframe on such a
+	 * link (ax25_maxframe()), so that is the window it names; a port
+	 * that says modulo 8 names maxframe.  The two used to be told apart,
+	 * kTx following the OPERATIONAL modulus instead, and an "eax25
+	 * accept" port then announced maxframe (7) right beside its
+	 * modulo-128 bit - a window it would not run, for accept does not
+	 * open a modulo-128 link by itself.  The bit and the window are one
+	 * and the same capability and now move together; a peer that learns
+	 * our window learns what we will run (Thomas, 2026-10-13).
+	 *
 	 * k RECEIVE: the window we can BUFFER, which is not the same thing.
 	 * A port that runs maxframe 3 still holds the full modulo-8 window
 	 * (7); one that runs emaxframe 4 still holds the 32 a 2.2 peer may
 	 * use.  The peer reads kRx to learn how many I-frames it may have in
-	 * flight toward us; kTx is our own choice (Thomas).
+	 * flight toward us.
 	 */
-	ktx = (mmask == EMMASK) ?
+	ktx = mod128 ?
 		 (ifp->emaxframe ? ifp->emaxframe : EMaxframe) :
 		 (ifp->maxframe  ? ifp->maxframe  : Maxframe);
-	if(ktx == 0 || ktx > (unsigned)mmask)
-		ktx = (mmask == EMMASK) ? 32 : 4;
-	/* kRx follows the CAPABILITY the OPT byte announces (the modulo
-	 * bit), not the window we happen to run with this destination: our
-	 * buffering does not shrink because we learnt the far end cannot do
-	 * modulo 128.  kTx above stays the operational setting - what we
-	 * will actually send. */
+	if(ktx == 0 || ktx > (unsigned)(mod128 ? EMMASK : MMASK))
+		ktx = mod128 ? 32 : 4;
+	/* kRx follows the SAME capability bit: our buffering does not shrink
+	 * because we learnt the far end cannot do modulo 128. */
 	if(mod128){
 		unsigned e = ifp->emaxframe ? ifp->emaxframe : EMaxframe;
 

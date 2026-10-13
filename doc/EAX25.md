@@ -74,8 +74,16 @@ have sent anyway and the wait is already paid for by the time it comes
 back.  Accept-or-XID.  A port that wants neither has two knobs, not one:
 `eax25 off` (nothing in the answer is read) or `ax25-v2.2 off` (no XID is
 sent *and none is answered*, so there is no answer to read).  What the
-answer offers besides the modulus - N1, k - is parsed and kept, not yet
-applied.
+answer offers besides the modulus - N1, k - is parsed, applied to that one
+link, and kept per station (see "An answer is remembered").
+
+Our own announcement is the mirror of that, and the modulus bit and the
+window we name with it are **one** capability: `emaxframe` beside modulo
+128, `maxframe` beside modulo 8.  An `accept` port can do modulo 128, so it
+names the window it would run on such a link - not the `maxframe` of one it
+has not opened.  Sending "modulo 128" beside a modulo-8 window is a
+statement that contradicts itself, and the peer remembers the window
+(Thomas, 2026-10-13).
 
 It has one cost, and it is the one Thomas named: an operator who does not
 read this page never learns the feature is there.  So the node says so.
@@ -464,6 +472,16 @@ let the ordinary fallback (three probes, `recover()`) settle it.  Nothing is
 ever sent in the far end's name - the caller has a timer of that kind of its
 own.  (Until 2026-10-09 the silence forced MMASK here, so switching
 `ax25-v2.2` on turned an `eax25 initiate` leg into a SABM leg - Thomas.)
+
+**One port refuses the question outright.**  An *outgoing* port at `ax25-v2.2
+off` does not speak AX.25 2.2, and a relayed XID that would have to cross it is
+*dropped*, not repeated (`ax25.c`, the gate before the point-D swallow).  A
+verbatim repeat would put C's answer on a link the operator cut, and A would
+read an answer our own knob forbids; the caller falls back on his timer and
+sends his SABM, which the relay still carries (the second leg is then opened
+without a question, at the outgoing port's `eax25`) - the switch takes the
+negotiation, not the connection.  Only `Digipeat 2` does this: at `Digipeat 1`
+the frame is repeated exactly as it came.
 
 Through the upgraded relay: 200 frames of 256 bytes, 51 200 bytes, counting
 straight through with `N(S)` past 127 and round again.  `ax25 status` shows

@@ -115,22 +115,20 @@ void xid_parse(struct mbuf **bpp,struct xid_info *xi);
 /* Build our own XID information field onto *bpp - empty, or with the
  * items *this* station can stand behind (see the file header).
  *
- * Four numbers, and they are told apart now:
+ * Four numbers, and they are told apart:
  *   N1tx = this port's paclen (what we send),
  *   N1rx = XID_N1RX_BYTES (what the stack can take), fixed,
- *   kTx  = the operational window (mmask's maxframe/emaxframe),
+ *   kTx  = the window of the OPTIONS modulus bit (emaxframe beside
+ *          modulo 128, maxframe beside modulo 8),
  *   kRx  = the buffering capability (mod128 ? emaxframe-or-32 : 7).
- * mmask is the modulus whose WINDOW (kTx) the field speaks with.  mod128
- * is the OPTIONS modulus bit, and it is deliberately separate: the bit is
- * a CAPABILITY (what this port can do, eax25 != off).  They differ on an
- * "eax25 accept" port, which can do modulo 128 and must announce it even
- * though it will not open a link with it by itself - a peer that reads
- * mod8 there would never try SABME toward us - and they differ when the
- * far end is learnt to be mod8-only.  kRx follows the CAPABILITY bit, not
- * the operational window: our buffering does not shrink with the peer.
- * An answer in a peer's name (xid_leg_answer) passes that peer's own bit,
- * not ours.  srej tells whether to offer SREJ.
+ * The modulus bit and kTx are one capability and move together: a port
+ * that announces modulo 128 names the window it would run on such a link
+ * (ax25_maxframe()), so an "eax25 accept" port does not put maxframe
+ * beside its modulo-128 bit.  kRx follows the same bit, for our buffering
+ * does not shrink with the peer.  An answer in a peer's name
+ * (xid_leg_answer) passes that peer's own bit, not ours.  srej tells
+ * whether to offer SREJ.
  */
-void xid_our_info(struct iface *ifp,int mmask,int mod128,int srej,struct mbuf **bpp);
+void xid_our_info(struct iface *ifp,int mod128,int srej,struct mbuf **bpp);
 
 #endif  /* _XID_H */

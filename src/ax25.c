@@ -1246,6 +1246,33 @@ struct mbuf **bpp
 				 * goes on per frame below, because each frame needs
 				 * its own copy of it.
 				 */
+				/* EIN XID, DEN DER AUSGANGSPORT NICHT SPRICHT.
+				 *
+				 * Digipeat 2 ist store-and-forward: hier ist
+				 * XID Teil des Protokolls und wir verhandeln
+				 * die Strecke.  Steht der Ausgangsport aber
+				 * auf ax25-v2.2 off, dann spricht dieser Port
+				 * kein 2.2 - weder fragend noch antwortend
+				 * (iface.c).  Ein XID fuer eine Station HINTER
+				 * uns darf darum nicht durch: wortgleich
+				 * wiederholt verhandelte C ueber einen Port,
+				 * den der Betreiber ausdruecklich abgeschaltet
+				 * hat, und A bekaeme eine Antwort, die unser
+				 * Knopf verbietet.  Also verwerfen: A faellt
+				 * nach seiner eigenen Frist auf SABM zurueck.
+				 *
+				 * Nur Digipeat 2 und nur ein XID-Kommando -
+				 * genau die Bedingung des Schluck-Falls
+				 * darunter, nur mit dem umgekehrten Ausgang.
+				 * Bei Digipeat 1 bleiben wir der dumme
+				 * Wiederholer, der weitergibt, was ankommt.
+				 */
+				if (Digipeat == 2 && ifp != NULL &&
+				    ifp->ax25_v2 == AX25V2_OFF &&
+				    hdr.cmdrsp == LAPB_COMMAND &&
+				    *bpp != NULL && control == XID) {
+					free_p(bpp);
+				}
 				/* AX.25 2.2 over the DIGIPEATED LEG (point D).
 				 *
 				 * Only at digipeat 2 (not at 1: there the frame
@@ -1425,7 +1452,6 @@ struct mbuf **bpp
 									paxp->hdr = arrived;
 									paxp->iface = ifp;
 									xid_our_info(ifp,
-										     eax25_wanted(ifp, probe_to),
 										     (ifp->eax25 != EAX25_OFF) ? 1 : 0,
 										     YES, &pbp);
 									sendframe(paxp, LAPB_COMMAND,

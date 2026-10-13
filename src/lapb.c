@@ -166,10 +166,9 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 	 * der fruehe Ausstieg oben behebt (Thomas, 2026-10-09).
 	 */
 	if(lp->ans_iface->eax25 == EAX25_OFF)
-		xid_our_info(lp->ans_iface, MMASK, 0, lp->srej, &tbp);
+		xid_our_info(lp->ans_iface, 0, lp->srej, &tbp);
 	else
 		xid_our_info(lp->ans_iface,
-			     lp->mod128 ? EMMASK : MMASK,
 			     lp->mod128 ? 1 : 0,
 			     lp->srej, &tbp);
 	sendframe(axp,LAPB_RESPONSE,XID | PF,-1,&tbp);
@@ -950,7 +949,6 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * whatever the block believes.
 			 */
 			xid_our_info(iface,
-				     iface->eax25 == EAX25_OFF ? MMASK : EMMASK,
 				     iface->eax25 == EAX25_OFF ? 0 : 1,YES,
 				     &tbp);
 			sendframe(axp,LAPB_RESPONSE,XID | (pf ? PF : 0),-1, &tbp);
@@ -1855,18 +1853,22 @@ static void eax25_hint(struct iface *ifp,struct ax25 *hdr)
  *
  * DIESELBE FRAGE, DIESELBE ANTWORT.  Der Relais-Bein (xid_leg_open) und die
  * Selbst-Sonde in ax_recv() sind eigene XID-Fragen an das naechste Bein bzw.
- * an C, und fuer sie gilt kein anderer Massstab als fuer unsere eigene
- * Verbindung: sonst bot eine "accept"-Station in der Sonde Modulo 128 an,
- * obwohl sie es selbst nie ungefragt tut, und die Sonde versprach damit eine
- * Faehigkeit, die der Port gar nicht anbietet.  Deshalb ist diese Funktion
- * nicht mehr static; die beiden Sonde-Stellen rufen sie mit ihrem Ausgangs-
- * port und dem gefragten Ziel auf.
+ * an C, und sie nennen die Faehigkeit des AUSGANGSPORTS, so wie es unsere
+ * eigene Verbindung auch tut.  Ein "accept"-Port kann Modulo 128; er
+ * kuendigt es an, sonst erfuehre C nie, dass ein SABME zu ihm durchkaeme,
+ * und nennt dazu die Fenstergroesse, die er auf einem Modulo-128-Bein
+ * faehrt (emaxframe).  Bit und Fenster sind EINE Faehigkeit; solange das
+ * Fenster den OPERATIVEN Modulus dieser einen Verbindung spiegelte, sagte
+ * die Sonde "Modulo 128, Fenster 7" und widersprach sich selbst (Thomas,
+ * 2026-10-13).  eax25_wanted() beantwortet die andere Frage - "soll ICH mit
+ * diesem Ziel Modulo 128 anfangen?" - und wird darum nur noch in est_link()
+ * gelesen, nicht mehr an den Sonde-Stellen.
  */
 
 /* Alter the "cannot do modulo-128" verdict by ONE session.  Called at the
  * top of est_link(), i.e. once per attempt to set up a link - and not from
- * eax25_wanted(): that one is read by the XID probe sites as well, and a
- * probe is part of the same attempt, not a new one.  When the count reaches
+ * eax25_wanted(): the count belongs at the start of an attempt, and
+ * est_link() is where an attempt begins.  When the count reaches
  * EAX25_RETRY the verdict goes and the next attempt asks with SABME again;
  * eax25_failed() says why the count exists at all.
  */
@@ -1906,9 +1908,8 @@ int eax25_wanted(struct iface *ifp, uint8 *dest)
 		 * einfachen Verbindungen wird wieder gefragt, denn der
 		 * Vermerk kann aus verlorenen Rahmen stammen (siehe
 		 * eax25_failed).  Gezaehlt wird das EINMAL je Aufbau, in
-		 * eax25_age(), und nicht hier: diese Funktion wird auch von
-		 * den Sonden-Stellen gelesen, und dort waere jeder Aufruf ein
-		 * zweiter Zaehlimpuls fuer dieselbe Verbindung.
+		 * eax25_age() am Anfang von est_link(); hier wird nur
+		 * gelesen.
 		 */
 		if(rp->eax25 == AXR_EAX25_NO)
 			return MMASK;
@@ -2155,7 +2156,6 @@ xid_leg_open(struct ax25_cb *axp)
 	paxp->hdr = axp->hdr;
 	paxp->iface = lp->leg_iface;
 	xid_our_info(lp->leg_iface,
-		     eax25_wanted(lp->leg_iface, lp->probe_to),
 		     (lp->leg_iface->eax25 != EAX25_OFF) ? 1 : 0,
 		     YES, &pbp);
 	sendframe(paxp, LAPB_COMMAND, XID | PF, -1, &pbp);
@@ -2190,7 +2190,7 @@ est_link_xid(struct ax25_cb *axp)
 		 * ein Ausfall, den wir uns selbst machen. */
 		goto plain_sabm;
 	}
-	xid_our_info(axp->iface,axp->mmask,
+	xid_our_info(axp->iface,
 		     (axp->iface != NULL && axp->iface->eax25 != EAX25_OFF) ? 1 : 0,
 		     YES,&tbp);
 	sendframe(axp,LAPB_COMMAND,XID|PF,-1,&tbp);
