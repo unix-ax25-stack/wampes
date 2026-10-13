@@ -1235,10 +1235,13 @@ void *p)
    * Variable; die Liste lief bisher nur ueber Ax_routes[] und sagte damit
    * nichts ueber ihn.  Wer wissen wollte, wohin ein unbekanntes Ziel geht,
    * musste es aus dem Kopf wissen.  Er steht deshalb als eigene Zeile unter
-   * dem Kopf - mit Datum und Zeit leer, damit die Spalten stimmen.
+   * dem Kopf - mit Datum und Zeit leer, damit die Spalten stimmen.  Das Wort
+   * sitzt in der Path-Spalte (dort, wo sonst das Ziel steht, Spalte 31), die
+   * Flag-Spalte bleibt leer: "default" in der PJEC-Spalte sah aus wie ein
+   * Flag.
    */
   if (Axroute_default_ifp)
-    printf("%6s  %5s  %-9s  default\n",
+    printf("%6s  %5s  %-9s       default\n",
 	   "", "", Axroute_default_ifp->name);
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
