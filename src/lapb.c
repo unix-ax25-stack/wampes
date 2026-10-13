@@ -2195,6 +2195,28 @@ est_link_xid(struct ax25_cb *axp)
 		 * ein Ausfall, den wir uns selbst machen. */
 		goto plain_sabm;
 	}
+	/* DER EINTRAG IST DER PLATZ DES URTEILS, UND ER MUSS VOR DER FRAGE
+	 * DA SEIN.  Kommt keine Antwort, schreibt recover() sein "keine
+	 * XID-Antwort" nur in einen Eintrag, den es schon gibt
+	 * (ax_routeptr(...,0)) - und fuer eine Station, die nie antwortet,
+	 * hat bis jetzt niemand einen angelegt: kein Relais (das tut es in
+	 * xid_leg_open()), kein empfangener Rahmen.  Der Zaehler stand damit
+	 * nach JEDEM Aufbau wieder auf null, und dieselbe stumme Station
+	 * wurde bei jedem connect neu gefragt - ueber XID_MAXTRIES hinaus,
+	 * endlos (Thomas, 2026-10-13).  Beim Relais faellt das nicht auf,
+	 * weil sein Bein den Eintrag selbst anlegt; nur der eigene, direkte
+	 * Aufbau hatte keinen.
+	 *
+	 * Der Eintrag traegt nur Wissen ueber die STATION, keinen Weg: ifp
+	 * bleibt leer, und axroute() nimmt weiterhin den Fang
+	 * (Axroute_default_ifp), wenn kein anderer Eintrag einen Port nennt.
+	 */
+	{
+		struct ax_route *rp = ax_routeptr(axp->hdr.dest,1);
+
+		if(rp != NULL)
+			rp->xid_time = secclock();
+	}
 	xid_our_info(axp->iface,
 		     (axp->iface != NULL && axp->iface->eax25 != EAX25_OFF) ? 1 : 0,
 		     YES,&tbp);

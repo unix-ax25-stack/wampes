@@ -331,6 +331,18 @@ SABME at all: a station we have never asked, or asked so long ago that
 
 Both numbers are knobs: `ax25 xid-retries` and `ax25 xid-probe-time`.
 
+Both live in the **route entry**, and a station that never answers has none
+yet - `recover()` writes the verdict only into an entry that *already*
+exists (`ax_routeptr(..., 0)`).  So our own probe lays the entry down as it
+goes out (`est_link_xid()`; `ifp` is left empty, so `axroute()` still finds
+the way through the default), exactly as the relay leg has always done
+(`xid_leg_open()`).  Without it the count was back to zero after every
+connect and the same silent station was asked again on every call - the
+count could never reach three, let alone open the hour.  A relay never saw
+this because it creates the entry itself, which is why only a direct call to
+a station that answers nothing showed the endless probing (Thomas,
+2026-10-13).
+
 ### An answer is remembered, and it is remembered for a while
 
 What a peer says about itself in its XID reply - the I-field it will take
