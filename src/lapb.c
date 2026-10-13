@@ -185,16 +185,22 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 void
 xid_leg_drop(struct ax25_cb *owner)
 {
-	struct ax25_xid_leg *lp, *next, **pp;
+	struct ax25_xid_leg *lp, **pp;
 
-	for(pp = &Ax25_xid_legs; (lp = *pp) != NULL; pp = &lp->next){
-		next = lp->next;
+	/* `next` must be read from a LIVE node - it is the FIRST field of the
+	 * block, so free() writes its own bookkeeping over it (glibc tcache
+	 * puts the freelist pointer there), and a loop that then advanced to
+	 * &lp->next and read *pp would treat the freed block as the next node.
+	 * So step pp forward only when the node is kept; after a delete *pp
+	 * already points at the successor. */
+	for(pp = &Ax25_xid_legs; (lp = *pp) != NULL; ){
 		if(lp->link_to == owner){
 			*pp = lp->next;
 			stop_timer(&lp->timer);
 			free(lp->anshdr);
 			free(lp);
-		}
+		} else
+			pp = &lp->next;
 	}
 }
 
