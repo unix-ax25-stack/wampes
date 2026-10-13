@@ -1238,9 +1238,8 @@ void *p)
    * dem Kopf - mit Datum und Zeit leer, damit die Spalten stimmen.
    */
   if (Axroute_default_ifp)
-    printf("%6s  %5s  %-9s  %s\n",
-	   "", "", Axroute_default_ifp->name,
-	   "*** default route: every unknown destination ***");
+    printf("%6s  %5s  %-9s  default\n",
+	   "", "", Axroute_default_ifp->name);
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
