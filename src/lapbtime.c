@@ -121,7 +121,8 @@ recover(void *p)
 			 * ohne XID-Frage ("What counts as evidence",
 			 * doc/EAX25.md; Thomas, 2026-10-13).
 			 */
-			if(axp->iface->ax25_v2 == AX25V2_ALWAYS){
+			if(axp->iface != NULL &&
+			   axp->iface->ax25_v2 == AX25V2_ALWAYS){
 				free_q(&axp->txq);
 				axp->reason = LB_NEGOTIATION;
 				lapbstate(axp,LAPB_DISCONNECTED);

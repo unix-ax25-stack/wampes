@@ -958,7 +958,8 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * whatever the block believes.
 			 */
 			xid_our_info(iface,
-				     iface->eax25 == EAX25_OFF ? 0 : 1,YES,
+				     (iface == NULL || iface->eax25 == EAX25_OFF)
+					     ? 0 : 1, YES,
 				     &tbp);
 			sendframe(axp,LAPB_RESPONSE,XID | (pf ? PF : 0),-1, &tbp);
 		} else if(cmdrsp == LAPB_COMMAND){
@@ -1268,8 +1269,9 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 */
 			if(axp->mmask == EMMASK)
 				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
-			if(axp->iface->ax25_v2 == AX25V2_ALWAYS ||
-			   axp->iface->ax25_v2 == AX25V2_INITIATE){
+			if(axp->iface != NULL &&
+			   (axp->iface->ax25_v2 == AX25V2_ALWAYS ||
+			    axp->iface->ax25_v2 == AX25V2_INITIATE)){
 				struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 				if(rp != NULL){
 					rp->xid = AXR_XID_NO;
@@ -1494,8 +1496,9 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 */
 			if(axp->mmask == EMMASK)
 				eax25_remember(axp->hdr.dest,AXR_EAX25_NO);
-			if(axp->iface->ax25_v2 == AX25V2_ALWAYS ||
-			   axp->iface->ax25_v2 == AX25V2_INITIATE){
+			if(axp->iface != NULL &&
+			   (axp->iface->ax25_v2 == AX25V2_ALWAYS ||
+			    axp->iface->ax25_v2 == AX25V2_INITIATE)){
 				struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 				if(rp != NULL){
 					rp->xid = AXR_XID_NO;
@@ -2154,9 +2157,9 @@ xid_leg_open(struct ax25_cb *axp)
 	 */
 	/* Only initiate a probe if this port is set to do so.  'accept'
 	 * means answer only - it must not send the first XID. */
-	if(lp->leg_iface != NULL &&
-	   lp->leg_iface->ax25_v2 != AX25V2_INITIATE &&
-	   lp->leg_iface->ax25_v2 != AX25V2_ALWAYS){
+	if(lp->leg_iface == NULL ||
+	   (lp->leg_iface->ax25_v2 != AX25V2_INITIATE &&
+	    lp->leg_iface->ax25_v2 != AX25V2_ALWAYS)){
 		stop_timer(&lp->timer);
 		for(pp = &Ax25_xid_legs; *pp != NULL; pp = &(*pp)->next){
 			if(*pp == lp){
@@ -2277,7 +2280,14 @@ ax25_v2_refused(uint8 *dest, const struct iface *ifp)
 {
 	struct ax_route *rp;
 
-	if(ifp->ax25_v2 != AX25V2_ALWAYS)
+	/* OHNE PORT KEINE VERWEIGERUNG.  Ein Relais-Bein, dessen Ausgang
+	 * keinen Weg kennt (keine Route und kein FANG), traegt iface == NULL;
+	 * es kann niemanden verweigern, weil es gar nicht hinauskaeme.  Der
+	 * Aufrufer entscheidet dann, was mit dem Bein geschieht - hier nur
+	 * keine Aussage ueber den Peer.  (Ohne diese Zeile starb der
+	 * Digi-Modus 2 an einem weiterzuleitenden SABM.)
+	 */
+	if(ifp == NULL || ifp->ax25_v2 != AX25V2_ALWAYS)
 		return 0;
 	if((rp = ax_routeptr(dest,0)) == NULL || rp->xid != AXR_XID_NO)
 		return 0;
@@ -2392,8 +2402,9 @@ est_link(struct ax25_cb *axp)
 	 * FRMR told us outright that XID is not wanted here, and that is
 	 * honored for good (xid_frmr).
 	 */
-	if(axp->iface->ax25_v2 == AX25V2_INITIATE ||
-	   axp->iface->ax25_v2 == AX25V2_ALWAYS){
+	if(axp->iface != NULL &&
+	   (axp->iface->ax25_v2 == AX25V2_INITIATE ||
+	    axp->iface->ax25_v2 == AX25V2_ALWAYS)){
 		struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
 		if(rp != NULL && rp->xid == AXR_XID_NO){
 			/* Silently decided "does not answer" - about the
