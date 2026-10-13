@@ -1056,8 +1056,34 @@ void *p)
   argc--;
   argv++;
   if (argc < 1) {
-    printf("Usage: ax25 route del all|<call> [<digis>...]\n");
+    printf("Usage: ax25 route del all|<call> [<digis>...] | default\n");
     return 1;
+  }
+
+  /* DER FANG IST EIN BEFEHL, KEIN RUFZEICHEN.
+   *
+   * Er lebte bisher nur in Axroute_default_ifp, ohne Weg hinein oder hinaus:
+   * "ax25 route add <port> default" setzte ihn, und danach liess er sich
+   * weder zeigen ("ax25 route list" kennt nur Ax_routes[]) noch loeschen -
+   * "default" fiel durch bis ax25args_to_hdr() und kam als
+   * "Invalid call \"default\"" zurueck.  Wer dem Knoten den Fang
+   * weggenommen hat, ohne ihn zu nennen, konnte die Aenderung nicht
+   * rueckgaengig machen.
+   */
+  if (!strcmp(*argv, "default")) {
+    if (argc > 1) {
+      printf("Usage: ax25 route del default\n");
+      return 1;
+    }
+    if (Axroute_default_ifp == NULL) {
+      printf("No default route set.\n");
+      return 1;
+    }
+    Axroute_default_ifp = NULL;
+    /* Die Datei kennt nur Ax_routes[]; der Fang wurde nie mitgeschrieben,
+     * und ihn hier zu flushen wuerde nur andere Eintraege neu schreiben. */
+    printf("default route forgotten\n");
+    return 0;
   }
 
   if (!strcmp(*argv, "all")) {
@@ -1203,6 +1229,18 @@ void *p)
 #else
   puts("Date    Time   Interface  PJE Path");
 #endif
+  /* DER FANG STEHT NICHT IN Ax_routes[].
+   *
+   * "ax25 route add <port> default" setzt Axroute_default_ifp, eine eigene
+   * Variable; die Liste lief bisher nur ueber Ax_routes[] und sagte damit
+   * nichts ueber ihn.  Wer wissen wollte, wohin ein unbekanntes Ziel geht,
+   * musste es aus dem Kopf wissen.  Er steht deshalb als eigene Zeile unter
+   * dem Kopf - mit Datum und Zeit leer, damit die Spalten stimmen.
+   */
+  if (Axroute_default_ifp)
+    printf("%6s  %5s  %-9s  %s\n",
+	   "", "", Axroute_default_ifp->name,
+	   "*** default route: every unknown destination ***");
   if(argc < 2) {
     for (i = 0; i < AXROUTESIZE; i++)
       for (rp = Ax_routes[i]; rp; rp = rp->next) doroutelistentry(rp);
