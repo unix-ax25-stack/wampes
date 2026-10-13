@@ -1464,18 +1464,13 @@ static void axpipe_put(struct axpipe *pp, struct mbuf **bpp)
   else free_p(bpp);
 }
 
-static void axpipe_hangup(struct axpipe *pp)
-{
-  if (pp->sp) close_axservice(pp->sp);
-  else if (pp->pc) close_nr(pp->pc);
-}
-
 static int axpipe_alive(struct axpipe *pp)
 {
   return pp->sp != 0 || pp->pc != 0;
 }
 
 static void axpipe_close(struct axpipe *pp);
+static void axpipe_release(struct axpipe *pp);
 static void axpipe_readable(void *arg);
 static void axpipe_writable(void *arg);
 static void axpipe_pump(struct axpipe *pp);
@@ -1604,8 +1599,7 @@ static void axpipe_readable(void *arg)
 		"axpipe: session fd %d ended via read: %s", pp->fd,
 		n == 0 ? "EOF (far end closed)" : "error (errno = %m)");
   }
-  axpipe_hangup(pp);                    /* end of file: let the link go */
-  off_read(pp->fd);
+  axpipe_release(pp);                   /* end of file: let the link go */
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1622,8 +1616,7 @@ static void axpipe_writable(void *arg)
     if (getsockopt(pp->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) || err) {
       syslog(LOG_ERR, "axpipe: session fd %d connect failed (errno = %m)",
 	     pp->fd);
-      axpipe_hangup(pp);
-      axpipe_close(pp);
+      axpipe_release(pp);
       return;
     }
     pp->connecting = 0;
@@ -1673,7 +1666,7 @@ static void axpipe_pump(struct axpipe *pp)
     }
     syslog(LOG_ERR, "axpipe: session fd %d write failed (errno = %m)",
 	   pp->fd);
-    axpipe_hangup(pp);
+    axpipe_release(pp);
     return;
   }
   off_write(pp->fd);
@@ -1699,6 +1692,49 @@ static void axpipe_close(struct axpipe *pp)
   if (pp->sp) pp->sp->user = 0;
   if (pp->pc) pp->pc->user = 0;
   free(pp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Let one forwarding go for good: the program's end is detached and the link
+ * or the circuit is told to go away.  This is what a program does to itself
+ * when it closes its descriptor (axpipe_readable) or the descriptor fails
+ * (axpipe_writable, axpipe_pump) - the same teardown the state upcall performs
+ * when the link gives way first, only started from this end.
+ *
+ * It is needed because axpipe_hangup() left the forwarding behind on the
+ * AX.25 side: close_axservice() removes the service from axp->services there
+ * and then, so the state upcall that would have freed the pipe can no longer
+ * come, and a program that hung up left both the pipe and its descriptor.  On
+ * NET/ROM that did not show, because close_nr() keeps the circuit and so the
+ * upcall that frees the pipe.  Doing the whole teardown here clears it on
+ * both.
+ *
+ * The order is what makes it safe: detach first, so a disconnect that
+ * close_axservice()/close_nr() starts cannot reach a pipe that is already
+ * gone, then free the pipe, then release the consumer.  close_axservice()
+ * frees the service there and then and takes the link down with it, which is
+ * why the pipe must be freed before it, not after.
+ */
+static void axpipe_release(struct axpipe *pp)
+{
+  if (pp->sp) {
+    struct axservice *sp = pp->sp;
+
+    sp->user = 0;
+    pp->sp = 0;
+    axpipe_close(pp);
+    close_axservice(sp);
+  } else if (pp->pc) {
+    struct circuit *pc = pp->pc;
+
+    pc->user = 0;
+    pp->pc = 0;
+    axpipe_close(pp);
+    close_nr(pc);
+  } else {
+    axpipe_close(pp);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
