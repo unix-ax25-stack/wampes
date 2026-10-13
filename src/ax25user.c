@@ -271,14 +271,19 @@ int pid
 			free_p(bpp);
 			return -1;
 		}
-		/* Segment when the operator asks for it and the packet is
-		 * larger than one frame.  The port decides (ax25.h, "ax25
-		 * segmentation" / "ifconfig <iface> segmentation"); the default
-		 * exempts PID 0xf0, so text keeps the classic behaviour unless
-		 * it is asked for.  segmenter() hands a packet that fits back
-		 * whole, so the common case does not change at all.
+		/* Segment when the operator asks for it, the packet is
+		 * larger than one frame, AND the peer said he can put the
+		 * pieces back together (his XID PI=3 segmenter bit).  The
+		 * port decides (ax25.h, "ax25 segmentation" / "ifconfig
+		 * <iface> segmentation"); the default exempts PID 0xf0, so
+		 * text keeps the classic behaviour unless it is asked for.
+		 * segmenter() hands a packet that fits back whole, so the
+		 * common case does not change at all.  With no XID answer
+		 * peer_segment is 0 and nothing changes; only a peer that
+		 * said "no segmenter" falls through to the plain frame
+		 * chunking below.
 		 */
-		if(ax25_segments_pid(axp->iface,pid)){
+		if(ax25_segments_pid(axp->iface,pid) && axp->peer_segment >= 0){
 			struct mbuf *tbp;
 			uint nseg;
 

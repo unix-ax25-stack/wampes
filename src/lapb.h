@@ -67,13 +67,27 @@ struct axreseq {
 enum lapb_version {
 	V1=1,                   /* AX.25 Version 1 */
 	V2,                     /* AX.25 Version 2.0 */
-	V2_2                    /* AX.25 Version 2.2 - a 2.0 peer proved it by
-				 * ANSWERING a XID in this session.  Never
-				 * set from a knob: a port that says 2.2 is
-				 * no evidence, a V2 peer with SREJ and no XID
-				 * would then be asked a question it does not
-				 * know.  The timer rules test for V1, so a
-				 * 2.2 link is timed like a 2.0 one. */
+	V2_2                    /* AX.25 Version 2.2, proven on the wire by
+				 * one of two frames - and never by a knob (a
+				 * port that SAYS 2.2 is no evidence; a V2
+				 * peer with SREJ and no XID would then be
+				 * asked a question it does not know):
+				 *
+				 *   - he ANSWERED a XID.  That is the
+				 *     confirmed proof, and it brings his
+				 *     parameters (N1, k, segmenter).  It
+				 *     holds for this session, or, remembered
+				 *     in the route (est_link), for a later
+				 *     one while Xid_expire_time keeps it.
+				 *   - he sent us an SREJ.  That is an
+				 *     UNCONFIRMED XID - the capability, as
+				 *     a SABME proves eax25, but no
+				 *     parameters - and it is worth the
+				 *     session it arrived in and no more
+				 *     (srej_ok, lapb.c).
+				 *
+				 * The timer rules test for V1, so a 2.2
+				 * link is timed like a 2.0 one. */
 };
 
 enum lapb_state {
@@ -252,11 +266,19 @@ struct ax25_cb {
 	uint window;                    /* Local flow control limit, bytes */
 	/* What the peer declared in its XID answer: the N1 (bytes) it will
 	 * receive and the window k (frames) it will buffer.  Ours to clamp
-	 * our sending to, for THIS link only - not remembered per route
-	 * (xid.h, ax25_apply_peer_xid).  Zero means "he said nothing".
+	 * our sending to.  Zero means "he said nothing".  The route
+	 * remembers the same numbers (peer_n1rx/peer_window) and reapplies
+	 * them on the next session while Xid_expire_time holds
+	 * (xid.h, ax25_apply_peer_xid, est_link).
 	 */
 	uint peer_n1;
 	uint peer_k;
+	/* His PI=3 segmenter bit, as a three-valued answer: 0 = he did not
+	 * answer (nothing known), 1 = he can reassemble (segment freely),
+	 * -1 = he said NO, and a segment would reach a station that cannot
+	 * put it together - so the oversized frame is dropped, exactly as
+	 * when the port's own segmentation is off (ax25.c, ax25user.c). */
+	int peer_segment;
 	enum lapb_version proto;        /* Protocol version */
 	uint pthresh;                   /* Poll threshold, bytes */
 	unsigned retries;               /* Retry counter */

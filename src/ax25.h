@@ -43,6 +43,17 @@ extern int Digi_keep_path;
 extern int Digiout;
 extern int Ax25_v2_default;         /* globaler Factory-Default fuer ax25-v2.2 */
 extern long Xid_probe_time;         /* Frist vor erneutem XID-Probe, Sekunden */
+/* WIE OFT eine unbeantwortete XID-Frage in Folge wiederholt wird, ehe
+ * zwischen zwei Fragen nur noch Xid_probe_time liegt.  Frisches Fragen
+ * ist billig und eine verlorene Frage darf nicht eine ganze Stunde
+ * kosten; nach diesen Versuchen wird die Station als "stumm" gefuehrt
+ * (Thomas). */
+extern int Xid_retries;
+/* WIE LANGE eine BEANTWORTETE XID gilt.  Eine echte Antwort beschreibt
+ * eine Faehigkeit, die sich aendern kann - aber nicht im Minutentakt.
+ * Bis dahin wird der Peer nicht wieder gefragt, danach neu ausgehandelt
+ * (1,5 Tage als Vorgabe, Thomas). */
+extern long Xid_expire_time;
 extern int Ax25mbox;
 extern int Axigntos;
 
@@ -180,6 +191,30 @@ struct ax_route {
 	 * danach erst greift die Stunde.
 	 */
 	int xid_tries;
+	/* WAS UNS DER PEER IN SEINER XID-ANTWORT UEBER SICH GESAGT HAT -
+	 * fuer KUENFTIGE Sitzungen, nicht nur fuer die, in der er es sagte.
+	 *
+	 * Bisher starb das mit jeder Verbindung: est_link() nullte
+	 * peer_n1/peer_k, und eine Station, die einmal brav geantwortet
+	 * hatte, wurde beim naechsten Anruf wieder gefragt - oder, schlimmer,
+	 * gar nicht gefragt und dann ohne ihre Grenzen bedient.  Eine
+	 * gemessene Antwort ist eine Auskunft ueber die STATION, und sie
+	 * gilt, bis sie verfaellt (Xid_expire_time) oder die Route umzieht.
+	 *
+	 * Die ROHEN PI-Werte, so wie sie auf dem Draht standen: n1rx in
+	 * BITS (PI=6) und window in RAHMEN (PI=8).  Null heisst "er hat
+	 * dazu nichts gesagt" - und darf nirgends als "kann 0" gelesen
+	 * werden (siehe ax25_apply_peer_xid).
+	 *
+	 * peer_xid_time ist der secclock()-Zeitpunkt der Antwort.  Nur eine
+	 * echte Antwort fuellt das; eine blosse Frage (Kommando) oder ein
+	 * Verstummen sagt ueber N1 und k nichts und laesst die Felder leer.
+	 */
+	unsigned peer_n1rx;             /* PI=6: was er annimmt (Bits) */
+	unsigned peer_window;           /* PI=8: was er puffert (Rahmen) */
+	int peer_srej;                  /* PI=3: er kann SREJ */
+	int peer_segment;               /* PI=3: er kann den Segmenter */
+	long peer_xid_time;             /* wann gelernt, secclock() */
 	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
 	 * one.  Learned from what arrives, so that we can answer to the one
 	 * machine instead of shouting at the whole segment.

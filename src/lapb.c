@@ -159,14 +159,14 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 	 * nicht.  Im Labor stand er frueher auf b0, und B reichte C's
 	 * Modulo 128 trotzdem an A weiter:
 	 *
-	 *   EAX25: DB0CCC->DB0AAA XID(F) ... SREJ mod128 N1rx=2048 k=32
+	 *   EAX25: DB0CCC->DB0AAA XID(F) ... SREJ mod128 N1rx=2048 kRx=32
 	 *
 	 * A baute daraufhin SABME auf, und die Station, die SREJ und Modulo
 	 * 128 nicht kann, war der Digipeat selbst.  Das ist der Fehler, den
 	 * der fruehe Ausstieg oben behebt (Thomas, 2026-10-09).
 	 */
 	if(lp->ans_iface->eax25 == EAX25_OFF)
-		xid_our_info(lp->ans_iface, MMASK, 0, NO, &tbp);
+		xid_our_info(lp->ans_iface, MMASK, 0, lp->srej, &tbp);
 	else
 		xid_our_info(lp->ans_iface,
 			     lp->mod128 ? EMMASK : MMASK,
@@ -322,7 +322,7 @@ xid_leg_done(struct ax25_xid_leg *lp)
 		 * gar nicht existieren.  Ein Rahmen in seinem Namen waere
 		 * eine Behauptung ueber eine Station, die sich nicht zu
 		 * Wort gemeldet hat, und die Werte darin waeren Bs
-		 * Portparameter: "C kann nur Modulo 8, SREJ ja, k=7,
+		 * Portparameter: "C kann nur Modulo 8, SREJ ja, kRx=7,
 		 * N1rx=2048".  Genau das stand hier früher, zehn Sekunden
 		 * nach As Frage, mit A als Empfaenger - der Aufbau hat
 		 * funktioniert, und A hat trotzdem etwas erfundenes
@@ -434,10 +434,17 @@ xid_leg_served(struct ax25_xid_leg *lp)
  * senden, ohne 2.2 zu beherrschen, und dann kaeme ein SREJ bei einem V1- oder
  * V2.0-Partner heraus, der nur ein REJ versteht - und der wartet vergebens
  * auf ein Fenster, das nie kommen wird.  Deshalb verlangt die Benutzung
- * zusaetzlich axp->proto == V2_2, und das setzt ausschliesslich eine
- * XID-ANTWORT in dieser Sitzung.  Ein Vermerk im Routeneintrag genuegt
- * dafuer nicht: der darf die Lebensdauer des Eintrags haben, die
- * SREJ-Entscheidung nicht (doc/AX25-2.2-GAP.md).
+ * zusaetzlich axp->proto == V2_2.  Das setzen zwei Beweise vom Draht:
+ *  - eine XID-ANTWORT, in dieser Sitzung oder gemerkt aus einer frueheren
+ *    (est_link), solange Xid_expire_time sie haelt - ein bestaetigter XID,
+ *  - ein SREJ, das er selbst schickt - ein unbestaetigter XID: er zeigt die
+ *    Faehigkeit wie ein SABME das eax25 zeigt, nennt aber keine Parameter
+ *    (N1/k/Segmenter stehen allein in seiner Antwort).  Er ist darum nur
+ *    fuer die Sitzung gut, in der er kam, und tastet den gelernten Vermerk
+ *    nicht an (lapb.c, SREJ-Fall).
+ * Ein Vermerk OHNE Antwort genuegt nicht - und die Frist ist der Grund, warum
+ * der gemerkte Beweis es darf: 1,5 Tage sind nicht die Lebensdauer des
+ * Routeneintrags (24,8 Tage) (doc/AX25-2.2-GAP.md).
  */
 static int
 srej_ok(struct ax25_cb *axp)
@@ -743,26 +750,27 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		 * Antwort, die B in C's Namen weiterreicht, ist etwas anderes
 		 * und wird nicht gelernt (doc/AX25-2.2-GAP.md).
 		 *
-		 * WIE LANGE EIN BEWIESENER VERMERK GILT, ist die Lebensdauer
-		 * des Routeneintrags und NICHT Xid_probe_time.  Die eine Stunde
+		 * WIE LANGE EIN BEWIESENER VERMERK GILT, ist Xid_expire_time
+		 * (1,5 Tage) und NICHT Xid_probe_time.  Die eine Stunde
 		 * gehoert einer Station, von der wir noch NICHTS wissen: dort
 		 * soll der naechste Versuch die Wartezeit nicht nochmal
 		 * bezahlen, aber nach einer Stunde doch wieder fragen.  Wer
-		 * geantwortet hat, wird einmal gefragt, und der Eintrag
-		 * vergisst ihn wie alles andere - ax25.c loescht beide Vermerke
+		 * geantwortet hat, wird so lange nicht wieder gefragt; danach
+		 * wird neu ausgehandelt, und ax25.c loescht beide Vermerke
 		 * ohnehin, sobald sich Weg oder Port aendern.
 		 *
 		 * Der Preis davon ist eine Station, deren Betreiber die
 		 * Software gewechselt hat: der Vermerk riecht es erst, wenn
-		 * der Eintrag faellt.  Das ist unkritisch, solange nichts
-		 * 2.2-Wissen OHNE neuen Beweis auf den Draht bringt - das
-		 * Modul faellt am DM zurueck, die Antwort an A am DM von A -
-		 * und die einzige Stelle, die das nicht auffaellt, ist SREJ.
-		 * SREJ darf darum nur bei axp->proto == V2_2 aus dieser
-		 * Sitzung.  Das setzen nicht der Routeneintrag, sondern
-		 * ausschliesslich Beweise vom Draht dieser Sitzung: eine
-		 * XID-Antwort, ein SREJ, das er selbst schickt, und fuer
-		 * ein Bein seine Antwort auf unsere Frage - srej_ok()
+		 * Xid_expire_time abgelaufen ist (oder der Eintrag faellt).
+		 * Das ist unkritisch, solange nichts 2.2-Wissen OHNE neuen
+		 * Beweis auf den Draht bringt - das Modul faellt am DM
+		 * zurueck, die Antwort an A am DM von A - und die einzige
+		 * Stelle, die das nicht auffaellt, ist SREJ.
+		 * SREJ darf darum nur bei axp->proto == V2_2.  Das setzen
+		 * Beweise vom Draht: eine XID-Antwort (in dieser Sitzung,
+		 * oder gemerkt aus einer frueheren, solange Xid_expire_time
+		 * sie haelt), ein SREJ, das er selbst schickt, und fuer ein
+		 * Bein seine Antwort auf unsere Frage - srej_ok()
 		 * (doc/AX25-2.2-GAP.md).
 		 */
 		if(cmdrsp == LAPB_RESPONSE &&
@@ -773,6 +781,17 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			eax25_remember(hdr->source,
 				       xi.mod128 ? AXR_EAX25_YES
 						 : AXR_EAX25_NO);
+			/* UND WAS ER UEBER SEIN EMPFANGEN GESAGT HAT,
+			 * BLEIBT STEHEN - fuer die naechste Sitzung, nicht
+			 * nur fuer diese.  Eine gemessene Antwort ist eine
+			 * Auskunft ueber die STATION; est_link() wendet sie
+			 * wieder an, und erst Xid_expire_time laesst sie
+			 * verfallen (ax25.h, struct ax_route). */
+			rp->peer_n1rx = xi.n1rx;
+			rp->peer_window = xi.window;
+			rp->peer_srej = xi.srej;
+			rp->peer_segment = xi.segment;
+			rp->peer_xid_time = rp->xid_time;
 		} else if(cmdrsp == LAPB_COMMAND){
 			/* SEINE FRAGE IST AUCH EINE AUSKUNFT UEBER IHN.
 			 * Ein XID-Kommando traegt die Faehigkeit des
@@ -795,15 +814,35 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		if(cmdrsp == LAPB_RESPONSE){
 			struct ax25_xid_leg *lp;
 
-			/* DIE EINZIGE STELLE, DIE V2_2 SETZT.  Eine Station, die
+			/* AUCH EINE SPAETE ANTWORT KLEMMT.
+			 *
+			 * Sie kann nach unserer Wartezeit kommen, wenn das
+			 * SABM schon draussen ist (HF).  Sie kam aber, und
+			 * was sie ueber sein Empfangen sagt, bleibt gueltig:
+			 * unser SENDEN wird begrenzt, nie behaupten wir
+			 * etwas ueber ihn (Thomas: "klemmen").  Der
+			 * neg_wait-Fall unten wendet dasselbe an; die
+			 * Dopplung schadet nicht, es ist ein Minimum.  Ein
+			 * Bein-Auftrag (made_here) steht auf DISCONNECTED
+			 * und wird hier nicht angefasst - C's Grenzen fuer
+			 * das Bein setzt der Bein-Code selbst. */
+			if(axp != NULL && !axp->flags.neg_wait &&
+			   axp->state != LAPB_DISCONNECTED)
+				ax25_apply_peer_xid(axp, xi.n1rx, xi.window);
+
+			/* DER BEWEIS AUS DIESER SITZUNG.  Eine Station, die
 			 * sich mit 2.2 (PI=3, SREJ) bruest, hat damit noch
 			 * nichts gezeigt - sie hat nur gefragt.  Erst ihre
 			 * ANTWORT tut das, und zwar in dieser Sitzung, was
 			 * genau der Nachweis ist, den SREJ braucht
-			 * (srej_ok).  Ein alter Vermerk aus einer früheren
-			 * Sitzung darf hier nichts wiederbeleben. */
+			 * (srej_ok).  Fuer eine spaetere Sitzung traegt der
+			 * Routeneintrag denselben Beweis weiter, solange
+			 * Xid_expire_time ihn haelt (est_link). */
 			if(axp != NULL){
 				axp->proto = V2_2;
+				/* Auch sein Segmenter-Bit: 1 kann, -1 kann
+				 * nicht (siehe peer_segment in lapb.h). */
+				axp->peer_segment = xi.segment ? 1 : -1;
 				if(xi.srej)
 					axp->flags.peer_srej = YES;
 			}
@@ -1236,6 +1275,15 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					 * (doc/AX25-2.2-GAP.md).
 					 */
 					rp->xid_frmr = YES;
+					/* Und seine Parameter sind damit
+					 * auch hin: er will kein XID, also
+					 * gilt auch nichts, was er in einem
+					 * frueheren gesagt hat. */
+					rp->peer_n1rx = 0;
+					rp->peer_window = 0;
+					rp->peer_srej = 0;
+					rp->peer_segment = 0;
+					rp->peer_xid_time = 0;
 				}
 			}
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
@@ -1289,11 +1337,16 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * so his next gap gets a SREJ in return, not a REJ.
 			 */
 			axp->flags.peer_srej = YES;
-			/* The same proof the XID answer is, and from the same
-			 * session - he is not announcing anything, he did it.
-			 * Without it srej_ok() would refuse to answer the
-			 * SREJ with a SREJ, and the very station that proved
-			 * itself capable would be sent a REJ. */
+			/* EIN UNBESTAETIGTER XID.  Er hat den Rahmen geschickt,
+			 * und SREJ gibt es erst mit 2.2 - das zeigt die
+			 * Faehigkeit so, wie ein SABME das eax25 zeigt.  Aber
+			 * er sagt damit nichts ueber sein Empfangen: kein N1,
+			 * kein k, kein Segmenter.  Das ist genau der
+			 * unbestaetigte Teil, und er ist nur so viel wert wie
+			 * die Sitzung, in der er kam.  Ohne proto == V2_2
+			 * wuerde srej_ok() ablehnen, und die Station, die sich
+			 * gerade bewiesen hat, bekaeme ein REJ statt eines
+			 * SREJ. */
 			axp->proto = V2_2;
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
@@ -1310,22 +1363,38 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * capability, not the answer. */
 			{
 				struct ax_route *srp = ax_routeptr(hdr->source,0);
-				/* EIN SREJ BEWEIST DIE FAEHIGKEIT, NICHT DIE
-				 * PARAMETER.  Dass er selektiv wiederholt,
-				 * heisst: er spricht 2.2 - bewiesen auf dem
-				 * Draht, wie ein SABME von ihm, und darum
-				 * gehoert es ins eax25-Feld.  Seine Parameter
-				 * (N1, k, das SREJ-Bit, der Segmenter) stehen
-				 * aber allein in SEINER XID-Antwort.  Ein SREJ
-				 * als "er beantwortet unsere XID" zu verbuchen
-				 * hiesse, sich das fuer immer abzuschneiden:
-				 * xid == YES faellt aus xid_may_probe() heraus,
-				 * und gefragt wuerde nie wieder.  xid bleibt
-				 * darum, was es war - nur eine echte Antwort
-				 * setzt es - und der naechste Aufbau versucht
-				 * die Frage weiter (xid_tries faengt neu an).
-				 * Auf einem Relais fragt ohnehin Punkt D. */
-				eax25_remember(hdr->source,AXR_EAX25_YES);
+				/* EIN SREJ BEWEIST AX.25-2.2 - UND SONST
+				 * NICHTS.  Oben steht schon alles, was
+				 * daraus folgt: peer_srej und proto == V2_2
+				 * fuer DIESE Sitzung, beides auf dem Draht
+				 * bewiesen.  Er sagt damit NICHT, dass er
+				 * Modulo 128 kann; 2.2 gibt es auch mit
+				 * acht Sequenznummern, und SREJ ist genau
+				 * dafuer der Reparaturweg.  Frueher stand
+				 * hier ein eax25_remember(YES): eine
+				 * Verwechslung, die die Station beim
+				 * naechsten Anruf ein SABME kostete, das sie
+				 * nie beantwortet haette.
+				 *
+				 * UND DER GELERNTE VERMERK BLEIBT, WIE ER
+				 * WAR.  Sagte sein XID "kein SREJ" (oder hat
+				 * er nie geantwortet), nehmen wir sein SREJ
+				 * trotzdem an - lazy im Akzeptieren, und
+				 * vielleicht mag er XID nicht und zeigt sich
+				 * eben so.  Fuer ihn gutgeschrieben ist es
+				 * nur hier: die Route behaelt ihr Urteil,
+				 * und die naechste Sitzung faengt wieder bei
+				 * dem an, was er dort selbst sagt.  Ein SREJ
+				 * als "er hat unsere XID beantwortet" zu
+				 * verbuchen, waere die andere Verwechslung:
+				 * xid == YES faellt aus xid_may_probe()
+				 * heraus, und seine Parameter (N1, k, das
+				 * SREJ-Bit, der Segmenter - sie stehen allein
+				 * in SEINER Antwort) kaemen nie mehr an.
+				 * xid bleibt darum, was es war; der naechste
+				 * Aufbau versucht die Frage weiter (xid_tries
+				 * faengt neu an).  Auf einem Relais fragt
+				 * ohnehin Punkt D. */
 				if(srp != NULL && srp->xid != AXR_XID_YES)
 					srp->xid_tries = 0;
 			}
@@ -1432,6 +1501,15 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 					 * (doc/AX25-2.2-GAP.md).
 					 */
 					rp->xid_frmr = YES;
+					/* Und seine Parameter sind damit
+					 * auch hin: er will kein XID, also
+					 * gilt auch nichts, was er in einem
+					 * frueheren gesagt hat. */
+					rp->peer_n1rx = 0;
+					rp->peer_window = 0;
+					rp->peer_srej = 0;
+					rp->peer_segment = 0;
+					rp->peer_xid_time = 0;
 				}
 			}
 			sendctl(axp,LAPB_COMMAND,DISC|PF);
@@ -1516,11 +1594,16 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			 * so his next gap gets a SREJ in return, not a REJ.
 			 */
 			axp->flags.peer_srej = YES;
-			/* The same proof the XID answer is, and from the same
-			 * session - he is not announcing anything, he did it.
-			 * Without it srej_ok() would refuse to answer the
-			 * SREJ with a SREJ, and the very station that proved
-			 * itself capable would be sent a REJ. */
+			/* EIN UNBESTAETIGTER XID.  Er hat den Rahmen geschickt,
+			 * und SREJ gibt es erst mit 2.2 - das zeigt die
+			 * Faehigkeit so, wie ein SABME das eax25 zeigt.  Aber
+			 * er sagt damit nichts ueber sein Empfangen: kein N1,
+			 * kein k, kein Segmenter.  Das ist genau der
+			 * unbestaetigte Teil, und er ist nur so viel wert wie
+			 * die Sitzung, in der er kam.  Ohne proto == V2_2
+			 * wuerde srej_ok() ablehnen, und die Station, die sich
+			 * gerade bewiesen hat, bekaeme ein REJ statt eines
+			 * SREJ. */
 			axp->proto = V2_2;
 			axp->flags.remotebusy = NO;
 			stop_timer(&axp->t4);
@@ -1859,7 +1942,7 @@ xid_may_probe(struct ax_route *rp)
 		return NO;              /* er hat ausdruecklich abgelehnt */
 	if(rp->xid == AXR_XID_YES)
 		return NO;              /* er hat geantwortet, nichts zu fragen */
-	if(rp->xid_tries < XID_MAXTRIES)
+	if(rp->xid_tries < Xid_retries)
 		return YES;
 	return secclock() - rp->xid_time >= Xid_probe_time;
 }
@@ -2188,11 +2271,43 @@ est_link(struct ax25_cb *axp)
 	/* Ein Aufbau, ein Zaehlimpuls fuer das "kann kein Modulo 128". */
 	eax25_age(axp->hdr.dest);
 	/* Fuer diese Verbindung noch nichts geklemmt - die XID-Antwort des
-	 * Peers fuellt das (ax25_apply_peer_xid). */
+	 * Peers fuellt das (ax25_apply_peer_xid), oder die Erinnerung
+	 * unten, die noch nicht verfallen ist. */
 	axp->peer_n1 = 0;
 	axp->peer_k = 0;
+	axp->peer_segment = 0;
 	axp->mmask = eax25_wanted(axp->iface,axp->hdr.dest);
 	eax25_mark(axp);
+	/* WAS DER PEER FRUEHER GESAGT HAT, GILT WEITER.
+	 *
+	 * Eine echte XID-Antwort beschreibt die STATION, nicht diese eine
+	 * Verbindung: sein N1, sein k, sein SREJ, sein Segmenter.  Solange
+	 * sie nicht verfallen ist (Xid_expire_time), wird sie ohne neue
+	 * Frage angewandt - und gefragt wird ohnehin nicht, denn xid == YES
+	 * faellt aus xid_may_probe() heraus.  Ohne das hier starb jede
+	 * gemessene Grenze mit der Sitzung, und eine Station, die einmal
+	 * brav geantwortet hatte, wurde ohne ihre Grenzen bedient.
+	 *
+	 * proto = V2_2 und peer_srej kommen mit: eine Antwort auf ein XID
+	 * ist genau der Nachweis, den srej_ok() verlangt - hier aus einer
+	 * frueheren Sitzung, aber nicht aelter als Xid_expire_time.  Das
+	 * ist die Grenze, die den alten Einwand entkraeftet (der Vermerk
+	 * duerfe nicht die Lebensdauer des EINTRAGS haben): 1,5 Tage sind
+	 * nicht 24,8 Tage Route, und danach wird neu gefragt.
+	 */
+	{
+		struct ax_route *rp = ax_routeptr(axp->hdr.dest,0);
+
+		if(rp != NULL && rp->xid == AXR_XID_YES && rp->peer_xid_time &&
+		   (Xid_expire_time <= 0 ||
+		    secclock() - rp->peer_xid_time < Xid_expire_time)){
+			ax25_apply_peer_xid(axp,rp->peer_n1rx,rp->peer_window);
+			axp->peer_segment = rp->peer_segment ? 1 : -1;
+			axp->proto = V2_2;
+			if(rp->peer_srej)
+				axp->flags.peer_srej = YES;
+		}
+	}
 	/* AX.25 2.2, F1: if this port starts the negotiation and the route
 	 * does not know yet whether the peer speaks XID, ONE XID probe goes
 	 * before the SABM.  It is decoupled from the modulus eax25 just

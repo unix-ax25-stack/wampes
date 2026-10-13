@@ -19,11 +19,16 @@
  *         forces nothing - see "does not change the modulus".  Bit 22
  *         announces the segmenter/reassembler, which this node does
  *         implement (segmenter(), PID 0x08).
- *   PI=5  I-field length transmit (N1) - what we can send; the same
- *         number as PI=6 here, because a port's paclen bounds both.
- *   PI=6  I-field length receive (N1) - what we will take.
- *   PI=7  Window size transmit (k) - the same as PI=8 here.
- *   PI=8  Window size receive (k) - what we will buffer.
+ *   PI=5  I-field length transmit (N1) - what this port will send
+ *         (its paclen).
+ *   PI=6  I-field length receive (N1) - what we can take (the node's
+ *         maximum I-field), which is NOT the same number: a small
+ *         sending paclen says nothing about what we can receive.
+ *   PI=7  Window size transmit (k) - the window this port will run
+ *         (maxframe / emaxframe), our own choice.
+ *   PI=8  Window size receive (k) - the window we can buffer, the full
+ *         modulo's worth (7 in modulo 8), not the smaller value a
+ *         timid sending window would suggest.
  *
  * The peer's PI=6/PI=8 are its RECEIVE capabilities, so they bound what
  * WE may put on the link: they are read (xi.n1rx, xi.window) and clamped
@@ -63,6 +68,14 @@
 #define XID_PI_ACKTIME  9       /* Wait for acknowledge, T1 (msec) */
 #define XID_PI_RETRIES  10      /* Retry count */
 
+/* Die groesste I-Field-Laenge, die dieser Stack ANNIMMT, in Oktetten.
+ * Das ist NICHT paclen: paclen ist, womit WIR senden.  Empfangsseitig
+ * gibt es (noch) keinen eigenen Schalter, und der Stack kann die
+ * Standardlaenge 256 - theoretisch mehr, aber da hoert die
+ * Kompatibilitaet auf.  Also steht sie hier fest, bis es ein
+ * RX-paclen gibt (Thomas, 2026-10-12). */
+#define XID_N1RX_BYTES  256
+
 /* Bits of the HDLC Optional Functions value (Figure 4.5).  It is a
  * three-octet value per ISO 8885; bits 7, 13, 15 and 17 are always 1,
  * bits 1 and 2 select REJ or SREJ (exactly one must be set), bits 10/11
@@ -75,9 +88,10 @@
 #define XID_OPT_FIXED   0x02a080        /* bits 7,13,15,17, always 1 */
 /* Bit 22: segmenter/reassembler.  This node implements it (segmenter(),
  * PID 0x08, lapb.c), so it sets the bit in its own optional functions;
- * a peer's bit is read too (xi.segment).  Per 6.6 the procedure is only
- * enabled when both ends are AX.25 2.2 - which is what answering a XID
- * proves.
+ * a peer's bit is read too (xi.segment) and HONORED: if he does not offer
+ * it, no segment goes toward him (ax25.c, ax25user.c, peer_segment in
+ * lapb.h).  Per 6.6 the procedure is only enabled when both ends are
+ * AX.25 2.2 - which is what answering a XID proves.
  */
 #define XID_OPT_SEGMENT 0x400000        /* bit 22: segmenter/reassembler */
 
@@ -99,17 +113,23 @@ struct xid_info {
 void xid_parse(struct mbuf **bpp,struct xid_info *xi);
 
 /* Build our own XID information field onto *bpp - empty, or with the
- * items *this* station can stand behind (see the file header).  mmask is
- * the modulus whose WINDOW (k, emaxframe vs maxframe) the field speaks
- * with.  mod128 is the OPTIONS modulus bit alone, and it is deliberately
- * separate: the bit is a CAPABILITY (what this port can do, eax25 != off),
- * while the window is the operational setting.  They differ on an
+ * items *this* station can stand behind (see the file header).
+ *
+ * Four numbers, and they are told apart now:
+ *   N1tx = this port's paclen (what we send),
+ *   N1rx = XID_N1RX_BYTES (what the stack can take), fixed,
+ *   kTx  = the operational window (mmask's maxframe/emaxframe),
+ *   kRx  = the buffering capability (mod128 ? emaxframe-or-32 : 7).
+ * mmask is the modulus whose WINDOW (kTx) the field speaks with.  mod128
+ * is the OPTIONS modulus bit, and it is deliberately separate: the bit is
+ * a CAPABILITY (what this port can do, eax25 != off).  They differ on an
  * "eax25 accept" port, which can do modulo 128 and must announce it even
  * though it will not open a link with it by itself - a peer that reads
- * mod8 there would never try SABME toward us.  An answer in a peer's name
- * (xid_leg_answer) passes that peer's own bit, not ours.  srej tells
- * whether to offer SREJ - always true here, kept in the signature for the
- * negotiated gate.
+ * mod8 there would never try SABME toward us - and they differ when the
+ * far end is learnt to be mod8-only.  kRx follows the CAPABILITY bit, not
+ * the operational window: our buffering does not shrink with the peer.
+ * An answer in a peer's name (xid_leg_answer) passes that peer's own bit,
+ * not ours.  srej tells whether to offer SREJ.
  */
 void xid_our_info(struct iface *ifp,int mmask,int mod128,int srej,struct mbuf **bpp);
 

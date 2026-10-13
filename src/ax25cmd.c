@@ -37,6 +37,8 @@ static int dodigikeepad(int argc,char *argv[],void *p);
 static int dodigiout(int argc,char *argv[],void *p);
 static int doax25v2(int argc,char *argv[],void *p);
 static int doxidprobe(int argc,char *argv[],void *p);
+static int doxidretries(int argc,char *argv[],void *p);
+static int doxidexpire(int argc,char *argv[],void *p);
 
 static int domaxframe(int argc,char *argv[],void *p);
 static int doemaxframe(int argc,char *argv[],void *p);
@@ -121,6 +123,20 @@ static struct cmds Axcmds[] = {
 	  "  keeps its \"no XID\" verdict.  After that time, a new connect\n"
 	  "  may probe again.  A fresh FRMR or SABM verdict resets it.\n"
 	  "  Default: 60 minutes."
+	},
+	{ "xid-retries",   doxidretries,   0, 1,
+	  "ax25 xid-retries <n>\n"
+	  "  How many connection attempts in a row repeat an unanswered\n"
+	  "  XID probe before only 'xid-probe-time' separates two probes.\n"
+	  "  A lost question on HF should not cost a whole hour; after\n"
+	  "  these tries the station is treated as silent.  Default: 3."
+	},
+	{ "xid-expire-time", doxidexpire,  0, 1,
+	  "ax25 xid-expire-time <minutes>\n"
+	  "  How long a station that ANSWERED an XID keeps that answer -\n"
+	  "  its N1, k, SREJ and segmenter - before we negotiate afresh.\n"
+	  "  A measured capability can change, but not every minute.\n"
+	  "  Default: 2160 minutes (1.5 days)."
 	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
@@ -371,6 +387,13 @@ void *p)
 			if(axp->peer_n1 || axp->peer_k)
 				printf("  XID N1rx=%u k=%u",
 				 axp->peer_n1, axp->peer_k);
+			/* Und sein Segmenter-Bit, sobald es etwas bedeutet:
+			 * yes heisst "er kann zusammensetzen", no heisst "ihm
+			 * schicken wir keine Segmente" (peer_segment).  Keine
+			 * Anzeige, solange er nichts dazu gesagt hat. */
+			if(axp->peer_segment)
+				printf("  SEG=%s",
+				 axp->peer_segment > 0 ? "yes" : "no");
 			printf("\n");
 			/* A session that never leaves the node is shown, and
 			 * shown as what it is: it has no port, no timers and
@@ -648,6 +671,56 @@ void *p)
 			return 1;
 		}
 		Xid_probe_time = minutes * 60;
+	}
+	return 0;
+}
+/* Wie oft eine unbeantwortete XID-Frage in Folge wiederholt wird - siehe
+ * ax25.h.  Innerhalb der ersten Xid_retries Aufbauten nach einem
+ * Verstummen fragt jeder Aufbau von selbst wieder; danach liegt die
+ * Frage nur noch Xid_probe_time auseinander.
+ */
+static int
+doxidretries(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("XID probe retries: %d\n", Xid_retries);
+		return 0;
+	}
+	{
+		int n = atoi(argv[1]);
+		if(n < 0){
+			printf("XID retries must not be negative\n");
+			return 1;
+		}
+		Xid_retries = n;
+	}
+	return 0;
+}
+/* Wie lange eine BEANTWORTETE XID gilt - siehe ax25.h.  Innerhalb dieser
+ * Frist wird der Peer nicht wieder gefragt und seine Grenzen aus der
+ * gemerkten Antwort angewandt.
+ */
+static int
+doxidexpire(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("XID expiry time: %ld minute%s\n",
+		 Xid_expire_time / 60, Xid_expire_time == 60 ? "" : "s");
+		return 0;
+	}
+	{
+		long minutes = atol(argv[1]);
+		if(minutes < 1){
+			printf("XID expiry time must be at least 1 minute\n");
+			return 1;
+		}
+		Xid_expire_time = minutes * 60;
 	}
 	return 0;
 }

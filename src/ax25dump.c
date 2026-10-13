@@ -174,7 +174,7 @@ int check       /* Not used */
 					(pv & XID_OPT_SEGMENT) ? " SEG" : "");
 				break;
 			case XID_PI_WINDOWRX:
-				fprintf(fp," k=%u",(unsigned)pv);
+				fprintf(fp," kRx=%u",(unsigned)pv);
 				break;
 			case XID_PI_IFIELDRX:
 				fprintf(fp," N1rx=%u",(unsigned)pv);

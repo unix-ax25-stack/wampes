@@ -98,7 +98,7 @@ struct mbuf **bpp)
 	uint8 buf[64];
 	int n = 0;
 	uint32 opt;
-	unsigned window, n1;
+	unsigned ktx, krx, n1tx, n1rx;
 	int segmode;
 
 	/* With no interface there is nothing to answer for - an empty
@@ -118,20 +118,44 @@ struct mbuf **bpp)
 		| ((segmode != AXSEG_OFF) ? XID_OPT_SEGMENT : 0)
 		| (srej ? XID_OPT_SREJ : XID_OPT_REJ)
 		| (mod128 ? XID_OPT_MOD128 : XID_OPT_MOD8);
-	/* N1, the I-field length we take, in bits (Figure 4.5).  A port
-	 * that has no paclen of its own inherits the node's, and answering
-	 * 0 here would announce "I take no information field at all" - which
-	 * is how a prober saw N1rx=0 in the trace. */
-	n1 = (ifp->paclen ? ifp->paclen : Paclen) * 8;
-	/* k, the window we will buffer.  The receive window is what the
-	 * spec asks about; we buffer nothing beyond the module, so say so.
-	 * Same inheritance as the length: 0 means "take the node's", not "0".
+	/* N1 TRANSMIT: the I-field length WE send = this port's paclen.  N1
+	 * RECEIVE: what we can TAKE = the node's maximum I-field, on its
+	 * own.  They are separate parameters (Figure 4.5) that were wrongly
+	 * the same number here ("a port's paclen bounds both").  That told
+	 * every peer a receive capability we do not have, and it then sent
+	 * us less than it had to.  A zero that only follows from inheritance
+	 * is not sent as 0: it means "take the node's", not "I take none".
 	 */
-	window = (mmask == EMMASK) ?
+	n1tx = (ifp->paclen ? ifp->paclen : Paclen) * 8;
+	n1rx = XID_N1RX_BYTES * 8;
+	/* k TRANSMIT: the window WE will run = the modulus' port setting.
+	 * k RECEIVE: the window we can BUFFER, which is not the same thing.
+	 * A port that runs maxframe 3 still holds the full modulo-8 window
+	 * (7); one that runs emaxframe 4 still holds the 32 a 2.2 peer may
+	 * use.  The peer reads kRx to learn how many I-frames it may have in
+	 * flight toward us; kTx is our own choice (Thomas).
+	 */
+	ktx = (mmask == EMMASK) ?
 		 (ifp->emaxframe ? ifp->emaxframe : EMaxframe) :
 		 (ifp->maxframe  ? ifp->maxframe  : Maxframe);
-	if(window == 0 || window > (unsigned)mmask)
-		window = (mmask == EMMASK) ? 32 : 4;
+	if(ktx == 0 || ktx > (unsigned)mmask)
+		ktx = (mmask == EMMASK) ? 32 : 4;
+	/* kRx follows the CAPABILITY the OPT byte announces (the modulo
+	 * bit), not the window we happen to run with this destination: our
+	 * buffering does not shrink because we learnt the far end cannot do
+	 * modulo 128.  kTx above stays the operational setting - what we
+	 * will actually send. */
+	if(mod128){
+		unsigned e = ifp->emaxframe ? ifp->emaxframe : EMaxframe;
+
+		if(e == 0 || e > (unsigned)EMMASK)
+			e = 32;
+		/* We can do 63, but 32 is the width any 2.2 peer can be
+		 * trusted with.  The capability is therefore the larger of
+		 * the two: emaxframe if it is set above 32, else 32. */
+		krx = (e > 32) ? e : 32;
+	} else
+		krx = MMASK;            /* modulo 8 holds 7 frames, no more */
 
 	buf[n++] = XID_FI_GENERAL;
 	buf[n++] = XID_GI_PARAMS;
@@ -144,30 +168,29 @@ struct mbuf **bpp)
 	buf[n++] = (opt >> 8) & 0xff;
 	buf[n++] = opt & 0xff;
 
-	/* N1 transmit (PI=5) and receive (PI=6), in bits.  A port's paclen
-	 * bounds both directions, so the two numbers are the same here -
-	 * announcing the send side lets the peer size what it sends us. */
+	/* N1 transmit (PI=5) and receive (PI=6), in bits: our sending
+	 * length and our receiving capability, now told apart. */
 	buf[n++] = XID_PI_IFIELDTX;
 	buf[n++] = 2;
-	buf[n++] = (n1 >> 8) & 0xff;
-	buf[n++] = n1 & 0xff;
+	buf[n++] = (n1tx >> 8) & 0xff;
+	buf[n++] = n1tx & 0xff;
 
 	buf[n++] = XID_PI_IFIELDRX;
 	buf[n++] = 2;
-	buf[n++] = (n1 >> 8) & 0xff;
-	buf[n++] = n1 & 0xff;
+	buf[n++] = (n1rx >> 8) & 0xff;
+	buf[n++] = n1rx & 0xff;
 
-	/* Window transmit (PI=7) and receive (PI=8), in frames.  Same
-	 * window in both directions, as for N1. */
+	/* Window transmit (PI=7) and receive (PI=8), in frames: our own
+	 * choice and our buffering capability, no longer the same. */
 	buf[n++] = XID_PI_WINDOWTX;
 	buf[n++] = 2;
-	buf[n++] = (window >> 8) & 0xff;
-	buf[n++] = window & 0xff;
+	buf[n++] = (ktx >> 8) & 0xff;
+	buf[n++] = ktx & 0xff;
 
 	buf[n++] = XID_PI_WINDOWRX;
 	buf[n++] = 2;
-	buf[n++] = (window >> 8) & 0xff;
-	buf[n++] = window & 0xff;
+	buf[n++] = (krx >> 8) & 0xff;
+	buf[n++] = krx & 0xff;
 
 	buf[2] = (uint8)((n - 4) >> 8);
 	buf[3] = (uint8)((n - 4) & 0xff);

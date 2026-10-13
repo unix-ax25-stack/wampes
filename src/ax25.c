@@ -47,6 +47,8 @@ int Digi_keep_path = 0; /* 0 = strip passed digis, 1 = keep the path */
 int Digiout = DIGIOUT_ROUTE;    /* normal or same-iface */
 int Ax25_v2_default = AX25V2_ACCEPT;    /* Factory-Default fuer ax25-v2.2 */
 long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
+int Xid_retries = XID_MAXTRIES;         /* unbeantwortete XID-Fragen in Folge */
+long Xid_expire_time = 36L * 60L * 60L; /* 1,5 Tage: so lange gilt eine Antwort */
 
 /* Weiter unten, bei axroute() - dort steht auch, warum es NICHT axroute()
  * benutzt.
@@ -225,12 +227,15 @@ uint8 tos
 	/* Insert the PID */
 	pushdown(bpp,NULL,1);
 	(*bpp)->data[0] = pid;
-	if(!ax25_segments_pid(iface,pid)){
-		/* The operator has turned segmentation off for this port.  A
-		 * datagram that still fits goes as it always would; one that
-		 * does not cannot be sent - it may not be cut (an IP datagram
-		 * is not a byte stream) and there is no segmenter to carry it
-		 * - so it is dropped, as when segmenter() itself refuses.
+	if(!ax25_segments_pid(iface,pid) || axp->peer_segment < 0){
+		/* Segmentation is off for this port, OR the peer's own XID
+		 * answer said it cannot put segments back together (PI=3
+		 * segmenter bit clear - peer_segment in lapb.h).  Either
+		 * way a datagram that still fits goes as it always would;
+		 * one that does not cannot be sent - it may not be cut (an
+		 * IP datagram is not a byte stream) and there is no
+		 * segmenter to carry it - so it is dropped, as when
+		 * segmenter() itself refuses.
 		 */
 		if(len_p(*bpp) > axp->paclen + 1){
 			free_p(bpp);
@@ -1546,6 +1551,14 @@ struct mbuf **bpp
 								 * nie. */
 								lp->mod128 = (prp->eax25
 									   == AXR_EAX25_YES);
+								/* Auch sein N1, sein k
+								 * und sein SREJ stehen
+								 * im Eintrag, aus seiner
+								 * Antwort - die Antwort
+								 * an A traegt sie weiter. */
+								lp->n1rx = prp->peer_n1rx;
+								lp->window = prp->peer_window;
+								lp->srej = prp->peer_srej;
 								lp->heard = YES;
 								xid_leg_done(lp);
 							}
@@ -1897,6 +1910,15 @@ int perm)
 				rp->xid_time = 0;
 				rp->xid_tries = 0;
 				rp->xid_frmr = 0;
+				/* Und was er uns ueber sein Empfangen
+				 * gesagt hat, gehoert zum alten Weg: der
+				 * neue kann ein anderer Nexthop sein
+				 * (siehe die Feld-Doku in ax25.h). */
+				rp->peer_n1rx = 0;
+				rp->peer_window = 0;
+				rp->peer_srej = 0;
+				rp->peer_segment = 0;
+				rp->peer_xid_time = 0;
 			}
 		}
 		rp->time = secclock();

@@ -309,8 +309,37 @@ SABME at all: a station we have never asked, or asked so long ago that
 `Xid_probe_time` (60 min) has run out.
 
     xid_tries   unanswered XID questions IN A ROW, at most one per
-                session.  The first XID_MAXTRIES (3) sessions ask again;
+                session.  The first Xid_retries (3) sessions ask again;
                 after that only `Xid_probe_time` opens it.
+
+Both numbers are knobs: `ax25 xid-retries` and `ax25 xid-probe-time`.
+
+### An answer is remembered, and it is remembered for a while
+
+What a peer says about itself in its XID reply - the I-field it will take
+(`N1`), the window it will buffer (`k`), SREJ, the segmenter - describes the
+**station**, not one connection.  It used to die with the session:
+`est_link()` zeroed the per-link limits at every connect, and a station that
+had answered once was asked again - or worse, was served without its
+limits.  The route now keeps the parsed reply (`peer_n1rx`, `peer_window`,
+`peer_srej`, `peer_xid_time`), and a new session applies it without a fresh
+question - and therefore without a fresh probe, because `xid == YES` already
+falls out of `xid_may_probe()`.
+
+`Xid_expire_time` (default 1.5 days = 2160 minutes, `ax25 xid-expire-time`)
+bounds the note: a measured capability can change, but not every minute, and
+after the window the next connect negotiates afresh.  A route that moves, or
+a FRMR, drops the whole note at once (`ax25.c`, `lapb.c`).  The bound is
+also what lets a remembered SREJ proof satisfy `srej_ok()`: 1.5 days are not
+the lifetime of the route entry.
+
+An SREJ is the other proof, and it is deliberately worth less.  He *sent* the
+frame, so he can do 2.2 - an **unconfirmed** XID, the capability exactly as a
+`SABME` proves `eax25`, but without a single parameter.  It is honored for the
+session it arrived in and never rewrites the learned reply: even when his XID
+said *no SREJ*, or he never answered, we take the SREJ as it comes, and the
+route keeps the verdict he himself gave.  The XID question stays open, so his
+`N1`/`k` still arrive when he answers.
 
 One per **session**, and not per frame.  The same rule serves a connect of
 our own and the relay's question in the caller's name (the point-D case in
