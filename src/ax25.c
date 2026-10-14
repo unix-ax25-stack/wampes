@@ -1312,6 +1312,22 @@ struct mbuf **bpp
 					struct ax_route *prp;
 					int probe_c = YES;
 
+					/* EIN NACHBAR, DER UNS NICHT
+					 * KENNT.  Sein XID lief gerade
+					 * durch uns hindurch - statt
+					 * uns direkt zu fragen - und
+					 * traegt es unser WAMP-Set, so
+					 * ist er WAMPES und weiss nur
+					 * nicht mehr, dass wir der
+					 * hop2hop-Nexthop sind.  Wir
+					 * geben ihm unser eigenes XID,
+					 * ehe wir C fragen: er kennt uns
+					 * dann sofort.  Nur ein direkter
+					 * Nachbar, nur ein hop2hop-Knoten
+					 * (xid_teach_hop2hop, lapb.c). */
+					xid_teach_hop2hop(hdr.source,
+							  iface, bpp);
+
 					/* C is the station the probe is
 					 * meant for: always the DESTINATION
 					 * of the swallowed frame.  A digipeater
@@ -2000,6 +2016,8 @@ int perm)
 				rp->peer_segment = 0;
 				rp->peer_xid_time = 0;
 				rp->hop2hop = 0;
+				rp->teach_time = 0;
+				rp->teach_tries = 0;
 			}
 		}
 		rp->time = secclock();

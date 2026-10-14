@@ -237,6 +237,17 @@ struct ax_route {
 	 * hinter ihm nicht unnoetig zu fragen: wir kennen die Strecke zu ihm
 	 * schon.  Ein Wegumzug loescht es wie die peer_*-Werte. */
 	int hop2hop;
+	/* WANN WIR IHM ZULETZT UNSER EIGENES XID GESCHICKT HABEN, weil er
+	 * durch uns hindurch fragte und damit verriet, dass er uns nicht
+	 * kennt (xid_teach_hop2hop, lapb.c).  Eigenes Feld und nicht
+	 * xid_tries: das Lehren ist keine Frage nach einem Aufbau, und ein
+	 * FRMR oder ein gemessenes JA an dieser Route darf es nicht allein
+	 * abschalten - gerade wenn A neu gebootet hat, steht dort noch das
+	 * alte JA, das ihn als bekannt fuehrt.  Das Timing ist trotzdem das
+	 * normale: Xid_retries Anfragen kurz hintereinander, danach
+	 * Xid_probe_time Pause.  Ein Wegumzug loescht es wie hop2hop. */
+	long teach_time;                /* Sekunden, secclock() */
+	int teach_tries;
 	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
 	 * one.  Learned from what arrives, so that we can answer to the one
 	 * machine instead of shouting at the whole segment.
@@ -410,6 +421,15 @@ int xid_leg_pending(uint8 *call, const struct iface *ifp);
 /* Open a second leg with a question of our own, the way a connect that
  * starts here does - see struct ax25_xid_leg, link_to. */
 int xid_leg_open(struct ax25_cb *axp);
+
+/* Ein Nachbar, der uns offenbar nicht kennt: sein XID lief gerade durch uns
+ * hindurch, statt dass er uns direkt gefragt haette.  Traegt es unser
+ * WAMP-Set, schicken wir ihm unser EIGENES XID (Quellruf wir, keine Digis,
+ * auf dem Ankunftsport), damit er uns als hop2hop kennenlernt und unsere
+ * Parameter fuer alle Wege durch uns erbt - noch vor seinem Aufbau.  Nur ein
+ * hop2hop-Knoten lehrt, und nur einen direkten Nachbarn; alles Weitere in
+ * xid_teach_hop2hop() (lapb.c). */
+void xid_teach_hop2hop(uint8 *src, struct iface *ifp, struct mbuf **bpp);
 
 /* Siehe eax25_fails / eax25_skips oben. */
 #define EAX25_MAXFAILS           3      /* Rueckfaelle in Folge bis "kann nicht" */

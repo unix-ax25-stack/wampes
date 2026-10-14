@@ -102,6 +102,7 @@ struct xid_info *xi)
 				case XID_PI_PRIV_SETID:
 					set_wamp = (pl == XID_PRIV_SETLEN &&
 						    pv == XID_PRIV_SETVAL);
+					xi->wamp = set_wamp;
 					break;
 				case XID_PI_PRIV_CAPS:
 					if(set_wamp && pl >= 1 &&

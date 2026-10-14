@@ -499,6 +499,87 @@ xid_hop2hop_note(uint8 *src, struct xid_info *xi)
 		}
 }
 
+/* EIN NACHBAR, DER UNS OFFENBAR NICHT KENNT (Thomas, 2026-10-14).
+ *
+ * Wir sind B und schlucken gerade ein XID von A, das einem Dritten galt
+ * (Punkt D, ax25.c).  Traegt dieses XID unser WAMP-Set, so spricht A unsere
+ * Vereinbarung - und dass er ueberhaupt DURCH uns hindurch fragt, statt uns
+ * direkt, verraet, dass er uns nicht als hop2hop kennt: sonst haette er
+ * sich die Frage gespart, denn xid_may_probe() haelt still, sobald der Weg
+ * ueber einen bekannten hop2hop-Nexthop laeuft.  Also schicken wir ihm
+ * unser EIGENES XID.  Er antwortet (eine XID-Anfrage wird beantwortet),
+ * lernt uns als hop2hop und erbt unsere Werte fuer alle Wege durch uns -
+ * und kann sofort SABM/SABME senden, ohne auf C zu warten.  Seine Antwort
+ * bringt uns zugleich frische Werte fuer den Arm zu ihm.
+ *
+ * NUR EIN HOP2HOP-KNOTEN LEHRT.  Ein Digi im mode 1 schreibt ohnehin kein
+ * XID; schriebe er eines, stuende auf einer Kette A-d1-...-d8 jeder dieser
+ * Digis auf und fragte A - ein XID-Schwall, der A nichts sagt.
+ *
+ * NUR EIN DIREKTER NACHBAR.  Nur ihn erreicht ein Rahmen ohne Pfad, und nur
+ * sein Bit gilt (xid_hop2hop_note).  Wer selbst hinter einem Digi sitzt,
+ * bekommt unser XID nicht zu sehen; dann sparen wir es uns.
+ *
+ * DAS TIMING IST DAS NORMALE.  Xid_retries Anfragen kurz hintereinander,
+ * danach Xid_probe_time Pause - dieselbe Regel wie bei einer Sonde, nur an
+ * einem eigenen Zaehler.
+ */
+void
+xid_teach_hop2hop(
+uint8 *src,
+struct iface *ifp,
+struct mbuf **bpp)
+{
+	struct xid_info xi;
+	struct mbuf *tbp = NULL;
+	struct mbuf *cb = NULL;
+	struct ax25_cb *paxp;
+	struct ax_route *rp;
+	uint8 c;
+
+	if(!ax25_hop2hop() || ifp == NULL || ifp->hwaddr == NULL)
+		return;
+	if(src == NULL || !*src)
+		return;
+	rp = ax_routeptr(src,0);
+	if(rp == NULL || rp->digi != NULL)
+		return;                 /* kein direkter Nachbar */
+	/* Sein XID traegt unser Set?  Dann ist er WAMPES und versteht, warum
+	 * wir fragen.  Auf einer KOPIE: das ankommende XID wird weiter unten
+	 * noch gebraucht (Punkt D schluckt es nur, wenn es wirklich dorthin
+	 * gehoert).
+	 */
+	if(dup_p(&cb,*bpp,0,len_p(*bpp)) == 0)
+		return;
+	if(pullup(&cb,&c,1) != 1){      /* Kontrollbyte */
+		free_p(&cb);
+		return;
+	}
+	xid_parse(&cb,&xi);
+	free_p(&cb);
+	if(!xi.wamp)
+		return;
+	if(rp->teach_tries >= Xid_retries &&
+	   secclock() - rp->teach_time < Xid_probe_time)
+		return;
+	paxp = cr_ax25(src);
+	if(paxp == NULL)
+		return;
+	memset(&paxp->hdr,0,sizeof(paxp->hdr));
+	addrcp(paxp->hdr.source,ifp->hwaddr);
+	addrcp(paxp->hdr.dest,src);
+	paxp->hdr.ndigis = 0;
+	paxp->hdr.nextdigi = 0;
+	paxp->iface = ifp;
+	xid_our_info(ifp,
+		     (ifp->eax25 != EAX25_OFF) ? 1 : 0,
+		     YES, ax25_hop2hop(), &tbp);
+	sendframe(paxp,LAPB_COMMAND,XID | PF,-1,&tbp);
+	rp->teach_time = secclock();
+	rp->teach_tries++;
+	del_ax25(paxp);
+}
+
 /* Process incoming frames */
 int
 lapb_input(
