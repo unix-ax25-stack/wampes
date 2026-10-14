@@ -499,33 +499,49 @@ xid_hop2hop_note(uint8 *src, struct xid_info *xi)
 		}
 }
 
-/* EIN NACHBAR, DER UNS OFFENBAR NICHT KENNT (Thomas, 2026-10-14).
+/* WAS EIN XID, DAS DURCH UNS HINDURCHLIEF, UNS SAGT - UND WAS WIR DANN TUN
+ * (Thomas, 2026-10-14).
  *
- * Wir sind B und schlucken gerade ein XID von A, das einem Dritten galt
- * (Punkt D, ax25.c).  Traegt dieses XID unser WAMP-Set, so spricht A unsere
- * Vereinbarung - und dass er ueberhaupt DURCH uns hindurch fragt, statt uns
- * direkt, verraet, dass er uns nicht als hop2hop kennt: sonst haette er
- * sich die Frage gespart, denn xid_may_probe() haelt still, sobald der Weg
- * ueber einen bekannten hop2hop-Nexthop laeuft.  Also schicken wir ihm
- * unser EIGENES XID.  Er antwortet (eine XID-Anfrage wird beantwortet),
- * lernt uns als hop2hop und erbt unsere Werte fuer alle Wege durch uns -
- * und kann sofort SABM/SABME senden, ohne auf C zu warten.  Seine Antwort
- * bringt uns zugleich frische Werte fuer den Arm zu ihm.
+ * Wir sind B, und gerade geht bei uns ein XID von A durch, das einem Dritten
+ * galt (Punkt D, ax25.c).  Zwei Folgen, und beide gehoeren hierher, weil
+ * beide aus derselben einen Auskunft kommen: A hat ueber sich selbst
+ * gesprochen - und dass er es DURCH uns tat und nicht ZU uns, ist die zweite
+ * Auskunft, die man nur lesen muss.
+ *
+ * TEIL A - AUCH SEINE FRAGE IST EINE AUSKUNFT UEBER IHN.  Ein XID traegt die
+ * Faehigkeit des Arms, ueber den es hinausgeht, und zwar des ABSENDERS.
+ * Traegt es dazu das hop2hop-Bit, so terminiert und bestaetigt A den Hop
+ * selbst; dann gilt seine Faehigkeit fuer alle Wege DURCH ihn, und das ist
+ * genau, was xid_hop2hop_note() eintraegt.  Fuer ein XID AN UNS tut das
+ * lapb_input() laengst - hier fehlte es bisher, weil dieser Rahmen nie bei
+ * lapb_input() vorbeikommt: der Punkt-D-Zweig schluckt ihn.  Kein neuer
+ * Code, nur der zweite Eingang in denselben Vermerk.
+ *
+ * TEIL 2 - EIN NACHBAR, DER UNS NICHT MEHR KENNT.  Dass A ueberhaupt DURCH
+ * uns hindurch fragt, statt uns direkt, verraet, dass er uns nicht als
+ * hop2hop kennt: sonst haette er sich die Frage gespart, denn
+ * xid_may_probe() haelt still, sobald der Weg ueber einen bekannten
+ * hop2hop-Nexthop laeuft.  Traegt sein XID unser WAMP-Set, so ist A WAMPES
+ * und versteht, warum wir fragen - also schicken wir ihm unser EIGENES XID.
+ * Er antwortet (eine XID-Anfrage wird beantwortet), lernt uns als hop2hop
+ * und erbt unsere Werte fuer alle Wege durch uns - und kann sofort
+ * SABM/SABME senden, ohne auf C zu warten.  Seine Antwort laeuft ueber
+ * lapb_input() und bringt uns dabei frische Werte fuer den Arm zu ihm.
  *
  * NUR EIN HOP2HOP-KNOTEN LEHRT.  Ein Digi im mode 1 schreibt ohnehin kein
  * XID; schriebe er eines, stuende auf einer Kette A-d1-...-d8 jeder dieser
  * Digis auf und fragte A - ein XID-Schwall, der A nichts sagt.
  *
  * NUR EIN DIREKTER NACHBAR.  Nur ihn erreicht ein Rahmen ohne Pfad, und nur
- * sein Bit gilt (xid_hop2hop_note).  Wer selbst hinter einem Digi sitzt,
- * bekommt unser XID nicht zu sehen; dann sparen wir es uns.
+ * sein Bit gilt (xid_hop2hop_note prueft das selbst).  Wer selbst hinter
+ * einem Digi sitzt, bekommt unser XID nicht zu sehen; dann sparen wir es uns.
  *
  * DAS TIMING IST DAS NORMALE.  Xid_retries Anfragen kurz hintereinander,
  * danach Xid_probe_time Pause - dieselbe Regel wie bei einer Sonde, nur an
  * einem eigenen Zaehler.
  */
 void
-xid_teach_hop2hop(
+xid_relay_note(
 uint8 *src,
 struct iface *ifp,
 struct mbuf **bpp)
@@ -537,16 +553,10 @@ struct mbuf **bpp)
 	struct ax_route *rp;
 	uint8 c;
 
-	if(!ax25_hop2hop() || ifp == NULL || ifp->hwaddr == NULL)
-		return;
 	if(src == NULL || !*src)
 		return;
-	rp = ax_routeptr(src,0);
-	if(rp == NULL || rp->digi != NULL)
-		return;                 /* kein direkter Nachbar */
-	/* Sein XID traegt unser Set?  Dann ist er WAMPES und versteht, warum
-	 * wir fragen.  Auf einer KOPIE: das ankommende XID wird weiter unten
-	 * noch gebraucht (Punkt D schluckt es nur, wenn es wirklich dorthin
+	/* Auf einer KOPIE: das ankommende XID wird weiter unten noch
+	 * gebraucht (Punkt D schluckt es nur, wenn es wirklich dorthin
 	 * gehoert).
 	 */
 	if(dup_p(&cb,*bpp,0,len_p(*bpp)) == 0)
@@ -557,8 +567,16 @@ struct mbuf **bpp)
 	}
 	xid_parse(&cb,&xi);
 	free_p(&cb);
+	/* Teil A: seine eigene Frage zaehlt wie seine Antwort. */
+	xid_hop2hop_note(src,&xi);
+	/* Teil 2: er kennt uns nicht mehr - wir sagen es ihm. */
+	if(!ax25_hop2hop() || ifp == NULL || ifp->hwaddr == NULL)
+		return;
 	if(!xi.wamp)
 		return;
+	rp = ax_routeptr(src,0);
+	if(rp == NULL || rp->digi != NULL)
+		return;                 /* kein direkter Nachbar */
 	if(rp->teach_tries >= Xid_retries &&
 	   secclock() - rp->teach_time < Xid_probe_time)
 		return;

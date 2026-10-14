@@ -1312,21 +1312,19 @@ struct mbuf **bpp
 					struct ax_route *prp;
 					int probe_c = YES;
 
-					/* EIN NACHBAR, DER UNS NICHT
-					 * KENNT.  Sein XID lief gerade
-					 * durch uns hindurch - statt
-					 * uns direkt zu fragen - und
-					 * traegt es unser WAMP-Set, so
-					 * ist er WAMPES und weiss nur
-					 * nicht mehr, dass wir der
-					 * hop2hop-Nexthop sind.  Wir
-					 * geben ihm unser eigenes XID,
-					 * ehe wir C fragen: er kennt uns
-					 * dann sofort.  Nur ein direkter
-					 * Nachbar, nur ein hop2hop-Knoten
-					 * (xid_teach_hop2hop, lapb.c). */
-					xid_teach_hop2hop(hdr.source,
-							  iface, bpp);
+					/* EIN XID, DAS DURCH UNS
+					 * HINDURCHLIEF.  Sein Absender
+					 * A hat damit ueber sich selbst
+					 * gesprochen: wir merken seine
+					 * Faehigkeit (Teil A) - und lief
+					 * es durch uns statt zu uns, so
+					 * kennt er uns nicht mehr als
+					 * hop2hop-Nexthop und bekommt
+					 * unser eigenes XID (Teil 2).
+					 * Alles in xid_relay_note,
+					 * lapb.c. */
+					xid_relay_note(hdr.source,
+						       iface, bpp);
 
 					/* C is the station the probe is
 					 * meant for: always the DESTINATION

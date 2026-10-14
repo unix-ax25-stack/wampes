@@ -135,7 +135,7 @@ struct xid_info {
 	/* The "WAMP" set identifier was seen: he speaks our agreement.
 	 * Independent of the capability bits - a set with hop2hop clear
 	 * still says he understands the subfield at all, which is exactly
-	 * what xid_teach_hop2hop() needs to know before it answers a
+	 * what xid_relay_note() needs to know before it answers a
 	 * neighbour that forgot us. */
 	int wamp;               /* GI=F0 PI=0: he speaks our set */
 	int hop2hop;            /* GI=F0 PI=1: he acks hop by hop (as neapthop) */

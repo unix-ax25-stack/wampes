@@ -239,7 +239,7 @@ struct ax_route {
 	int hop2hop;
 	/* WANN WIR IHM ZULETZT UNSER EIGENES XID GESCHICKT HABEN, weil er
 	 * durch uns hindurch fragte und damit verriet, dass er uns nicht
-	 * kennt (xid_teach_hop2hop, lapb.c).  Eigenes Feld und nicht
+	 * kennt (xid_relay_note, lapb.c).  Eigenes Feld und nicht
 	 * xid_tries: das Lehren ist keine Frage nach einem Aufbau, und ein
 	 * FRMR oder ein gemessenes JA an dieser Route darf es nicht allein
 	 * abschalten - gerade wenn A neu gebootet hat, steht dort noch das
@@ -422,14 +422,17 @@ int xid_leg_pending(uint8 *call, const struct iface *ifp);
  * starts here does - see struct ax25_xid_leg, link_to. */
 int xid_leg_open(struct ax25_cb *axp);
 
-/* Ein Nachbar, der uns offenbar nicht kennt: sein XID lief gerade durch uns
- * hindurch, statt dass er uns direkt gefragt haette.  Traegt es unser
- * WAMP-Set, schicken wir ihm unser EIGENES XID (Quellruf wir, keine Digis,
- * auf dem Ankunftsport), damit er uns als hop2hop kennenlernt und unsere
- * Parameter fuer alle Wege durch uns erbt - noch vor seinem Aufbau.  Nur ein
- * hop2hop-Knoten lehrt, und nur einen direkten Nachbarn; alles Weitere in
- * xid_teach_hop2hop() (lapb.c). */
-void xid_teach_hop2hop(uint8 *src, struct iface *ifp, struct mbuf **bpp);
+/* Was ein XID, das DURCH uns hindurchlief, uns sagt und was wir dann tun:
+ * sein Absender hat damit ueber sich selbst gesprochen.  Teil A - traegt es
+ * das hop2hop-Bit, gilt seine Faehigkeit fuer alle Wege DURCH ihn
+ * (xid_hop2hop_note, derselbe Vermerk wie fuer ein XID an uns, nur der
+ * zweite Eingang).  Teil 2 - lief es durch uns hindurch statt zu uns, kennt
+ * er uns nicht mehr als hop2hop; traegt es unser WAMP-Set, schicken wir ihm
+ * unser EIGENES XID (Quellruf wir, keine Digis, auf dem Ankunftsport), damit
+ * er uns sofort wiederkennt und unsere Parameter fuer alle Wege durch uns
+ * erbt.  Nur ein hop2hop-Knoten lehrt, und nur einen direkten Nachbarn.
+ * Alles Weitere in xid_relay_note() (lapb.c). */
+void xid_relay_note(uint8 *src, struct iface *ifp, struct mbuf **bpp);
 
 /* Siehe eax25_fails / eax25_skips oben. */
 #define EAX25_MAXFAILS           3      /* Rueckfaelle in Folge bis "kann nicht" */
