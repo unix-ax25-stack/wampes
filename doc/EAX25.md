@@ -405,6 +405,61 @@ a caller who keeps dialling cannot push the hour out in front of us.
 the window where `EAX25_RETRY` has just expired and the probes are running
 once more.  `ax25 route list ?` prints the legend.
 
+## A parameter of our own
+
+Every XID parameter this node reads - PI 3 and PIs 5 to 8 - is one the
+standard defines, and PI 3 has no bit left that could be ours.  What Figure
+4.5 does not already assign is marked "always 0", and the two bits that are
+truly *Reserved* (0 and 23) are reserved for the standard's own later use -
+the very thing a permanent extension must not hang off.  Bit 22 is the
+warning: the July 1998 printing of the figure still lists it as reserved,
+and this stack advertises it only because a segmenter stands behind it.
+
+The standards have a place for an extension instead, and it is not a bit in
+PI 3.  ISO/IEC 8885 gives the data link layer subfield more than one Group
+Identifier: `0x80` is the parameter negotiation we use, and `0xF0` is the
+**private parameter negotiation** subfield (in ISO/IEC 13239 the
+*user-defined parameters* subfield; ITU-T V.42 gives the same `11110000` to
+its own private parameters).  Inside it, PIs are defined "by prior agreement
+between the stations", and `PI=0` is the parameter **set identifier** that
+says which agreement this is - V.42 puts the ASCII "V.42" there.  That space
+is reserved for private use and will not be handed to someone else; the free
+bits of PI 3 and the PIs a vendor invents inside the `0x80` group (Direwolf
+takes 65/66/67 there, numbers borrowed from V.42's *user data* subfield) are
+not.
+
+Our extension, then:
+
+    GI=F0  GL=0009
+      PI=0  PL=4  PV="WAMP"    the parameter set
+      PI=1  PL=1  PV=01        bit 0: we acknowledge hop by hop
+
+`WAMP` is the umbrella: the set identifier names whose agreement this is -
+ours, where V.42 writes "V.42" - and everything we add later is a **bit of
+`PI=1` under it**, not another PI or another set.  Bit 0, hop2hop-ack, is
+the first such extension; the other seven bits are clear and waiting.
+
+The FI stays the single `0x82` at the head of the information field; the
+subfield follows the `0x80` group, because subfields ascend by GI, and costs
+eleven octets.  Bit 0, **hop2hop-ack**, is a statement about this station as
+a **nexthop**: we terminate the hop and acknowledge it ourselves, so a
+station that reads it may put its question to us instead of to the station
+behind us.  That is the bit's whole content - what a node *does* with the
+answer belongs to the AX.25 2.2 relay and is written down in
+`doc/AX25-2.2-GAP.md`, not here.  A clear bit says "unknown", never
+"cannot", and nothing is inherited from an unknown.
+
+The extension is harmless because the standard says it is.  Section 4.3.3.7:
+a parameter field with an unrecognized PI "is ignored", and the fields of
+the figure "do not preclude the negotiation of other parameters between
+consenting stations".  Concretely, a station that parses only the `0x80`
+group - Direwolf reads one subfield and stops at its Group Length - takes our
+standard parameters, sees the trailing octets as a frame/group-length
+mismatch and reports it, and does not fail: the extension is ignored, which
+is the required outcome.  We owe the same, and in the other direction:
+`xid_parse()` reads the `0x80` group and has nothing to say about what
+follows it.
+
 ## Measured
 
 Rig: `testtools/eaxpeer.py`, which plays the far end in four ways -
