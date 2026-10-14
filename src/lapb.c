@@ -134,44 +134,33 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 	 * and that is decided by eax25 below, separately.  (Der 2.2er Knopf
 	 * ax25-v2.2 off ist strenger und schweigt schon oben: er sagt, dass
 	 * dieser Port kein XID kennt.) */
-	/* IN C'S NAMEN, ALSO MIT C'S WERTEN.  Diese Antwort geht fuer A
-	 * raus und A baut daraus seine Verbindung NACH C - sie beschreibt
-	 * das Bein B->C und nicht das Bein B->A, aus dem sie herauskommt.
-	 * Ein B, der hier seine eigenen Parameter eintraegt, wuerde einem
-	 * schweigenden C (srej bleibt dann null, mod128 auch) ein
-	 * Modulo-128-Vermoegen andichten, das niemand nachgewiesen hat:
-	 * A spricht danach SABME, und die Antwort, die darauf ausbleibt,
-	 * ist A's Problem fuer eine Behauptung, die wir uns ausgedacht
-	 * haben.  Also stehen hier die Werte, die C selbst genannt hat
-	 * (xid_leg_served) oder die das Verstummen ergeben hat
-	 * (xid_leg_done nach XID_LEG_TIMEOUT - dort bleibt mod128 null).
+	/* DIE ANTWORT BESCHREIBT IHR EIGENES BEIN, NICHT DAS FERNE.
 	 *
-	 * EAX25 OFF DARF NICHTS BEHAUPTEN, WAS ES ABGESCHALTET HAT - das
-	 * gilt auch fuer eine Antwort, die einem anderen die Faehigkeiten
-	 * des C vorgibt.  Der 2.0er Knopf (eax25 off) nimmt der Antwort das
-	 * Modulo-128-Bit im EAX25-Feld: B gibt A nicht C's Modulo 128
-	 * weiter, wenn B es auf diesem Port selbst nicht anbietet.  A sieht
-	 * damit "C: nur Modulo 8" und handelt danach - was der Knopf
-	 * bewirken soll.
+	 * Sie geht ueber ans_iface (den Port zu A) hinaus, und was ein XID
+	 * ankuendigt, ist die Faehigkeit der Strecke, auf der es laeuft:
+	 * fuer A ist das Bein A<->B, nicht das Bein B->C.  A sendet seine
+	 * Rahmen an UNS, also muss es UNSERE Empfangsgrenzen kennen - C's
+	 * N1/k/SREJ sind fuer A unerreichbar und wuerden ein Bein
+	 * beschreiben, auf dem A nie sendet.  Darum die Werte des
+	 * Ausgangsports, genau wie bei der Frage nach C hinueber
+	 * (xid_leg_probe, derselbe Aufruf mit leg_iface).  Das
+	 * QUELLRUFEZEICHEN bleibt C (Quellentreue, build_path oben) -
+	 * Parameter pro Arm, Absender unveraendert.
 	 *
-	 * Der 2.2er Knopf (ax25-v2.2 off) ist strenger und schweigt schon
-	 * oben: eine Station, die kein XID kennt, antwortet auf eines gar
-	 * nicht.  Im Labor stand er frueher auf b0, und B reichte C's
-	 * Modulo 128 trotzdem an A weiter:
+	 * Vorher standen hier lp->mod128/lp->srej, also C's Faehigkeit; das
+	 * war gegen die Vorgabe (jedes XID beschreibt den Arm, auf dem es
+	 * laeuft).  Die Werte bleiben am Auftrag fuer das eigene Bein
+	 * (xid_leg_done), die Antwort an A nimmt sie nicht mehr.
 	 *
-	 *   EAX25: DB0CCC->DB0AAA XID(F) ... SREJ mod128 N1rx=2048 kRx=32
-	 *
-	 * A baute daraufhin SABME auf, und die Station, die SREJ und Modulo
-	 * 128 nicht kann, war der Digipeat selbst.  Das ist der Fehler, den
-	 * der fruehe Ausstieg oben behebt (Thomas, 2026-10-09).
+	 * EAX25 OFF DARF NICHTS BEHAUPTEN, WAS ES ABGESCHALTET HAT: der
+	 * 2.0er Knopf nimmt der Antwort das Modulo-128-Bit, und A handelt
+	 * danach.  Der 2.2er Knopf (ax25-v2.2 off) ist strenger und
+	 * schweigt schon oben: eine Station, die kein XID kennt, antwortet
+	 * auf eines gar nicht (Thomas, 2026-10-09).
 	 */
-	if(lp->ans_iface->eax25 == EAX25_OFF)
-		xid_our_info(lp->ans_iface, 0, lp->srej,
-			     ax25_hop2hop(), &tbp);
-	else
-		xid_our_info(lp->ans_iface,
-			     lp->mod128 ? 1 : 0,
-			     lp->srej, ax25_hop2hop(), &tbp);
+	xid_our_info(lp->ans_iface,
+		     (lp->ans_iface->eax25 != EAX25_OFF) ? 1 : 0,
+		     YES, ax25_hop2hop(), &tbp);
 	sendframe(axp,LAPB_RESPONSE,XID | PF,-1,&tbp);
 	del_ax25(axp);
 }

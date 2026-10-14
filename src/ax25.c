@@ -1601,16 +1601,20 @@ struct mbuf **bpp
 								 * seinen
 								 * Rueckfall
 								 * nie. */
-								lp->mod128 = (prp->eax25
-									   == AXR_EAX25_YES);
-								/* Auch sein N1, sein k
-								 * und sein SREJ stehen
-								 * im Eintrag, aus seiner
-								 * Antwort - die Antwort
-								 * an A traegt sie weiter. */
-								lp->n1rx = prp->peer_n1rx;
-								lp->window = prp->peer_window;
-								lp->srej = prp->peer_srej;
+								/* Die ANTWORT
+								 * an A traegt
+								 * sie NICHT
+								 * weiter: sie
+								 * beschreibt
+								 * das Bein zu A
+								 * (xid_leg_answer
+								 * ), unabhaengig
+								 * von C.  Der
+								 * Eintrag sagt
+								 * nur, DASS wir C
+								 * kennen und
+								 * darum antworten
+								 * duerfen. */
 								lp->heard = YES;
 								xid_leg_done(lp);
 							}
