@@ -66,6 +66,11 @@ extern long Xid_expire_time;
  * aus (doc/AX25-2.2-GAP.md).  Nur die Faehigkeiten werden vererbt, nicht
  * das Bit selbst.  Vorgabe: an. */
 extern int Xid_inherit_hop2hop;
+/* OB WIR EINEN NACHBARN BELEHREN, DER DURCH UNS HINDURCH FRAGT (sein XID
+ * verraet, dass er uns nicht als hop2hop kennt): er bekommt dann unser
+ * eigenes XID, statt auf eine Frage zu warten (doc/AX25-2.2-GAP.md).
+ * Vorgabe: an. */
+extern int Xid_teach_hop2hop;
 extern int Ax25mbox;
 extern int Axigntos;
 

@@ -40,6 +40,7 @@ static int doxidprobe(int argc,char *argv[],void *p);
 static int doxidretries(int argc,char *argv[],void *p);
 static int doxidexpire(int argc,char *argv[],void *p);
 static int doxidinherit(int argc,char *argv[],void *p);
+static int doxidteach(int argc,char *argv[],void *p);
 static int domaxframe(int argc,char *argv[],void *p);
 static int doemaxframe(int argc,char *argv[],void *p);
 static int domycall(int argc,char *argv[],void *p);
@@ -146,6 +147,15 @@ static struct cmds Axcmds[] = {
 	  "  negotiates nothing (doc/AX25-2.2-GAP.md).  Only the\n"
 	  "  capabilities are inherited, never the bit itself.\n"
 	  "  Default: on."
+	},
+	{ "xid-teach-hop2hop", doxidteach, 0, 1,
+	  "ax25 xid-teach-hop2hop [on|off]\n"
+	  "  Whether a neighbour that asks THROUGH us - and so does not know\n"
+	  "  us as a hop2hop nexthop - is told so at once, with our own XID,\n"
+	  "  instead of waiting to be asked itself (doc/AX25-2.2-GAP.md).\n"
+	  "  This is the node's only unsolicited frame; it goes out at\n"
+	  "  digipeat 2 and only to a direct neighbour.  With off we lose\n"
+	  "  the shortcut, not the ability.  Default: on."
 	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
@@ -752,6 +762,32 @@ void *p)
 		Xid_inherit_hop2hop = 1;
 	} else if(!stricmp(argv[1],"off")){
 		Xid_inherit_hop2hop = 0;
+	} else {
+		printf("Valid options: on off\n");
+		return 1;
+	}
+	return 0;
+}
+/* Ob wir einem Nachbarn, der DURCH uns hindurch fragt, unser eigenes XID
+ * schicken - siehe ax25.h und doc/AX25-2.2-GAP.md.  Das ist der einzige
+ * Rahmen, den dieser Knoten ungefragt in die Welt setzt; aus heisst: wir
+ * warten, bis er uns selbst anspricht.  Die Faehigkeit selbst haengt nicht
+ * daran - die Route merkt sich sein Bit aus seinem XID trotzdem. */
+static int
+doxidteach(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("XID re-teach of a neighbour: %s\n",
+		 Xid_teach_hop2hop ? "on" : "off");
+		return 0;
+	}
+	if(!stricmp(argv[1],"on")){
+		Xid_teach_hop2hop = 1;
+	} else if(!stricmp(argv[1],"off")){
+		Xid_teach_hop2hop = 0;
 	} else {
 		printf("Valid options: on off\n");
 		return 1;

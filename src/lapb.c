@@ -530,7 +530,10 @@ xid_hop2hop_note(uint8 *src, struct xid_info *xi)
  *
  * NUR EIN HOP2HOP-KNOTEN LEHRT.  Ein Digi im mode 1 schreibt ohnehin kein
  * XID; schriebe er eines, stuende auf einer Kette A-d1-...-d8 jeder dieser
- * Digis auf und fragte A - ein XID-Schwall, der A nichts sagt.
+ * Digis auf und fragte A - ein XID-Schwall, der A nichts sagt.  Und wer
+ * gar nicht lehren will ("ax25 xid-teach-hop2hop off", ax25cmd.c), laesst
+ * es ganz: es ist unser einziger ungefragter Rahmen.  Teil A oben haengt
+ * nicht daran - die Route merkt sich sein Bit aus seinem XID trotzdem.
  *
  * NUR EIN DIREKTER NACHBAR.  Nur ihn erreicht ein Rahmen ohne Pfad, und nur
  * sein Bit gilt (xid_hop2hop_note prueft das selbst).  Wer selbst hinter
@@ -570,7 +573,8 @@ struct mbuf **bpp)
 	/* Teil A: seine eigene Frage zaehlt wie seine Antwort. */
 	xid_hop2hop_note(src,&xi);
 	/* Teil 2: er kennt uns nicht mehr - wir sagen es ihm. */
-	if(!ax25_hop2hop() || ifp == NULL || ifp->hwaddr == NULL)
+	if(!Xid_teach_hop2hop || !ax25_hop2hop() || ifp == NULL ||
+	   ifp->hwaddr == NULL)
 		return;
 	if(!xi.wamp)
 		return;

@@ -50,6 +50,14 @@ long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
 int Xid_retries = XID_MAXTRIES;         /* unbeantwortete XID-Fragen in Folge */
 long Xid_expire_time = 36L * 60L * 60L; /* 1,5 Tage: so lange gilt eine Antwort */
 int Xid_inherit_hop2hop = 1;    /* Hop2hop-Nexthop vererbt seine Parameter */
+/* OB WIR EINEN NACHBARN BELEHREN, DER DURCH UNS FRAGT.  Tut er das, kennt
+ * er uns nicht als hop2hop, und traegt sein XID unser WAMP-Set, schicken wir
+ * ihm unser eigenes (xid_relay_note, lapb.c).  Abschaltbar, weil es die
+ * einzige Stelle ist, an der WIR ungefragt einen Rahmen in die Welt setzen -
+ * wer das nicht will, verliert nur die Abkuerzung, nicht die Faehigkeit
+ * (doc/AX25-2.2-GAP.md).  Vorgabe: an.
+ */
+int Xid_teach_hop2hop = 1;
 
 /* Ob dieser Knoten als Nexthop den Hop selbst terminiert und bestaetigt.
  * Das ist genau das Store-and-Forward-Digipeaten; Digipeat 1 reicht die
