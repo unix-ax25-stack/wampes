@@ -217,6 +217,9 @@ struct ax_route {
 	 * gar nicht gefragt und dann ohne ihre Grenzen bedient.  Eine
 	 * gemessene Antwort ist eine Auskunft ueber die STATION, und sie
 	 * gilt, bis sie verfaellt (Xid_expire_time) oder die Route umzieht.
+	 * Sie faellt auch, wenn der Nexthop umzieht, ueber den sie vererbt
+	 * wurde: dann gibt es den Weg nicht mehr, auf den sie passt
+	 * (axroute_forget_through).
 	 *
 	 * Die ROHEN PI-Werte, so wie sie auf dem Draht standen: n1rx in
 	 * BITS (PI=6) und window in RAHMEN (PI=8).  Null heisst "er hat
@@ -240,7 +243,9 @@ struct ax_route {
 	 * durch ihn vererbt; dort steht nur das Ergebnis, die Werte in
 	 * peer_*.  Der Punkt-D-Zweig (ax25.c) liest es, um ein fernes Ziel
 	 * hinter ihm nicht unnoetig zu fragen: wir kennen die Strecke zu ihm
-	 * schon.  Ein Wegumzug loescht es wie die peer_*-Werte. */
+	 * schon.  Ein Wegumzug loescht es wie die peer_*-Werte - und mit ihm
+	 * fallen die Werte, die er den Wegen durch ihn vererbt hat
+	 * (axroute_forget_through). */
 	int hop2hop;
 	/* WANN WIR IHM ZULETZT UNSER EIGENES XID GESCHICKT HABEN, weil er
 	 * durch uns hindurch fragte und damit verriet, dass er uns nicht

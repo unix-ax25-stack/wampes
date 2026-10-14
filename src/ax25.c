@@ -1894,6 +1894,44 @@ int create)
 	return rp;
 }
 
+/* WAS EIN HOP2HOP-NEXTHOP DEN WEGEN DURCH IHN VERERBT HAT, GEHT MIT IHM.
+ *
+ * Geerbt wird nur von einem DIREKTEN Nexthop (xid_hop2hop_note, lapb.c).
+ * Zieht seine Route um oder verschwindet sie, dann ist das Gelernte eine
+ * Aussage ueber einen Weg, den es nicht mehr gibt - und es wird auch nie
+ * wieder erneuert, weil der Vermerk nur von einem direkten Nexthop kommt.
+ * Ohne das hier behielte ein Ziel hinter ihm bis Xid_expire_time (Vorgabe
+ * 1,5 Tage) ein "nicht fragen", das niemand mehr bestaetigt (Thomas,
+ * 2026-10-14, zu doc/AX25-2.2-GAP.md "Three conditions keep it narrow").
+ *
+ * Geraeumt wird nur, was die Erbschaft geschrieben hat: der xid-Vermerk und
+ * die Peer-Werte.  eax25 und xid_frmr bleiben - die stammen aus eigenen
+ * Messungen, ein Hop2hop-Nexthop schreibt sie nicht.
+ */
+static void
+axroute_forget_through(
+struct ax_route *rp)
+{
+	struct ax_route *q;
+	int i;
+
+	if(rp == NULL || !rp->hop2hop)
+		return;
+	for(i = 0; i < AXROUTESIZE; i++)
+		for(q = Ax_routes[i]; q != NULL; q = q->next){
+			if(q->digi != rp)
+				continue;
+			q->xid = AXR_XID_UNKNOWN;
+			q->xid_time = 0;
+			q->xid_tries = 0;
+			q->peer_n1rx = 0;
+			q->peer_window = 0;
+			q->peer_srej = 0;
+			q->peer_segment = 0;
+			q->peer_xid_time = 0;
+		}
+}
+
 void
 axroute_add(
 struct iface *iface,
@@ -2021,6 +2059,11 @@ int perm)
 				rp->peer_srej = 0;
 				rp->peer_segment = 0;
 				rp->peer_xid_time = 0;
+				/* Und die Wege DURCH ihn: was er ihnen
+				 * vererbt hat, gilt fuer den alten Weg.  Vor
+				 * dem Loeschen des Bits, das ist die Bedingung
+				 * der Erbschaft. */
+				axroute_forget_through(rp);
 				rp->hop2hop = 0;
 				rp->teach_time = 0;
 				rp->teach_tries = 0;
@@ -2106,6 +2149,11 @@ struct ax_route *instead)
 {
 	struct ax_route *q;
 	int i;
+
+	/* Der Knoten verschwindet - was er den Wegen durch ihn vererbt hat,
+	 * verschwindet mit ihm (axroute_forget_through).  Danach erst die
+	 * Zeiger auf den naechsten Sprung umbiegen. */
+	axroute_forget_through(rp);
 
 	for(i = 0; i < AXROUTESIZE; i++)
 		for(q = Ax_routes[i]; q; q = q->next)
