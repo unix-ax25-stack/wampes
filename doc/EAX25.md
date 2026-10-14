@@ -441,13 +441,17 @@ the first such extension; the other seven bits are clear and waiting.
 
 The FI stays the single `0x82` at the head of the information field; the
 subfield follows the `0x80` group, because subfields ascend by GI, and costs
-twelve octets.  Bit 0, **hop2hop-ack**, is a statement about this station as
-a **nexthop**: we terminate the hop and acknowledge it ourselves, so a
-station that reads it may put its question to us instead of to the station
-behind us.  That is the bit's whole content - what a node *does* with the
-answer belongs to the AX.25 2.2 relay and is written down in
-`doc/AX25-2.2-GAP.md`, not here.  A clear bit says "unknown", never
-"cannot", and nothing is inherited from an unknown.
+twelve octets.  It is **always there**: the set identifier is itself the
+statement that this station speaks the WAMP agreement, and an absent subfield
+cannot make it - it can only say "does not speak it", which is not the same
+as "speaks it and is not doing it now".  Bit 0, **hop2hop-ack**, is then a
+statement about this station as a **nexthop**: we terminate the hop and
+acknowledge it ourselves, so a station that reads it may put its question to
+us instead of to the station behind us.  Set and clear are both answers -
+`1` is "we do it", `0` is "we speak the agreement and are not doing it" - and
+what a node *does* with either belongs to the AX.25 2.2 relay and is written
+down in `doc/AX25-2.2-GAP.md`, not here.  Nothing is inherited from a `0`,
+and nothing is inherited from a station that sends no subfield at all.
 
 The extension is harmless because the standard says it is.  Section 4.3.3.7:
 a parameter field with an unrecognized PI "is ignored", and the fields of

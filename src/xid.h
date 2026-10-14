@@ -157,15 +157,21 @@ void xid_parse(struct mbuf **bpp,struct xid_info *xi);
  * that announces modulo 128 names the window it would run on such a link
  * (ax25_maxframe()), so an "eax25 accept" port does not put maxframe
  * beside its modulo-128 bit.  kRx follows the same bit, for our buffering
- * does not shrink with the peer.  An answer in a peer's name
- * (xid_leg_answer) passes that peer's own bit, not ours.  srej tells
+ * does not shrink with the peer.  Every value here describes the ARM the
+ * frame leaves by, the port that puts it on the wire: an answer a relay
+ * writes in a peer's name (xid_leg_answer) therefore takes its numbers from
+ * OUR port towards the caller, not from the station behind us.  srej tells
  * whether to offer SREJ.
  *
- * hop2hop appends the private subfield (GI=0xF0, doc/EAX25.md) saying that
- * THIS station, as a nexthop, terminates the hop and acknowledges it.  It
- * is a statement about the station that puts the frame on the wire, so it
- * is set from the node's own s&f-digipeat capability (Digipeat == 2) and
- * never from what a peer said.
+ * The private subfield (GI=0xF0, doc/EAX25.md) is ALWAYS written: its set
+ * identifier says this station speaks the WAMP agreement, and an absent
+ * subfield cannot - it can only say "does not speak it".  Inside it,
+ * hop2hop is bit 0 of the capability bitmap and says that THIS station, as
+ * a nexthop, terminates the hop and acknowledges it.  It too is a statement
+ * about the station that puts the frame on the wire, taken from the node's
+ * own s&f-digipeat capability (Digipeat == 2) and never from what a peer
+ * said; a clear bit is "speaks it, does not do it now", so the capability
+ * value is 0 then, not absent.
  */
 void xid_our_info(struct iface *ifp,int mod128,int srej,int hop2hop,
 	struct mbuf **bpp);

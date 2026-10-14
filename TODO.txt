@@ -10685,15 +10685,39 @@ ZU SCHRITT 3 (die Routendatei) - ABGEARBEITET UND DURCHGEPRUEFT (2026-09-26)
   doc/AX25-2.2-GAP.md:117-125, der Wunschzettel, auf den das
   hinauslaeuft.
 
-  EINE INVARIANTE, und es ist derselbe Fallstrick wie der SREJ-Fehler
-  von weiter oben:  das Bit darf NIE in einer Antwort stehen, die ein
-  Digipeat in Cs Namen schreibt.  Diese Antwort beschreibt den
-  Ziel-Digi;  ein darin gesetztes Bit wuerde A belehren, DAS ZIEL sei
-  hop2hop - eine Behauptung ueber einen Dritten.  Das Bit gehoert
-  ausschliesslich in die Antwort, die eine Station fuer sich selbst gibt.
-  Und Schweigen bleibt unbekannt, nie hop2hop - sonst wird aus einem
-  ausbleibenden Frame eine Behauptung.  Auf MODUS 1 bleibt es verboten,
-  wie oben.
+  EINE INVARIANTE - aber nicht die, die hier zuerst stand (Korrektur
+  Thomas, 2026-10-14):  das Bit beschreibt den ARM, auf dem es laeuft,
+  nicht das ferne Ziel.  Die Antwort, die ein Relais in Cs Namen
+  schreibt, geht ueber den Port zu A hinaus und traegt deshalb DIE WERTE
+  DIESES PORTS:  unser paclen, unser k, unser Modulo-Bit - und UNSER
+  hop2hop-Bit, gesetzt genau dann, wenn WIR auf diesem Arm hop2hop
+  ankundigen, sonst nicht.  Die Werte des Beins zu C (paclen, N1, k)
+  und auch Cs hop2hop-Faehigkeit gehen NICHT ein;  die gehoeren an Cs
+  Route und an die Sitzung auf dem Port zu C.
+
+  DAS WAMP-SET SELBST STEHT IMMER IM XID (Thomas, 2026-10-14).  Ein XID
+  hat Subfelder, aufsteigend nach GI; nach dem 0x80-Block folgt unser
+  privates GI=0xF0, darin PI=0 = Satzname "WAMP" und PI=1 = eine
+  1-Byte-Faehigkeits-Bitmap, deren Bit 0 hop2hop ist.  Das Set sagt
+  "diese Station spricht die WAMP-Vereinbarung" - das kann nur das
+  Vorhandensein des Subfelds sagen, nicht ein fehlendes.  Erst das Bit
+  sagt, ob hop2hop gerade laeuft:  1 = terminiert und bestaetigt den Hop
+  selbst (Digipeat 2), 0 = spricht die Vereinbarung, laesst sie aber aus.
+  Deshalb ist ein klares Bit eine AUSKUNFT ("kennen es, tun es jetzt
+  nicht"), keine Unbekannte - vorher schrieb xid_our_info() das Subfeld
+  nur bei gesetztem Bit, und ein klares Bit hiess dann "kein WAMP".
+  Wer ein FREMDES XID wiederholt (Digipeat 1), laesst dessen Set
+  unveraendert; nur Fragen/Antworten, die WIR schreiben, tragen unseres.
+
+  Die zuerst notierte Fassung ("das Bit darf NIE in einer Antwort
+  stehen, die ein Digipeat in Cs Namen schreibt") verwechselte zwei
+  Dinge:  den QUELLRUF, der C bleibt (Quellentreue), und die PARAMETER,
+  die dem Arm gehoeren.  Ein Bit in dieser Antwort behauptet nichts
+  ueber C - es ist unsere eigene Auskunft an A ueber unsere Strecke zu
+  A.  Was nie geschehen darf, ist Cs hop2hop-Faehigkeit (oder die eines
+  Ziels hinter ihm) in die Antwort an A zu uebernehmen.  Und Schweigen
+  bleibt unbekannt, nie hop2hop - sonst wird aus einem ausbleibenden
+  Frame eine Behauptung.  Auf MODUS 1 bleibt es verboten, wie oben.
 
   WAS ES NICHT LOEST, ehrlich gesagt:  der erste Versuch benutzt die
   Werte des abschliessenden Digis, das Bein endet aber physikalisch beim

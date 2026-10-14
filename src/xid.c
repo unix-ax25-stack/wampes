@@ -246,12 +246,20 @@ struct mbuf **bpp)
 	buf[2] = (uint8)((n - 4) >> 8);
 	buf[3] = (uint8)((n - 4) & 0xff);
 
-	/* Our own extension, when this station can stand behind it (see
-	 * xid.h and doc/EAX25.md).  The private subfield follows the 0x80
-	 * group because data link layer subfields ascend by GI.  Its GL
-	 * counts its parameter field alone, FI stays the one at the head.
+	/* UNSER SUBFELD STEHT IMMER DA.  Das Set ist die Auskunft "diese
+	 * Station spricht die WAMP-Vereinbarung"; sein blosses Vorhandensein
+	 * ist die Aussage, die ein fehlendes Subfeld nicht machen kann - es
+	 * hiesse "kann es nicht", und das ist etwas anderes als "kann es und
+	 * laesst es gerade aus".  Erst danach sagt die Faehigkeits-Bitmap,
+	 * was gerade an ist; hop2hop ist ihr Bit 0, gesetzt genau dann, wenn
+	 * diese Station den Hop selbst terminiert und bestaetigt (Digipeat 2,
+	 * siehe xid.h und doc/EAX25.md).  Ein klares Bit ist damit eine
+	 * Auskunft ("wir kennen die Vereinbarung, tun es jetzt nicht"), keine
+	 * Unbekannte.  Das private Subfeld folgt dem 0x80-Block, weil
+	 * Subfelder nach GI aufsteigen; sein GL zaehlt nur sein eigenes Feld,
+	 * das FI bleibt das eine am Kopf.
 	 */
-	if(hop2hop){
+	{
 		int i;
 
 		buf[n++] = XID_GI_PRIVATE;
@@ -263,7 +271,7 @@ struct mbuf **bpp)
 			buf[n++] = XID_PRIV_SET[i];
 		buf[n++] = XID_PI_PRIV_CAPS;
 		buf[n++] = 1;
-		buf[n++] = XID_PRIV_CAP_HOP2HOP;
+		buf[n++] = hop2hop ? XID_PRIV_CAP_HOP2HOP : 0;
 	}
 
 	pushdown(bpp,buf,(uint)n);
