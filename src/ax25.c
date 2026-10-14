@@ -49,6 +49,7 @@ int Ax25_v2_default = AX25V2_ACCEPT;    /* Factory-Default fuer ax25-v2.2 */
 long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
 int Xid_retries = XID_MAXTRIES;         /* unbeantwortete XID-Fragen in Folge */
 long Xid_expire_time = 36L * 60L * 60L; /* 1,5 Tage: so lange gilt eine Antwort */
+int Xid_inherit_hop2hop = 1;    /* Hop2hop-Nexthop vererbt seine Parameter */
 
 /* Ob dieser Knoten als Nexthop den Hop selbst terminiert und bestaetigt.
  * Das ist genau das Store-and-Forward-Digipeaten; Digipeat 1 reicht die
@@ -1346,6 +1347,29 @@ struct mbuf **bpp
 					prp = ax_routeptr(probe_to,0);
 					if(prp != NULL && !xid_may_probe(prp))
 						probe_c = NO;
+					/* DER NAECHSTE SPRUNG KANN HOP2HOP.  Dann ist
+					 * die Frage nach einem Ziel HINTER ihm
+					 * unnoetig: was unsere Strecke zu ihm angeht,
+					 * hat er uns mit seinem eigenen XID schon
+					 * gesagt.  Wir fragen also nicht weiter - und
+					 * weil wir ueber das ferne Ziel dann nichts
+					 * wissen, schweigen wir auch: kein Rahmen in
+					 * seinem Namen (xid_leg_done).  Das Bit wird
+					 * nicht auf die Wege durch ihn vererbt, es
+					 * steht nur an SEINER Route (ax25.h). */
+					if(prp == NULL){
+						struct ax_route *nprp;
+						uint8 next_hop[AXALEN];
+
+						if(arrived.nextdigi < arrived.ndigis)
+							addrcp(next_hop,
+							       arrived.digis[arrived.nextdigi]);
+						else
+							addrcp(next_hop, arrived.dest);
+						nprp = ax_routeptr(next_hop,0);
+						if(nprp != NULL && nprp->hop2hop)
+							probe_c = NO;
+					}
 					/* NOCH EINE FRAGE IN DER LUFT?  Dann
 					 * wartet schon jemand auf C - der
 					 * Warter, den wir gleich anlegen, steckt
@@ -1975,6 +1999,7 @@ int perm)
 				rp->peer_srej = 0;
 				rp->peer_segment = 0;
 				rp->peer_xid_time = 0;
+				rp->hop2hop = 0;
 			}
 		}
 		rp->time = secclock();

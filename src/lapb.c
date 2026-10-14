@@ -450,6 +450,55 @@ srej_ok(struct ax25_cb *axp)
 	return axp->flags.peer_srej && axp->proto == V2_2;
 }
 
+/* WAS EIN HOP2HOP-NEXTHOP UNS SAGT, GILT FUER ALLE WEGE DURCH IHN.
+ *
+ * Sagt der Absender eines XID - Antwort oder eigene Frage, beides ist
+ * dieselbe Auskunft ueber ihn - dass er den Hop selbst terminiert und
+ * bestaetigt (hop2hop-ack, doc/EAX25.md), und ist er unser DIREKTER
+ * Nexthop, dann steht unsere Strecke zu ihm fest.  Jeder Weg, den wir DURCH
+ * ihn halten, laeuft ueber genau diese Strecke; sein N1, sein k, sein SREJ
+ * und sein Segmenter gelten darum auch fuer sie.  Ein Aufbau dorthin braucht
+ * dann nichts mehr auszuhandeln: xid == YES haelt xid_may_probe() still und
+ * est_link() wendet die gemerkten Werte wieder an.
+ *
+ * NUR EIN DIREKTER NEXTHOP.  Geht seine eigene Route ueber einen weiteren
+ * Digi, ist der Absender fuer uns nicht der erste Sprung, und das Bit ist die
+ * Aussage eines Dritten - es wird nichts vererbt.
+ *
+ * DAS BIT SELBST WIRD NICHT VERERBT.  Es beschreibt IHN, nicht das ferne
+ * Ziel; an dessen Route steht nur das Ergebnis.  Sonst waere ein zweiter
+ * Relais-Sprung selbst "hop2hop", und die Frage nach einem dritten Ziel
+ * unterbliebe, ohne dass jemand bestaetigt hat, dass er es terminiert.
+ */
+static void
+xid_hop2hop_note(uint8 *src, struct xid_info *xi)
+{
+	struct ax_route *rp, *q;
+	int i;
+
+	if(!xi->hop2hop)
+		return;
+	rp = ax_routeptr(src,0);
+	if(rp == NULL || rp->digi != NULL)
+		return;                 /* kein direkter Nexthop */
+	rp->hop2hop = 1;            /* fuer den Punkt-D-Zweig in ax25.c */
+	if(!Xid_inherit_hop2hop)
+		return;
+	for(i = 0; i < AXROUTESIZE; i++)
+		for(q = Ax_routes[i]; q != NULL; q = q->next){
+			if(q->digi != rp)
+				continue;
+			q->xid = AXR_XID_YES;
+			q->xid_time = secclock();
+			q->xid_tries = 0;
+			q->peer_n1rx = xi->n1rx;
+			q->peer_window = xi->window;
+			q->peer_srej = xi->srej;
+			q->peer_segment = xi->segment;
+			q->peer_xid_time = secclock();
+		}
+}
+
 /* Process incoming frames */
 int
 lapb_input(
@@ -731,6 +780,11 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 		struct ax_route *rp;
 
 		xid_parse(bpp,&xi);
+		/* Hat er den Hop selbst bestaetigt (hop2hop-ack), dann
+		 * gilt seine Faehigkeit fuer alle Wege DURCH ihn - noch
+		 * ehe wir seine Antwort auswerten, denn beides ist
+		 * dieselbe Auskunft.  Siehe xid_hop2hop_note(). */
+		xid_hop2hop_note(hdr->source,&xi);
 		/* NUR EINE ANTWORT SCHLOSSS DEN AUSTAUSCH.  Wer zuerst gefragt
 		 * hat, ist nebensache - gefragt haben kann er nur, wenn er
 		 * selbst eine Antwort bekommen hat, und dann ist beides

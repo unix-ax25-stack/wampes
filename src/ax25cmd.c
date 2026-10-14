@@ -39,7 +39,7 @@ static int doax25v2(int argc,char *argv[],void *p);
 static int doxidprobe(int argc,char *argv[],void *p);
 static int doxidretries(int argc,char *argv[],void *p);
 static int doxidexpire(int argc,char *argv[],void *p);
-
+static int doxidinherit(int argc,char *argv[],void *p);
 static int domaxframe(int argc,char *argv[],void *p);
 static int doemaxframe(int argc,char *argv[],void *p);
 static int domycall(int argc,char *argv[],void *p);
@@ -137,6 +137,15 @@ static struct cmds Axcmds[] = {
 	  "  its N1, k, SREJ and segmenter - before we negotiate afresh.\n"
 	  "  A measured capability can change, but not every minute.\n"
 	  "  Default: 2160 minutes (1.5 days)."
+	},
+	{ "xid-inherit-hop2hop", doxidinherit, 0, 1,
+	  "ax25 xid-inherit-hop2hop [on|off]\n"
+	  "  Whether a nexthop that acks the hop in its XID (the hop2hop\n"
+	  "  bit, doc/EAX25.md) hands its channel parameters down to every\n"
+	  "  route we hold THROUGH it: a connect down such a path then\n"
+	  "  negotiates nothing (doc/AX25-2.2-GAP.md).  Only the\n"
+	  "  capabilities are inherited, never the bit itself.\n"
+	  "  Default: on."
 	},
 	{ "flush",        doaxflush,      0, 0, NULL },
 	{ "heard",        doaxheard,      0, 0, NULL },
@@ -721,6 +730,31 @@ void *p)
 			return 1;
 		}
 		Xid_expire_time = minutes * 60;
+	}
+	return 0;
+}
+/* Ob ein hop2hop-Nexthop seine Parameter an die Wege durch ihn vererbt -
+ * siehe ax25.h und doc/AX25-2.2-GAP.md.  Nur ein Schalter: eine Station
+ * verlaesst sich entweder darauf, dass der Nexthop den Hop terminiert,
+ * oder sie handelt jeden Fernweg selbst aus (wie vor dieser Erweiterung). */
+static int
+doxidinherit(
+int argc,
+char *argv[],
+void *p)
+{
+	if(argc < 2){
+		printf("XID hop2hop inheritance: %s\n",
+		 Xid_inherit_hop2hop ? "on" : "off");
+		return 0;
+	}
+	if(!stricmp(argv[1],"on")){
+		Xid_inherit_hop2hop = 1;
+	} else if(!stricmp(argv[1],"off")){
+		Xid_inherit_hop2hop = 0;
+	} else {
+		printf("Valid options: on off\n");
+		return 1;
 	}
 	return 0;
 }

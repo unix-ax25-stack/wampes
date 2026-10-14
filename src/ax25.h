@@ -58,6 +58,14 @@ extern int Xid_retries;
  * Bis dahin wird der Peer nicht wieder gefragt, danach neu ausgehandelt
  * (1,5 Tage als Vorgabe, Thomas). */
 extern long Xid_expire_time;
+/* OB EIN HOP2HOP-NEXTHOP SEINE PARAMETER VERERBT.  Sagt ein Nexthop in
+ * seinem XID, dass er den Hop selbst terminiert und bestaetigt (das
+ * hop2hop-ack-Bit, doc/EAX25.md), dann gilt sein N1/k/SREJ/Segmenter fuer
+ * JEDEN Weg, den wir DURCH ihn halten - denn unsere Strecke zu ihm ist
+ * immer dieselbe.  Ein Aufbau ueber so einen Weg handelt dann nichts mehr
+ * aus (doc/AX25-2.2-GAP.md).  Nur die Faehigkeiten werden vererbt, nicht
+ * das Bit selbst.  Vorgabe: an. */
+extern int Xid_inherit_hop2hop;
 extern int Ax25mbox;
 extern int Axigntos;
 
@@ -219,6 +227,16 @@ struct ax_route {
 	int peer_srej;                  /* PI=3: er kann SREJ */
 	int peer_segment;               /* PI=3: er kann den Segmenter */
 	long peer_xid_time;             /* wann gelernt, secclock() */
+	/* OB DIESER NEXTHOP DEN HOP SELBST TERMINIERT UND BESTAETIGT
+	 * (hop2hop-ack, doc/EAX25.md).  Ein XID von ihm mit dem Bit, und wir
+	 * wissen: was unsere Strecke zu IHM angeht, hat er uns damit gesagt.
+	 *
+	 * Es steht fuer SEINE Route - die Faehigkeit wird NICHT auf Wege
+	 * durch ihn vererbt; dort steht nur das Ergebnis, die Werte in
+	 * peer_*.  Der Punkt-D-Zweig (ax25.c) liest es, um ein fernes Ziel
+	 * hinter ihm nicht unnoetig zu fragen: wir kennen die Strecke zu ihm
+	 * schon.  Ein Wegumzug loescht es wie die peer_*-Werte. */
+	int hop2hop;
 	/* WHERE THIS STATION SITS ON AN ETHERNET, when the port is a BPQether
 	 * one.  Learned from what arrives, so that we can answer to the one
 	 * machine instead of shouting at the whole segment.
