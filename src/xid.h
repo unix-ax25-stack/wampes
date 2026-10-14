@@ -41,6 +41,12 @@
  * PI=10 retries, unknown PIs) is skipped: per 4.3.3.7 an unrecognized
  * parameter is ignored and an absent one retains its current or default
  * value.
+ *
+ * A second GROUP IDENTIFIER, 0xF0, carries our own extension (the private
+ * parameter negotiation subfield; doc/EAX25.md).  Its PI=0 names the set
+ * ("WAMP") and PI=1 bit 0 says hop2hop-ack: this station, as a nexthop,
+ * terminates the hop and acknowledges it.  Subfields beyond the first are
+ * walked by GI order; one we do not know is stepped over by its GL.
  */
 
 #ifndef _XID_H
@@ -52,6 +58,31 @@
 /* The general-purpose XID information field (4.3.3.7). */
 #define XID_FI_GENERAL  0x82    /* Format Identifier */
 #define XID_GI_PARAMS   0x80    /* Group Identifier, parameter negotiation */
+
+/* The private parameter negotiation subfield (ISO/IEC 8885; ISO/IEC 13239
+ * calls it the user-defined parameters subfield, ITU-T V.42 gives the same
+ * 0xF0 to its own).  It is the place the standards leave to an agreement
+ * between the stations, which is where our extension lives; "PI=0 is the
+ * set identifier" is V.42's convention and it is what tells the two sides
+ * they mean the same thing (doc/EAX25.md, "A parameter of our own").
+ */
+#define XID_GI_PRIVATE   0xF0   /* Group Identifier, private parameters */
+#define XID_PI_PRIV_SETID 0     /* our parameter set identifier (ASCII) */
+#define XID_PI_PRIV_CAPS  1     /* our capability bits */
+#define XID_PRIV_SET     "WAMP" /* the set: the umbrella for our extensions */
+#define XID_PRIV_SETLEN  (sizeof(XID_PRIV_SET) - 1)
+/* The PV of PI=0, derived from XID_PRIV_SET so the two cannot drift apart:
+ * the encoder writes the string, the parser compares the number. */
+#define XID_PRIV_SETVAL  ((uint32)XID_PRIV_SET[0] << 24 | \
+			  (uint32)XID_PRIV_SET[1] << 16 | \
+			  (uint32)XID_PRIV_SET[2] << 8  | \
+			  (uint32)XID_PRIV_SET[3])
+
+/* Bits of the private capability value (PI=1).  One bit per extension, in
+ * order; nothing grows by inventing a new PI each time.
+ */
+#define XID_PRIV_CAP_HOP2HOP 0x01   /* bit 0: we acknowledge hop by hop */
+
 
 /* Parameter identifiers, Figure 4.5.  Die Nummern stehen so in der Norm
  * (AX.25 2.2 Rev 4, Fig. 4.5, Seite 32): 5 ist die I-Field-Laenge Tx, 6 die
@@ -101,6 +132,7 @@ struct xid_info {
 	int mod128;             /* PI=3: he offers modulo 128 */
 	int mod8;               /* PI=3: he offers modulo 8 */
 	int segment;            /* PI=3: he offers segmenter/reassembler */
+	int hop2hop;            /* GI=F0 PI=1: he acks hop by hop (as neapthop) */
 	unsigned n1rx;          /* PI=6: I-field length he receives (bits) */
 	unsigned window;        /* PI=8: frames k he will buffer */
 };
@@ -128,7 +160,14 @@ void xid_parse(struct mbuf **bpp,struct xid_info *xi);
  * does not shrink with the peer.  An answer in a peer's name
  * (xid_leg_answer) passes that peer's own bit, not ours.  srej tells
  * whether to offer SREJ.
+ *
+ * hop2hop appends the private subfield (GI=0xF0, doc/EAX25.md) saying that
+ * THIS station, as a nexthop, terminates the hop and acknowledges it.  It
+ * is a statement about the station that puts the frame on the wire, so it
+ * is set from the node's own s&f-digipeat capability (Digipeat == 2) and
+ * never from what a peer said.
  */
-void xid_our_info(struct iface *ifp,int mod128,int srej,struct mbuf **bpp);
+void xid_our_info(struct iface *ifp,int mod128,int srej,int hop2hop,
+	struct mbuf **bpp);
 
 #endif  /* _XID_H */

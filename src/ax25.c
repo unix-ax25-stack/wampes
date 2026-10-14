@@ -50,6 +50,17 @@ long Xid_probe_time = 60L * 60L;        /* eine Stunde, in Sekunden */
 int Xid_retries = XID_MAXTRIES;         /* unbeantwortete XID-Fragen in Folge */
 long Xid_expire_time = 36L * 60L * 60L; /* 1,5 Tage: so lange gilt eine Antwort */
 
+/* Ob dieser Knoten als Nexthop den Hop selbst terminiert und bestaetigt.
+ * Das ist genau das Store-and-Forward-Digipeaten; Digipeat 1 reicht die
+ * Bytes unveraendert durch und Digipeat 0 repeater gar nicht, keiner von
+ * beiden sagt im XID "hop2hop-ack" (doc/EAX25.md).
+ */
+int
+ax25_hop2hop(void)
+{
+	return Digipeat == 2;
+}
+
 /* Weiter unten, bei axroute() - dort steht auch, warum es NICHT axroute()
  * benutzt.
  */
@@ -1453,7 +1464,7 @@ struct mbuf **bpp
 									paxp->iface = ifp;
 									xid_our_info(ifp,
 										     (ifp->eax25 != EAX25_OFF) ? 1 : 0,
-										     YES, &pbp);
+										     YES, ax25_hop2hop(), &pbp);
 									sendframe(paxp, LAPB_COMMAND,
 										  XID | PF, -1, &pbp);
 									/* Gefragt - also darf der

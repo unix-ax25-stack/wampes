@@ -41,6 +41,10 @@ extern uint8 Ax25multi[][AXALEN];
 extern int Digipeat;
 extern int Digi_keep_path;
 extern int Digiout;
+/* Ob dieser Knoten als Nexthop den Hop selbst terminiert und bestaetigt -
+ * die Faehigkeit, die das hop2hop-ack-Bit im XID ankuendigt (doc/EAX25.md).
+ * Das ist genau Store-and-Forward-Digipeaten (Digipeat == 2). */
+int ax25_hop2hop(void);
 extern int Ax25_v2_default;         /* globaler Factory-Default fuer ax25-v2.2 */
 extern long Xid_probe_time;         /* Frist vor erneutem XID-Probe, Sekunden */
 /* WIE OFT eine unbeantwortete XID-Frage in Folge wiederholt wird, ehe

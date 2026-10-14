@@ -16,6 +16,84 @@ static char *decode_type(uint type);
 static void dump_l3(FILE *fp,int pid,struct mbuf **bpp,int check,
 	const char *s_ext,int partial);
 
+/* The PI/PL/PV list of ONE subfield.  `gi` says how the parameter numbers
+ * are to be read: 0x80 is the standard parameter negotiation, 0xF0 our own
+ * (the parameter set "WAMP", doc/EAX25.md).  More than one subfield is the
+ * normal case - each further one in its own GI/GL bracket.
+ */
+static void
+xid_dump_params(FILE *fp,int gi,uint gl,struct mbuf **bpp)
+{
+	uint pv;
+	int pi,pl,len,b;
+
+	while(gl >= 2){
+		if((pi = PULLCHAR(bpp)) == -1 || (pl = PULLCHAR(bpp)) == -1)
+			break;
+		gl -= 2;
+		if(pl > gl)
+			break;	/* das Feld ist laut Draht nicht ok */
+		gl -= pl;
+		len = pl;
+		pv = 0;
+		while(pl-- > 0){
+			if((b = PULLCHAR(bpp)) == -1)
+				break;
+			pv = (pv << 8) | b;
+		}
+		if(gi == XID_GI_PRIVATE){
+			switch(pi){
+			case XID_PI_PRIV_SETID:
+				fprintf(fp," SET=0x%x",(unsigned)pv);
+				break;
+			case XID_PI_PRIV_CAPS:
+				fprintf(fp," CAPS=0x%x%s",(unsigned)pv,
+					(pv & XID_PRIV_CAP_HOP2HOP) ?
+					 " hop2hop" : "");
+				break;
+			default:
+				fprintf(fp," PI=%u PL=%u PV=0x%x",
+					pi,len,(unsigned)pv);
+				break;
+			}
+			continue;
+		}
+		switch(pi){
+		case XID_PI_OPTIONS:
+			fprintf(fp," OPT=0x%x%s%s%s",
+				(unsigned)pv,
+				(pv & XID_OPT_SREJ) ? " SREJ" :
+				(pv & XID_OPT_REJ) ? " REJ" : "",
+				(pv & XID_OPT_MOD128) ? " mod128" :
+				(pv & XID_OPT_MOD8) ? " mod8" : "",
+				(pv & XID_OPT_SEGMENT) ? " SEG" : "");
+			break;
+		case XID_PI_WINDOWRX:
+			fprintf(fp," kRx=%u",(unsigned)pv);
+			break;
+		case XID_PI_IFIELDRX:
+			fprintf(fp," N1rx=%u",(unsigned)pv);
+			break;
+		case XID_PI_IFIELDTX:
+			fprintf(fp," N1tx=%u",(unsigned)pv);
+			break;
+		case XID_PI_WINDOWTX:
+			fprintf(fp," kTx=%u",(unsigned)pv);
+			break;
+		case XID_PI_ACKTIME:
+			fprintf(fp," T1=%ums",(unsigned)pv);
+			break;
+		case XID_PI_RETRIES:
+			fprintf(fp," Retries=%u",(unsigned)pv);
+			break;
+		default:
+			fprintf(fp," PI=%u PL=%u PV=0x%x",
+				pi,pl,pv);
+			break;
+		}
+	}
+}
+
 /* Dump an AX.25 packet header */
 void
 ax25_dump(
@@ -131,8 +209,8 @@ int check       /* Not used */
 			fprintf(fp," Invalid seq number");
 		fputs(s_ext, fp);
 	} else if(type == XID && pullup(bpp,xidf,4) == 4){
-		uint gl, pv;
-		int pi,pl,b;
+		uint gl;
+		int gi,b;
 		/* XID-Negotiationsfelder nach ISO 8885 / AX.25 2.2 §2.5.7.1:
 		 * auf FI und GI folgt GL (die Gesamtlaenge der nachfolgenden
 		 * Parameterliste, two octets big-endian), darauf ein oder
@@ -143,59 +221,24 @@ int check       /* Not used */
 		 * einmal das Wort XID - die Luecke war im wampes genauso.
 		 */
 		gl = (xidf[2] << 8) | xidf[3];
-		if(eax25 ? (xidf[0] == XID_FI_GENERAL) : 1)
-			fprintf(fp," FI=0x%x",xidf[0]);
-		else
-			fprintf(fp," FI=0x%x",xidf[0]);
-		if(xidf[1] == XID_GI_PARAMS)
-			fprintf(fp," GI=0x%x",xidf[1]);
-		fprintf(fp," GL=%u",gl);
-		while(gl >= 2){
-			if((pi = PULLCHAR(bpp)) == -1 || (pl = PULLCHAR(bpp)) == -1)
+		fprintf(fp," FI=0x%x",xidf[0]);
+		fprintf(fp," GI=0x%x GL=%u",xidf[1],gl);
+		xid_dump_params(fp,xidf[1],gl,bpp);
+		/* Weitere Subfelder stehen in eigenen GI/GL-Klammern, nach GI
+		 * aufsteigend - unser privates (0xF0) folgt dem 0x80. */
+		for(;;){
+			uint gl2;
+
+			if((gi = PULLCHAR(bpp)) == -1)
 				break;
-			gl -= 2;
-			if(pl > gl)
-				break;	/* das Feld ist laut Draht nicht ok */
-			gl -= pl;
-			pv = 0;
-			while(pl-- > 0){
-				if((b = PULLCHAR(bpp)) == -1)
-					break;
-				pv = (pv << 8) | b;
-			}
-			switch(pi){
-			case XID_PI_OPTIONS:
-				fprintf(fp," OPT=0x%x%s%s%s",
-					(unsigned)pv,
-					(pv & XID_OPT_SREJ) ? " SREJ" :
-					(pv & XID_OPT_REJ) ? " REJ" : "",
-					(pv & XID_OPT_MOD128) ? " mod128" :
-					(pv & XID_OPT_MOD8) ? " mod8" : "",
-					(pv & XID_OPT_SEGMENT) ? " SEG" : "");
+			if((b = PULLCHAR(bpp)) == -1)
 				break;
-			case XID_PI_WINDOWRX:
-				fprintf(fp," kRx=%u",(unsigned)pv);
+			gl2 = (uint)b << 8;
+			if((b = PULLCHAR(bpp)) == -1)
 				break;
-			case XID_PI_IFIELDRX:
-				fprintf(fp," N1rx=%u",(unsigned)pv);
-				break;
-			case XID_PI_IFIELDTX:
-				fprintf(fp," N1tx=%u",(unsigned)pv);
-				break;
-			case XID_PI_WINDOWTX:
-				fprintf(fp," kTx=%u",(unsigned)pv);
-				break;
-			case XID_PI_ACKTIME:
-				fprintf(fp," T1=%ums",(unsigned)pv);
-				break;
-			case XID_PI_RETRIES:
-				fprintf(fp," Retries=%u",(unsigned)pv);
-				break;
-			default:
-				fprintf(fp," PI=%u PL=%u PV=0x%x",
-					pi,pl,pv);
-				break;
-			}
+			gl2 |= b;
+			fprintf(fp," GI=0x%x GL=%u",gi,gl2);
+			xid_dump_params(fp,gi,gl2,bpp);
 		}
 		fputs(s_ext, fp);
 	} else

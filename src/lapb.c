@@ -166,11 +166,12 @@ xid_leg_answer(struct ax25_xid_leg *lp)
 	 * der fruehe Ausstieg oben behebt (Thomas, 2026-10-09).
 	 */
 	if(lp->ans_iface->eax25 == EAX25_OFF)
-		xid_our_info(lp->ans_iface, 0, lp->srej, &tbp);
+		xid_our_info(lp->ans_iface, 0, lp->srej,
+			     ax25_hop2hop(), &tbp);
 	else
 		xid_our_info(lp->ans_iface,
 			     lp->mod128 ? 1 : 0,
-			     lp->srej, &tbp);
+			     lp->srej, ax25_hop2hop(), &tbp);
 	sendframe(axp,LAPB_RESPONSE,XID | PF,-1,&tbp);
 	del_ax25(axp);
 }
@@ -960,7 +961,7 @@ struct mbuf **bpp               /* Rest of frame, starting with ctl */
 			xid_our_info(iface,
 				     (iface == NULL || iface->eax25 == EAX25_OFF)
 					     ? 0 : 1, YES,
-				     &tbp);
+				     ax25_hop2hop(), &tbp);
 			sendframe(axp,LAPB_RESPONSE,XID | (pf ? PF : 0),-1, &tbp);
 		} else if(cmdrsp == LAPB_COMMAND){
 			/* OFF SCHWEIGT, AUCH AUF FRAGEN.  Der Knopf
@@ -2175,7 +2176,7 @@ xid_leg_open(struct ax25_cb *axp)
 	paxp->iface = lp->leg_iface;
 	xid_our_info(lp->leg_iface,
 		     (lp->leg_iface->eax25 != EAX25_OFF) ? 1 : 0,
-		     YES, &pbp);
+		     YES, ax25_hop2hop(), &pbp);
 	/* DASS gefragt wurde, zaehlt hier - wie beim eigenen Aufbau
 	 * (est_link_xid).  xid_leg_timeout() schreibt spaeter nur das
 	 * Urteil; wartete der Zaehler auf dessen Ablauf, fragte ein
@@ -2253,7 +2254,7 @@ est_link_xid(struct ax25_cb *axp)
 	}
 	xid_our_info(axp->iface,
 		     (axp->iface != NULL && axp->iface->eax25 != EAX25_OFF) ? 1 : 0,
-		     YES,&tbp);
+		     YES, ax25_hop2hop(), &tbp);
 	sendframe(axp,LAPB_COMMAND,XID|PF,-1,&tbp);
 	axp->flags.neg_wait = YES;
 	axp->retries = 0;

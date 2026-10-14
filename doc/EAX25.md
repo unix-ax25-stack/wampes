@@ -441,7 +441,7 @@ the first such extension; the other seven bits are clear and waiting.
 
 The FI stays the single `0x82` at the head of the information field; the
 subfield follows the `0x80` group, because subfields ascend by GI, and costs
-eleven octets.  Bit 0, **hop2hop-ack**, is a statement about this station as
+twelve octets.  Bit 0, **hop2hop-ack**, is a statement about this station as
 a **nexthop**: we terminate the hop and acknowledge it ourselves, so a
 station that reads it may put its question to us instead of to the station
 behind us.  That is the bit's whole content - what a node *does* with the

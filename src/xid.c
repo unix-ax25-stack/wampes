@@ -10,9 +10,15 @@
 #include "lapb.h"
 #include "xid.h"
 
-/* Read the PI/PL/PV parameter list and remember what concerns us.
- * The GL is trusted in length but bounded by what the frame actually
+/* Read the subfields' PI/PL/PV parameter lists and remember what concerns
+ * us.  The GL is trusted in length but bounded by what the frame actually
  * holds - pullup() refuses to walk past the data it has.
+ *
+ * The information field is a Format Identifier followed by one or more
+ * GI/GL groups (ISO 8885).  We came for the parameter negotiation
+ * (GI=0x80); our own extension sits in the private subfield (GI=0xF0) that
+ * follows it.  Any other group is stepped over by its GL, which is what
+ * "an unrecognized parameter is ignored" means at this level.
  */
 void
 xid_parse(
@@ -20,65 +26,101 @@ struct mbuf **bpp,
 struct xid_info *xi)
 {
 	uint8 b;
-	uint gl;
-	int left;
+	int set_wamp = 0;       /* the "WAMP" set identifier was seen */
 
 	memset(xi,0,sizeof(*xi));
 	if(pullup(bpp,&b,1) != 1 || b != XID_FI_GENERAL)
 		return;
-	if(pullup(bpp,&b,1) != 1 || b != XID_GI_PARAMS)
-		return;
-	if(pullup(bpp,&b,1) != 1)
-		return;
-	gl = (uint)b << 8;
-	if(pullup(bpp,&b,1) != 1)
-		return;
-	gl |= b;
-	left = (int)gl;
-	while(left > 2){
-		uint8 pi, pl;
-		uint32 pv = 0;
-		int i;
+	for(;;){
+		uint gl;
+		int left, gi;
 
-		if(pullup(bpp,&pi,1) != 1)
+		/* No more subfields is a normal end, not an error. */
+		if(pullup(bpp,&b,1) != 1)
 			return;
-		if(pullup(bpp,&pl,1) != 1)
+		gi = b;
+		if(pullup(bpp,&b,1) != 1)
 			return;
-		left -= 2;
-		if(pl > left)
-			pl = left;
-		for(i = 0;i < pl;i++){
+		gl = (uint)b << 8;
+		if(pullup(bpp,&b,1) != 1)
+			return;
+		gl |= b;
+		left = (int)gl;
+		while(left > 2){
+			uint8 pi, pl;
+			uint32 pv = 0;
+			int i;
+
+			if(pullup(bpp,&pi,1) != 1)
+				return;
+			if(pullup(bpp,&pl,1) != 1)
+				return;
+			left -= 2;
+			if(pl > left)
+				pl = left;
+			for(i = 0;i < pl;i++){
+				if(pullup(bpp,&b,1) != 1)
+					return;
+				pv = (pv << 8) | b;
+			}
+			left -= pl;
+			switch(gi){
+			case XID_GI_PARAMS:
+				switch(pi){
+				case XID_PI_OPTIONS:
+					/* A PI longer than two octets is
+					 * legal (ISO leaves it open); the
+					 * bits that matter to us are within
+					 * the first two.
+					 */
+					if(pl >= 3){
+						xi->srej   = (pv & XID_OPT_SREJ)   != 0;
+						xi->mod128 = (pv & XID_OPT_MOD128) != 0;
+						xi->mod8   = (pv & XID_OPT_MOD8)   != 0;
+						xi->segment = (pv & XID_OPT_SEGMENT) != 0;
+						/* Exactly one of REJ/SREJ must be
+						 * set (Figure 4.5); trust the SREJ
+						 * one.
+						 */
+					}
+					break;
+				case XID_PI_WINDOWRX:
+					xi->window = pv;
+					break;
+				case XID_PI_IFIELDRX:
+					xi->n1rx = pv;
+					break;
+				default:
+					break;
+				}
+				break;
+			case XID_GI_PRIVATE:
+				/* PI=0 names the agreement; only under
+				 * our set do the bits of PI=1 mean what
+				 * we think they mean. */
+				switch(pi){
+				case XID_PI_PRIV_SETID:
+					set_wamp = (pl == XID_PRIV_SETLEN &&
+						    pv == XID_PRIV_SETVAL);
+					break;
+				case XID_PI_PRIV_CAPS:
+					if(set_wamp && pl >= 1 &&
+					   (pv & XID_PRIV_CAP_HOP2HOP))
+						xi->hop2hop = 1;
+					break;
+				default:
+					break;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		/* A group ends at its GL; a PI+PL the loop left behind is
+		 * stepped over so the next GI is read where it really is. */
+		while(left-- > 0){
 			if(pullup(bpp,&b,1) != 1)
 				return;
-			pv = (pv << 8) | b;
-		}
-		left -= pl;
-		switch(pi){
-		case XID_PI_OPTIONS:
-			/* A PI longer than two octets is legal (ISO
-			 * leaves it open); the bits that matter to us are
-			 * within the first two.
-			 */
-			if(pl >= 3){
-				uint32 o = pv;
-
-				xi->srej   = (o & XID_OPT_SREJ)   != 0;
-				xi->mod128 = (o & XID_OPT_MOD128) != 0;
-				xi->mod8   = (o & XID_OPT_MOD8)   != 0;
-				xi->segment = (o & XID_OPT_SEGMENT) != 0;
-				/* Exactly one of REJ/SREJ must be set
-				 * (Figure 4.5); trust the SREJ one.
-				 */
-			}
-			break;
-		case XID_PI_WINDOWRX:
-			xi->window = pv;
-			break;
-		case XID_PI_IFIELDRX:
-			xi->n1rx = pv;
-			break;
-		default:
-			break;
 		}
 	}
 }
@@ -92,6 +134,7 @@ xid_our_info(
 struct iface *ifp,
 int mod128,
 int srej,
+int hop2hop,
 struct mbuf **bpp)
 {
 	uint8 buf[64];
@@ -198,8 +241,30 @@ struct mbuf **bpp)
 	buf[n++] = (krx >> 8) & 0xff;
 	buf[n++] = krx & 0xff;
 
+	/* The standard group ends here: its GL covers exactly the parameters
+	 * above, so it is written before the private subfield follows. */
 	buf[2] = (uint8)((n - 4) >> 8);
 	buf[3] = (uint8)((n - 4) & 0xff);
+
+	/* Our own extension, when this station can stand behind it (see
+	 * xid.h and doc/EAX25.md).  The private subfield follows the 0x80
+	 * group because data link layer subfields ascend by GI.  Its GL
+	 * counts its parameter field alone, FI stays the one at the head.
+	 */
+	if(hop2hop){
+		int i;
+
+		buf[n++] = XID_GI_PRIVATE;
+		buf[n++] = 0x00;                /* GL = 9: PI 0 (2+4) + PI 1 (2+1) */
+		buf[n++] = 0x09;
+		buf[n++] = XID_PI_PRIV_SETID;
+		buf[n++] = XID_PRIV_SETLEN;
+		for(i = 0;i < (int)XID_PRIV_SETLEN;i++)
+			buf[n++] = XID_PRIV_SET[i];
+		buf[n++] = XID_PI_PRIV_CAPS;
+		buf[n++] = 1;
+		buf[n++] = XID_PRIV_CAP_HOP2HOP;
+	}
 
 	pushdown(bpp,buf,(uint)n);
 }
