@@ -163,25 +163,17 @@ void xid_parse(struct mbuf **bpp,struct xid_info *xi);
  * OUR port towards the caller, not from the station behind us.  srej tells
  * whether to offer SREJ.
  *
- * The private subfield (GI=0xF0, doc/EAX25.md) goes into every XID we
- * write in our OWN name (relay == 0): its set identifier says this station
- * speaks the WAMP agreement, and an absent subfield cannot - it can only
- * say "does not speak it".  Inside it, hop2hop is bit 0 of the capability
- * bitmap and says that THIS station, as a nexthop, terminates the hop and
- * acknowledges it; a clear bit is "speaks it, does not do it now", so the
+ * The private subfield (GI=0xF0, doc/EAX25.md) is ALWAYS written: its set
+ * identifier says this station speaks the WAMP agreement, and an absent
+ * subfield cannot - it can only say "does not speak it".  Inside it,
+ * hop2hop is bit 0 of the capability bitmap and says that THIS station, as
+ * a nexthop, terminates the hop and acknowledges it.  It too is a statement
+ * about the station that puts the frame on the wire, taken from the node's
+ * own s&f-digipeat capability (Digipeat == 2) and never from what a peer
+ * said; a clear bit is "speaks it, does not do it now", so the capability
  * value is 0 then, not absent.
- *
- * Into a frame we write in someone ELSE's name (relay != 0: the relayed
- * answer to A, the probe in A's name) the subfield goes only when hop2hop
- * is set - then the bit is the information and the set only carries it.  A
- * clear bit there would be a capability "off" under a third party's call,
- * which says nothing about him.
- *
- * hop2hop is always a statement about the station that puts the frame on
- * the wire, taken from the node's own s&f-digipeat capability (Digipeat
- * == 2) and never from what a peer said.
  */
 void xid_our_info(struct iface *ifp,int mod128,int srej,int hop2hop,
-	int relay,struct mbuf **bpp);
+	struct mbuf **bpp);
 
 #endif  /* _XID_H */

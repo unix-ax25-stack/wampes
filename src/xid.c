@@ -135,7 +135,6 @@ struct iface *ifp,
 int mod128,
 int srej,
 int hop2hop,
-int relay,
 struct mbuf **bpp)
 {
 	uint8 buf[64];
@@ -247,31 +246,20 @@ struct mbuf **bpp)
 	buf[2] = (uint8)((n - 4) >> 8);
 	buf[3] = (uint8)((n - 4) & 0xff);
 
-	/* DAS SET NUR, WO ES ETWAS UEBER UNS SAGT (Thomas, 2026-10-14).
-	 *
-	 * Ein XID in unserem EIGENEN Namen (relay == 0) traegt das
-	 * WAMP-Set immer.  Sein Vorhandensein ist die Auskunft "diese
-	 * Station spricht die Vereinbarung"; ein fehlendes Subfeld koennte
-	 * das nicht sagen - es hiesse "kann es nicht", und das ist etwas
-	 * anderes als "kann es und laesst es gerade aus".  Erst danach sagt
-	 * die Bitmap, was an ist; hop2hop ist ihr Bit 0, gesetzt genau dann,
-	 * wenn diese Station den Hop selbst terminiert und bestaetigt
-	 * (Digipeat 2, siehe xid.h und doc/EAX25.md).  Ein klares Bit ist
-	 * damit eine Auskunft, keine Unbekannte.
-	 *
-	 * Ein XID, das wir im Namen eines ANDEREN schreiben (relay != 0: die
-	 * Relais-Antwort an A, die Sonde in A's Namen), traegt das Set nur,
-	 * wenn unser hop2hop-Bit gesetzt ist.  Dann ist das BIT die Aussage
-	 * (wir terminieren den Hop) und das Set nur sein Traeger.  Ist das
-	 * Bit klar, gaebe es nichts zu sagen: das Set stuende unter einem
-	 * fremden Quellruf, und eine Faehigkeit "aus" ist keine Auskunft
-	 * ueber den Genannten.  Dann lieber gar kein Set.
-	 *
-	 * Das private Subfeld folgt dem 0x80-Block, weil Subfelder nach GI
-	 * aufsteigen; sein GL zaehlt nur sein eigenes Feld, das FI bleibt das
-	 * eine am Kopf.
+	/* UNSER SUBFELD STEHT IMMER DA.  Das Set ist die Auskunft "diese
+	 * Station spricht die WAMP-Vereinbarung"; sein blosses Vorhandensein
+	 * ist die Aussage, die ein fehlendes Subfeld nicht machen kann - es
+	 * hiesse "kann es nicht", und das ist etwas anderes als "kann es und
+	 * laesst es gerade aus".  Erst danach sagt die Faehigkeits-Bitmap,
+	 * was gerade an ist; hop2hop ist ihr Bit 0, gesetzt genau dann, wenn
+	 * diese Station den Hop selbst terminiert und bestaetigt (Digipeat 2,
+	 * siehe xid.h und doc/EAX25.md).  Ein klares Bit ist damit eine
+	 * Auskunft ("wir kennen die Vereinbarung, tun es jetzt nicht"), keine
+	 * Unbekannte.  Das private Subfeld folgt dem 0x80-Block, weil
+	 * Subfelder nach GI aufsteigen; sein GL zaehlt nur sein eigenes Feld,
+	 * das FI bleibt das eine am Kopf.
 	 */
-	if(hop2hop || !relay){
+	{
 		int i;
 
 		buf[n++] = XID_GI_PRIVATE;

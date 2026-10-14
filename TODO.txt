@@ -10695,7 +10695,7 @@ ZU SCHRITT 3 (die Routendatei) - ABGEARBEITET UND DURCHGEPRUEFT (2026-09-26)
   und auch Cs hop2hop-Faehigkeit gehen NICHT ein;  die gehoeren an Cs
   Route und an die Sitzung auf dem Port zu C.
 
-  DAS WAMP-SET UND DIE KOMPROMISS-REGEL (Thomas, 2026-10-14).  Ein XID
+  DAS WAMP-SET SELBST STEHT IMMER IM XID (Thomas, 2026-10-14).  Ein XID
   hat Subfelder, aufsteigend nach GI; nach dem 0x80-Block folgt unser
   privates GI=0xF0, darin PI=0 = Satzname "WAMP" und PI=1 = eine
   1-Byte-Faehigkeits-Bitmap, deren Bit 0 hop2hop ist.  Das Set sagt
@@ -10703,18 +10703,11 @@ ZU SCHRITT 3 (die Routendatei) - ABGEARBEITET UND DURCHGEPRUEFT (2026-09-26)
   Vorhandensein des Subfelds sagen, nicht ein fehlendes.  Erst das Bit
   sagt, ob hop2hop gerade laeuft:  1 = terminiert und bestaetigt den Hop
   selbst (Digipeat 2), 0 = spricht die Vereinbarung, laesst sie aber aus.
-  Ein klares Bit in unserem EIGENEN Namen ist darum eine Auskunft ("wir
-  kennen die Vereinbarung, tun es jetzt nicht"), keine Unbekannte.
-
-  WO es steht, haengt davon ab, in WESSEN Namen das XID laeuft:  in
-  unserem eigenen immer (auch mit Bit 0), im Namen eines ANDEREN nur mit
-  gesetztem Bit.  Ein klares Bit unter fremdem Quellruf gaebe nichts zu
-  sagen - das Set stuende fuer uns, der Quellruf fuer einen Dritten, und
-  eine Faehigkeit "aus" ist keine Auskunft ueber den Genannten.  Dafuer
-  hat xid_our_info() den relay-Schalter.  Zu wissen:  die Relais-Stellen
-  (relay=1) laufen heute ohnehin nur bei Digipeat 2, wo das Bit steht -
-  der Schalter ist die Absicherung, keine sichtbare Aenderung.  Ein
-  FREMDES XID, das wir nur wiederholen (Digipeat 1), bleibt unveraendert.
+  Deshalb ist ein klares Bit eine AUSKUNFT ("kennen es, tun es jetzt
+  nicht"), keine Unbekannte - vorher schrieb xid_our_info() das Subfeld
+  nur bei gesetztem Bit, und ein klares Bit hiess dann "kein WAMP".
+  Wer ein FREMDES XID wiederholt (Digipeat 1), laesst dessen Set
+  unveraendert; nur Fragen/Antworten, die WIR schreiben, tragen unseres.
 
   Die zuerst notierte Fassung ("das Bit darf NIE in einer Antwort
   stehen, die ein Digipeat in Cs Namen schreibt") verwechselte zwei
