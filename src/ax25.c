@@ -1488,7 +1488,7 @@ struct mbuf **bpp
 									paxp->iface = ifp;
 									xid_our_info(ifp,
 										     (ifp->eax25 != EAX25_OFF) ? 1 : 0,
-										     YES, ax25_hop2hop(), &pbp);
+										     YES, ax25_hop2hop(), 1, &pbp);
 									sendframe(paxp, LAPB_COMMAND,
 										  XID | PF, -1, &pbp);
 									/* Gefragt - also darf der
