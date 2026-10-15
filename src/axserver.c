@@ -10,6 +10,12 @@
 #include <pwd.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+/* <sys/un.h> is what defines SOL_LOCAL and LOCAL_PEERPID, the peer pid a
+ * service socket was accepted from on the systems that record it; without it
+ * the lookup below would quietly find nothing and every row would lack its
+ * pid and program.  Linux defines what it needs in <sys/socket.h> alone.
+ */
+#include <sys/un.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <poll.h>
@@ -1376,6 +1382,35 @@ static void axserv_close_upcall(void *arg)
  */
 
 struct axpipe {
+  /* Every live forwarding, in one list, so that "sessions" can name them and
+   * "close <handle>" can find one again.  The id is handed out once, when the
+   * forwarding is made, and keeps it for life - the descriptor and the
+   * addresses it carries come and go, and a pointer is not something to ask
+   * an operator to type.
+   */
+  struct axpipe *next;
+  unsigned long id;
+  /* The service socket of the program that got this forwarding, or -1 when
+   * the node runs it itself (a "program:", the node's own login, a dialled
+   * socket).  It is two things at once: what tells a libax25 forwarding from
+   * one of the node's own - only a forwarding with an owner is listed, so the
+   * node's internal services cannot be reached through "sessions" - and where
+   * the owner's pid is read from, the kernel having recorded it at connect()
+   * time (see axserv_peer_pid).
+   */
+  int ownerfd;
+  /* WHO CALLED WHOM.  A row of "sessions" reads like a packet trace -
+   * "A > Z via B C D" - and a trace alone does not say which of the two
+   * stations opened the link; here it is known exactly.  Every forwarding
+   * is made one of two ways: by a listen()/accept() (we_called = 0, the
+   * far end is the caller) or by a connect() the node made for a caller
+   * (we_called = 1, we are the caller, the same sense in which the unix
+   * side is "the initiator").  Both leave hdr.source = us - on an incoming
+   * link build_path(reverse) turned the header round, on one we opened the
+   * header was built with our call as the source - so only this flag says
+   * which way FROM/TO and the digi path are to be read.
+   */
+  int we_called;
   /* One of these two: an AX.25 consumer, or a NET/ROM circuit.  The rest of
    * the machinery is the same for both, so it is written once and the four
    * operations that differ are wrapped below.
@@ -1397,6 +1432,13 @@ struct axpipe {
   int recv_char;                        /* last byte seen, per direction */
   int send_char;
 };
+
+/* The forwardings WAMPES is running for programs, newest first, and the next
+ * handle to hand out.  Only axpipe_close() takes one out; a forwarding is put
+ * in when it is made.
+ */
+static struct axpipe *Axpipes;
+static unsigned long NextAxpipeId = 1;
 
 /* How much may pile up for a socket that is not taking it.  Far above
  * anything a radio link produces, so the brake never touches the normal
@@ -1683,6 +1725,13 @@ static void axpipe_pump(struct axpipe *pp)
 
 static void axpipe_close(struct axpipe *pp)
 {
+  struct axpipe **lp;
+
+  for (lp = &Axpipes; *lp != NULL; lp = &(*lp)->next)
+    if (*lp == pp) {
+      *lp = pp->next;
+      break;
+    }
   if (pp->fd >= 0) {
     off_read(pp->fd);
     off_write(pp->fd);
@@ -1697,18 +1746,10 @@ static void axpipe_close(struct axpipe *pp)
 /*---------------------------------------------------------------------------*/
 
 /* Let one forwarding go for good: the program's end is detached and the link
- * or the circuit is told to go away.  This is what a program does to itself
- * when it closes its descriptor (axpipe_readable) or the descriptor fails
+ * or the circuit is told to go away.  "close <handle>" does this, and so does
+ * a descriptor the program has closed (axpipe_readable) or one that failed
  * (axpipe_writable, axpipe_pump) - the same teardown the state upcall performs
  * when the link gives way first, only started from this end.
- *
- * It is needed because axpipe_hangup() left the forwarding behind on the
- * AX.25 side: close_axservice() removes the service from axp->services there
- * and then, so the state upcall that would have freed the pipe can no longer
- * come, and a program that hung up left both the pipe and its descriptor.  On
- * NET/ROM that did not show, because close_nr() keeps the circuit and so the
- * upcall that frees the pipe.  Doing the whole teardown here clears it on
- * both.
  *
  * The order is what makes it safe: detach first, so a disconnect that
  * close_axservice()/close_nr() starts cannot reach a pipe that is already
@@ -1735,6 +1776,287 @@ static void axpipe_release(struct axpipe *pp)
   } else {
     axpipe_close(pp);
   }
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* The link state, in the words the session table uses.  Deliberately the
+ * same words ax25netd prints: a connect that has gone out and is not yet
+ * answered is CONNECTING, one that stands is ESTABLISHED, one on its way
+ * down is DISC.  LAPB_RECOVERY is ESTABLISHED too - the link is up and being
+ * polled to see whether the far end is still there, which is not a state an
+ * operator acts on, and netd has no word of its own for it.
+ */
+static const char *axpipe_axstate(const struct ax25_cb *axp)
+{
+  switch (axp->state) {
+  case LAPB_DISCONNECTED: return "DISC";
+  case LAPB_LISTEN:       return "LISTENING";
+  case LAPB_SETUP:        return "CONNECTING";
+  case LAPB_DISCPENDING:  return "DISC";
+  case LAPB_CONNECTED:    return "ESTABLISHED";
+  case LAPB_RECOVERY:     return "ESTABLISHED";
+  default:                return "?";
+  }
+}
+
+static const char *axpipe_nrstate(const struct circuit *pc)
+{
+  switch (pc->state) {
+  case NR4STDISC:   return "DISC";
+  case NR4STCPEND:  return "CONNECTING";
+  case NR4STCON:    return "ESTABLISHED";
+  case NR4STDPEND:  return "DISC";
+  case NR4STLISTEN: return "LISTENING";
+  default:          return "?";
+  }
+}
+
+/* The pid of the program at the far end of a service socket.  The kernel
+ * recorded it at connect() time, so it is read back with no more rights than
+ * the accept itself needed - see the same recipe in ax25netd's loop.c.  A
+ * descriptor the node owns itself (ownerfd -1), or a system with neither
+ * credential, leaves 0 and the table shows no owner.
+ */
+static pid_t axserv_peer_pid(int fd)
+{
+#if defined(SO_PEERCRED)
+  struct ucred cr;
+  socklen_t len = sizeof(cr);
+
+  if (fd >= 0 && getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cr, &len) == 0)
+    return cr.pid;
+#elif defined(LOCAL_PEERPID)
+  pid_t pid;
+  socklen_t len = sizeof(pid);
+
+  if (fd >= 0 && getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0)
+    return pid;
+#else
+  (void) fd;
+#endif
+  return 0;
+}
+
+/* The name of that program, where the system keeps one.  Linux has it in
+ * /proc's comm; elsewhere the pid alone has to do, which is the same answer
+ * ax25netd gives.  A name with a space in it would split the row, so spaces
+ * become underscores - comm has no newline and at most fifteen characters.
+ */
+static void axserv_owner_name(pid_t pid, char *prog, size_t cap)
+{
+#ifdef __linux__
+  char path[64], line[16];
+  FILE *f;
+
+  snprintf(prog, cap, "-");
+  if (pid <= 0) return;
+  snprintf(path, sizeof(path), "/proc/%ld/comm", (long) pid);
+  if ((f = fopen(path, "r")) == NULL) return;
+  if (fgets(line, sizeof(line), f) != NULL) {
+    size_t n = strcspn(line, "\r\n"), i;
+
+    line[n] = '\0';
+    for (i = 0; i < n; i++)
+      if (line[i] == ' ' || line[i] == '\t') line[i] = '_';
+    if (line[0] != '\0') snprintf(prog, cap, "%s", line);
+  }
+  fclose(f);
+#else
+  (void) pid;
+  snprintf(prog, cap, "-");
+#endif
+}
+
+/* One forwarding as one line, in the fields ax25netctl -s prints:
+ *
+ *   <id> <port> <from> <to> <proto> <state> <owner> <prog> <path>
+ *
+ * Fields are separated by one space and none of them carries a space, so the
+ * line reads by eye and splits by strtok() alike.  from is the caller and to
+ * the called station, so the row reads the way the call travelled - A > Z
+ * via B C D - which is the one thing a packet trace cannot tell on its own.
+ * For AX.25 the header is us-as-source whichever way the link was opened, so
+ * the caller is hdr.source on a link we opened and hdr.dest on one that
+ * called us (build_path(reverse) turned it); pp->we_called says which.  For
+ * NET/ROM the caller is the user who opened the circuit and the called side
+ * the call that was reached.  <port> is the interface that carried it,
+ * "netrom" for an L4 circuit.  <path> is the digipeaters the call came
+ * through, comma joined, up to eight, "-" when there were none, in the same
+ * direction as FROM > TO; for NET/ROM it is the node the user sits on, which
+ * is the same "how it came" in one field.  <proto> is the service pid,
+ * <owner>/<prog> the program holding the link, 0 and "-" when there is
+ * nobody to name.
+ */
+static void axpipe_line(struct axpipe *pp, char *buf, int len)
+{
+  char port[AXBUF], from[AXBUF], to[AXBUF], path[AXBUF * (MAXDIGIS + 1)];
+  char prog[16];
+  const char *state;
+  int pid = 0;
+  pid_t owner;
+
+  owner = axserv_peer_pid(pp->ownerfd);
+  axserv_owner_name(owner, prog, sizeof(prog));
+
+  path[0] = 0;
+  if (pp->sp) {
+    struct ax25_cb *axp = pp->sp->axp;
+    int i;
+
+    snprintf(port, sizeof(port), "%s", axlisten_portname(axp));
+    /* FROM is the caller and TO the called, so the row reads the way the
+     * call travelled: from the caller, through its digipeaters, to the
+     * called station.  Which of the header's two addresses that is depends
+     * on who opened the link (pp->we_called) - and so does which way the
+     * digis have to be read.
+     *
+     * The header WE built for a link we opened was never turned: hdr.source
+     * is us, the caller, and hdr.digis runs from our first hop outwards, so
+     * both read forwards.  On an incoming link build_path(reverse) turned
+     * source and dest and reversed hdr.digis with them: hdr.dest is the
+     * caller, and the way the call came reads backwards - B, C, D and not
+     * D, C, B.  Either way FROM > TO is the call's own direction, not a
+     * reply's, and the path is "the digipeaters the frame came through" as
+     * the wire monitor shows it ("A->Z v B C D").
+     */
+    if (pp->we_called) {
+      pax25(from, axp->hdr.source);
+      pax25(to, axp->hdr.dest);
+      for (i = 0; i < axp->hdr.ndigis; i++) {
+	char one[AXBUF];
+
+	if (i != 0) strcat(path, ",");
+	strcat(path, pax25(one, axp->hdr.digis[i]));
+      }
+    } else {
+      pax25(from, axp->hdr.dest);
+      pax25(to, axp->hdr.source);
+      for (i = axp->hdr.ndigis - 1; i >= 0; i--) {
+	char one[AXBUF];
+
+	if (i != axp->hdr.ndigis - 1) strcat(path, ",");
+	strcat(path, pax25(one, axp->hdr.digis[i]));
+      }
+    }
+    pid = pp->sp->pid;
+    state = axpipe_axstate(axp);
+  } else if (pp->pc) {
+    struct circuit *pc = pp->pc;
+    struct axlisten *lp = axlisten_netrom();
+
+    snprintf(port, sizeof(port), "netrom");
+    /* The same reading: the user who opened the circuit (pc->cuser, set from
+     * the NR4 CONNECT REQUEST in circuit_manager) is the caller and goes in
+     * FROM, the call he reached in TO.  A NET/ROM forwarding is always one
+     * the far end opened - the node's own listener took it - so pp->we_called
+     * would be 0 here anyway.  The node the user sits on goes where a
+     * digipeater would: the way the call came.
+     */
+    pax25(from, pc->cuser);
+    if (lp && lp->call[0])
+      pax25(to, lp->call);
+    else
+      pax25(to, pc->node);
+    pax25(path, pc->node);
+    state = axpipe_nrstate(pc);
+  } else {
+    return;                             /* not a forwarding we can describe */
+  }
+  if (!path[0]) strcpy(path, "-");
+  snprintf(buf, (size_t) len, "%lu %s %s %s %d %s %u %s %s",
+	   pp->id, port, from, to, pid, state,
+	   owner > 0 ? (unsigned) owner : 0u, prog, path);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Every forwarding WAMPES runs for a program, handed to emit() one line at a
+ * time, then a listening row for every callsign a client is holding, then a
+ * final "***" line that says the list is complete.  The node's own login, a
+ * "program:" or "socket:" target and a dialled address are not in here: this
+ * is the list an operator can act on with "close", and those are the node's
+ * own services - reaching them from outside would turn "sessions" into remote
+ * administration of the node.  A forwarding or a claim a client made is
+ * included, because the node still owns the link.
+ *
+ * The terminator is not decoration.  A client reads this over the service
+ * socket, which has no prompt and whose answer is as long as the table is
+ * long, so nothing else says where the last row ends.  A row never begins
+ * with "*", so a line that does is never mistaken for one.
+ */
+void axserv_sessions(void (*emit)(void *arg, const char *line), void *arg)
+{
+  struct axpipe *pp;
+  struct axlisten *lp;
+  char line[256];
+  unsigned n = 0;
+
+  for (pp = Axpipes; pp; pp = pp->next) {
+    if (pp->ownerfd < 0) continue;      /* the node's own, not a client's */
+    if (!axpipe_alive(pp)) continue;    /* on its way out already */
+    axpipe_line(pp, line, (int) sizeof(line));
+    emit(arg, line);
+    n++;
+  }
+
+  /* A callsign a client holds but nobody has called: no handle - there is
+   * nothing here to close, and the row says so by leaving the id out - and
+   * "*" for the remote, any caller.  A datagram claim (ui) is the same row
+   * with a state of its own, so an operator can tell the two apart.
+   */
+  for (lp = Axlisten; lp; lp = lp->next) {
+    char call[AXBUF], port[80], prog[16];
+    pid_t owner;
+
+    if (lp->netrom || lp->kind != LK_CLIENT) continue;
+    if (lp->clientfd < 0 || lp->disabled) continue;
+    /* The port list, the way "listen" shows it: a claim on every port has
+     * none to name, and the "!" back means every port but those. */
+    if (lp->ports.spec == 0)
+      strcpy(port, "-");
+    else
+      snprintf(port, sizeof(port), "%s%s", lp->ports.exclude ? "!" : "",
+	       lp->ports.spec);
+    owner = axserv_peer_pid(lp->clientfd);
+    axserv_owner_name(owner, prog, sizeof(prog));
+    snprintf(line, sizeof(line), "- %s %s * %d %s %u %s -",
+	     port, pax25(call, lp->call), lp->pid,
+	     lp->ui ? "DATAGRAM" : "LISTENING",
+	     owner > 0 ? (unsigned) owner : 0u, prog);
+    emit(arg, line);
+    n++;
+  }
+
+  snprintf(line, sizeof(line), "*** %u session%s", n, n == 1 ? "" : "s");
+  emit(arg, line);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Close the forwarding an operator named by its handle.  Returns 0 when one
+ * was found and let go, -1 when the number is not one of ours any more.
+ *
+ * A kill is something that happens to somebody's link, so it is said out
+ * loud, the same way ax25netd logs its own.
+ */
+int axserv_session_close(const char *handle)
+{
+  char *end;
+  unsigned long id;
+  struct axpipe *pp;
+
+  if (handle == NULL || *handle == 0) return -1;
+  id = strtoul(handle, &end, 10);
+  if (end == handle || *end != 0) return -1;
+  for (pp = Axpipes; pp; pp = pp->next)
+    if (pp->id == id) break;
+  if (pp == NULL) return -1;
+
+  syslog(LOG_NOTICE, "axserv: session %lu closed on request (%s)",
+	 pp->id, pp->pc ? "netrom" : "ax25");
+  axpipe_release(pp);
+  return 0;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1787,6 +2109,10 @@ static struct axpipe *axpipe_new(struct axlisten *lp, int fd)
     return NULL;
   }
   pp->fd = fd;
+  pp->id = NextAxpipeId++;
+  pp->ownerfd = -1;                     /* the node's own until a caller says */
+  pp->next = Axpipes;
+  Axpipes = pp;
   pp->ascii = !lp->binary;
   /* A dialled socket is a stream: the service at the other end chose what it
    * listens on and we do not get to argue.  Frame boundaries survive on the
@@ -1825,6 +2151,11 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, struct axlisten *lp,
   struct axservice *sp;
 
   if (!(pp = axpipe_new(lp, fd))) return NULL;
+  pp->ownerfd = lp->clientfd;           /* a client's claim, or -1 for ours */
+  /* The far end called us: build_path(reverse) turned the header round, so
+   * hdr.source is the address that was called (us) and hdr.dest the caller.
+   */
+  pp->we_called = 0;
   if (!(sp = open_axservice(axp, lp->pid, axpipe_recv_upcall,
 			    axpipe_send_upcall, axpipe_state_upcall, pp))) {
     axpipe_close(pp);
@@ -2006,6 +2337,7 @@ int nrserv_listen_start(struct circuit *pc)
   int fd = -1;
   struct axlisten *lp;
   struct axpipe *pp;
+  int ownerfd = -1;                     /* the client's claim, when there is one */
 
   nrserv_listen_why[0] = '\0';
   if (!(lp = axlisten_netrom())) return 0;      /* nothing configured */
@@ -2055,6 +2387,7 @@ int nrserv_listen_start(struct circuit *pc)
 	       pax25(called, lp->call));
       return 0;
     }
+    ownerfd = cp->clientfd;
   }
 
   if (!(pp = axpipe_new(lp, fd))) {
@@ -2062,6 +2395,7 @@ int nrserv_listen_start(struct circuit *pc)
 	     "the target %s could not be connected", lp->target);
     return 0;
   }
+  pp->ownerfd = ownerfd;
   pp->pc = pc;
   pc->user = (char *) pp;
   pc->r_upcall = nrpipe_recv_upcall;
@@ -2179,7 +2513,7 @@ static struct axservice *axserv_login_open(struct ax25_cb *axp)
  * fed by it.
  */
 
-int axserv_pipe_attach(struct axservice *sp, int binary, int *fdp)
+int axserv_pipe_attach(struct axservice *sp, int binary, int ownerfd, int *fdp)
 {
   static struct axlisten pipe_lp;       /* only binary is read for a live fd */
   struct axpipe *pp;
@@ -2193,6 +2527,12 @@ int axserv_pipe_attach(struct axservice *sp, int binary, int *fdp)
     close(sv[1]);
     return -1;
   }
+  pp->ownerfd = ownerfd;                /* the caller that asked to connect */
+  /* We opened this link: ax25_adopt_path() copied the header we built, so
+   * hdr.source is our call and hdr.digis runs from our first hop outwards.
+   * The row reads from us to the far end, the call's own direction.
+   */
+  pp->we_called = 1;
   pp->sp = sp;
   sp->r_upcall = axpipe_recv_upcall;
   sp->t_upcall = axpipe_send_upcall;

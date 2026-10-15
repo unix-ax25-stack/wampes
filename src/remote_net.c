@@ -484,7 +484,7 @@ static void transport_state_upcall(struct transport_cb *tp)
        */
       int fd = -1;
 
-      if (!tp->svc || axserv_pipe_attach(tp->svc, cp->binary, &fd)) {
+      if (!tp->svc || axserv_pipe_attach(tp->svc, cp->binary, cp->fd, &fd)) {
 	say(cp, "*** link failure with %s - nomem", cp->target);
 	transport_close(tp);
 	return;
@@ -517,6 +517,49 @@ static int ascii_command(struct controlblock *cp)
 static int binary_command(struct controlblock *cp)
 {
   cp->binary = 1;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "sessions" and "close <handle>": what WAMPES is forwarding for programs,
+ * and letting one of them go.  A descriptor served by a node has no
+ * SIOCAX25CTLCON to reach - axkill(8) and axctl(8) go to AGWPE - so the
+ * service socket is where a bridge asks, and where their request lands once
+ * it is translated.  See documentation/wampes-sessions-in-netd.md.
+ *
+ * One session is one line, and the list ends with a "***" line: a reader is
+ * handed rows until it reads that one.  The service socket has no prompt and
+ * the answer is as long as the table is long, so without the final line a
+ * reader could not tell a short answer from one cut off mid-stream - and a
+ * row never begins with "*", so the last line is never taken for one.  The
+ * handle is whatever "sessions" showed, and it stays the same for as long as
+ * the forwarding lasts.
+ */
+
+static void sessions_line(void *arg, const char *line)
+{
+  say((struct controlblock *) arg, "%s", line);
+}
+
+static int sessions_command(struct controlblock *cp)
+{
+  axserv_sessions(sessions_line, cp);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static int close_command(struct controlblock *cp)
+{
+  char *handle = getarg(0, 0);
+
+  if (handle == 0 || *handle == 0) {
+    say(cp, "*** close needs the handle from \"sessions\"");
+    return 0;
+  }
+  if (axserv_session_close(handle) != 0)
+    say(cp, "*** no session %s", handle);
   return 0;
 }
 
@@ -1053,6 +1096,11 @@ static void command_receive(void *arg)
     { "datagram", datagram_command },
     { "handover", handover_command },
     { "listen",  listen_command },
+    { "sessions", sessions_command },
+    /* "close" last on purpose: names are matched by their first letters, and
+     * a bare "c" has always meant "connect".  "cl" reaches "close".
+     */
+    { "close",   close_command },
     { 0,         0 }
   };
 

@@ -79,6 +79,40 @@ The refusals carry a reason, which is the whole point of them:
 kernel converted nothing.  Without it the service socket would translate line
 endings, which is right for a human on a terminal and wrong for a program.
 
+### Asking what is forwarding, and stopping one
+
+`sessions` lists every forwarding the node runs for a program - an incoming
+call handed to a client, an outgoing `connect` handed back as a descriptor, a
+NET/ROM circuit - and `close <handle>` lets one of them go.  The handle is the
+first field of the row and stays the same for as long as the forwarding lasts:
+
+    -> sessions
+    <- 3 hfb DL1TST-1 DL1AAA 240 ESTABLISHED 4711 axlisten -
+    <- - - DL1TST-9 * 240 LISTENING 4711 axlistendb -
+    <- *** 2 sessions
+
+A row is `<id> <port> <from> <to> <proto> <state> <owner> <prog> <path>`, the
+fields `ax25netctl -s` prints.  `from` is the call that opened the forwarding
+and `to` the call it reached, so the row reads in the direction the call
+travelled, and `path` - the digipeaters it came through, or the NET/ROM node -
+reads that way with it; `owner`/`prog` name the program to look for in `ps`.  A callsign a client holds but
+nobody has called has no handle and shows `-` for its id, a `*` for the
+remote, and `LISTENING` - or `DATAGRAM` for a `listen ... ui` claim.  The node
+runs `program:`, `socket:` and its own login itself, and those are not listed:
+`sessions` is what an operator can act on, not a way into the node.
+
+The list ends with a `***` line, so a reader knows it has the whole table and
+not an answer cut off mid-stream; end of file alone would not say.  `close`
+takes one handle, answers nothing on success, and logs the kill:
+
+    -> close 3
+    -> (syslog: axserv: session 3 closed on request (ax25))
+
+Only a forwarding with a handle is closed, so a listener is not killable - a
+sysop stops the program behind it, whose pid the row names.  Closing an AX.25
+forwarding drops that link, which is what a kill means there; closing a NET/ROM
+circuit drops the circuit and leaves the underlying AX.25 link standing.
+
 ## What the shim does
 
 A program asks for a protocol id through the third argument of `socket()`,
