@@ -2836,6 +2836,12 @@ struct mbuf **bpp
 		 */
 		if(dpid != PID_SEGMENT && !ax25_pid_is_ip(dpid))
 			ifp->ax25sndcnt++;
+		/* The connected-mode exit, and it does not pass axsend(): every
+		 * I, RR, RNR, REJ, SABM, UA, DM and FRMR of a link leaves here.
+		 * Watched where it is counted, so the monitor and "tot" agree on
+		 * this side too.
+		 */
+		axmon_frame(ifp, IF_TRACE_OUT, *bpp);
 		return (*ifp->raw)(ifp,bpp);
 	}
 	free_p(bpp);

@@ -505,6 +505,11 @@ struct mbuf **bpp
 	 */
 	ax_dup_remember(ax_fingerprint(*bpp));
 
+	/* The second UI exit, and the monitor watches it like the first - a
+	 * bridged datagram and a DAMA poll go out here and never pass axsend().
+	 */
+	axmon_frame(iface, IF_TRACE_OUT, *bpp);
+
 	idest = (hdr->ndigis != 0 && hdr->nextdigi != hdr->ndigis) ?
 		hdr->digis[hdr->nextdigi] : hdr->dest;
 	/* The second UI exit, and counted the same way as axsend()'s - from
@@ -669,6 +674,11 @@ uint8 *ax_via           /* forced via, for multicast (QST-0 ARP) via digipeater 
 	 */
 	if((ctl & ~PF) == UI)
 		ax_dup_remember(ax_fingerprint(*bpp));
+	/* One frame out, and watched before the branch below: the interface it
+	 * leaves by is the one axmon_frame() maps to, exactly as the counter
+	 * just below does.
+	 */
+	axmon_frame(iface, IF_TRACE_OUT, *bpp);
 	/* This shouldn't be necessary because redirection has already been
 	 * done at the IP router layer, but just to be safe...
 	 */
@@ -1051,6 +1061,16 @@ struct mbuf **bpp
 	 * that only one of the two counters moved.
 	 */
 	iface->ax25recvcnt++;
+
+	/* The raw monitor sees the frame as it came off the port, before any of
+	 * the checks below - so a frame for somebody else, one with a broken
+	 * header and our own echo are all in it, exactly as they are in
+	 * iface->rawrecvcnt and ax25recvcnt.  A kernel AX.25 port hands an
+	 * AF_PACKET socket the same frame at the same place; a monitor that
+	 * showed only the frames the node decided to act on would be a
+	 * different thing, and not the one mheard(8) is looking for.
+	 */
+	axmon_frame(iface, IF_TRACE_IN, *bpp);
 
 	/* Loop-Schutz: ein UI-Rahmen, den wir selbst gerade byte-identisch
 	 * ausgesendet haben, ist unser Echo (Bruecke, Digi, Datagramm-Loop).
@@ -1710,6 +1730,12 @@ struct mbuf **bpp
 					 * still a frame that goes out.
 					 */
 					ifp->ax25sndcnt++;
+					/* Watched where it is counted, for the
+					 * same reason: a repeated frame goes out
+					 * of this port and a monitor on it sees
+					 * it.
+					 */
+					axmon_frame(ifp, IF_TRACE_OUT, f);
 					/* Nur UI wird hier ueberhaupt wiederholt
 					 * (digipeat 2); auf einem DAMA-Kanal
 					 * darf auch das auf das Fenster warten.
@@ -2500,6 +2526,7 @@ struct mbuf **bpp
 	 * and this is its counterpart for the output side.
 	 */
 	out->ax25sndcnt++;
+	axmon_frame(out, IF_TRACE_OUT, *bpp);
 	(*out->raw)(out,bpp);
 	return 1;
 }

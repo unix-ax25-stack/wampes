@@ -550,6 +550,25 @@ int axlisten_enable(int n);
 int axlisten_ui_deliver(struct iface *ifp,struct ax25 *hdr,int pid,
 			struct mbuf **bpp);
 
+/* The raw monitor of the node's own AX.25 traffic - the third socket beside
+ * the command channel and the service socket, and the same thing a kernel
+ * port hands to an AF_PACKET socket.
+ *
+ * Called from the places that already count a frame for the interface -
+ * ax_recv() on the way in, and each frame-producing path on the way out
+ * (axsend(), ax_send_ui(), sendframe(), the digipeater's repeat, ax_user_
+ * to_user() and the NET/ROM broadcast) - so that what the monitor shows and
+ * what "tot" adds up to are the same frames.  bp is the complete AX.25 frame
+ * (addresses, control field, optional PID and information) and is read, not
+ * consumed.
+ *
+ * dir is IF_TRACE_IN for a frame that arrived on the interface and
+ * IF_TRACE_OUT for one that left by it.  Costs a length count and a
+ * non-blocking write, and only while a monitor is connected - see
+ * axmon_frame() in remote_net.c.
+ */
+void axmon_frame(struct iface *ifp,int dir,struct mbuf *bp);
+
 int axlisten_active(const uint8 *call);
 /* The port a session is shown as coming in on: the interface, or "local"
  * where it never left the node - the field ax25d picks its stanza by.

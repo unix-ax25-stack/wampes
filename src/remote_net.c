@@ -4,6 +4,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -65,6 +66,22 @@ struct controlblock {
                                          * command line; every line after it
                                          * is payload and nothing else */
   struct ax25 dgram_hdr;
+  /* The raw monitor, on its own listener.  A monitor connection only ever
+   * RECEIVES: after "monitor ..." it is a sink for frames, and what it sends
+   * afterwards is discarded.  See axmon_frame().
+   */
+  int monitor;                          /* This connection is a monitor */
+  int mon_dirs;                         /* IF_TRACE_IN, plus IF_TRACE_OUT */
+  struct portlist mon_ports;            /* iface= list; empty: every port */
+  struct controlblock *mon_next;        /* the list of monitors */
+  /* One frame in flight when the socket had no room for the whole of it.
+   * Frames that arrive while this is full are dropped - a monitor must never
+   * make the node wait, and a stream that is handed half a frame never lines
+   * up again.  See axmon_write().
+   */
+  unsigned char *mon_buf;
+  int mon_len;                          /* bytes of it in all */
+  int mon_off;                          /* bytes of it written */
 };
 
 struct cmdtable {
@@ -74,7 +91,13 @@ struct cmdtable {
 
 static int fkbd = -1;
 
-/* What we listen on.  Two kinds, and the difference is what may be said:
+/* Every connection that asked to watch the raw frame stream.  Read by
+ * axmon_frame(); the rest of the node never looks at it.  See the monitor
+ * block below delete_controlblock().
+ */
+static struct controlblock *Monitors;
+
+/* What we listen on.  Three kinds, and the difference is what may be said:
  *
  * The command channel carries "command" and "console" and is therefore the
  * node's own command line - whoever reaches it can reconfigure everything.
@@ -84,13 +107,25 @@ static int fkbd = -1;
  * the node.  It lives in the public sockets directory, and there the DIRECTORY
  * is what decides who may reach it - 0750, group of the sysop's choosing.
  *
+ * The monitor socket carries "monitor" and nothing else, and it is a sink
+ * afterwards: the node writes raw frames to it and never reads a frame back.
+ * It lives in sockets/ beside the service socket, so it is reached by the
+ * same group - but it is a socket of its own because the two answer different
+ * questions.  The service socket decides who may CONNECT; the monitor decides
+ * who may WATCH, and whoever may do one of those is not thereby allowed the
+ * other.  See the monitor command below.
+ *
  * Each entry keeps its own descriptor.  The accept handler is given the
  * entry, not a global - with one shared variable the first connection would
  * hang the node in accept() on the wrong socket.
  */
 struct listener {
   char *name;                           /* in build_sockaddr() notation */
-  int restricted;                       /* service socket, not command channel */
+  int restricted;                       /* 0 command channel, 1 service
+					 * socket, 2 monitor socket - which
+					 * commands it takes and, for the two
+					 * in sockets/, that the directory
+					 * around it is the gate */
   int fd;
 };
 
@@ -103,9 +138,12 @@ struct listener {
 static char Netcmd_path[512];
 static char Axsock_path[512];
 static char Axsock_name[512];
+static char Monitor_path[512];
+static char Monitor_name[512];
 static struct listener Listeners[] = {
   { NULL, 0, -1 },
   { NULL, 1, -1 },
+  { NULL, 2, -1 },
   { NULL, 0, -1 }
 };
 
@@ -119,8 +157,11 @@ listener_paths(void)
   snprintf(Netcmd_path, sizeof(Netcmd_path), "unix:%s", path);
   nodedir_path(Axsock_path, sizeof(Axsock_path), "sockets/ax25");
   snprintf(Axsock_name, sizeof(Axsock_name), "unix:%s", Axsock_path);
+  nodedir_path(Monitor_path, sizeof(Monitor_path), "sockets/monitor");
+  snprintf(Monitor_name, sizeof(Monitor_name), "unix:%s", Monitor_path);
   Listeners[0].name = Netcmd_path;
   Listeners[1].name = Axsock_name;
+  Listeners[2].name = Monitor_name;
 }
 
 /* The loopback listeners are not among them: they stay closed unless net.rc
@@ -222,7 +263,19 @@ static void delete_controlblock(struct controlblock *cp, int loud,
     syslog(LOG_NOTICE, "%s", line);
   /* Whatever this client was listening for falls free with it. */
   axlisten_client_release(cp->fd);
+  if (cp->monitor) {
+    struct controlblock **pp;
+
+    for (pp = &Monitors; *pp != NULL; pp = &(*pp)->mon_next)
+      if (*pp == cp) {
+	*pp = cp->mon_next;
+	break;
+      }
+    free(cp->mon_buf);
+    portlist_free(&cp->mon_ports);
+  }
   off_read(cp->fd);
+  off_write(cp->fd);
   close(cp->fd);
   free(cp);
 }
@@ -329,6 +382,187 @@ void remote_net_drop_client(int fd, const char *reason)
   if (fd < 0 || !(cp = (struct controlblock *) on_read_arg(fd))) return;
   if (cp->fd != fd) return;             /* not a client control block */
   delete_controlblock(cp, 1, reason);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* THE RAW MONITOR.
+ *
+ * What a kernel AX.25 port gives an AF_PACKET socket, the node gives these:
+ * the frames themselves.  Every monitor connection is on the list below, and
+ * the places that already count a frame for an interface (ax_recv() on the
+ * way in, and each frame-producing path on the way out) call axmon_frame().
+ * There is no per-frame allocation and no work at all while the list is
+ * empty - a node nobody watches pays one null check.
+ *
+ * The FORM is the same for every monitor:
+ *
+ *	[4-byte big-endian length][interface name][NUL][AX.25 frame]
+ *
+ * The length, because a frame holds NUL bytes and the end of it would
+ * otherwise be nowhere; the name, because a node has several interfaces and
+ * a kernel monitor gives its name too.  What is IN the frame is the whole
+ * AX.25 frame - addresses, control field, PID and information - exactly what
+ * arrived or left, so listen(1) and mheard(8) decode the original with no
+ * help from anybody.  There is no direction bit and no frame invented here:
+ * "output" is a separate order, not a flag on a frame (see the handshake).
+ *
+ * A FRAME IS WRITTEN WHOLE OR NOT AT ALL.  A stream keeps no write
+ * boundaries, so half a frame leaves the reader looking for the length of
+ * the next one in the middle of this one's payload, and no later byte can put
+ * that right.  The whole frame is tried at once, and what the socket would not
+ * take is staged for on_write() - one frame, and while it is staged the
+ * frames that arrive are DROPPED.  That is the difference from a login: a
+ * monitor holds nothing (no session, no login), so losing frames is what it
+ * does when it stops reading, and it is never a reason to close it.  The node
+ * never waits for a monitor, and a monitor never makes the node wait.
+ */
+
+/* The record: four bytes of length, the interface name and its NUL, then the
+ * frame.  The frame is one byte shorter than a reader's payload buffer, which
+ * carries a KISS data byte in front of it (see libax25/wampes.c): a frame of
+ * AXMON_FRAME_MAX bytes would make a payload one byte too long for a reader
+ * that asked for AXMON_FRAME_MAX, and a frame that long is not an AX.25 frame
+ * anyway.  The bound is here so that reader never has to drop one. */
+#define AXMON_NAME_MAX   64
+#define AXMON_FRAME_MAX  1500
+#define AXMON_REC_MAX    (4 + AXMON_NAME_MAX + 1 + AXMON_FRAME_MAX)
+
+static void axmon_writable(void *arg);
+
+/* Give up on a monitor whose socket failed.  A slow reader is not this - a
+ * full socket is handled by staging - but a closed or reset one has no
+ * reader left at all, and saying why is better than a silent leak.
+ */
+static void axmon_lost(struct controlblock *cp)
+{
+  char reason[128];
+
+  snprintf(reason, sizeof(reason), "monitor not written: %s",
+	   strerror(errno));
+  remote_net_drop_client(cp->fd, reason);
+}
+
+static void axmon_write(struct controlblock *cp, const unsigned char *rec,
+			int len)
+{
+  int n;
+
+  /* A frame is still on its way out: this one is lost.  Dropping it, and not
+   * queueing it, is what keeps a monitor that stopped reading from growing
+   * anything on the node.
+   */
+  if (cp->mon_buf != NULL) return;
+
+  n = write(cp->fd, rec, (unsigned) len);
+  if (n == len) return;
+  if (n < 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+      n = 0;                            /* nothing written: stage it all */
+    else {
+      axmon_lost(cp);
+      return;
+    }
+  }
+  /* A short write, or none at all.  Keep the rest and let on_write() finish
+   * it, one whole frame at a time.
+   *
+   * If the copy for the rest fails, nothing can finish the record that is
+   * already half on the wire - and half a record leaves the reader reading
+   * the next length out of this one's payload, for good.  So a partial write
+   * with no memory drops the client; a write that took nothing at all can
+   * simply lose the frame.
+   */
+  if (!(cp->mon_buf = (unsigned char *) malloc((size_t) len))) {
+    if (n > 0) axmon_lost(cp);
+    return;
+  }
+  memcpy(cp->mon_buf, rec, (size_t) len);
+  cp->mon_len = len;
+  cp->mon_off = n;
+  on_write(cp->fd, axmon_writable, cp);
+}
+
+static void axmon_writable(void *arg)
+{
+  struct controlblock *cp = (struct controlblock *) arg;
+  int n;
+
+  if (cp->mon_buf == NULL) {
+    off_write(cp->fd);
+    return;
+  }
+  n = write(cp->fd, cp->mon_buf + cp->mon_off,
+	    (unsigned) (cp->mon_len - cp->mon_off));
+  if (n > 0)
+    cp->mon_off += n;
+  else if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK ||
+		     errno == EINTR))
+    return;                             /* still no room: wait for the next */
+  else {
+    axmon_lost(cp);
+    return;
+  }
+  if (cp->mon_off < cp->mon_len) return;
+  free(cp->mon_buf);
+  cp->mon_buf = NULL;
+  cp->mon_len = 0;
+  cp->mon_off = 0;
+  off_write(cp->fd);
+}
+
+void axmon_frame(struct iface *ifp, int dir, struct mbuf *bp)
+{
+  /* Built once and handed to every monitor that wants it.  Static because
+   * the node is single threaded and nothing below calls back into here.
+   */
+  static unsigned char rec[AXMON_REC_MAX];
+  struct controlblock *cp;
+  struct controlblock *next;
+  struct mbuf *p;
+  unsigned char *q;
+  int framelen, namelen, left, off, total;
+
+  if (Monitors == NULL || bp == NULL || ifp == NULL) return;
+  /* The interface it is on the wire on - the one whose ax25sndcnt the
+   * senders move.  iface may only be passing the frame on to its "forw".
+   */
+  if (ifp->forw != NULL) ifp = ifp->forw;
+  if (ifp->name == NULL) return;
+
+  framelen = (int) len_p(bp);
+  if (framelen <= 0 || framelen >= AXMON_FRAME_MAX) return;
+  namelen = (int) strlen(ifp->name);
+  if (namelen > AXMON_NAME_MAX) namelen = AXMON_NAME_MAX;
+
+  rec[0] = (unsigned char) (framelen >> 24);
+  rec[1] = (unsigned char) (framelen >> 16);
+  rec[2] = (unsigned char) (framelen >> 8);
+  rec[3] = (unsigned char) framelen;
+  memcpy(rec + 4, ifp->name, (size_t) namelen);
+  rec[4 + namelen] = 0;
+  off = 4 + namelen + 1;
+  q = rec + off;
+  for (p = bp, left = framelen; p != NULL && left > 0; p = p->next) {
+    int cnt = (int) p->cnt;
+
+    if (cnt > left) cnt = left;
+    memcpy(q, p->data, (size_t) cnt);
+    q += cnt;
+    left -= cnt;
+  }
+  total = off + framelen;
+
+  for (cp = Monitors; cp != NULL; cp = next) {
+    /* axmon_write() can drop this monitor (a dead socket), and dropping it
+     * frees it and takes it off Monitors - so the next one is read BEFORE the
+     * write, not after the free.
+     */
+    next = cp->mon_next;
+    if (!(cp->mon_dirs & dir)) continue;
+    if (!portlist_allows(&cp->mon_ports, ifp)) continue;
+    axmon_write(cp, rec, total);
+  }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -560,6 +794,78 @@ static int close_command(struct controlblock *cp)
   }
   if (axserv_session_close(handle) != 0)
     say(cp, "*** no session %s", handle);
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* "monitor [iface=<list>] [input|output]" - become a raw monitor.
+ *
+ * The default is input: what ARRIVED on the port, which is the value of a
+ * kernel ETH_P_AX25 socket and of listen(1) with no -a - the traffic a heard
+ * list is made of.  "output" adds our own transmissions, the value of
+ * ETH_P_ALL and of "listen -a".  The two words are trace's, so the same two
+ * say the same thing in the node's own "trace" command.
+ *
+ * The iface list is the one "listen ax25 add" already takes: comma separated,
+ * a "!" in front of the whole list to exclude, "all" for every port, and
+ * nothing at all for every port as well.  It is answered HERE and not at the
+ * client: a monitor that asked for one interface is not sent the others.
+ *
+ * Not a datagram listen, and not accidentally: a datagram client claims a
+ * callsign, a monitor watches an interface.  The frames go out whole and
+ * unaltered, destination and all, so an APRS beacon addressed to APRS - which
+ * has nothing to do with the monitor's own callsign - is shown to everyone
+ * who may watch that port.  That is what a monitor is for, and why it has a
+ * socket and a right of its own.
+ */
+static int monitor_command(struct controlblock *cp)
+{
+  char copy[sizeof(cp->buffer)];
+  char err[160];
+  char *argv[16];
+  char *p;
+  const char *ifaces = NULL;
+  int dirs = IF_TRACE_IN;
+  int argc;
+  int i;
+
+  strcpy(copy, getarg(0, 1));
+  for (argc = 0, p = strtok(copy, " \t");
+       p != NULL && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+
+  for (i = 0; i < argc; i++) {
+    if (!strncasecmp(argv[i], "iface=", 6)) {
+      ifaces = argv[i] + 6;
+      continue;
+    }
+    if (!strcasecmp(argv[i], "input")) {
+      dirs = IF_TRACE_IN;
+      continue;
+    }
+    if (!strcasecmp(argv[i], "output")) {
+      dirs = IF_TRACE_IN | IF_TRACE_OUT;
+      continue;
+    }
+    say(cp, "*** \"%s\": \"monitor\" takes iface=<list>, input or output",
+	argv[i]);
+    return -1;
+  }
+  if (portlist_set(&cp->mon_ports, ifaces, err, sizeof(err))) {
+    say(cp, "*** %s", err);
+    return -1;
+  }
+  cp->mon_dirs = dirs;
+  /* A second "monitor" line on the same connection is a command too: it
+   * replaces the list and the directions rather than adding a second entry.
+   */
+  if (!cp->monitor) {
+    cp->monitor = 1;
+    cp->mon_next = Monitors;
+    Monitors = cp;
+  }
   return 0;
 }
 
@@ -1104,6 +1410,15 @@ static void command_receive(void *arg)
     { 0,         0 }
   };
 
+  /* What the monitor socket offers, and all it offers.  It is not a place to
+   * connect, send or command from: the one word opens the stream and the
+   * session is a sink afterwards.
+   */
+  static const struct cmdtable monitor_table[] = {
+    { "monitor", monitor_command },
+    { 0,         0 }
+  };
+
   char c;
   int n;
 
@@ -1115,6 +1430,12 @@ static void command_receive(void *arg)
 				   : strerror(errno));
     return;
   }
+  /* A monitor receives; it does not command.  Read here only to hear the end
+   * of the stream - a client that vanishes must free its slot - and throw
+   * away whatever else it sent.  Nothing it could say would be an order, and
+   * parsing it as one would end the session over a stray byte.
+   */
+  if (cp->monitor) return;
   /* Take a line ending however it comes: LF, CRLF or a bare CR.  A telnet
    * sends CRLF, and a stray CR left on the end of the last word turned
    * "datagram hf1:" into an unknown word - it only ever went unnoticed
@@ -1188,7 +1509,8 @@ static void command_receive(void *arg)
     return;
   }
   if (command_switcher(cp, getarg(cp->buffer, 0),
-		       cp->restricted ? service_table : full_table))
+		       cp->restricted == 2 ? monitor_table
+		       : cp->restricted ? service_table : full_table))
     delete_controlblock(cp, 0,
 			"unknown command, or the command ended the session");
 }
@@ -1222,6 +1544,19 @@ static void accept_connection_net(void *p)
   }
   cp->fd = fd;
   cp->restricted = l->restricted;
+  /* The monitor socket's writes must never wait: a node held up in write()
+   * would miss frames on the air, and the monitor is only watching.  The
+   * reads stay as they are - command_receive() reads only when select says
+   * there is something, and a non-blocking read that returns EAGAIN there
+   * would be answered by the same nul check as the end of the stream.  The
+   * one connect() on accept() does not inherit O_NONBLOCK from the listener,
+   * so it is set here and only for the monitor.
+   */
+  if (l->restricted == 2) {
+    int fl = fcntl(cp->fd, F_GETFL, 0);
+
+    if (fl != -1) fcntl(cp->fd, F_SETFL, fl | O_NONBLOCK);
+  }
   on_read(cp->fd, command_receive, cp);
 }
 

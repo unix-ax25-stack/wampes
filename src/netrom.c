@@ -412,6 +412,11 @@ static void broadcast_to(struct broadcast *p, struct mbuf **bpp)
   addrcp(p->hdr.source, p->iface->hwaddr);
   dup_p(&bp, *bpp, 0, MAXINT16);
   htonax25(&p->hdr, &bp);
+  /* The one send in the node that does not go through ax_send_ui(), so the
+   * monitor has to be told here too - and, like every other sender, with the
+   * interface the frame leaves by.
+   */
+  axmon_frame(p->iface, IF_TRACE_OUT, bp);
   if (p->iface->forw)
     (*p->iface->forw->raw)(p->iface->forw, &bp);
   else
