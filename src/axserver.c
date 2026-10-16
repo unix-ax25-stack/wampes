@@ -1,5 +1,7 @@
 /* @(#) $Id: axserver.c,v 1.19 2002/02/05 12:00:34 dl9sau Exp $ */
 
+#define _GNU_SOURCE		/* SO_PEERCRED: struct ucred and the peer pid */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
