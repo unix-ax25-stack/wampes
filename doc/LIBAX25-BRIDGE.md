@@ -231,6 +231,15 @@ ELF has a flat namespace: the first definition of `socket` in the search
 order is the one every reference binds to, wherever the reference comes
 from, so getting the library loaded first is the whole trick.
 
+If the sources of such a program are at hand, there is a second way to the
+same end - on Linux: link it against `libax25` with `-lax25`.  The program
+may not call a single `libax25` function and its code stays as it is; but
+the library comes with the program then, and the shim answers its socket
+calls the same way - the backend still chosen per port at `bind()`, as
+described above.  The library has to be the one built with
+`--enable-userspace-ax25`, and on macOS the link does not take the place of
+`DYLD_INSERT_LIBRARIES`.
+
 **On macOS the recipe that stood here was wrong, and the library now does
 something else instead.**  Mach-O binds two-level - every import remembers
 which library it came from - and `DYLD_FORCE_FLAT_NAMESPACE`, which was the
