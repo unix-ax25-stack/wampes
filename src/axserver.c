@@ -1637,11 +1637,16 @@ static void axpipe_readable(void *arg)
     axpipe_put(pp, &bp);
     return;
   }
+  if (n == 0) {
+    /* End of file: far end closed the connection */
+    syslog(LOG_NOTICE, "axpipe: session fd %d ended via read: EOF (far end closed)", pp->fd);
+    axpipe_release(pp);
+    return;
+  }
   if (n < 0 && (errno == EAGAIN || errno == EINTR)) return;
-  if (n < 0) { // log only if n > 0; comment out if you like to log normal sessin termintion
-	syslog(n == 0 ? LOG_NOTICE : LOG_ERR,
-		"axpipe: session fd %d ended via read: %s", pp->fd,
-		n == 0 ? "EOF (far end closed)" : "error (errno = %m)");
+  if (n < 0) {
+    syslog(LOG_ERR, "axpipe: session fd %d ended via read: error (errno = %d: %s)",
+	   pp->fd, errno, strerror(errno));
   }
   axpipe_release(pp);                   /* end of file: let the link go */
 }
@@ -1658,8 +1663,8 @@ static void axpipe_writable(void *arg)
 
     off_write(pp->fd);
     if (getsockopt(pp->fd, SOL_SOCKET, SO_ERROR, (void *) &err, &len) || err) {
-      syslog(LOG_ERR, "axpipe: session fd %d connect failed (errno = %m)",
-	     pp->fd);
+      syslog(LOG_ERR, "axpipe: session fd %d connect failed (errno = %d: %s)",
+	     pp->fd, err, strerror(err));
       axpipe_release(pp);
       return;
     }
@@ -1708,8 +1713,8 @@ static void axpipe_pump(struct axpipe *pp)
       on_write(pp->fd, axpipe_writable, pp);
       return;
     }
-    syslog(LOG_ERR, "axpipe: session fd %d write failed (errno = %m)",
-	   pp->fd);
+    syslog(LOG_ERR, "axpipe: session fd %d write failed (errno = %d: %s)",
+	   pp->fd, errno, strerror(errno));
     axpipe_release(pp);
     return;
   }
@@ -2664,7 +2669,11 @@ static int axserv_handover(struct axlisten *lp, const char *line, int *fdp)
       /* either a genuine error, or the channel refused to drain in time:
        * refuse the call, and close our end so the client's copy sees EOF
        * at once rather than waiting on a session nobody is serving. */
-      if (!real_err) errno = EIO;       /* the caller logs strerror(errno) */
+      if (!real_err) {
+        errno = ETIMEDOUT;
+      } else if (n == 0) {
+        errno = EPIPE;
+      }
       close(sv[0]);
       close(sv[1]);
       return -1;
