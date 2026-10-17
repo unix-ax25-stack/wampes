@@ -84,10 +84,13 @@ _doc:
 # anybody who is not deep in Unix permissions.  755 also agrees with what
 # lib/rundir.c sets at every start, so the two do not fight each other.
 #
-# The decision about who may use the node is made one level down, on
-# sockets/: that directory is the gate, 750 with a group of the sysop's
-# choosing, and the socket inside it is deliberately open (0666 - connect()
-# asks for write and never for execute).  See doc/PERMISSIONS.md.
+# The decision about who may use the node is the socket's now, not the
+# directory's.  sockets/ comes up 755, .sockets stays 700, and the two unix
+# sockets inside sockets/ state the gate themselves - 0666 for the service,
+# 0660 with the directory's group for the monitor - and "axsock mode"/"group"
+# (with the monitor's own twins) may change either from net.rc.  That also
+# removes the difference between BSD and Linux about where a new socket takes
+# its group from.  See doc/PERMISSIONS.md.
 #
 # Files lose group and world write.  Anything holding credentials wants less
 # than that and has to say so itself; see doc/PERMISSIONS.md.
@@ -106,7 +109,7 @@ _secure:
 	find $(TCPDIR) -type d ! -name .sockets ! -name sockets \
 		-exec chmod 755 {} \; ; \
 	[ -d $(TCPDIR)/.sockets ] && chmod 700 $(TCPDIR)/.sockets; \
-	[ -d $(TCPDIR)/sockets ] && chmod 750 $(TCPDIR)/sockets; \
+	[ -d $(TCPDIR)/sockets ] && chmod 755 $(TCPDIR)/sockets; \
 	find $(TCPDIR) -type f -exec chmod go-w {} \; ; \
 	echo "$(TCPDIR): root, 755, nothing below it writable by anyone else"; \
 	echo "  .sockets and sockets now belong to ROOT.  A node that runs under"; \

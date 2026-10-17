@@ -111,7 +111,8 @@ struct cmds Cmds[] = {
 	/* The default number in the synopsis keeps in step with
 	 * TCP_AX25_GW_PORT_DEFAULT in remote_net.c (Thomas). */
 	{ "axsock",       doaxsock,       0, 0,
-	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n"
+	  "axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>|\n"
+	  "        monitor mode <octal>|group <name>]\n"
 	  "       tcp-listen default port 8213" },
 	{ "ip",           doip,           0, 0, NULL },
 	{ "kick",         dokick,         0, 0, NULL },

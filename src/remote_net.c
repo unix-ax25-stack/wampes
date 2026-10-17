@@ -1601,22 +1601,21 @@ static void complain(const char *fmt, ...)
 
 /*---------------------------------------------------------------------------*/
 
-/* The service socket is created wide open, and that is not carelessness: the
- * directory around it is the gate.  sockets/ is 0750, so who may reach this
- * socket is decided by the group on that directory - one chgrp, and the sysop
- * has moved the whole service from one group to another without having to
- * think about socket modes at all.
+/* The service socket is created wide open, and that is not carelessness: what
+ * decides who may reach it is the socket's own mode, and 0666 is the widest a
+ * sysop gets.  sockets/ itself is 0755 (see create_rundir() in lib/rundir.c):
+ * it decides who may walk the path and who may create the socket, and both are
+ * the sysop's business, but it no longer decides who may reach a socket that
+ * is already there.  That moved onto the socket, where "axsock mode"/"axsock
+ * group" and their monitor twins set it, after the bind.
  *
- * Guessing here is what does not work.  A group looked up by name gave
+ * Guessing a group here is what did not work.  A group looked up by name gave
  * whoever happened to hold that name the transmitter, and on BSD a socket
  * inherits the group of its DIRECTORY, so "no such group" quietly produced
  * group staff - every local account.  Refusing instead, with 0600, produced a
  * node that no client could reach, which drives an operator to chmod -R 777
- * on the lot.  Both are worse than saying plainly: the door is the directory.
- *
- * net.rc can still say otherwise with "axsock mode" and "axsock group", and
- * those run after the bind.  0606 to admit everyone except one group, for
- * instance.
+ * on the lot.  Both are worse than saying plainly what each socket's mode is
+ * and leaving the choice to net.rc.
  *
  * 0666 AND NOT 0777, because connect() to a unix socket asks for WRITE and
  * never for execute.  Linux says it in af_unix.c, unix_find_bsd():
@@ -1631,11 +1630,43 @@ static void complain(const char *fmt, ...)
  * than the decision behind it.  For a socket, "wide open" is 0666.  It was
  * 0777 because that was the plainest way to write "the directory decides",
  * without anybody checking which bits get read (Thomas' question).
+ *
+ * The monitor socket is not the service socket, and 0666 is not its answer.
+ * What the service socket decides is CONNECT, and connect() asks for write;
+ * what the monitor decides is WATCH, and watching is being handed every frame
+ * on the node.  That audience is the group, so the monitor comes up 0660, its
+ * group inherited from sockets/ (inherit_dir_group() below), and "axsock
+ * monitor mode"/"group" may say otherwise exactly as "axsock mode"/"group" do
+ * for the service socket.
  */
 
 static void set_service_rights(const char *path)
 {
   chmod(path, 0666);
+}
+
+/* The monitor's group is the group of the directory that holds it - sockets/ -
+ * because 0660 says so and because that is the one decision the sysop already
+ * makes there.  BSD gives a new socket the group of its directory by itself;
+ * Linux gives it the group of the process, so it has to be said.  Saying it
+ * makes "chgrp hams $TCPDIR/sockets" mean the same on both platforms, and
+ * "axsock monitor group" may still override it from net.rc.
+ *
+ * A failure is left alone: the mode still holds, and the group stays what
+ * bind() gave it, which is what an installation that never set one expects.
+ */
+static void inherit_dir_group(const char *path)
+{
+  char dir[sizeof(((struct sockaddr_un *) 0)->sun_path) + 1];
+  struct stat st;
+  char *slash;
+
+  if (strlen(path) >= sizeof(dir)) return;
+  strcpy(dir, path);
+  if (!(slash = strrchr(dir, '/'))) return;
+  *slash = '\0';
+  if (stat(dir, &st)) return;
+  chown(path, (uid_t) -1, st.st_gid);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1672,6 +1703,12 @@ int doaxsock(int argc, char *argv[], void *p)
     printf("%s  mode 0%03o  uid %lu  gid %lu\n", Axsock_path,
            (unsigned) (st.st_mode & 07777),
            (unsigned long) st.st_uid, (unsigned long) st.st_gid);
+    if (stat(Monitor_path, &st))
+      printf("%s: not there\n", Monitor_path);
+    else
+      printf("%s  mode 0%03o  uid %lu  gid %lu\n", Monitor_path,
+	     (unsigned) (st.st_mode & 07777),
+	     (unsigned long) st.st_uid, (unsigned long) st.st_gid);
     if (Tcpax25gw_port)
       printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Tcpax25gw_port);
     else
@@ -1711,6 +1748,50 @@ int doaxsock(int argc, char *argv[], void *p)
       return 1;
     }
     return 0;
+  }
+
+  /* The monitor socket's rights, on their own because it is a socket of its
+   * own: 0660 and the group of sockets/ is a different answer from 0666, and
+   * the sysop may want to change either - see the note on sockets/ above.
+   */
+  if (!strcmp(argv[1], "monitor")) {
+    if (argc < 3) {
+      printf("axsock monitor mode <octal>|group <name>\n");
+      return 1;
+    }
+    if (!strcmp(argv[2], "mode")) {
+      if (argc < 4) {
+	printf("axsock monitor mode <octal>\n");
+	return 1;
+      }
+      mode = strtoul(argv[3], &end, 8);
+      if (*end || mode > 07777) {
+	printf("axsock monitor mode <octal>, e.g. 0660\n");
+	return 1;
+      }
+      if (chmod(Monitor_path, (mode_t) mode)) {
+	printf("%s: cannot set the mode\n", Monitor_path);
+	return 1;
+      }
+      return 0;
+    }
+    if (!strcmp(argv[2], "group")) {
+      if (argc < 4) {
+	printf("axsock monitor group <name>\n");
+	return 1;
+      }
+      if (!(gr = getgrnam(argv[3]))) {
+	printf("no group \"%s\"\n", argv[3]);
+	return 1;
+      }
+      if (chown(Monitor_path, (uid_t) -1, gr->gr_gid)) {
+	printf("%s: cannot set the group\n", Monitor_path);
+	return 1;
+      }
+      return 0;
+    }
+    printf("axsock monitor mode <octal>|group <name>\n");
+    return 1;
   }
 
   /* The Unix sockets are always there - they come up with the node and go
@@ -1753,7 +1834,8 @@ int doaxsock(int argc, char *argv[], void *p)
     return tcpax25gw_on(port);
   }
 
-  printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>]\n"
+  printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>|"
+	 "monitor mode <octal>|group <name>]\n"
 	 "       (tcp-listen default port %d)\n", TCP_AX25_GW_PORT_DEFAULT);
   return 1;
 }
@@ -1815,14 +1897,23 @@ static int open_listener(struct listener *l, int loud)
   }
 
   if (addr->sa_family == AF_UNIX) {
-    if (l->restricted)
-      set_service_rights(((struct sockaddr_un *) addr)->sun_path);
+    const char *sun = ((struct sockaddr_un *) addr)->sun_path;
+
+    if (l->restricted == 2) {
+      /* 0660, and the group of the directory that holds it; see the note on
+       * sockets/ above.  chown first, so no reader sees the bitmap without
+       * the group it belongs to.
+       */
+      inherit_dir_group(sun);
+      chmod(sun, 0660);
+    } else if (l->restricted)
+      set_service_rights(sun);
     else
       /* The command channel leaned entirely on 0700 of the directory around
        * it - nothing set a mode on the socket itself.  Say it on the object
        * as well, the way the service socket has always stated its terms.
        */
-      chmod(((struct sockaddr_un *) addr)->sun_path, 0600);
+      chmod(sun, 0600);
   }
 
   l->fd = fd;

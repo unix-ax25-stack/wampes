@@ -17,9 +17,9 @@ designed.  They add one line and wait for the next restart.
 
 The command channel on `$TCPDIR/.sockets/netcmd` is the node's own
 command line.  Whatever may be typed at the console may be sent there,
-`!` included.  The node creates that socket with mode 0700, so only root
-can reach it - **provided the directories above it cannot be replaced by
-somebody else.**
+`!` included.  The node creates that socket with mode 0600 and keeps the
+directory around it at 0700, so only root can reach it - **provided the
+directories above it cannot be replaced by somebody else.**
 
 That second half is the part people miss.  A directory you may write is a
 directory whose contents you may rename.  If `/usr/local` belongs to your
@@ -51,34 +51,52 @@ there.
 
 ### What is deliberately not checked
 
-`$TCPDIR/sockets/` and what lives in it.  That directory is published on
-purpose: `sockets/ax25` is how libax25 programs reach the node, and its
-owner, group and mode are the sysop's decision rather than a security
-question.  `0660` group `hams` is the usual choice.  A sysop who does not
-want the `hams` group transmitting can make it `0660` group `staff`
-instead, or `0606` group `hams`, and either is a considered decision, not
-a mistake.  The node itself no longer decides any of it - see *The door is
-the directory* below for the two attempts that were made and why both were
-wrong.
+`$TCPDIR/sockets/` is published on purpose: `sockets/ax25` and
+`sockets/monitor` are how libax25 programs reach the node, and the mode
+on each **socket** is the sysop's decision rather than a security
+question.  The directory is **0755** - it decides who may walk the path
+and who may create a socket there, and neither of those decides who may
+*reach* one.  What decides that is the socket itself: `sockets/ax25` is
+**0666** and `sockets/monitor` is **0660** with the group of the
+directory around it.  `0660` group `hams` on the service socket is the
+usual choice, and it is set with `axsock mode 0660` and `axsock group
+hams`; a sysop who does not want the `hams` group transmitting can make
+it `0660` group `staff` instead, or `0606` group `hams`, and either is a
+considered decision, not a mistake.  The node itself no longer decides
+any of it - see *The socket is the door* below for the defaults and
+*Saying something else in net.rc* for how to move them.
 
 The socket that *would* matter is the command channel.  It lives in
 `.sockets`, and it carries 0600 of its own since 2026-08-15 - until then
-nothing set a mode on it at all and those 0700 on the directory were its
+nothing set a mode on it at all and the mode on the directory was its
 entire protection.
 
 `.sockets` is created 0700 and then left alone, like every other
-directory here.  700 is the right default because it holds regardless of
-what the socket inside says; an admin who wants 750 for a group of sysops
-may have it and will keep it.  One who opens it wide is told so at
-startup - that one is still checked.
+directory here.  0700 says what the 0600 on the socket inside says, so the
+two agree and neither is the weak one; it is not comfort, either, because
+the command channel runs `!` as root.  An admin who wants 0750 for a group
+of sysops may have it and will keep it.  One who opens either directory
+wide - group or world *write* - is told so at startup; that one is still
+checked.
 
-### The door is the directory
+### The socket is the door
 
-`sockets/` is created **0750** and the socket inside it **0666**.  That
-looks backwards until you see which one is the gate: who may reach the
-service is decided by the group on the directory, and the sysop moves the
-whole service from one group to another with a single `chgrp`, without
-having to think about socket modes at all.
+`sockets/` is created **0755** and the sockets inside it state the terms
+themselves: **0666** for the service socket, **0660** with the group of
+the directory for the monitor.  Who may reach the node is decided by the
+mode on the socket, and `axsock` moves it without touching the directory:
+the service from one group to another with `axsock group`, the monitor
+with `axsock monitor mode` and `axsock monitor group`.
+
+The directory keeps two smaller jobs, and both are the sysop's: it
+decides who may walk the path to a socket, and who may create one there -
+`bind()` needs **write** on the directory.  Neither is a transmission
+decision, which is why 0755 is the default now.  0750 used to stand there
+"because the directory is the gate", but it decided nothing: on BSD a new
+directory takes the group of its parent, so it came up `root:staff` and
+admitted every local account anyway, while on Linux it came up `root:root`
+and admitted nobody - which is what kept an operator typing `chmod 755`.
+Putting the decision on the socket removes both surprises.
 
 **0666 and not 0777**, because `connect()` to a unix socket asks for
 **write** and never for execute.  Linux says so outright - `af_unix.c`,
@@ -94,33 +112,40 @@ So the x bit was never read by anything.  It stood there until
 decides", and nobody had checked which bits get consulted.  For a socket,
 wide open is 0666.
 
-    chgrp hams   $TCPDIR/sockets     the hams group may use the node
-    chgrp sysops $TCPDIR/sockets     that group instead
-    chmod 755    $TCPDIR/sockets     everybody may
+    axsock group hams            the hams group may transmit
+    axsock group sysops          that group instead
+    axsock mode 0666             everybody may (the default)
+    axsock monitor group hams    the hams group may watch
+    axsock monitor mode 0660     the default
 
-Guessing is what does not work here, and both directions were tried on
-2026-08-15.  Looking a group up by name handed the transmitter to whoever
-held that name - and on BSD a new file takes the group of its DIRECTORY
-rather than of whoever made it, so "no such group" quietly produced group
-`staff`, which on macOS is every local account.  Refusing instead, and
-leaving the socket at 0600, produced a node no client could reach and no
-daemon could use without running as root.  That is the default which ends
-in `chmod -R 777 /usr/local`, and it has been seen in the wild often
-enough.
+Guessing a group is what does not work here, and both directions were
+tried on 2026-08-15.  Looking a group up by name handed the transmitter
+to whoever held that name - and on BSD a new file takes the group of its
+DIRECTORY rather than of whoever made it, so "no such group" quietly
+produced group `staff`, which on macOS is every local account.  Refusing
+instead, and leaving the socket at 0600, produced a node no client could
+reach and no daemon could use without running as root.  That is the
+default which ends in `chmod -R 777 /usr/local`, and it has been seen in
+the wild often enough.  Neither is the node's to decide, which is why it
+leaves the choice to net.rc rather than picking a group.
 
-**The group is inherited, and the two systems inherit differently.**  On
-BSD and macOS a new directory takes the group of its parent, so
-`sockets/` comes up `root:staff` if `$TCPDIR` is - and `staff` is every
-local account, so 0750 admits everyone.  On Linux it takes the group of
-the process, so `root:root`, and 0750 admits nobody but root.  The same
-setting, opposite results.  Either way the answer is one line, and it is
-a line somebody should think about once:
+**A socket's group is inherited, and the two systems inherit
+differently.**  On BSD and macOS a new socket takes the group of its
+directory, so `sockets/monitor` comes up `root:staff` if `sockets/` does -
+and `staff` is every local account.  On Linux it takes the group of the
+process, so `root:root`.  The same setting, opposite results.  The
+monitor does not leave that to chance: the node gives it the group of the
+directory it sits in, so
 
     chgrp <group> $TCPDIR/sockets
 
-`make install` does not do it, and does not create a group either.  It
-cannot know who is meant to have the radio, and an install that reaches
-into the account database is not one anybody should run.
+means the same on both platforms, and `axsock monitor group <name>` may
+still override it.  For the service socket the question does not arise -
+0666 names no group.
+
+`make install` does not perform that `chgrp`, and does not create a group
+either.  It cannot know who is meant to have the radio, and an install
+that reaches into the account database is not one anybody should run.
 
 ### Connecting and binding are governed by different things
 
@@ -144,22 +169,23 @@ it and binds again.  **Both** the removing and the binding need write
 permission on the directory.
 
 **The answer is `chown`, not `chmod`.**  A node running as root needs
-nothing at all - root writes whatever the bits say, and `root:hams 0750` is
+nothing at all - root writes whatever the bits say, and `root:hams 0755` is
 the ordinary case.  A node under a normal account wants the directory to
 BELONG to that account, with the mode unchanged:
 
-    drwxr-x---  thomas:hams  /tcp/sockets
+    drwxr-xr-x  thomas:hams  /tcp/sockets
 
     thomas    owner, may create the socket    -> the node starts
-    hams      r-x, may enter and connect      -> the clients get in
-    others    nothing
+    everyone  r-x, may enter - and connect, subject to the socket's mode
 
-Opening it up instead - 770, let alone 777 - is the worse trade by some way,
-and the next section says why: the moment the group may write, any member of
-it may delete `ax25` and bind their own socket under that name, and every
-client will connect to them with correct permissions and nothing to notice.
-Where that really is wanted, several daemons publishing their own sockets in
-one place, it is 1770 and the sticky bit is not optional.
+Whether the walls are up at all is the socket's business now (see above).
+What the directory mode still decides is who may *create* an entry in it,
+and opening that up - 770, let alone 777 - is the worse trade by some way,
+and the next section says why: the moment the group may write, any member
+of it may delete `ax25` and bind their own socket under that name, and
+every client will connect to them with correct permissions and nothing to
+notice.  Where that really is wanted, several daemons publishing their own
+sockets in one place, it is 1770 and the sticky bit is not optional.
 
 Running `make install` as root takes the ownership back (`chown -R root`,
 and deliberately so: a root node reads net.rc, where `!` runs a shell
@@ -175,7 +201,7 @@ and it says it to syslog, because a node started at boot has no console.
 
 ### The sticky bit on sockets/
 
-At 750 it makes no difference: only root may create or remove entries.
+At 755 it makes no difference: only the owner may create or remove entries.
 It matters the moment the directory is opened up for writing - say 1770
 so that several daemons can publish their own sockets there - and then it
 is not optional.  Without it, any member of that group may delete `ax25`
@@ -191,11 +217,14 @@ the node's.
 The defaults are a starting point.  net.rc runs after the sockets exist,
 so these win:
 
-    axsock                    show owner, group and mode
-    axsock group <name>       set the group
-    axsock mode <octal>       set the mode
+    axsock                        show owner, group and mode, both sockets
+    axsock group <name>           set the service socket's group
+    axsock mode <octal>           set the service socket's mode
+    axsock monitor group <name>   set the monitor's group
+    axsock monitor mode <octal>   set the monitor's mode
 
-The one that the directory alone cannot express:
+The one a directory mode cannot express, because it is not a mode the
+directory has:
 
     axsock mode 0606          everybody EXCEPT the group on the socket -
                               they may be connected to, and may not
@@ -209,22 +238,23 @@ directory, and it has to say so itself: 640 or 600, owned by root.
 
 ### Where a group change leaves you, in practice
 
-`chgrp hams $TCPDIR/sockets` is the one line, and the mode it meets is
-worth looking at, because the group of a new directory is inherited and
-the two platforms inherit it differently.
+Who may transmit and who may watch is `axsock group hams` and `axsock
+monitor group hams` now; the directory is not in that path any more.  A
+sysop who wants it in the path anyway - the directory as a second wall, so
+that only one group can even walk to the socket - changes its mode, and
+then it is worth knowing which modes do what.  The default is 0755.
 
-    0750  root:hams   the shape most stations want.  hams may traverse,
-                      find the socket and connect; nobody else may do
-                      any of the three
+    0755  root:hams   the default.  hams may walk the path and connect,
+                      and so may everyone else; the socket decides who
+                      actually gets in
+
+    0750  root:hams   hams may traverse, find the socket and connect;
+                      nobody else may do any of the three.  The socket
+                      still decides within the group
 
     0710  root:hams   the same, less: hams may traverse and connect but
                       not list, so the name of the socket stays unread-
                       able to them as well
-
-    0755  root:staff   the accident macOS makes on its own.  `staff` is
-                      every local account, so 750 already admits
-                      everyone, and the "750 is restrictive" note in the
-                      Makefile is not true on that platform
 
 **0705 does not do what it looks like.**  It reads as "group nothing,
 world a little", and for a directory the group is where the people who
@@ -251,16 +281,19 @@ instead of assumed:
   the socket's own `0666` never comes into it.  Which is also why the
   mistake shows up as a plain `EACCES` and reads like a wrong group.
 
-`make install` does not perform the `chgrp`.  It cannot know who is meant
-to have the radio, and an install that reaches into the account database
-is not one anybody should want to have run by accident.  It also does not
-create the group.  So this is the one line a sysop has to think about
-once, by hand:
+`make install` does not set a group on either socket, and does not create
+one.  It cannot know who is meant to have the radio, and an install that
+reaches into the account database is not one anybody should want to have
+run by accident.  So the group is the one thing a sysop has to think about
+once, and net.rc is where to say it:
 
-    chgrp <group> $TCPDIR/sockets
+    axsock group hams            who may transmit
+    axsock monitor group hams    who may watch
 
-and if the result is that nothing connects afterwards, `0705` and a group
-that does not exist are the two things to look at first.
+If the monitor is to follow the directory's group rather than name one
+itself, `chgrp <group> $TCPDIR/sockets` is the line that sets it.  And if
+nothing connects afterwards, `0705` on the directory and a group that does
+not exist are the two things to look at first.
 
 ## What that admission is worth
 
@@ -352,6 +385,7 @@ then, and the operator is running it out of a directory of their own.
     chown -R root  $TCPDIR
     chmod 755      $TCPDIR and its directories
     chmod 700      $TCPDIR/.sockets
+    chmod 755      $TCPDIR/sockets
     chmod go-w     every file below it
 
 By hand, including the part above `$TCPDIR` that `make install` will not

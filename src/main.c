@@ -114,7 +114,7 @@ nodedir_setup(void)
 	for(i = 0; dirs[i] != NULL; i++){
 		nodedir_path(path, sizeof(path), dirs[i]);
 		if(stat(path, &st) == -1){
-			mode_t mode = (i == 0) ? 0700 : 0750;
+			mode_t mode = (i == 0) ? 0700 : 0755;
 
 			if(mkdir(path, mode) == -1 && errno != EEXIST){
 				printf("Can't create %s: ",path);

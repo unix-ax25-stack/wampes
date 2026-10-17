@@ -57,12 +57,12 @@ static void makedir(const char *name, int mode)
     chmod(name, mode);
 }
 
-/* .sockets used to be forced to 0700 at every start, because nothing set a
- * mode on the command socket itself and those 0700 were its whole protection.
- * The socket says 0600 for itself now, so the directory is no longer load
- * bearing and can follow the same rule as the rest: 0700 when we create it,
- * and left alone afterwards.  An admin who wants 0750 for a group of sysops
- * may have it and keep it; one who opens it wide is told so at startup.
+/* .sockets stays 0700.  It used to be forced to 0700 at every start because
+ * nothing set a mode on the command socket itself and those 0700 were its
+ * whole protection.  The socket says 0600 for itself now, so 0700 is the same
+ * decision made twice - which is the point, since the command channel runs
+ * "!" as root.  An admin who wants 0750 for a group of sysops may have it and
+ * keep it; one who opens it wide is told so at startup.
  */
 
 /*---------------------------------------------------------------------------*/
@@ -70,13 +70,19 @@ static void makedir(const char *name, int mode)
 void create_rundir(void)
 {
   makedir(TCPDIR, 0755);
-  /* 0750, because this directory is the gate.  The socket inside is left
-   * wide open - see set_service_rights() in remote_net.c - so what decides
-   * who may reach the node is the group on this directory, which the sysop
-   * sets once and can change with a single chgrp.  Guessing a group here
-   * would be guessing who may use the transmitter.
+  /* 0755, because the gate is the socket now and not the directory.  The two
+   * sockets in sockets/ state it themselves - 0666 for the service, 0660 with
+   * the directory's group for the monitor (set_service_rights() and
+   * inherit_dir_group() in src/remote_net.c) - and "axsock" moves either one
+   * from net.rc.  The directory decides only who may walk the path and who
+   * may create a socket there, and both belong to the sysop.  It used to be
+   * 0750 "because it is the gate", which decided nothing: on BSD a new
+   * directory takes the group of its parent, so it came up root:staff and
+   * admitted every local account, while on Linux it came up root:root and
+   * admitted nobody - which is what kept an operator running "chmod 755".
+   * See doc/PERMISSIONS.md.
    */
-  makedir(TCPDIR "/sockets", 0750);
+  makedir(TCPDIR "/sockets", 0755);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -84,6 +90,10 @@ void create_rundir(void)
 void create_admin_rundir(void)
 {
   makedir(TCPDIR, 0755);
+  /* 0700: the command channel runs "!" as root, and the socket inside is 0600
+   * of its own.  The directory says the same thing and keeps saying it even
+   * if something later loosens the socket; it is not comfort either way.
+   */
   makedir(TCPDIR "/.sockets", 0700);
 }
 

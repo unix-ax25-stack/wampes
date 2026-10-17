@@ -14,8 +14,9 @@ everywhere else:
     $TCPDIR/sbin/     net conversd mkhostdb qaddr qname
     $TCPDIR/bbs/      bbs.help bbs_import
     $TCPDIR/sockets/  convers                     0755, socket 0666
-                      ax25                        0755, socket 0660 root:hams
-    $TCPDIR/.sockets/ netcmd                      0700
+                      ax25                        0755, socket 0666
+                      monitor                     0755, socket 0660 + group
+    $TCPDIR/.sockets/ netcmd                      0700, socket 0600
     $TCPDIR/          the configuration and the data files, see below
 
     $TCPDIR/net       -> sbin/net                 compatibility symlinks for
@@ -71,14 +72,22 @@ Not an accident of history, but a rights boundary:
 * `sockets/`, mode 0755, holds the convers socket, which every user needs.
   The socket itself is chmod'ed 0666 after binding.
 * `.sockets/`, mode 0700, holds `netcmd`, which is `net`'s command line -
-  whoever can reach it can reconfigure the node.  `cnet` is the client.
+  whoever can reach it can reconfigure the node.  `cnet` is the client.  The
+  socket is 0600 of its own, so 0700 is the same decision twice, on purpose:
+  the command channel runs `!` as root, and the directory keeps the narrower
+  mode even if something later loosens the socket.
 * `sockets/ax25` is the AX.25 service: connect and datagram, and nothing that
-  reaches back into the node.  It sits in the public directory, so its own
-  mode does the work - 0660 and group `hams` where that group exists,
-  otherwise it keeps its owner, which errs narrow rather than wide.  The same
-  service is reachable over TCP on 127.0.0.1 and ::1 after `axsock tcp-listen
-  on` (or `... port <n>`), default port 8213; that listener is off unless
-  net.rc asks for it, because a TCP port carries no rights of its own.
+  reaches back into the node.  It comes up 0666 - wide, because a directory
+  is not the gate any more and each socket states its own terms - and
+  `axsock mode 0660` with `axsock group hams` is the usual net.rc line where
+  that group exists.  The same service is reachable over TCP on 127.0.0.1 and
+  ::1 after `axsock tcp-listen on` (or `... port <n>`), default port 8213;
+  that listener is off unless net.rc asks for it, because a TCP port carries
+  no rights of its own.
+* `sockets/monitor` is the read-only side of the same house - whoever can
+  reach it watches every frame on the node.  It comes up 0660 with the group
+  of the directory that holds it, so `chgrp hams $TCPDIR/sockets` admits
+  hams to it on BSD and Linux alike; `axsock monitor mode`/`group` move it.
 
 `lib/rundir.c` enforces both: `mkdir` alone would leave the mode to the umask,
 so `chmod` follows and also repairs a directory that is already there.  The two
