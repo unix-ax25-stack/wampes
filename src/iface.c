@@ -523,9 +523,19 @@ doifconfig(int argc,char *argv[],void *p)
 	struct iface *ifp;
 	int i;
 
-	/* "verbose" stands where an interface name would - checked before the
-	 * lookup, or it would come back as "Interface verbose unknown".
+	/* "verbose" AND "stats" ARE ANSWERS AND NOT SETTINGS, and they stand
+	 * where an interface name would - checked before the lookup, or they
+	 * would come back as "Interface verbose unknown".
+	 *
+	 * "stats" IS THE ONE THAT MAY NOT LIVE IN "verbose": a TCP carrier has a
+	 * block per session on it, with a dialect, a checksum and counters, and
+	 * that section changes shape while a link is being watched - which is
+	 * exactly what a setting listing must not do (Thomas).  With no name it
+	 * is every TCP port of the node, one after the other.
 	 */
+	if(argc == 2 && !strcmp(argv[1],"stats")){
+		return tcpsock_stat(NULL);
+	}
 	if(argc == 2 && !strcmp(argv[1],"verbose")){
 		for(ifp = Ifaces;ifp != NULL;ifp = ifp->next){
 			showiface(ifp,1);
@@ -546,6 +556,20 @@ doifconfig(int argc,char *argv[],void *p)
 	if(argc == 2){
 		showiface(ifp,0);
 		return 0;
+	}
+	/* A TCP CARRIER, AND NOT EVERY INTERFACE: "stats" of a tun port would be
+	 * the counters "ifconfig <iface>" already prints, and saying so is
+	 * better than printing them twice under a word that means something
+	 * else here.
+	 */
+	if(argc == 3 && !strcmp(argv[2],"stats")){
+		if(ifp->raw != tcpsock_raw){
+			printf("Interface %s carries no TCP sessions - "
+			       "\"ifconfig %s\" has its counters\n",
+			       ifp->name,ifp->name);
+			return 1;
+		}
+		return tcpsock_stat(ifp);
 	}
 	if(argc == 3 && !strcmp(argv[2],"verbose")){
 		showiface(ifp,1);
@@ -1054,6 +1078,11 @@ ifbroad(int argc,char *argv[],void *p)
  * partner's checksum, the TCP one LEARNS it per session - and this is the
  * question ifcrc() asks to tell them apart.  The port's first session carries
  * the kind the attach ordered (portproto).
+ *
+ * AND THE PORT THAT TAKES BOTH COUNTS.  TCPAD_AUTO carries KISS as one of its
+ * two dialects, so "crc auto" there has to LEARN like the KISS port and not
+ * PROBE like a serial line; the AXTCP half never reads crccontrol at all
+ * (axtcp_rx() checks its own checksum).  See tcpsock_portname().
  */
 static int
 is_kisstcp(
@@ -1064,7 +1093,32 @@ struct iface *ifp)
 	if (!tcpsock_isport(ifp))
 		return 0;
 	tp = tcpsock_first(ifp);
-	return tp != NULL && tp->portproto == TCPAD_KISSTCP;
+	return tp != NULL && (tp->portproto == TCPAD_KISSTCP ||
+			      tp->portproto == TCPAD_AUTO);
+}
+
+/* THE WORD for a CRC setting - the same word "ifconfig <iface> crc" takes, so
+ * that a value in the statistics and a value on the setting line can be
+ * compared by eye and not by memory.  "off" for everything this build knows and
+ * does not do, and for an out-of-range value too: a statistics line must print
+ * a word where the setting takes a word, never a number.
+ *
+ * The two probing values are the only ones with their own spelling, and they
+ * spell out what they are - a port that is "test-smack" is a port that sends
+ * one checksummed frame and then waits, which is not what "smack" would say.
+ */
+const char *
+crcword(int crc)
+{
+	switch (crc) {
+	case CRC_AUTO:      return "auto";
+	case CRC_TEST_16:   return "test-smack";
+	case CRC_TEST_RMNC: return "test-flexnet";
+	case CRC_16:        return "smack";
+	case CRC_RMNC:      return "flexnet";
+	case CRC_CCITT:     return "ccitt";
+	default:            return "off";
+	}
 }
 
 /* Set interface CRC mode.  Naming a mode also stops the KISS receiver from

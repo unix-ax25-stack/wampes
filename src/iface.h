@@ -475,4 +475,9 @@ int mtu_ok(const char *who,long mtu);
 
 int if_learns_routes(struct iface *ifp);
 
+/* The word a CRC setting is written and printed as - "auto", "off", "smack",
+ * "flexnet", "ccitt", and the two probing values spelled out.  Used by "ifconfig
+ * <iface> verbose" and by "ifconfig <iface> stats".  See crcword() in iface.c. */
+const char *crcword(int crc);
+
 #endif  /* _IFACE_H */

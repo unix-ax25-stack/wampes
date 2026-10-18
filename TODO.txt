@@ -11309,3 +11309,387 @@ AUFTRAG (Thomas, 2026-10-18), in dieser Reihenfolge:
    crc-error-Statistik bei ifconfig verbose im DG8NGN-Fall 0 war;
    Zaehler erst ab dem ersten gueltigen Rahmen waeren Thomas ebenfalls
    recht - so zaehlt ein nmap-Portscan nicht mit.
+
+
+VEREINHEITLICHUNG KISSTCP/AXTCP - BESTANDSAUFNAHME (Thomas, 2026-10-19)
+
+DIES IST DIE VORARBEIT ZU PUNKT 2, NUR GELESEN UND AUFGESCHRIEBEN -
+noch keine Zeile Code.  Die Frage, die alles andere entscheidet, ist:
+BLEIBEN ES ZWEI PORTTYPEN oder wird es EINER.  Davon haengt der Name
+des Statusbefehls ab (Punkt 4) und die Flaeche von "attach".
+
+WIE ES HEUTE STEHT
+
+Sitzung und Port sind zwei Dinge.  struct tcpsock hat
+  int proto;      was DIESE SITZUNG inzwischen ist (TCPAD_DETECT bis
+                  zum ersten Byte, danach AXTCP oder KISSTCP)
+  int portproto;  was der PORT spricht, gesetzt beim attach und
+                  unveraendert - daraus lebt "attach axtcp stat", das
+                  die KISSTCP-Ports auslassen muss.
+Jede Sitzung traegt vier Hooks, alle vom Port geerbt (beim attach
+gesetzt, beim accept aus der listen-Struktur kopiert):
+  rx, tx, detect, keepalive.
+
+DIE ERKENNUNG LAEUFT EINMAL.  tcpsock_detect() ruft tp->detect() nur,
+solange proto == TCPAD_DETECT; der Hook setzt proto und ist danach
+fertig.  Ein Protokollwechsel mitten im Betrieb wird nicht geraten.
+Das eine Byte, das entscheidet, ist sauber: 0xC0 ist FEND und damit
+KISS; als AXTCP-Laengenhochbyte waere 0xC0 = 49152 und damit ueber
+AXTCP_MAXLEN (2048) - also kann es nur KISS sein.  Alles andere ist
+ein AXTCP-Kandidat, den erst die CRC bestaetigt (axtcp_rx()).
+
+UND JEDER DETEKTOR WEIST DEN ANDEREN AB.  axtcp_detect() gibt -1
+zurueck, wenn das erste Byte 0xC0 ist ("that is KISS"),
+kisstcp_detect() gibt -1 zurueck, wenn es NICHT 0xC0 ist ("not KISS").
+-1 heisst: garbage++, tcpsock_forget(), Sitzung weg.  Ein Port ist
+heute also EINPROTOKOLLIG, und der fremde Partner wird nicht einmal
+informiert (kisstcp.c: "not accepted, and is not told why").
+
+RAHMUNG UND TAKT
+  AXTCP: [2B Laenge BE][AX.25-Rahmen + CRC-CCITT].  Die Laenge zaehlt
+         den Rahmen MIT CRC.  Keepalive 00 02 00 00 (Laenge 2, CRC von
+         nichts = 0x0000).  AXTCP_CHAN 0.
+  KISS:  FEND-Rahmen mit Escaping und Typbyte, optional SMACK- (0x80)
+         oder FlexNet-CRC (0x20).  Keepalive c0 c0.  KISS_CHAN 0.
+Beide rufen am Ende tcpsock_input(tp, buf, len, chan) mit chan 0.
+
+WAS UNABHAENGIG VOM ENCODING IST (und deshalb heute schon geteilt)
+  - Der Shared-Key (tcpsock_auth_send): ein leerer UI-Rahmen, gebaut in
+    tcpsock.c und ueber tcpsock_send() geschickt - der Session-tx-Hook
+    rahmt ihn, egal welcher.  Muss so bleiben.
+  - Die Kanal-/Lernlogik: tcpsock_input() -> axip_learn_transport(src,
+    tp, chan, tp->proto, ifp).  Der Partner wird MIT seinem Encoding
+    (tproto) gelernt.
+  - Der Weg hinaus: tcpsock_raw() findet eine Sitzung
+    (axip_transport_route / tcpsock_client_session / single_session)
+    und uebergibt ihr den Rahmen; gerahmt wird im Session-tx-Hook.
+
+EIN TOTER FADEN, DER EINEN FEHLER VERDECKT: axip_route.tproto wird in
+axip_learn_transport() gesetzt (axip.c:2002) und NIRGENDS gelesen -
+grep tproto findet nur die Definition, die Zuweisung und den
+Kommentar.  Der Sendeweg fragt es also nicht.  Fuer die
+Vereinheitlichung ist das eine gute Nachricht (das Encoding haengt
+schon an der Sitzung) und eine schlechte: "axip route" zeigt nicht,
+wer welches Encoding spricht.  Nach dem Umbau gehoert tproto in die
+Ausgabe.
+
+crccontrol, DIE ZWEI BEDEUTUNGEN.  Auf einem KISS-Port ist es die
+Wire-Pruefsumme (CRC_AUTO/off/16/RMNC/TEST_16/TEST_RMNC, gelesen in
+kiss.c und kisstcp.c).  axtcp und axip setzen es auf CRC_CCITT - und
+ausser der verbose-Zeile in iface.c:1874 liest es dort niemand.  Fuer
+den AXTCP-Weg ist es also nur Anzeige; die echte CRC macht axtcp_rx()
+ueber check_crc_ccitt().  Auf einem vereinigten Port heisst das:
+Vorgabe CRC_AUTO (KISS-Semantik), AXTCP-Sitzungen ignorieren es.
+
+WAS "EIN TRANSPORT" BRAUCHT
+  1. EINEN Detektor, der beide annimmt: 0xC0 -> KISSTCP, sonst AXTCP-
+     Kandidat (die Bestaetigung ueber die CRC bleibt in der RX).  Damit
+     verschwindet der -1-Zweig fuer den "fremden" Partner fast ganz;
+     garbage bleibt nur, wenn gar kein Rahmen kommt.
+  2. EINEN rx-Dispatcher und EINEN tx-Dispatcher, die auf tp->proto
+     schalten; tp->proto ist dann das GELERNTE Encoding der Sitzung.
+  3. EINEN keepalive-Dispatcher (00 02 00 00 vs c0 c0).
+  4. portproto wird zur POLITIK statt zur einzelnen Kennung und traegt
+     den Wert aus "type=" (auto/kiss/axtcp).  Die Sitzung bleibt bei
+     TCPAD_DETECT, bis das erste Byte sie festlegt; danach steht ihr
+     Encoding in tp->proto.
+  5. ifp->crccontrol-Vorgabe = CRC_AUTO; AXTCP ignoriert es.
+  6. EINE Statistik ueber beide Encodings, mit dem Default-crc-mode des
+     Ports - und genau das ist zugleich der Ort, an dem Punkt 4 landet.
+  7. DER GRUSS AN EINE NOCH NICHT IDENTIFIZIERTE SITZUNG: KEINER.
+     Heute geht beim accept und beim fertigen connect sofort ein
+     Keepalive hinaus (tcpsock.c:1734 im accept, tcpsock.c:695-696 in
+     on_write), und ein KISS-Port gruesst mit c0 c0.  Beides faellt weg
+     (Thomas, 2026-10-19 - ENTSCHIEDEN G).  Der Timer macht es heute
+     schon richtig: bei TCF_GARBAGE steigt er mit continue aus, BEVOR der
+     Keepalive-Block kommt; es fehlen nur die beiden Sofort-Aufrufe.
+     Der Befund, der die Frage aufgeworfen hat, bleibt lesenswert: c0 c0
+     an einen AXTCP-Peer ist eine Laenge 0xC0C0 = 49344, also ueber
+     AXTCP_MAXLEN, und der Peer wirft die Verbindung weg (axtcp_rx ->
+     tcpsock_forget).  00 02 00 00 waere fuer KISS nur dann harmlos, wenn
+     der KISS-Leser alles vor dem ersten FEND wegwirft - eine Annahme,
+     auf die wir uns nicht stellen (Thomas, im tcpdump gesehen: ein
+     frisch angenommener kisstcp-Port schickt c0 c0, bevor der Peer ein
+     Byte gesagt hat).
+
+ENTSCHIEDEN (Thomas, 2026-10-19)
+  A. "attach axtcp" WIRD DIE OBERMENGE: der Befehl nimmt beide
+     Encodings an, und der Name passt in die Familie axip/axudp/axtcp
+     ("AX.25 in TCP").  Kein dritter Name, kein "attach tcp" (das klingt
+     nach Port-Forwarding).  "attach kisstcp" bleibt und ist der auf KISS
+     festgenagelte Alias (Default-Port 8001); "axtcp" hoert auf 9393.
+  B. FESTGENAGELT WIRD MIT EINEM WORT: "type=kiss|axtcp|auto", Default
+     "auto" (= beides).  Dasselbe Muster wie "bind=" - ein Wort mit "=",
+     das ueberall stehen darf und vor dem Positionslesen herausgefiltert
+     wird (tcpsock_take_keepalive / tcpsock_take_sharedkey).  Damit ist
+     die Zeile hoechstens "attach axtcp <name> ...": kein dreifaches
+     "axtcp" wie in "attach axtcp axtcp axtcp".
+  C. ORTHOGONAL ZU "listen"/"client".  type= sagt, WAS die Sitzungen
+     sprechen duerfen, nicht wer wen anruft.  Die drei Achsen sind Rolle
+     (listen / client / beides), Encoding (type=) und Adresse/Port
+     (bind=, listen <port>, client <host>[:<port>]).  Ein Port mit beiden
+     Rollen hat EINE type=-Politik fuer alle seine Sitzungen, eingehend
+     wie ausgehend.
+  D. DIE DEFAULT-PORTNUMMER FOLGT DEM type=: kiss -> 8001,
+     axtcp -> 9393, auto -> 9393.  Damit ist "attach kisstcp" genau
+     "attach axtcp type=kiss" (samt Default 8001) - ein reiner Alias.
+  D2. DIE AUFLOESUNG VON type= UND PORT (Thomas, 2026-10-19).  type= muss
+     nicht geschrieben werden.  Reihenfolge, von oben nach unten:
+       1. ein geschriebenes "type=" gewinnt immer - auch gegen einen
+          wohlbekannten Port.
+       2. sonst der Kommandoname, aber nur fuer einen Port, der NUR
+          HORCHT: "attach axtcp" -> auto (das ist sein Zweck), der Alias
+          "attach kisstcp" -> kiss.  Eine geschriebene PORTNUMMER nagelt
+          einen Listener NICHT fest: 8001 und 9393 sind Konventionen und
+          keine Gesetze, und wer kein type= schreibt, will beide.
+       3. ein CLIENT kann nicht auto sein (siehe G).  Sein Dialekt kommt
+          aus seinem ZIELPORT: 8001 -> kiss, 9393 -> axtcp; ohne
+          geschriebenen Port steht die eigene Nummer des Kommandos (9393
+          fuer "attach axtcp", 8001 fuer den Alias).  Ein geschriebener
+          anderer Port ist ein Fehler, und "type=auto" zusammen mit
+          client ebenfalls.
+     Der Default-Port folgt dem Ergebnis: kiss -> 8001, axtcp/auto -> 9393.
+     "attach axtcp axtcp listen 9393" wird damit AUTO auf 9393 - die
+     Obermenge, ohne die Zeile zu aendern; "attach kisstcp kisstcp93
+     listen 93" bleibt kiss auf 93 (der Alias nagelt fest).  "attach
+     axtcp <name>" ohne Port und ohne type= ist ebenfalls auto auf 9393.
+  G. KEIN GRUSS VOR DER IDENTIFIKATION (Thomas, 2026-10-19).  Eine
+     eingehende Verbindung bekommt nichts, bis die Gegenseite ihr erstes
+     Byte gesagt hat; der erste Keepalive geht dann in ihrem erkannten
+     Dialekt hinaus.  Auch der ausgehende connect gruesst nicht: ein
+     anti-idle nuetzt dort nichts, weil die Gegenseite noch nicht weiss,
+     wer wir sind - sie kann uns nur ueber die IP raten, und das geht
+     schief, sobald zwei Rechner hinter einem NAT je eine Verbindung
+     aufbauen.  Zwei Beobachtungen stuetzen das: (a) ein anstaendiges
+     Protokoll wartet nicht auf uns, es redet von selbst (smtp
+     antwortet, http nicht); (b) der Sofort-Gruss hat den Peer zu
+     Aufbau/Abbruch/Neuaufbau getrieben - am Ende standen ueber 300
+     Sitzungen im Wartezustand, und sein Stack schloss nicht einmal
+     sauber.  Ein Peer, der auf uns wartet, ist genau der Peer, dessen
+     Protokoll wir nicht kennen - und dann duerfen wir nicht raten.
+     NEBENWIRKUNG Shared-Key, und der erste Rahmen ueberhaupt: WIR senden
+     zuerst.  Ein auto-Port kann den ersten Rahmen nicht rahmen - er
+     kennt den Dialekt noch nicht.  "Erst nach dem ersten Byte der
+     Gegenseite" ist keine Loesung, sondern ein Deadlock: bei
+     listen/client sendet der CLIENT zuerst, der Listener sendet von
+     sich aus nichts (das ist gerade die Entscheidung G) - der Client
+     erfaehrt den Dialekt also nie.  Also: type=auto gibt es NUR fuer
+     listen.  Eine client-Zeile MUSS ihren Dialekt nennen (type=kiss|
+     axtcp, oder der Alias "attach kisstcp").  Ohne Shared-Key gilt
+     dasselbe: das erste Datenpaket hat dasselbe Problem.
+     (Thomas, 2026-10-19)
+
+ENTSCHEIDEN (Thomas, 2026-10-19)
+  I. DIE FRIST (TCP_GARBAGE_MAX, 5 min) GILT FUER JEDEN, dessen Verbindung
+     steht und der noch nichts gesagt hat - auf einem festgenagelten Port
+     genauso wie auf einem auto-Port.  Das ist die Frage, ob man sich nicht
+     besser auf den Kernel-TCP-Stack verlassen koennte: NEIN, aus drei
+     Gruenden.  (a) Wir setzen SO_KEEPALIVE ueberhaupt nicht auf diesen
+     Sockets.  (b) Auch mit dem Kernel-Keepalive waere nur ein TOTER Peer zu
+     erkennen (fehlende ACK), nicht ein LEBENDER, der nach dem Handshake
+     stumm bleibt - das ist aber genau der Probe- und Scannerfall, um den es
+     geht; ein solches, stilles, halb offenes Socket haelt der Kernel fuer
+     immer und die Anzahl der lebenden fds waechst bis morgen weiter.  (c) Das
+     Wort "identifiziert" kennt nur die Anwendung, nicht TCP: der Kernel weiss
+     nichts davon, dass hier noch kein Byte ueber die Leitung gegangen ist.
+     GEANDERT (uncommitted): die Leine haengt nicht mehr am Anlegen
+     (tcpsock_new, wo sie einen noch nicht verbundenen Client betroffen
+     haette), sondern dort, wo die Verbindung STAND - im accept () und nach
+     SO_ERROR-Erfolg in on_write, und nur solange proto noch TCPAD_DETECT ist;
+     wer sich identifiziert hat, ist dauerhaft dran und wird nur vom
+     Keepalive lebend gehalten.  tcpsock_gone() loescht TCF_GARBAGE mit, damit
+     ein Neubau nicht schon am ersten Tick abgeraeumt wird.  Eine ablaufende
+     Frist laeuft damit auch beim CLIENT weiter, aber dort baut sie ab per
+     tcpsock_client_lost() (Ringen erneut) statt per tcpsock_forget(), weil ein
+     Client-Port niemandem sonst gehoert.
+     NEBENWIRKUNG (nachzuhalten, falls es reut): zusammen mit G (kein Gruss)
+     kann jetzt auch eine ruhende Verbindung, deren Gegenseite ebenfalls nicht
+     gruesst, nach 5 min abgebaut und neu aufgebaut werden, weil ihr erstes
+     Byte ausbleibt.  Vorher betraf das nur angenommene Sitzungen.  Wer das
+     nicht will, gibt einem festgenagelten Port den "identifiziert"-Zustand
+     von Geburt an - dann entfaellt auch das sinnlose Pong.
+
+NOCH OFFEN (Thomas)
+  E. Was zeigt "axip route" nach dem Umbau: tproto je Eintrag (heute
+     gesetzt und nie gelesen).
+
+ENTSCHEIDEN (Thomas, 2026-10-18)
+  F. DER STATISTIK-BEFEHL HEISST "ifconfig [<iface>] stats" - umgesetzt.
+     - Zuerst "iface axtcp stat" vorgeschlagen; Thomas' Korrektur: zum
+       bestehenden ifconfig, wo "verbose" schon das andere nichtsetzende
+       Wort steht.  Ein zweiter Oberbegriff fuer dieselbe Schnittstelle
+       waeren zwei Wege zu demselben Ort.
+     - "tcpstat" waere voellig irritierend: "tcp" IST der eingebaute
+       TCP-Stack mit eigenen Subwoertern (irtt, rtt, mss, window,
+       status, ...) - ein "tcpstat" daneben fragt "welches tcp?".
+     - "stats" (Plural, wie vom Thomas geschrieben) und nicht "stat":
+       der Befehl zeigt mehr als eine Zahl - Ports UND Sitzungen.
+     - EIN Transport, kein Filter mehr je Typ: nach 2b ist "axtcp" die
+       Obermenge, und die Dialektfrage ist eine SPALTE (port:kiss|axtcp|
+       auto), kein Grund, die Tabelle zu teilen.
+     - "attach ... stat" beantwortet nur noch den Hinweis auf die neue
+       Adresse, und zwar mit PRAEFIXVERGLEICH ("st" und "sta" zaehlen
+       als "stat", wie bei jedem Subwort) - sonst lege "attach axtcp st"
+       weiterhin still ein Interface "st" an, was Punkt 4 war.
+     - NEBEN: die Peer-Adresse einer angenommenen Sitzung hatte bisher
+       nirgends gestanden (tcpsock.h: "die Peer-Adresse ist nirgends
+       hier").  Neues Feld raddr, aus dem accept(), ausgegeben als
+       "from:<host>:<port>" in derselben Spalte, in der ein Client
+       "peer:" steht - eine Zeile hat nie beide.
+
+RISIKEN / ZU BEWAHREN
+  - Ein festgenagelter Single-Encoding-Port ist heute ein
+    Sicherheitsmerkmal (ein KISS-Port nimmt keinen AXTCP-Peer an).
+    "type=kiss" und "type=axtcp" halten das als Option am Leben; nur der
+    Default "auto" gibt es auf.
+  - Der Byte-Strom darf nicht raten: die Erkennung bleibt einmalig.
+    Ein Partner, der mitten in der Sitzung das Encoding wechselt, ist
+    weiterhin kein Fall.
+  - Shared-Key, Keepalive, Lernlogik und Loop-Schutz sind encoding-
+    neutral und duerfen nicht je Typ dupliziert werden.
+
+REIHENFOLGE (Vorschlag, kleine Commits)
+  2a. Detektor + rx/tx/keepalive-Dispatcher hinter einem neuen
+      portproto; bestehende axtcp-/kisstcp-Ports unveraendert.
+      FERTIG (2026-10-19, uncommitted): TCPAD_AUTO in tcpsock.h (die
+      Port-POLITIK, nicht zu verwechseln mit TCPAD_DETECT, dem Zustand der
+      Sitzung), die acht Hooks in axtcp.c/kisstcp.c nicht mehr static,
+      tcpsock_dual_detect/rx/tx/keepalive + tcpsock_hooks_auto() in
+      tcpsock.c, die Leine in tcpsock_new() an TCPAD_AUTO gebunden.  Der
+      Detektor: erstes Byte c0 -> KISS, sonst AXTCP (als AXTCP-Laenge waere
+      c0xx = 49152 > AXTCP_MAXLEN 2048); er WEIST NICHTS AB.  tx/keepalive
+      einer noch unbekannten Sitzung liefern -1 (nichts hinaus).  Tests
+      gruen: kisstcp_crc.py, packete2e.py.
+  2b. "type=kiss|axtcp|auto" (Default auto), Default-Port folgt type=;
+      "attach kisstcp" wird Alias fuer "attach axtcp type=kiss".
+      FERTIG (2026-10-19, uncommitted): EIN gemeinsamer Attach
+      (tcpsock_attach() in tcpsock.c) mit cmd/cmdtype - axtcp_attach und
+      kisstcp_attach sind drei Zeilen Wrapper; die Aufloesung steht in D2.
+      is_kisstcp() (iface.c) zaehlt TCPAD_AUTO mit, damit "crc auto" auf
+      einem auto-Port LERNT statt zu PROBEN; tcpsock_stat() zeigt fuer
+      "attach axtcp stat" auch die auto-Ports (port:auto), und
+      tcpsock_portname() nennt sie beim Namen.  Tests: attach_type.py
+      (Aufloesung + Fehlerfaelle + stat-Filter) und auto_dual.py (ein
+      auto-Port bedient KISS UND AXTCP, und schweigt bis zum ersten Byte
+      der Gegenseite) - beide gruen, ebenso die beiden 2a-Tests.
+  2c. Eine Statistik; hier faltet sich Punkt 4 hinein, und der falsche
+      Kommentar in tcpsock_show_verbose() wird richtiggestellt.
+      FERTIG (2026-10-18, uncommitted):
+      - ADRESSE: "ifconfig [<iface>] stats" (Entscheidung F, s.o.).
+        "attach axtcp stat" / "attach kisstcp stat" antworten nur noch
+        mit dem Hinweis auf die neue Adresse, mit Praefixvergleich.
+      - EINE LISTE: tcpsock_stat(ifp) ohne den alten proto-Filter.  Die
+        Dialekt-Frage ist eine Spalte (port:kiss|axtcp|auto), und
+        "ifconfig stats" ohne Namen zeigt alle TCP-Ports, "ifconfig
+        <iface> stats" nur den einen - so wie "verbose" neben
+        "ifconfig verbose" steht.
+      - crc-Spalten: "crc-port:" ist die Einstellung des Ports
+        (ifconfig <iface> crc), "crc:" was DIESE SitzUNG spricht.  Ein
+        axtcp-Sitzung sagt immer "ccitt" (die CRC-16 ist Teil des
+        Payloads und wird von axtcp_rx() geprueft, unabhaengig von der
+        Einstellung), eine kiss-Sitzung folgt crcfixed/crcmode wie
+        kisstcp_crcmode(), eine noch nicht identifizierte sagt "-" und
+        nicht "off" - "off" waere eine Antwort, und es gibt noch keine.
+        crcword() in iface.c ist das eine Wort fuer beide Stellen, damit
+        sich Einstellung und Statistik vergleichen lassen.
+      - "from:<host>:<port>" fuer angenommene Sitzungen (neues Feld
+        raddr), in der Spalte, in der ein Client "peer:" steht.
+      - NEBENBEFUND 1 behoben (s.u.): tcpsock_show_verbose() nimmt nicht
+        mehr tcpsock_first(ifp), sondern den EINTRAG, DER DEN PORT
+        HAELT (listens oder TCF_CLIENT).
+      - Tests: attach_type.py (eine Liste, crc-port-Spalte, Hinweis statt
+        Interface "st"), kisstcp_crc.py (zusaetzlich d2) und h2): die
+        crc-Spalte folgt dem Lernen - crc:flexnet, dann crc:smack),
+        auto_dual.py und packete2e.py gruen.  garbage.py (Punkt I, 340 s)
+        und monitor.py laufen.
+      - ZWEI FEHLER WAREN IM SKRIPT UND NICHT IM KNOTEN, beide mussten
+        erst gefunden werden, bevor Punkt I zu beweisen war:
+        (a) "der Port horcht weiter" wurde als "listens:1" geprueft.  Die
+            1 ist die ZAHL DER HOERENDEN SOCKETS, und bei Dual-Stack
+            ("bind=0.0.0.0,[::]", dem Default) sind es 2.  Jetzt
+            "flags:listen".
+        (b) Ein abgebrochener Lauf laesst seinen Knoten am Leben (der
+            SIGTERM traf nur das Python-Elternteil), der haelt die Ports,
+            und der naechste Lauf bekommt beim Boot
+            "cannot bind 0.0.0.0 port 18041: Address already in use" -
+            die Schnittstelle fehlt dann UEBERHAUPT, und jede spaetere
+            Pruefung sieht so aus, als haette der Knoten die Sitzung
+            geloescht.  Das erklaert auch den ersten, raehtselhaften
+            Befund "der Client-Eintrag ist verschwunden": bei einem
+            fehlenden Interface antwortet die Statistik desselben
+            natuerlich mit nichts.  garbage.py prueft jetzt nach dem
+            Boot, da beide Schnittstellen stehen, und bricht mit dem
+            Bind-Fehler aus dem Konsolenpuffer ab.
+  2d. tproto in "axip route" sichtbar machen.
+
+NOCH ZU TUN AUS 2b (klein)
+  - FERTIG (2026-10-19, uncommitted): ENTSCHIEDEN G umgesetzt.  Die beiden
+    Sofort-Gruesse sind gestrichen (tcpsock.c:1734 im accept, tcpsock.c:696 in
+    on_write), der auth-Send (Shared-Key) BLEIBT und ist der eine Rahmen, der
+    vor dem ersten Byte der Gegenseite hinausgeht.  Im Tick wartet der
+    Keepalive jetzt ebenfalls auf das erste Byte (tp->proto != TCPAD_DETECT) -
+    beim angenommenen Socket tat das die Leine schon, beim CLIENT auf einem
+    festgenagelten Port fehlte es, und genau dort waere ein Keepalive sonst in
+    einen geratenen Dialekt gegangen.  So geht der ERSTE Keepalive in dem
+    Dialekt hinaus, den die Gegenseite genannt hat.  auto_dual.py prueft (c):
+    auch ein festgenagelter KISS-Port schweigt vor der Identifikation.
+  - ENTSCHIEDEN I (2026-10-19, uncommitted): die Frist gilt jetzt fuer jede
+    lebende, noch nicht identifizierte Sitzung - festgenagelt wie auto, und
+    beim Client genauso.  Steht im Detail oben unter "ENTSCHEIDEN (Thomas,
+    2026-10-19)", Punkt I.
+    BEWIESEN (garbage.py, 340 s, alle Pruefungen bestanden): vor der Frist
+    stand die angenommene Sitzung (flags:connected) und der Client
+    (flags:client, garbage:0, 1 Verbindung).  Nach der Frist ist die
+    angenommene Sitzung weg UND der Port horcht weiter (flags:listen), der
+    Knoten hat die Leitung getrennt (EOF auf unserer Seite), der Client hat
+    sich abgemeldet (garbage:1) und NEU AUFGEBAUT (2 Verbindung(en) an
+    unserer stillen Gegenstelle), und der Knoten lebt weiter.  Das ist die
+    Teilung, die es zu sehen galt: angenommene Sitzung faellt, PORT und
+    CLIENT ueberleben - tcpsock_client_lost() und nicht tcpsock_forget(),
+    sonst haette sich der Port selbst geloescht.
+
+NEBENBEFUNDE (2026-10-19)
+  1. "ifconfig <iface> verbose" nennt eine horchende Schnittstelle
+     "client".  tcpsock_show_verbose() (tcpsock.c:1994) nimmt
+     tcpsock_first(ifp) - und das ist seit dem accept die ANGENOMMENE
+     Sitzung, nicht der Listener (accept haengt vorne an, tcpsock.c:1722).
+     Weil die kein ->listens hat, faellt sie in den else-Zweig, der alles
+     Nicht-Listener als "client" beschriftet (auch eine angenommene
+     Sitzung, die kein Client ist), und die listener/bound-Zeilen des
+     horchenden Sockets fehlen ganz.  Betrifft axtcp und kisstcp
+     (Thomas: "ja da steht kisstcp client, und axtcp client, obwohl das
+     ein listener ist").  Gehoert zu 2c/Punkt 4.
+     BEHOBEN (2026-10-18, mit 2c): der Port-Eintrag wird danach gesucht,
+     was ein Eintrag HAELT - ->listens != NULL oder TCF_CLIENT - und
+     nicht danach, wo er in der Liste steht.  Eine angenommene Sitzung
+     haelt beides nicht (sie kam auf einem Socket rein, den ein anderer
+     besitzt) und taucht in "verbose" gar nicht erst auf; was sie macht,
+     steht in "ifconfig <iface> stats".  Der Kommentar darueber, der
+     "attach ... stat" als "separate command on a separate page"
+     bezeichnete, ist mit dem Umzug nach ifconfig richtiggestellt.
+     Bewiesen durch garbage.py: nach Ablauf der Frist stand die
+     horchende Schnittstelle weiterhin als "flags:listen" da, waehrend
+     die angenommene Sitzung gefallen war - vor dem Fix kam dort
+     "client" und die bound-Zeilen fehlten.
+  2. Bridge und der Learner.  Beobachtung (Thomas, DB0FHN-10 mit
+     "ifconfig kisstcp bridge xnet"; axtcp, kisstcp und xnet in einer
+     bridge group): DL9SAU sendet DL9SAU->DB0FHN SABM(P) ueber axtcp.
+     DB0FHN-10 SIEHT den Rahmen ("axtcp recv: AX25: DL9SAU->DB0FHN
+     SABM(P)"), lernt DL9SAU aber nicht.  Erst ein connect auf DB0FHN-10
+     SELBST (der Rahmen ist dann an uns adressiert) wird gelernt.
+     Korrektur an einer ersten Vermutung: "unser eigenes Rufzeichen
+     bleibt aus dem Pfad" erklaert das NICHT - der Learner liest die
+     QUELLE (DL9SAU), und die steht im Rahmen.  Was den Unterschied
+     macht, ist das ZIEL: an uns adressiert -> gelernt, gebrueckt (Ziel
+     DB0FHN, das auf xnet zuhause ist) -> nicht gelernt.  Der Verdacht
+     liegt also auf einem Filter "sind wir angesprochen" und nicht auf
+     der Bruecke selbst.
+     Der Code sagt zum Eingang: tcpsock_input() (tcpsock.c:214) ruft
+     axip_learn_transport(src, tp, chan, tp->proto, tp->ifp) in Zeile 272
+     VOR net_route() in Zeile 286 - dort ist kein "sind wir angesprochen"
+     zu sehen, und beides laeuft fuer JEDEN Rahmen.  Also erreicht der
+     Rahmen tcpsock_input auf diesem Weg nicht, ODER das Lernen scheitert
+     in axip_learn_transport (perm/once bzw. axip_may_learn ->
+     Axip_refused, oder ax_dup_recent -> Ax_echoes).  Mit Zaehlern
+     pruefen: axip_dropped()/Axip_refused/Ax_echoes, "axip rou" vor/nach,
+     und ob der Rahmen ueberhaupt bis tcpsock_input kommt.

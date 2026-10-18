@@ -45,9 +45,11 @@
 #include "ax25.h"
 #include "axip.h"
 #include "hpux.h"
+#include "slip.h"		/* only FR_END: the first byte of KISS */
 #include "tcpsock.h"
 #include "trace.h"
 #include "sockaddr_util.h"	/* tcpsock_show_verbose(): the bound address */
+#include "buildsaddr.h"		/* build_hostport(): the "host:port" rule */
 
 /*---------------------------------------------------------------------------*/
 
@@ -105,6 +107,21 @@ static void tcpsock_reconnect(struct tcpsock *tp);
 static void tcpsock_client_lost(struct tcpsock *tp);
 static void tcpsock_build_failed(struct tcpsock *tp);
 
+/* THE NAME OF A PORT'S POLICY, once, for the two lists that print it.  "auto"
+ * and not "axtcp" for the port that takes both - that one is NOT an AXTCP port
+ * and calling it one is exactly the lie Punkt 2 is here to remove (Thomas).
+ */
+static const char *
+tcpsock_portname(
+int portproto)
+{
+  if (portproto == TCPAD_KISSTCP)
+    return "kisstcp";
+  if (portproto == TCPAD_AUTO)
+    return "auto";
+  return "axtcp";
+}
+
 /* WHEN A CHANNEL COMES UP FOR A DECISION and has not decided yet: the first
  * byte decides, and after that it stays decided.  Anyone who tests again after
  * every frame ends up with a port at which the peer surprises itself (Thomas).
@@ -140,6 +157,90 @@ struct tcpsock *tp)
     return -1;
   }
   return 0;			/* noch nicht genug Bytes fuer ein Urteil */
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* THE HOOKS OF A PORT THAT TAKES BOTH ENCODINGS.  The sysop wrote no dialect
+ * ("type=auto"), so the port carries a set that dispatches on tp->proto - the
+ * value its detector read out of the first byte.
+ *
+ * THE ONE-BYTE RULE IS THE SAME ONE THAT STANDS IN axtcp.c AND kisstcp.c, and
+ * it is written once more here because this is the one reading that must NOT
+ * answer -1: a pinned port refuses the dialect it was not opened for, an auto
+ * port has no other dialect to refuse.  0xc0 is the KISS FEND, and as an AXTCP
+ * length it would be 49152, over AXTCP_MAXLEN - so it cannot be anything else;
+ * everything else opens a length field and is AXTCP unless a CRC says no,
+ * which is axtcp_rx()'s business and not this one's.
+ *
+ * UNTIL THE FIRST BYTE A SESSION SENDS NOTHING.  That is not an omission but
+ * the decision: on a listener the peer speaks first, and a client on an "auto"
+ * port cannot exist at all - it would have to frame its first packet with a
+ * dialect it does not know yet, which is a deadlock (TODO.txt, ENTSCHIEDEN G).
+ * tx and keepalive therefore only ever answer for a proto that is set; the
+ * defensive branches below exist so that a route pointing at an unidentified
+ * session drops the frame instead of running into a NULL.
+ */
+static int
+tcpsock_dual_detect(
+struct tcpsock *tp)
+{
+  if (tp->len < 1)
+    return 0;			/* nothing there yet: keep waiting */
+  tp->proto = (tp->buf[0] == FR_END) ? TCPAD_KISSTCP : TCPAD_AXTCP;
+  return 1;
+}
+
+static int
+tcpsock_dual_rx(
+struct tcpsock *tp)
+{
+  if (tp->proto == TCPAD_KISSTCP)
+    return kisstcp_rx(tp);
+  if (tp->proto == TCPAD_AXTCP)
+    return axtcp_rx(tp);
+  return 0;			/* unreachable: detection runs before rx */
+}
+
+static int
+tcpsock_dual_tx(
+struct tcpsock *tp,
+unsigned char *out,
+int max,
+struct mbuf **bpp)
+{
+  if (tp->proto == TCPAD_KISSTCP)
+    return kisstcp_tx(tp, out, max, bpp);
+  if (tp->proto == TCPAD_AXTCP)
+    return axtcp_tx(tp, out, max, bpp);
+  /* UNIDENTIFIED, so there is no dialect to write the frame in and no frame
+   * goes out.  The caller (tcpsock_send()) frees the mbuf on a negative
+   * return, exactly as it does for a frame that did not fit.
+   */
+  return -1;
+}
+
+static int
+tcpsock_dual_keepalive(
+struct tcpsock *tp,
+unsigned char *out,
+int max)
+{
+  if (tp->proto == TCPAD_KISSTCP)
+    return kisstcp_keepalive(tp, out, max);
+  if (tp->proto == TCPAD_AXTCP)
+    return axtcp_keepalive(tp, out, max);
+  return -1;			/* nothing to say before the peer said who he is */
+}
+
+void
+tcpsock_hooks_auto(
+struct tcpsock *tp)
+{
+  tp->rx = tcpsock_dual_rx;
+  tp->tx = tcpsock_dual_tx;
+  tp->detect = tcpsock_dual_detect;
+  tp->keepalive = tcpsock_dual_keepalive;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -501,8 +602,9 @@ struct tcpsock *tp)
 
   if ((bp = qdata(buf, (uint) l)) == NULL)
     return;
-  /* tcpsock_send(), not a direct write: the frame belongs in the same queue
-   * as the keepalive that comes next, and leaves it in the same order.
+  /* tcpsock_send(), not a direct write: the frame has to be the first thing on
+   * the wire, ahead of every frame and every keepalive that follows, and the one
+   * queue is what keeps that order.
    */
   tcpsock_send(tp, bp);
 }
@@ -557,6 +659,18 @@ void *p)
       return;
     }
     tp->flags |= TCF_CONNECTED | TCF_WASUP;
+    /* AND THE SAME DEADLINE AS AT THE ACCEPT (TODO.txt, ENTSCHIEDEN I).  A
+     * client whose peer says nothing after the handshake is as useless as an
+     * accepted session whose peer only probed, and the same five minutes end it.
+     * By tcpsock_client_lost() and not by tcpsock_forget(): a client port
+     * belongs to nobody else and rings again, an accepted session does not.  Only
+     * when the peer has not spoken yet - a session that identified itself is kept
+     * alive by the keepalive and must not be torn down for silence.
+     */
+    if (tp->proto == TCPAD_DETECT) {
+      tp->flags |= TCF_GARBAGE;
+      tp->garbage_since = secclock();
+    }
     tp->early = 0;		/* der Burst ist bezahlt oder nie gefallen;
 				 * ab hier zaehlt nur noch die Leiter */
     tp->attempts = 0;
@@ -573,13 +687,15 @@ void *p)
       if (getsockname(tp->fd, (struct sockaddr *) &tp->laddr, &sl) < 0)
 	memset(&tp->laddr, 0, sizeof(tp->laddr));
     }
-    /* THE KEEPALIVE GOES OUT AT ONCE, and that is the whole reason it is on by
-     * default.  A partner that has just answered our SYN has told us nothing
-     * about itself, so it cannot know whether we speak AXTCP or KISS - and the
-     * keepalive packet is what says it: a KISS peer sees FEND and settles on
-     * KISS, an AXTCP peer sees a valid frame and settles on AXTCP.  It also
-     * ends the wait for a port scanner early, because the scanner does not
-     * answer and a real partner does.
+    /* THE SHARED-KEY FRAME, AND ONLY THAT.  A session we built is the one place
+     * where something goes out before the peer has said a byte - the code is how
+     * the partner decides who we are, and it has to be the first frame
+     * (tcpsock_auth_send()).  The keepalive that used to stand beside it is gone
+     * (TODO.txt, ENTSCHIEDEN G): a greeting is a guess at the peer's dialect, and
+     * a peer that waits for us is exactly the peer whose protocol we do not know.
+     * A client never pins "auto" ("type=auto" with "client" is refused at the
+     * attach), so the frame here is never framed in the wrong dialect - and a
+     * client with no shared key sends nothing at all until the peer speaks.
      *
      * HERE AND NOT AT THE END OF THE FUNCTION: on_write() is registered again
      * every time a write could not be completed, so a send at the end would go
@@ -592,7 +708,6 @@ void *p)
      * port scanner that keeps quiet must still run into TCP_GARBAGE_MAX.
      */
     tcpsock_auth_send(tp);
-    tcpsock_keepalive_send(tp);
   }
   tcpsock_flush(tp);
 }
@@ -660,7 +775,12 @@ struct tcpsock *tp)
     close(tp->fd);
     tp->fd = -1;
   }
-  tp->flags &= ~(TCF_CONNECTED | TCF_CONNECTING);
+  /* AND THE DEADLINE GOES WITH THE CONNECTION.  TCF_GARBAGE means "this live
+   * session has not identified itself yet"; with the fd gone there is no
+   * session left to identify, and a flag that stayed would have the tick tear
+   * the next attempt down the moment it stands (TODO.txt, ENTSCHIEDEN I).
+   */
+  tp->flags &= ~(TCF_CONNECTED | TCF_CONNECTING | TCF_GARBAGE);
   tp->len = 0;			/* half a frame of a dead connection
 				 * belongs to no new one */
 }
@@ -834,14 +954,17 @@ int portproto)
    *
    * portproto is the OTHER half and stays unchanged: it says what the PORT
    * speaks, and that hangs on the command, not on the first byte.
+   *
+   * THE DEADLINE IS NOT SET HERE.  It belongs to a connection that is LIVE and
+   * has not identified itself, and this struct may be a listening port (no fd,
+   * and none to come) or a client that has not rung yet - the clock would run
+   * from the attach and not from the session.  It is set where the connection
+   * comes up: at the accept (tcpsock_on_accept()) and when our own SYN has
+   * stood (tcpsock_on_write()).  See TCP_GARBAGE_MAX in tcpsock.h.
    */
   tp->proto = TCPAD_DETECT;
   tp->portproto = portproto;
   tp->flags = flags;
-  if (portproto == TCPAD_DETECT) {
-    tp->flags |= TCF_GARBAGE;
-    tp->garbage_since = secclock();
-  }
   tp->lastrx = tp->lasttx = secclock();
   tp->next = Tcp_socks;
   Tcp_socks = tp;
@@ -1588,6 +1711,11 @@ void *p)
   tp->fd = fd;
   tp->family = ln->family;
   tp->laddr = ln->addr;
+  /* AND THE PEER, from the accept() and not from a lookup: it is the one address
+   * of this session that was never written anywhere, and "ifconfig <iface> stats"
+   * has to name a session before its line is worth anything.
+   */
+  tp->raddr = ss;
   tp->port = lp->lport;
   tp->flags = TCF_CONNECTED;
   /* THE KIND OF PORT COMES ALONG, and stays the one the sysop ordered.
@@ -1607,7 +1735,9 @@ void *p)
   tp->keepalive = lp->keepalive;
   /* THE DEADLINE IS ALREADY SET AT THE ACCEPT, and not at the first byte: the
    * scanner is already there in the accept(), and a port scanner does not wait
-   * for your generosity.
+   * for your generosity.  IT DOES NOT ASK WHAT THE PORT IS: an accepted session
+   * that has said nothing is unfinished whether the port is pinned or takes both
+   * dialects, and the five minutes end it either way (TODO.txt, ENTSCHIEDEN I).
    */
   tp->flags |= TCF_GARBAGE;
   tp->garbage_since = secclock();
@@ -1616,16 +1746,19 @@ void *p)
   Tcp_socks = tp;
   on_read(fd, tcpsock_on_read, tp);
   on_write(fd, tcpsock_on_write, tp);
-  /* THE KEEPALIVE GOES OUT HERE, and not in on_write(): on_write() only sends it
-   * when it was the one that finished a connect, and an accepted session has no
-   * connect to finish - it starts out TCF_CONNECTED (Thomas).
+  /* AND NOT ONE BYTE GOES OUT.  An accepted session says nothing until the peer
+   * has said its first byte (TODO.txt, ENTSCHIEDEN G).  A greeting here would be
+   * a guess at the peer's dialect, and the guess is destructive: c0 c0 is a
+   * length of 0xC0C0 for a peer that reads AXTCP - over AXTCP_MAXLEN, and
+   * axtcp_rx() throws the connection away - and 00 02 00 00 only helps a peer
+   * that already knows to wait for a FEND.  The peer's first byte is what
+   * decides the dialect, and until then there is nothing to frame.
    *
-   * It goes out before the peer has said a single byte, and that is the point:
-   * it is what tells a KISS peer that we are KISS, and it is what a port
-   * scanner does not answer.  It does not touch TCF_GARBAGE - only a byte FROM
-   * the peer proves that there is one (see tcpsock_on_read()/tcpsock_detect()).
+   * An auto port could not even frame a greeting (the dispatcher has no dialect
+   * yet), and because the deadline above runs out on a peer that never says
+   * anything, the first keepalive of a real session also falls in the dialect
+   * the peer's first byte named - see the keepalive block in the tick.
    */
-  tcpsock_keepalive_send(tp);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1665,7 +1798,10 @@ void *arg)
     if (tp->flags & TCF_GARBAGE) {
       if (now - tp->garbage_since >= TCP_GARBAGE_MAX) {
 	tp->garbage++;
-	tcpsock_forget(tp);
+	if (tp->flags & TCF_CLIENT)
+	  tcpsock_client_lost(tp);
+	else
+	  tcpsock_forget(tp);
       }
       continue;
     }
@@ -1676,13 +1812,21 @@ void *arg)
      * is exactly the session that goes quiet, because on a listener nothing
      * goes out unless somebody on the far side first sends us a frame.
      *
+     * AND IT WAITS FOR THE PEER'S FIRST BYTE (TODO.txt, ENTSCHIEDEN G): tp->proto
+     * is TCPAD_DETECT until the peer has said which dialect it speaks, so the
+     * FIRST keepalive goes out in the dialect that was RECOGNISED and not in a
+     * guessed one.  On an accepted session the rubbish test above already says
+     * this (the deadline is set at the accept and only a byte from the peer
+     * clears it); the test here is what makes it true of a CLIENT too, where no
+     * such deadline stands.
+     *
      * AFTER THE RUBBISH TEST, on purpose: a session that has not identified
-     * itself gets nothing from here.  It has already had one packet out of the
-     * accept(); it is being watched, and five minutes later it is gone.  Feeding
-     * a scanner every five minutes would be keeping exactly the connection
-     * alive that the GARBAGE window exists to end.
+     * itself gets nothing from here.  Feeding a scanner every five minutes would
+     * be keeping exactly the connection alive that the GARBAGE window exists to
+     * end.
      */
     if ((tp->flags & TCF_CONNECTED) && tp->keepalive != NULL &&
+	tp->proto != TCPAD_DETECT &&
 	tp->ifp != NULL && tp->ifp->keepalive > 0 &&
 	now - tp->lasttx >= tp->ifp->keepalive)
       tcpsock_keepalive_send(tp);
@@ -1865,24 +2009,23 @@ struct mbuf **bpp)
 
 /*---------------------------------------------------------------------------*/
 
-/* ifconfig <iface> verbose, for the two TCP carriers.
+/* ifconfig <iface> verbose, for the TCP carrier.
  *
  * "attach axtcp" or "attach kisstcp", and then nothing about the socket: which
- * address it is bound to is not printed anywhere in "ifconfig", and the
- * "attach ... stat" list that does know it is a separate command on a separate
- * page.  The bound address is the one thing that decides whether a TCP link
- * can work at all - a port bound to 127.0.0.1 is unreachable from the network
- * side, and a link that is bound to the wrong family accepts nothing and
- * explains nothing.  The sysop sees a port that exists and a link that does
- * not.
+ * address it is bound to is printed nowhere else.  The bound address is the one
+ * thing that decides whether a TCP link can work at all - a port bound to
+ * 127.0.0.1 is unreachable from the network side, and a link that is bound to
+ * the wrong family accepts nothing and explains nothing.  The sysop sees a port
+ * that exists and a link that does not.
  *
  * ONE PORT, ONE LINE HERE - one line PER LISTENING SOCKET, because a port with
  * two of them has two addresses and a reader has to know that the second
- * "bound" is not a contradiction of the first but the other socket.  One line
- * per session is left to "attach stat": the sessions come and go while a link is
- * being watched, and a line that changes shape is not a thing to read.  This
- * says the port: what it speaks, whether it listens or dials, where it is bound,
- * and where it would dial.
+ * "bound" is not a contradiction of the first but the other socket.  The
+ * sessions are the other half of the picture and they are one word away:
+ * "ifconfig <iface> stats" holds one block per session, with what each of them
+ * has identified itself as, whose connection it is, and what it has sent.  They
+ * come and go while a link is being watched, and a section that changes shape is
+ * not a thing to read (Thomas).
  */
 void
 tcpsock_show_verbose(
@@ -1892,7 +2035,22 @@ struct iface *ifp)
   struct tcpsock_listen *ln;
   char abuf[SOCKADDR_STRLEN];
 
-  if ((tp = tcpsock_first(ifp)) == NULL)
+  /* THE PORT, AND NOT THE NEWEST ENTRY.  tcpsock_first() is the most recently
+   * built one, and an accepted session is pushed in front of the listener it
+   * belongs to - so as soon as a visitor arrived, the visitor was read as the
+   * port (it carries no TCF_LISTEN, so the line called it a "client") and the
+   * lines above, which say where the port is bound, disappeared along with the
+   * listener they belong to.  A port was invisible exactly while somebody was
+   * using it.
+   *
+   * WHAT THE PORT IS is decided by what an entry HOLDS and not by its place in
+   * the list: the listening sockets, or the dialing role.  An accepted session
+   * holds neither - it came in on a socket somebody else owns (Thomas).
+   */
+  for (tp = Tcp_socks; tp != NULL; tp = tp->next)
+    if (tp->ifp == ifp && (tp->listens != NULL || (tp->flags & TCF_CLIENT)))
+      break;
+  if (tp == NULL)
     return;
   if (tp->listens) {
     /* A LISTENER HAS NO ONE FAMILY, and it says so per socket: the family is
@@ -1902,7 +2060,7 @@ struct iface *ifp)
      */
     for (ln = tp->listens; ln; ln = ln->next) {
       printf("           %s listener, %s port %d\n",
-	     tp->portproto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+	     tcpsock_portname(tp->portproto),
 	     ln->family == AF_INET6 ? "IPv6" : "IPv4", tp->lport);
       printf("           bound %s\n",
 	     sockaddr_to_string((struct sockaddr *) &ln->addr, abuf,
@@ -1910,7 +2068,7 @@ struct iface *ifp)
     }
   } else {
     printf("           %s %s, %s port %d\n",
-	   tp->portproto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+	   tcpsock_portname(tp->portproto),
 	   (tp->flags & TCF_LISTEN) ? "listener" : "client",
 	   (tp->family == AF_INET6) ? "IPv6" : "IPv4",
 	   (tp->flags & TCF_LISTEN) ? tp->lport : tp->port);
@@ -1941,45 +2099,662 @@ struct iface *ifp)
 
 /*---------------------------------------------------------------------------*/
 
-/* "axtcp stat" and "kisstcp stat" share this function. */
+/* WHAT A PORT NUMBER MEANS when it is a well-known one: 8001 is the
+ * KISS-over-TCP port (direwolf, xrouter) and 9393 the AXTCP one.  -1 for every
+ * other number, because "unknown" is something a client has to be TOLD about
+ * and not something to guess at.
+ */
+static int
+tcpsock_porttype(
+int port)
+{
+  if (port == KISSTCP_DEFAULT_PORT)
+    return TCPAD_KISSTCP;
+  if (port == AXTCP_DEFAULT_PORT)
+    return TCPAD_AXTCP;
+  return -1;
+}
+
+/* "type=kiss|axtcp|auto", taken off the line before anything reads a position -
+ * the same shape as "bind=", "keepalive" and "shared-key", and for the same
+ * reason: a word that may only stand in one particular place is one more rule
+ * to think about while copying a line out.  It is ONE word with a "=" and not a
+ * word with a value, so the gap closes by one.
+ *
+ * *typep is left at -1 when the word is absent, and the caller decides what
+ * that means (see tcpsock_attach()).
+ */
+static int
+tcpsock_take_type(
+int *argcp,
+char **argv,
+int *typep)
+{
+  int argc = *argcp;
+  int i;
+
+  /* FROM ONE, and not from two as the other two helpers: the word may stand in
+   * the very place the label would, as in "attach axtcp type=kiss listen
+   * 9393", and a word left there would be taken for a name (Thomas).
+   */
+  for (i = 1; i < argc; i++) {
+    if (strncmp(argv[i], "type=", 5) != 0)
+      continue;
+    if (!strcmp(argv[i] + 5, "auto"))
+      *typep = TCPAD_AUTO;
+    else if (!strcmp(argv[i] + 5, "axtcp"))
+      *typep = TCPAD_AXTCP;
+    else if (!strcmp(argv[i] + 5, "kiss"))
+      *typep = TCPAD_KISSTCP;
+    else {
+      printf("\"%s\" is not a dialect: it is type=kiss, type=axtcp or"
+	     " type=auto\n", argv[i]);
+      return 1;
+    }
+    memmove(argv + i, argv + i + 1, (size_t) (argc - i - 1) * sizeof(char *));
+    *argcp = argc - 1;
+    return 0;
+  }
+  return 0;
+}
+
+/* THE USAGE LINE, once: the two attach commands differ in the name they print
+ * and in nothing else, and a second copy of this text is a second copy that
+ * rots.
+ */
+static void
+tcpsock_attach_usage(
+const char *cmd)
+{
+  printf("Usage: attach %s [<label> [listen [<port>]]]"
+	 " [client <host>[:<port>]] [type=kiss|axtcp|auto]"
+	 " [bind=<addr>[,<addr>]...] [keepalive <seconds>]"
+	 " [shared-key <code>]\n", cmd);
+}
+
+/* A LINE THAT DOES NOT DO, before the interface exists: the pieces that were
+ * already taken are given back, and the answer is the one an attach returns.
+ */
+static int
+tcpsock_attach_abort(
+char *host,
+struct tcpsock_bindlist *binds)
+{
+  if (host)
+    free(host);
+  tcpsock_bind_free(binds);
+  return 1;
+}
+
+/* THE ONE ATTACH BEHIND "attach axtcp" AND "attach kisstcp".
+ *
+ * "attach kisstcp" IS "attach axtcp type=kiss" - not by a copied body but by
+ * this call: cmd is the name the sysop wrote (it stands in the usage lines and
+ * is the default interface name), and cmdtype is what that name means.
+ * "attach axtcp" means NO dialect in particular (TCPAD_AUTO, the superset),
+ * the alias means KISS (TCPAD_KISSTCP).  The framing itself is not here; each
+ * file keeps its own four hooks and one set of them is hung on below (see
+ * tcpsock_hooks_auto()).
+ *
+ * THE VALUES.  argv[0] is the word after "attach", argv[1] the label - exactly
+ * as in axip_attach(), and that is not a subtlety here: an attach that reads
+ * its arguments one place too early takes the word "listen" for the label and
+ * then fails on the port specification it never read (Thomas).
+ *
+ * bind= may stand anywhere and is filtered out, as in axip; type=, keepalive
+ * and shared-key are the same shape and come out before anything reads a
+ * position.
+ *
+ * WHAT COMES OUT IS ONE POLICY AND TWO PORTS, found in this order (Thomas,
+ * 2026-10-19):
+ *
+ *   1. A WRITTEN "type=" WINS, whatever else stands on the line.
+ *   2. Otherwise the COMMAND decides for a port that only LISTENS: "auto" for
+ *      "attach axtcp" - that is its reason to exist - and "kiss" for the
+ *      alias.  A written port number does NOT pin a listener: 8001 and 9393
+ *      are conventions and not laws, and a listener that takes both is what
+ *      the sysop asked for by not writing type=.
+ *   3. A CLIENT CANNOT BE "auto": it speaks first and would have to frame its
+ *      first packet with a dialect it does not know yet, which is a deadlock
+ *      (TODO.txt, ENTSCHIEDEN G).  Its dialect comes from its DESTINATION PORT
+ *      - 8001 is a KISS and 9393 an AXTCP partner; without a written one the
+ *      command's own number stands (9393 for "attach axtcp", 8001 for the
+ *      alias).  A written port that is neither of the two is an error, and so
+ *      is a written "type=auto" together with a client.
+ *
+ * THE DEFAULT PORT FOLLOWS THE DIALECT: KISS 8001, AXTCP and auto 9393.  So
+ * "attach kisstcp" and "attach axtcp type=kiss" are the same line, and a port
+ * that takes both answers on the AXTCP number, where XRouter expects it.
+ */
 int
-tcpsock_stat(
-struct iface *ifp,
-int proto,
+tcpsock_attach(
 int argc,
 char *argv[],
-void *p)
+void *p,
+const char *cmd,
+int cmdtype)
+{
+  struct iface *ifp;
+  struct tcpsock *tp;
+  char ifname[64];
+  const char *bindword = NULL;
+  char *av[12];
+  char *host = NULL;
+  char hostbuf[1024];
+  char servbuf[32];
+  struct tcpsock_bindlist *binds = NULL;
+  int family = AF_UNSPEC;
+  long tmp;
+  /* TWO PORT NUMBERS, and not one.  "listen 8000 client host:8001" is one
+   * interface that answers on 8000 and calls on 8001, and a single variable
+   * would make whichever word came last the answer to both questions - so
+   * "listen 20102 client 127.0.0.1:20103" listened on 20103 and said nothing
+   * (Thomas).  Both start at 0, which says "not written": what they default to
+   * follows the dialect and is worked out below.
+   */
+  int lport = 0;		/* the port this port ANSWERS on, 0 = not written */
+  int dport = 0;		/* the port this port CALLS on, 0 = not written */
+  int policy = cmdtype;		/* what the sessions of this port may speak */
+  int wtype = -1;		/* the "type=" word, -1 when it was not written */
+  int client = 0;
+  int listen = 0;
+  int ac = 0;
+  int i;
+  int keepalive = -1;		/* -1 = not written, so the default applies */
+  char key[AXALEN];		/* the shared code, if one was written */
+
+  (void) p;
+  /* "attach axtcp" IS NOT ITS OWN DIALECT.  Its name says the family, and the
+   * family's default is to take both; only the alias pins one.  What a client
+   * of THIS command speaks when it names no other follows the same rule, and is
+   * worked out where the ports are - the target port 8001 or 9393 says it, and
+   * a stranger's port is an error rather than a guess.
+   */
+
+  /* "bind=" AND "keepalive" ARE THE TWO WORDS THAT MAY STAND ANYWHERE, and
+   * both are taken out here, before anything reads a position.  A word that may
+   * only be written in one particular place is an extra rule to think about
+   * while copying a line out.
+   *
+   * "bind=" IS A LIST, and the list is parsed ONCE and then belongs to the port,
+   * so that "listen" can make a socket per entry and "client" can leave by the
+   * entry of the peer's family out of the same words.
+   */
+  for (i = 0; i < argc; i++) {
+    if (!strncmp(argv[i], "bind=", 5)) {
+      if (bindword != NULL) {
+	printf("\"bind=\" is written twice - it takes a list, so one word: "
+	       "\"bind=%s,%s\"\n", bindword, argv[i] + 5);
+	return 1;
+      }
+      bindword = argv[i] + 5;
+      continue;
+    }
+    if (ac >= (int) (sizeof(av) / sizeof(av[0]))) {
+      tcpsock_attach_usage(cmd);
+      printf("... and too many words before it.\n");
+      return 1;
+    }
+    av[ac++] = argv[i];
+  }
+  argc = ac;
+  argv = av;
+  /* THE KEEPALIVE COMES OUT HERE, next to "bind=" and before anything reads a
+   * position: from here on the line is positional, and a word in a position it
+   * knows nothing about is an error the sysop would not understand.
+   */
+  if (tcpsock_take_keepalive(&argc, argv, &keepalive))
+    return 1;
+  /* AND THE SHARED CODE NEXT TO IT, for the same reason: a word that may only
+   * stand in one particular place is an extra rule to think about while
+   * copying a line out.
+   */
+  if (tcpsock_take_sharedkey(&argc, argv, key))
+    return 1;
+  /* AND THE DIALECT, and it has to come out BEFORE the label is read: written
+   * in the label's place - "attach axtcp type=kiss listen 9393" - it would
+   * otherwise be taken for a name.
+   */
+  if (tcpsock_take_type(&argc, argv, &wtype))
+    return 1;
+  if (wtype >= 0)
+    policy = wtype;
+
+  /* "stat" IS NOT A LABEL, and it is not this command's to answer any more.  A
+   * status word inside a line that BUILDS something is the one place a sysop
+   * should not have to look for a status (Thomas), and what it answers is now
+   * "ifconfig <iface> stats", beside "verbose" where the other read-only word
+   * has always stood.
+   *
+   * A PREFIX OF THE WORD IS THE WORD, the same as for every subcommand on the
+   * command line - and that is what closes the trap this reserved word is here
+   * for in the first place: "attach axtcp st" used to build a port named "st"
+   * and say nothing at all.  Nobody who writes "sta" means a name.
+   */
+  if (argc >= 2 && strncmp("stat", argv[1], strlen(argv[1])) == 0) {
+    printf("Statistics do not belong to \"attach\" - use \"ifconfig %s stats\".\n",
+	   argc >= 3 ? argv[2] : "<iface>");
+    return 1;
+  }
+
+  /* "listen" AND "client" ARE NOT LABELS, and a first word that is one of
+   * them is the classic mistype: the name comes first, the option second, so
+   * "attach axtcp listen 999" builds a port NAMED "listen" - and the next
+   * attempt says "Interface listen already exists", a message about a port
+   * nobody meant to make (the "stat" case above has the same shape, Thomas).
+   */
+  if (argc >= 2 &&
+      (!strcmp(argv[1], "listen") || !strcmp(argv[1], "client"))) {
+    printf("\"%s\" is taken as the interface NAME here - the name stands\n"
+	   "first and the option after it: \"attach %s <name> %s ...\"\n",
+	   argv[1], cmd, argv[1]);
+    return 1;
+  }
+  if (argc >= 2) {
+    strncpy(ifname, argv[1], sizeof(ifname) - 1);
+    ifname[sizeof(ifname) - 1] = 0;
+  } else {
+    strncpy(ifname, cmd, sizeof(ifname) - 1);
+    ifname[sizeof(ifname) - 1] = 0;
+  }
+  if (if_lookup(ifname) != NULL) {
+    printf("Interface %s already exists\n", ifname);
+    return 1;
+  }
+
+  /* THE LIST IS TAKEN APART HERE, before the interface exists: a list that
+   * cannot be read is a mistake in the command line, and building the interface
+   * first and then refusing it would leave a name that is already half made.
+   */
+  if ((binds = tcpsock_bind_list(bindword)) == NULL && bindword != NULL)
+    return 1;
+
+  /* "listen" AND "client" ARE TWO WORDS, NOT TWO MODES, and both may stand:
+   * a node that answers an XRouter AND holds a session to a partner is both of
+   * those at once, and it is one interface - one name for "ifconfig", one
+   * "keepalive", one thing to trace.  Making them modes meant writing the
+   * second word decided everything and the first was ignored, so such a node
+   * had to become two interfaces over one port number, and two interfaces
+   * cannot hold one port number between them.
+   *
+   * Either word may come first, and the line is walked word by word until
+   * neither is there any more - the same shape as the "bind=" filtering above.
+   *
+   * NEITHER WORD AT ALL IS A LISTENER, which is the more frequent form and the
+   * one where you need not decide on a word.
+   */
+  listen = 0;
+  for (i = 2; i < argc; ) {
+    if (!strcmp(argv[i], "listen")) {
+      if (listen++)
+	goto Usage;
+      i++;
+      if (i < argc && argv[i][0] != '\0') {
+	if (cmd_getnum(argv[i], &tmp) || tmp <= 0 || tmp > 65535) {
+	  printf("Port \"%s\" is not a port number\n", argv[i]);
+	  return tcpsock_attach_abort(host, binds);
+	}
+	lport = (int) tmp;
+	i++;
+      }
+    } else if (!strcmp(argv[i], "client")) {
+      if (client++)
+	goto Usage;
+      if (++i >= argc) {
+	printf("\"client\" wants a host, as in \"client db0sao.ampr.org:8000\"\n");
+	tcpsock_attach_usage(cmd);
+	return tcpsock_attach_abort(host, binds);
+      }
+      /* THE PORT STANDS IN THE HOST, and that is right here: "client" has
+       * exactly one target, and a second word for it would be a syllable
+       * without content.
+       *
+       * build_hostport() is what splits it, so an IPv6 literal can be written
+       * the way build_sockaddr() wants it - "[::1]:8000" - and the brackets are
+       * gone by the time the name reaches getaddrinfo(), which would not take
+       * them.  A bare "::1:8000" it refuses instead of guessing: there is no
+       * telling the port from the address, and the wrong guess is the one that
+       * costs the afternoon.
+       */
+      if (build_hostport(argv[i], hostbuf, sizeof(hostbuf), servbuf,
+		 sizeof(servbuf), &family)) {
+	printf("\"%s\" is not a host or a host:port - an IPv6 literal goes in "
+	       "brackets, as in [::1]:8000\n", argv[i]);
+	return tcpsock_attach_abort(host, binds);
+      }
+      if (*servbuf) {
+	if (cmd_getnum(servbuf, &tmp) || tmp <= 0 || tmp > 65535) {
+	  printf("Port \"%s\" is not a port number\n", servbuf);
+	  return tcpsock_attach_abort(host, binds);
+	}
+	dport = (int) tmp;
+      }
+      if ((host = strdup(hostbuf)) == NULL)
+	return tcpsock_attach_abort(host, binds);
+      client = 1;
+      i++;
+    } else {
+    Usage:
+      /* A WORD TOO MANY IS REFUSED, not left unread.  The line is walked by
+       * position, and a word nobody read is a word the sysop believes was
+       * honoured: "attach axtcp al listen 19966 19967" bound 19966 and said
+       * nothing at all about 19967, which is not a shorter answer than this
+       * one.
+       */
+      tcpsock_attach_usage(cmd);
+      if (i < argc)
+	printf("... and \"%s\" is one word too many.\n", argv[i]);
+      return tcpsock_attach_abort(host, binds);
+    }
+  }
+  /* NEITHER WORD IS A LISTENER, on the default port: that is the more frequent
+   * form and the one where you need not decide on a word.
+   */
+  if (!client)
+    listen = 1;
+
+  /* THE DIALECT, AND THE ONE CASE THAT STILL NEEDS ONE.  Everything else is
+   * already decided; what is left is a client on a command whose own default
+   * is "auto", and a client cannot be "auto" (see the head of this function).
+   */
+  if (policy == TCPAD_AUTO && client) {
+    int wanted;
+
+    if (wtype >= 0) {
+      /* WRITTEN, and so an order and not a gap: the sysop asked for both
+       * dialects for the sessions of this port, and the client cannot have
+       * them.
+       */
+      printf("A port that takes both dialects cannot hold a client: the client\n"
+	     "speaks first and would have to write its first packet in a dialect\n"
+	     "it does not know yet.  Write \"type=kiss\" or \"type=axtcp\".\n");
+      return tcpsock_attach_abort(host, binds);
+    }
+    /* NOT WRITTEN, so the DESTINATION PORT decides - that is what the numbers
+     * mean and the sysop wrote one.  Without one the command's own number
+     * stands, and its dialect is the command's.
+     */
+    wanted = tcpsock_porttype(dport ? dport : AXTCP_DEFAULT_PORT);
+    if (wanted < 0) {
+      printf("Port %d says nothing about the dialect, and a client cannot be\n"
+	     "\"auto\": it speaks first.  Write \"type=kiss\" or \"type=axtcp\",\n"
+	     "or call port %d (kiss) or %d (axtcp)\n",
+	     dport, KISSTCP_DEFAULT_PORT, AXTCP_DEFAULT_PORT);
+      return tcpsock_attach_abort(host, binds);
+    }
+    policy = wanted;
+  }
+  /* THE PORTS NOW THAT THE DIALECT IS KNOWN: what was written stays, and what
+   * was not follows it - 8001 for KISS, 9393 for AXTCP and for "auto".
+   */
+  if (!lport)
+    lport = policy == TCPAD_KISSTCP ? KISSTCP_DEFAULT_PORT : AXTCP_DEFAULT_PORT;
+  if (!dport)
+    dport = policy == TCPAD_KISSTCP ? KISSTCP_DEFAULT_PORT : AXTCP_DEFAULT_PORT;
+
+  if ((ifp = (struct iface *) calloc(1, sizeof(struct iface))) == NULL) {
+    if (host)
+      free(host);
+    tcpsock_bind_free(binds);
+    return 1;
+  }
+  if ((ifp->name = strdup(ifname)) == NULL) {
+    free(ifp);
+    if (host)
+      free(host);
+    tcpsock_bind_free(binds);
+    return 1;
+  }
+  ifp->addr = Ip_addr;
+  ifp->mtu = 1500;		/* an AX.25 frame fits comfortably */
+  ifp->trace = 0;
+  ifp->broadcast = 0xffffffffUL;
+  ifp->netmask = 0xffffffffUL;
+  /* OUR OWN HARDWARE ADDRESS.  ax_answers_to() compares every incoming
+   * destination field with iface->hwaddr, and without that field the first
+   * frame that is delivered to us crashes.  The port is ours, so our own
+   * callsign goes here (Thomas).
+   */
+  ifp->hwaddr = (uint8 *) mallocw(AXALEN);
+  addrcp(ifp->hwaddr, Mycall);
+  /* THE IFTYPE, AND WITHOUT IT THE NODE CRASHES.  After every incoming
+   * packet network() fetches ifp->iftype->rcvf; a NULL there is a crash on
+   * the first good frame.  "AX25UI" is the same route as on a serial line:
+   * the frame arrives without a KISS cap and ax_recv() is the receiver both
+   * protocols need.
+   */
+  setencap(ifp, "AX25UI");
+  /* THE WAY OUT, and it is a hook as in axip - the framing stays with the tx
+   * hook, because AXTCP must count the CRC into its length field and KISS does
+   * not send one along.
+   */
+  ifp->raw = tcpsock_raw;
+  /* THE WIRE CHECKSUM.  crccontrol is NOT the AX.25 frame check sequence:
+   * that one is not in the KISS picture at all.  Nothing in the HDLC/LAPB
+   * stack computes it (only axip and axtcp append one, both encapsulations
+   * with no TNC in the path), nothing takes it off, and ntohax25()
+   * (ax25hdr.c:102) consumes the addresses and nothing else.  crccontrol
+   * names the KISS dialect's checksum - SMACK, FlexNet, or none.
+   *
+   * A PORT THAT CAN SPEAK KISS STARTS IN "auto".  CRC_AUTO says "learn which
+   * one from the partner, per session, and answer in kind"
+   * (kisstcp_crcmode(), and the top of kisstcp.c).  It used to be "off" here,
+   * on the argument that a TCP partner sends no checksum - and that argument
+   * was wrong for the partner we actually met: DG8NGN speaks FlexNet (type
+   * byte 0x20, a FlexNet checksum behind it), and "off" had us refuse every
+   * one of his frames as a foreign channel.  Learning costs nothing and is
+   * right in both cases: a partner who sends no checksum is learned as none
+   * and is answered with none.  A sysop who knows his partner may pin the
+   * dialect with "ifconfig <iface> crc off|smack|flexnet".
+   *
+   * A PINNED AXTCP PORT STAYS AT CRC_CCITT, as it always has: AXTCP carries
+   * its own checksum in its length area (axtcp_rx() checks it) and crccontrol
+   * is only ever the answer to "which KISS dialect", and there is no KISS
+   * session on such a port.
+   */
+  if (policy == TCPAD_AXTCP)
+    ifp->crccontrol = CRC_CCITT;
+  else
+    ifp->crccontrol = CRC_AUTO;
+  ifp->crcfixed = 0;
+  /* THE KEEPALIVE, and the default is on: see TCP_KEEPALIVE_DEFAULT for why a
+   * line that is quiet needs a packet on it.  The written value wins, and 0 is
+   * a written value - "keepalive 0" means off and not "use the default".
+   */
+  ifp->keepalive = keepalive < 0 ? TCP_KEEPALIVE_DEFAULT : keepalive;
+  if (key[0] != '\0')
+    memcpy(ifp->sharedkey, key, sizeof(ifp->sharedkey));
+
+  /* ONE PORT WITH BOTH ROLES, and the hooks are one set of four - the same
+   * bytes either way.  Only the flags say which half of it is wanted, and the
+   * session list is what "attach ... stat" walks.
+   *
+   * "bind=" BELONGS TO THE PORT AND NOT TO A ROLE, and that is what makes both
+   * words work with one list: a listener makes a socket per entry, and the
+   * session the client holds leaves by the entry of the peer's family.  A
+   * listener and a client on one interface that want different local addresses
+   * would need two interfaces - and two interfaces cannot hold one port number
+   * between them, which is why they are one interface (Thomas).
+   */
+  if ((tp = tcpsock_new(ifp, (client ? TCF_CLIENT : 0) | (listen ? TCF_LISTEN : 0),
+			policy)) == NULL) {
+    if (host)
+      free(host);
+    tcpsock_bind_free(binds);
+    if_detach(ifp);
+    return 1;
+  }
+  /* THE HOOKS OF THE POLICY, and this is the one place where the two files
+   * meet: a pinned port gets the four functions of its dialect and nothing
+   * else - it refuses the other dialect on the first byte, and that refusal is
+   * the security a sysop ordered - and a port that takes both gets the
+   * dispatcher (tcpsock_hooks_auto()), which grudges no byte and lets the CRC
+   * sort out a partner who guessed wrong.
+   */
+  if (policy == TCPAD_KISSTCP) {
+    tp->rx = kisstcp_rx;
+    tp->tx = kisstcp_tx;
+    tp->detect = kisstcp_detect;
+    tp->keepalive = kisstcp_keepalive;
+  } else if (policy == TCPAD_AXTCP) {
+    tp->rx = axtcp_rx;
+    tp->tx = axtcp_tx;
+    tp->detect = axtcp_detect;
+    tp->keepalive = axtcp_keepalive;
+  } else {
+    tcpsock_hooks_auto(tp);
+  }
+  /* THE LIST IS THE PORT'S, and not the call's: the rebuild needs it, and a
+   * session that rings again has to leave by the address it was told to leave
+   * by.  tcpsock_forget() takes it away with the port.
+   */
+  tp->binds = binds;
+
+  if (listen) {
+    if (tcpsock_listen(tp, binds, lport)) {
+      /* tcpsock_listen() has said which address and why.  A second sentence
+       * here would only repeat the port number at somebody who has just been
+       * told the address.
+       */
+      tcpsock_forget(tp);
+      if (host)
+	free(host);
+      if_detach(ifp);
+      return 1;
+    }
+  }
+  if (client) {
+    /* WHAT THE BRACKETS SAID, remembered before the first attempt and not
+     * only for it: AF_INET6 tells tcpsock_connect() to stop after the v6
+     * answers, and a later retry would otherwise be free to walk into an A
+     * record for a name that was written with "[...]" on purpose.  Zero means
+     * "either family", which is what an unbracketed spelling asks for.
+     *
+     * AND WITH A LISTENER ALONGSIDE, THE BRACKETS ARE THE PORT'S TOO: they say
+     * which family the peer is, and the "bind=" entry of that family is the
+     * address the session leaves by.  So a bracketed peer plus "bind=[::]" is
+     * a port that listens on [::] and calls out of [::], which is what the two
+     * words together say.
+     */
+    tp->family = family;
+    /* A RING THAT FAILS IS NO REASON TO LOSE THE PORT.  tcpsock_connect() says
+     * why, once, and the attach carries on; the ticker tries again after the
+     * deadline - otherwise after every outage of the peer one would have to
+     * type the command once more (Thomas).
+     */
+    tcpsock_connect(tp, host, dport);
+    free(host);
+  }
+  /* THE TICK, and it has to be started HERE, at the attach.  There is no
+   * other place for it: the init call that was meant to do it is gone,
+   * because nothing called it.  The consequence of a missing start would
+   * be invisible at the attach - the port listens and answers - and only
+   * show later: nothing in tcpsock_timer_task() runs, so a client never
+   * reconnects, a connection that is not identified never hits its five
+   * minutes, and the keepalive never ticks.
+   *
+   * CALLED FROM BOTH MODULES it is harmless: the first call starts the tick
+   * and every further one sees it running (see tcpsock_init()).
+   */
+  tcpsock_init();
+  ifp->next = Ifaces;
+  Ifaces = ifp;
+  return 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* WHAT A SESSION'S CHECKSUM IS, in the words "ifconfig <iface> crc" takes.  The
+ * port's own setting is the other word on the block, "crc-port:" - and the two
+ * differ exactly where the port learns (CRC_AUTO), which is the point of
+ * printing both: "crc-port:auto crc:smack" is a port that has learned, and
+ * "crc-port:auto crc:off" is one that has not heard a checksummed frame yet
+ * (kisstcp.c explains why starting with none is right and not an omission).
+ *
+ * THE SAME ANSWER kisstcp_crcmode() gives on the sending side, and for the same
+ * reason - that one is static in kisstcp.c and this file may not call it, so the
+ * question is answered here and has to stay the same (Thomas).
+ *
+ * AN AXTCP SESSION ALWAYS SAYS "ccitt" and never reads the setting: the CRC-16
+ * of the AX.25 frame is part of the payload there and is checked by axtcp_rx(),
+ * so a port pinned to "crc off" still checks it.
+ *
+ * AN UNIDENTIFIED SESSION SAYS "-", and not "off": "off" is an answer, and there
+ * is none yet - the partner has not sent a byte that would decide one.
+ */
+static const char *
+tcpsock_session_crc(
+struct tcpsock *tp)
+{
+  if (tp->proto == TCPAD_AXTCP)
+    return "ccitt";
+  if (tp->proto == TCPAD_KISSTCP) {
+    if (tp->ifp != NULL && tp->ifp->crcfixed)
+      return crcword(tp->ifp->crccontrol);
+    return crcword(tp->crcmode);
+  }
+  return "-";
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* ONE LIST, AND NOT ONE PER DIALECT.  "attach axtcp stat" and "attach kisstcp
+ * stat" used to be two lists that could not see each other, which is two
+ * answers to the question "what is this port doing" - and a port that takes
+ * both dialects had to be listed in one of them by an exception.  After Punkt
+ * 2b there is one transport, so there is one list, and WHICH dialect a port
+ * pins is a column of it (tcpsock_portname()) rather than a reason to split the
+ * table.  It is called from "ifconfig [<iface>] stats" (Thomas).
+ */
+int
+tcpsock_stat(
+struct iface *ifp)
 {
   struct tcpsock *tp;
+  char abuf[SOCKADDR_STRLEN];
+  char who[SOCKADDR_STRLEN + 8];
   int now;
 
-  (void) argc;
-  (void) argv;
-  (void) p;
   now = secclock();
   for (tp = Tcp_socks; tp; tp = tp->next) {
     if (ifp != NULL && tp->ifp != ifp)
       continue;
-    /* BY PORTPROTO, and not by proto: proto is the state of the individual session
-     * and stands at TCPAD_DETECT on every fresh listener.  Anyone who filters by
-     * that loses exactly the lines one wants to see.
-     */
-    if (proto != 0 && tp->portproto != proto)
-      continue;
     /* "listens:%d" and not one fd, because there is more than one: a port with
      * "bind=0.0.0.0,[::]" has two listening sockets, and a column that can only
      * show one of them is a column that has to lie on half the ports.  Which
-     * sockets they are, and what they are bound to, is "ifconfig verbose"'s
-     * line and stays there - this list is one line per session (Thomas). */
-    if ((tp->flags & TCF_LISTEN) && (tp->flags & TCF_CLIENT))
-      printf("  %-12s fd:%d listens:%d listen:%d peer:%s port:%d\n",
-	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, tp->lport,
-	     tp->peer ? tp->peer : "-", tp->port);
+     * sockets they are, and what they are bound to, is "ifconfig <iface>
+     * verbose"'s line and stays there - this list is one block per session
+     * (Thomas).
+     *
+     * WHO IS ON THIS ENTRY, in the column where the dialed host has always
+     * stood: "peer:" is the host a dialed session rings, "from:" the address an
+     * accepted session came in on.  One entry has one of them and never both -
+     * and an accepted session used to be answered with a bare "-", which is the
+     * one thing a list of sessions cannot do without when a port has more than
+     * one of them (Thomas).
+     */
+    if (tp->raddr.ss_family != 0)
+      snprintf(who, sizeof(who), "from:%s",
+	       sockaddr_to_string((struct sockaddr *) &tp->raddr, abuf,
+				  sizeof(abuf)));
+    else if (tp->peer != NULL)
+      snprintf(who, sizeof(who), "peer:%s", tp->peer);
     else
-      printf("  %-12s fd:%d listens:%d peer:%s port:%d\n",
-	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens,
-	     tp->peer ? tp->peer : "-",
-	     (tp->flags & TCF_LISTEN) ? tp->lport : tp->port);
+      snprintf(who, sizeof(who), "peer:-");
+    /* "crc-port:" IS THE PORT'S SETTING and stands on the port's line, next to
+     * the port number it belongs to; what this session has learned is the second
+     * word, on the session's line (Thomas).
+     */
+    if ((tp->flags & TCF_LISTEN) && (tp->flags & TCF_CLIENT))
+      printf("  %-12s fd:%d listens:%d listen:%d %s port:%d crc-port:%s\n",
+	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, tp->lport,
+	     who, tp->port,
+	     tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
+    else
+      printf("  %-12s fd:%d listens:%d %s port:%d crc-port:%s\n",
+	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, who,
+	     (tp->flags & TCF_LISTEN) ? tp->lport : tp->port,
+	     tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
 /* "in" AND "out" ARE FRAMES AND BYTES ON THE WIRE, and the two halves do not
      * count the same thing: the first number is AX.25 frames handed over, the
      * second is everything that went through the socket - the AXTCP length
@@ -1988,10 +2763,11 @@ void *p)
      * not look dead because it is quiet.  "kp in" below says what those bytes
      * were.
      */
-    printf("    port:%s session:%s flags:%s%s%s%s in:%ld/%ld out:%ld/%ld\n",
-	   tp->portproto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+    printf("    port:%s session:%s crc:%s flags:%s%s%s%s in:%ld/%ld out:%ld/%ld\n",
+	   tcpsock_portname(tp->portproto),
 	   tp->proto == TCPAD_DETECT ? "unidentified" :
 	   tp->proto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
+	   tcpsock_session_crc(tp),
 	   (tp->flags & TCF_LISTEN) ? "listen " : "",
 	   (tp->flags & TCF_CLIENT) ? "client " : "",
 	   (tp->flags & TCF_CONNECTED) ? "connected " : "",

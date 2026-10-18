@@ -77,6 +77,25 @@
 #define TCPAD_DETECT	0
 #define TCPAD_AXTCP	1
 #define TCPAD_KISSTCP	2
+/* AND THE PORT THAT TAKES BOTH.  TCPAD_DETECT is a SESSION state - "this one
+ * has not said who it is yet" - and TCPAD_AUTO is a PORT policy: the sysop
+ * ordered no particular dialect, so the port carries the hook set that
+ * dispatches (see tcpsock_hooks_auto() in tcpsock.c).  The session on such a
+ * port still starts as TCPAD_DETECT and settles on its first byte; only the
+ * PORT is "auto".  A pinned port keeps its own detector, which refuses the
+ * other dialect on the first byte - that refusal is a property the sysop
+ * ordered and is not given up here (TODO.txt, RISIKEN).
+ */
+#define TCPAD_AUTO	3
+
+/* AND THE TWO PORTS THAT CARRY A NAME.  8001 is the KISS-over-TCP port
+ * (direwolf, xrouter) and 9393 the AXTCP one, and they are conventions and not
+ * laws: a port number never PINS a dialect here (only a written "type=" does),
+ * but it does say which one a client is calling, and it is the default the
+ * dialect brings along (see tcpsock_attach() in tcpsock.c).
+ */
+#define KISSTCP_DEFAULT_PORT	8001
+#define AXTCP_DEFAULT_PORT	9393
 
 #define TCF_LISTEN	(1<<0)	/* own listening socket, no fd */
 #define TCF_CLIENT	(1<<1)	/* built by us, SYN sent */
@@ -142,8 +161,11 @@
  * nothing arrives although the sender sent it, and - this is the half that
  * hurts - the sender does not know it either, because it did not write into a
  * dead socket, it wrote into a socket that stopped being a path.  A session
- * that has identified itself has no other deadline at all (TCP_GARBAGE_MAX is
- * only for unidentified ones), so such a pair stays quiet and wrong for ever.
+ * that has identified itself has no other deadline at all - its silence is
+ * broken by the keepalive; a session that has NOT identified itself is ended
+ * by TCP_GARBAGE_MAX (TODO.txt, ENTSCHIEDEN I), and the time starts when the
+ * connection stands (accept or the SYN having finished), for pinned ports just
+ * as for auto ports.  So such a pair stays quiet and wrong for ever.
  *
  * SO BOTH SIDES SEND SOMETHING WHEN NOTHING IS HAPPENING.  One packet on a
  * quiet line is not traffic: the NAT keeps its mapping alive, and if it was
@@ -286,9 +308,22 @@ struct tcpsock {
   struct sockaddr_storage laddr;	/* the local address of a SESSION.  On a
 					 * listener the address is in the list
 					 * above, one per socket - and the peer
-					 * address is nowhere here, it is
-					 * tp->peer and it is printed as
-					 * "dials" (Thomas). */
+					 * address of a DIALED session is
+					 * tp->peer, printed as "dials"
+					 * (Thomas). */
+  struct sockaddr_storage raddr;	/* the peer of an ACCEPTED session, taken
+					 * off the accept().  For a while it was
+					 * nowhere at all, and "ifconfig <iface>
+					 * stats" then showed a port with three
+					 * sessions and nothing to tell them
+					 * apart but an fd number - a list whose
+					 * rows cannot be named is not a list
+					 * anybody reads (Thomas).
+					 *
+					 * A DIALED SESSION HAS NO FIELD HERE on
+					 * purpose: that address is tp->peer, one
+					 * per port, and it is printed as
+					 * "peer:" in the same column. */
 
   /* THE STREAM.  raw is the unmodified TCP content, len how much of it is
    * already there.  For AXTCP that is needed until length field AND announced
@@ -430,10 +465,21 @@ struct tcpsock *tcpsock_first(struct iface *ifp);
 int tcpsock_isport(struct iface *ifp);
 void tcpsock_show_verbose(struct iface *ifp);
 
-/* THE COUNTERS.  ifp == NULL means "all ports", proto == 0 "all protocols" -
- * which is what "attach axtcp stat" without a label says: the ports of this
- * protocol, without the KISS ports beside them. */
-int tcpsock_stat(struct iface *ifp, int proto, int argc, char *argv[], void *p);
+/* THE ONE STATISTIC OF THE TCP CARRIER, and the only place that lists the
+ * sessions: one block per port and one per session on it, with what a session
+ * has identified itself as and what its checksum is.  ifp == NULL is every TCP
+ * port of the node, a name is that port alone.  Called from "ifconfig [<iface>]
+ * stats" - it does not belong to "attach", which builds things. */
+int tcpsock_stat(struct iface *ifp);
+
+/* THE ONE ATTACH BEHIND "attach axtcp" AND "attach kisstcp".  cmd is the name
+ * the sysop wrote (it stands in the usage lines and is the default interface
+ * name), cmdtype what that name means: TCPAD_AUTO for "attach axtcp" - no
+ * dialect in particular, the superset - and TCPAD_KISSTCP for the pinned
+ * alias.  See the head of the function for how type= and the two ports are
+ * worked out.  Returns 0, or 1 having said why.
+ */
+int tcpsock_attach(int argc, char *argv[], void *p, const char *cmd, int cmdtype);
 
 /* Takes "keepalive <seconds>" off an attach line and closes the gap behind it,
  * so that the positional parsing of the rest of the line does not have to know
@@ -449,6 +495,30 @@ int tcpsock_take_keepalive(int *argcp, char **argv, int *keepal);
  * not, having said why.
  */
 int tcpsock_take_sharedkey(int *argcp, char **argv, char *key);
+
+/* THE TWO ENCODINGS' HOOK SETS, and this header is where the two meet: the
+ * dispatcher of an "auto" port picks a set by tp->proto, and the framing
+ * itself stays in the file it belongs to (axtcp.c, kisstcp.c).  Nothing here
+ * says what a frame is; that is each hook's own business.
+ *
+ * A PINNED PORT USES EXACTLY ONE OF THE TWO SETS and nothing else - it hangs
+ * the four functions of its dialect on the port and knows no dispatcher.
+ */
+int axtcp_rx(struct tcpsock *tp);
+int axtcp_tx(struct tcpsock *tp, unsigned char *out, int max, struct mbuf **bpp);
+int axtcp_detect(struct tcpsock *tp);
+int axtcp_keepalive(struct tcpsock *tp, unsigned char *out, int max);
+int kisstcp_rx(struct tcpsock *tp);
+int kisstcp_tx(struct tcpsock *tp, unsigned char *out, int max, struct mbuf **bpp);
+int kisstcp_detect(struct tcpsock *tp);
+int kisstcp_keepalive(struct tcpsock *tp, unsigned char *out, int max);
+
+/* AND THE HOOK SET OF A PORT THAT TAKES BOTH, hung on the port by the attach
+ * when the sysop asked for no particular dialect.  The dispatcher consults
+ * tp->proto, which the detector has set from the first byte; until then a
+ * session sends nothing at all (TODO.txt, ENTSCHIEDEN G).
+ */
+void tcpsock_hooks_auto(struct tcpsock *tp);
 
 /* THE WAY OUT, and both protocols hang it on ifp->raw.  The framing stays with
  * the tx hook: AXTCP counts the CRC into its length field, KISS sends none. */
