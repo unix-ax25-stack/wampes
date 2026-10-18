@@ -1,9 +1,21 @@
 /* 6PACK: an AX.25 host-to-TNC protocol on a serial line.
+ * * Copyright (C) 2026 Thomas Osterried <dl9sau@darc.de>
  *
- * Copyright 2026 Thomas Osterried, DL9SAU.  Distributed under the GNU General
- * Public License; see http://www.fsf.org/.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Not KISS with something added - a protocol of its own, by the people who
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
+ */
+
+ /* Not KISS with something added - a protocol of its own, by the people who
  * later gave KISS its FlexNet checksum, and it shows: what KISS had to bolt
  * on, 6pack has by construction.  A checksum over every frame, a TNC address
  * in every command byte so that eight of them can share a line, and the
