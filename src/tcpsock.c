@@ -892,7 +892,7 @@ struct tcpsock *tp)
    * eines Besuchers, der wiederkommt, wenn er will - der Port haelt nichts fuer
    * ihn.  Ist es die letzte gewesen, gehoeren auch die Adress-Routen des Ports
    * weg, die keine eigene Sitzung haben (axip_forget_iface()): eine Route
-   * "via <port>" waere sonst eine Zeile, deren Weg in Wirklichkeit niemand
+   * "on <port>" waere sonst eine Zeile, deren Weg in Wirklichkeit niemand
    * haelt.  Bei einer CLIENT-Sitzung gilt das nicht: den baut der Port selbst
    * wieder auf und behaelt seine Routen dafuer (Thomas).
    */

@@ -11373,6 +11373,16 @@ schon an der Sitzung) und eine schlechte: "axip route" zeigt nicht,
 wer welches Encoding spricht.  Nach dem Umbau gehoert tproto in die
 Ausgabe.
 
+GELOEST (2026-10-18, mit 2d, s.u. unter ENTSCHEIDEN E): tproto wird
+jetzt gelesen - in der Ausgabe von "axip route", je Session-Eintrag,
+und dort mit einem nackten kiss|axtcp.  Der SENDEWEG fragt es weiter
+nicht, und das ist jetzt auch beabsichtigt statt nur ertraeglich: wie
+gesendet wird, haengt an der Sitzung (tp->rx/tp->tx nach der
+Erkennung), und tproto in der Route-Zeile ist die Antwort auf "wer
+spricht was", nicht auf "wie wird gesendet".  Dass der tote Faden
+verdackt hat, dass NIEMAND das Feld las, war trotzdem ein Fehler im
+Kleinen - er haette beim naechsten echten Leser derselbe gefunden.
+
 crccontrol, DIE ZWEI BEDEUTUNGEN.  Auf einem KISS-Port ist es die
 Wire-Pruefsumme (CRC_AUTO/off/16/RMNC/TEST_16/TEST_RMNC, gelesen in
 kiss.c und kisstcp.c).  axtcp und axip setzen es auf CRC_CCITT - und
@@ -11508,10 +11518,27 @@ ENTSCHEIDEN (Thomas, 2026-10-19)
      Byte ausbleibt.  Vorher betraf das nur angenommene Sitzungen.  Wer das
      nicht will, gibt einem festgenagelten Port den "identifiziert"-Zustand
      von Geburt an - dann entfaellt auch das sinnlose Pong.
-
-NOCH OFFEN (Thomas)
-  E. Was zeigt "axip route" nach dem Umbau: tproto je Eintrag (heute
-     gesetzt und nie gelesen).
+     DIE FRIST IST EINE IDENTIFIKATIONSFRIST UND KEIN IDLE-TIMER (Klaerung
+     2026-10-18, nach einer Frage vom Thomas): gemessen wird ab
+     garbage_since - dem Moment, in dem die Verbindung stand (accept bzw.
+     SO_ERROR-Erfolg, tcpsock.c:1743, Auswertung 1799) - und NICHT ab dem
+     letzten empfangenen Byte.  Ein KEEPALIVE koennte sie also nicht
+     verlaengern, auch wenn er vor der Identifikation erlaubt waere: er ist
+     keine Identifikation (ein leeres KISS-FEND-Paar wie ein leeres
+     AXTCP-Frame tragen keine Adresse).  Deshalb ist die Stille vor der
+     Identifikation auch keine Luecke, die ein Anti-Idle schliessen koennte:
+     BEIDE Seiten schweigen, jede aus ihrem Grund - der Client ohne
+     shared-key hat nichts, womit er sich vorstellen koennte (der
+     Auth-Rahmen IST die Vorstellung), und die Gegenseite kennt auf einem
+     auto-Port das Encoding noch nicht und wuerde im geratenen Dialekt nur
+     Muell schicken.  Beim festgenagelten Port KONNTE eine Seite zuerst
+     reden (sie kennt ihr eigenes Encoding), und auch das rettete die
+     Verbindung nicht - sie faellt trotzdem nach 5 min, weil niemand
+     gesagt hat, wer er ist.  Aus der Stille hilft nur echter Verkehr: das
+     erste Datenframe in eine Richtung ist zugleich die Dialekt-Antwort
+     (der Client ist festgenagelt und weiss sein Encoding selbst), und wer
+     gar nicht warten will, setzt shared-key - dann ist der Client beim
+     Connect identifiziert und der Frist nicht mehr ausgesetzt.
 
 ENTSCHEIDEN (Thomas, 2026-10-18)
   F. DER STATISTIK-BEFEHL HEISST "ifconfig [<iface>] stats" - umgesetzt.
@@ -11620,7 +11647,69 @@ REIHENFOLGE (Vorschlag, kleine Commits)
             natuerlich mit nichts.  garbage.py prueft jetzt nach dem
             Boot, da beide Schnittstellen stehen, und bricht mit dem
             Bind-Fehler aus dem Konsolenpuffer ab.
-  2d. tproto in "axip route" sichtbar machen.
+  E. WAS "AXIP ROUTE" ZEIGT, IST JETZT ENTSCHEIDEN UND UMGESETZT - der
+     letzte offene Punkt aus 2b (dort "2d"), und zugleich die Antwort auf
+     das, was frueher unter NOCH OFFEN E stand: das Dialektwort JE
+     Session-Eintrag.  tproto steht in jedem Eintrag des Session-Zweigs
+     (doaxiproute(), dest.ss_family == 0), immer an derselben Stelle: erst
+     die Addr-Spalte mit dem Traeger, dann das Dialektwort (nackt,
+     kleingeschrieben: kiss|axtcp), dann "to host:port", wenn der Knoten
+     die Sitzung selbst gewaehlt hat.  Echte Ausgabe, alle drei Welten auf
+     EINEM Knoten:
+         TEST-8     tk  axtcp  heard 0:00:00:01 ago
+         TEST-7     tk  kiss  heard 0:00:00:01 ago
+         default    127.0.0.1  port 9393  on xnet
+         TEST-5     tc  axtcp  to 127.0.0.1:18052  heard 0:00:00:02 ago
+         DB0FHN     127.0.0.1  port 9393  on xnet  P
+     WARUM NUR DER SESSION-ZWEIG: dort IST eine Sitzung dahinter, und dort
+     ist das Encoding entschieden, bevor es eine Zeile gibt - das Lernen
+     laeuft erst nach einem dekodierten Rahmen (tcpsock_input() ->
+     axip_learn_transport(), tcpsock.c:373), fuer angenommene wie fuer
+     eigene Client-Sitzungen.  Hand-Routen und default bekommen KEIN
+     Wort: keine Sitzung, kein Encoding; welches Interface dort
+     draufspricht, sagt "on".  Zwei Partner auf einem auto-Port, der eine
+     KISS, der andere AXTCP, sahen VORHER zeilenweise identisch aus, und
+     "ifconfig <iface> stats" musste als zweite Befehlszeile dazukommen,
+     um den Unterschied ueberhaupt zu sagen.
+     ZUGLEICH ZWEI WORTAENDERUNGEN, beide vom Thomas vorgeschlagen:
+     (a) "via <iface>" heisst jetzt "on <iface>" (doaxiproute(), auch die
+         "(gone)"-Variante): "via" nennt sonst ueberall im Haus den
+         DIGIPFAD (ax25cmd.c:1177 druckt hinter "via" die Digipeater mit
+         pax25, ax25subr.c nimmt die Eingabe entgegen), und in einer
+         Route-Tabelle braucht ein Wort nicht zwei Bedeutungen - "on"
+         sagt ausserdem, was es ist: das Interface, auf dem die Frames
+         rausgehen.  Die beiden Kommentare, die das alte Ausgabewort
+         zitierten (axip.c "on <port>", tcpsock.c "on <port>"), sind
+         mitgezogen.
+     (b) KEIN crc: IN DER ROUTE-ZEILE (Thomas: "bringen wir hier noch die
+         (bei crc-auto) ausgehandelte CRC unter?" - Antwort: nein).  Die
+         CRC ist eine Eigenschaft der Sitzung, nicht des Weges, und
+         "ifconfig <iface> stats" zeigt sie je Sitzung MIT den crcerr-
+         Zaehlern, die sagen, ob sie je ein Problem war.  In der
+         Route-Zeile stunde sie ohne den Portkontext (crc-port:...), und
+         bei AXTCP waere es ein Konstanten-Wort (ccitt), das nie etwas
+         unterscheidet.  Ausgehandelt ist sie uebrigens nicht: es wird
+         nichts verhandelt, der Port mit crc-auto nimmt mehrere
+         Pruefsummen an (tcpsock.c, der Kommentar ueber crccontrol).
+     Bewiesen: route_show.py (testtools, 9 Pruefungen, gruen) stellt die
+     drei Welten dar - axudp-Hand-Routen wie in der db0fhn-10-Konfiguration, eine KISS- und eine AXTCP-Sitzung an EINEM auto-Port,
+     und eine eigene Client-Sitzung gegen eine Gegenstelle im Skript - und
+     prueft: Dialektwort in allen drei Session-Zeilen, "to host:port" nur
+     bei der Client-Route, "on xnet" in beiden Hand-Routen, "via" nirgends
+     mehr.  ZWEI FEHLER WAREN IM SKRIPT UND NICHT IM KNOTEN: die
+     Paar-Reihenfolge im Rahmen (das erste Feld ist das ZIEL und nicht die
+     Quelle - gelernt wird die Quelle, die darum in der Zeile stand, wo
+     ich sie nicht vermutete), und der AXTCP-CRC:
+     append_crc_ccitt() (crc.c:183) rechnet crc ^ 0xffff und haengt das
+     NIEDRIGE Byte zuerst an; erst die Gegenprobe crc(rahmen+crc) ==
+     0xf0b8 machte die zweite Sitzung sichtbar - vorher warf der Knoten
+     die Rahmen weg und ihre Route fehlte schlicht.
+     AUCH GEPRUEFT, was eine eigene Client-Sitzung beim Aufbau tut: ein
+     Client OHNE shared-key schickt bis zum ersten Byte der Gegenseite
+     gar nichts (tcpsock.c:698), das leere UI-Frame geht nur mit
+     shared-key (tcpsock_auth_send()) - die Gegenstelle im Skript empfing
+     also 0 B, und das ist die richtige Antwort, nicht eine Stille, die
+     haenge geblieben waere.
 
 NOCH ZU TUN AUS 2b (klein)
   - FERTIG (2026-10-19, uncommitted): ENTSCHIEDEN G umgesetzt.  Die beiden
@@ -11693,3 +11782,16 @@ NEBENBEFUNDE (2026-10-19)
      Axip_refused, oder ax_dup_recent -> Ax_echoes).  Mit Zaehlern
      pruefen: axip_dropped()/Axip_refused/Ax_echoes, "axip rou" vor/nach,
      und ob der Rahmen ueberhaupt bis tcpsock_input kommt.
+  3. "attach axip xnet udp 930:9393 bind=127.0.0.1" schlaegt auf MACOS
+     fehl: "cannot bind address: Permission denied" (axip.c:1475), und die
+     Folge ist "Interface xnet unknown" - jede spaetere "axip route add
+     ... :xnet" antwortet dann mit 'No such interface "xnet"'.  Auf
+     db0fhn (Linux) ist dieselbe Zeile Teil der laufenden Konfiguration.
+     NICHT der Port und nicht die Adresse: derselbe UDP-Port an
+     127.0.0.1 bindet Python ohne Fehler (und "::1" obendrein), und
+     jenseits von 1024 ist ohnehin kein Privileg noetig; der Knoten
+     oeffnet fuer UDP ein SOCK_DGRAM (axip_open_sock()) und kein RAW.
+     Noch unaufgeklaert, macOS-spezifisch oder nicht - bis dahin bindet
+     route_show.py diesen Port ohne "bind=" (der Test braucht xnet nur
+     als Anzeige-Welt), und die laufende db0fhn-Konfiguration bleibt
+     unberuehrt.

@@ -2054,7 +2054,7 @@ void *tsock)
  * Adress-Route, die der Sysop auf diesen Port geschrieben hat (rdev auf
  * einem Carrier entsteht ausschliesslich ueber "axip route add", siehe
  * doaxiprouteadd()) und zu keiner Sitzung gehoert: sie stuende als
- * "via <port>" da, waehrend den Weg in Wirklichkeit niemand haelt -
+ * "on <port>" da, waehrend den Weg in Wirklichkeit niemand haelt -
  * "die Route zaehlt, solange der Port EINE Sitzung hat" (doaxiprouteadd()).
  *
  * DESHALB GEHOERT WRITTEN NICHT HIERHIN: written schuetzt vor der ZEITFRIST
@@ -2550,6 +2550,29 @@ static int doaxiproute(int argc, char *argv[], void *p)
 
       printf("%-9s  %s", pax25(buf, rp->call),
 	     (tp != NULL && tp->ifp != NULL) ? tp->ifp->name : "<gone>");
+      /* WELCHES ENCODING SPRICHT DIE GEGENSEITE (2d/E).  Genau hier, immer
+       * an derselben Stelle, weil die Zeile sonst von einer zweiten, zeilen-
+       * gleichen nicht zu unterscheiden waere: zwei Partner auf einem auto-
+       * Port, der eine KISS, der andere AXTCP, sahen vor dieser Zeile
+       * identisch aus, waehrend "ifconfig <iface> stats" es schon sagte.
+       *
+       * tproto steht auf JEDEM Eintrag dieses Zweigs: das Lernen laeuft erst
+       * nach einem dekodierten Rahmen (tcpsock.c:373), also ist das Encoding
+       * entschieden, bevor es eine Zeile gibt - fuer angenommene wie fuer
+       * eigene Client-Sitzungen (die "to host:port" unten).  Welcher Wert
+       * dabei aus der Port-Politik kam (type=kiss|axtcp|auto) sieht man in
+       * "ifconfig <iface> verbose".
+       *
+       * DIE CRC STEHT NICHT HIER: sie ist eine Eigenschaft der Sitzung, nicht
+       * des Weges, und "ifconfig <iface> stats" zeigt sie je Sitzung mit den
+       * crcerr-Zaehlern, die sagen, ob sie je ein Problem war.  Hier stünde
+       * sie ohne den Portkontext (crc-port:...), und bei AXTCP waere es ein
+       * Konstanten-Wort (Thomas).
+       */
+      if (rp->tproto == TCPAD_AXTCP)
+	printf("  axtcp");
+      else if (rp->tproto == TCPAD_KISSTCP)
+	printf("  kiss");
       if (tp != NULL && (tp->flags & TCF_CLIENT) && tp->peer != NULL)
 	printf("  to %s:%d", tp->peer, tp->port);
     } else
@@ -2562,11 +2585,16 @@ static int doaxiproute(int argc, char *argv[], void *p)
      * Nummer bleibt nach dem Wegfallen des Ports fuer immer vergeben, siehe
      * axip_ifp_to_rdev().
      */
+    /* UND AUF WELCHEM INTERFACE, mit "on" und nicht mit "via": "via" nennt
+     * im ganzen sonstigen Haus den DIGIPFAD (ax25cmd.c druckt hinter "via"
+     * die Digipeater), waehrend hier ein Interface steht - zwei Bedeutungen
+     * in einem Wort braucht eine Route-Tabelle nicht (Thomas).
+     */
     if (rp->rdev) {
       if ((ifp = axip_iface(rp->rdev)) != NULL)
-	printf("  via %s", ifp->name);
+	printf("  on %s", ifp->name);
       else
-	printf("  via port %d (gone)", rp->rdev);
+	printf("  on port %d (gone)", rp->rdev);
     }
     /* P heisst "der Sysop hat permanent gesagt", ONCE heisst "bei der Adresse
      * gescannt, bei der es zum ersten Mal gehoert wurde".  Zwei Worte, weil
