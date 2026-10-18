@@ -253,6 +253,17 @@ struct tcpsock {
 				 * port (Thomas). */
   int family;			/* AF_INET or AF_INET6 */
 
+  /* THE CHECKSUM THIS SESSION SPEAKS, and it is a SESSION field and not the
+   * port's.  A KISS-over-TCP port left in "crc auto" learns it from its
+   * partner's own frames - bit 7 of the type byte announces SMACK, bit 5
+   * FlexNet - and answers in whichever one proved out.  A port pinned with
+   * "ifconfig <iface> crc off|smack|flexnet" does not read this field: the pin
+   * wins (see kisstcp.c, kisstcp_crcmode()).  Per SESSION because one
+   * listening port can carry several partners at once, and which dialect a
+   * partner speaks is his to say and not the port's (Thomas, 2026-10-18).
+   */
+  int crcmode;
+
   /* The listening sockets, one per "bind=" entry - see struct
    * tcpsock_listen below, and why there is a list and not one fd.
    *

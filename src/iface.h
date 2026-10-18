@@ -203,6 +203,10 @@ struct iface {
 #define CRC_16          3       /* Send CRC_16 packets */
 #define CRC_RMNC        4       /* Send CRC_RMNC packets */
 #define CRC_CCITT       5       /* Send CRC_CCITT packets */
+#define CRC_AUTO        6       /* Learn the checksum from the partner's frames
+                                 * (KISS-over-TCP).  The serial KISS port cannot
+                                 * do that - two frames cannot probe a whole
+                                 * line - and probes instead, see CRC_TEST_16. */
 
 	/* THE KEEPALIVE OF A TCP PORT, in seconds; 0 says nothing is sent.  See
 	 * tcpsock.h for what the packet is and why it is needed.  It lives on

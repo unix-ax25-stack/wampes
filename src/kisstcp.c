@@ -66,16 +66,25 @@
  * a data frame, 1..6 for setting a TNC parameter, 15 for leaving KISS.  Dire
  * Wolf writes it exactly so: stemp[0] = (chan << 4) | kiss_cmd (kissnet.c).
  *
- * AND THERE IS NO CRC BIT IN IT.  This file used to read 0x80 as "a 16 bit
- * CRC follows" and 0x20 as "an RMNC CRC follows", which is not KISS: both
- * bits are in the channel field, so 0x80 is channel 8 and 0x20 is channel 2.
- * No conformant peer ever sends them, this code can therefore never have seen
- * a CRC there against one - and against itself it read its own test frames as
- * a wrong channel.  The lower nibble is the command, and there is no room in
- * the type byte to say "a CRC follows": over TCP the frame boundary is given
- * by FEND anyway, and the systems that meet here (Dire Wolf, BPQ, catf) send
- * no CRC.  A CRC between FEND and the AX.25 frame would have to be announced
- * out of band, and nothing announces it (Thomas).
+ * AND THE SAME TWO NIBBLES CARRY TWO CHECKSUM FLAGS, which is the collision
+ * this file has to live with.  SMACK puts bit 7 - which is channel 8 in plain
+ * KISS - over its port number and a CRC-16/ARC behind the frame; FlexNet
+ * writes the whole byte as 0x20 - channel 2 in plain KISS - and a FlexNet
+ * checksum behind it.  A single frame cannot say which of the two it means.
+ *
+ * WHAT RESOLVES IT IS THE CHECKSUM ITSELF.  A 0x20 frame whose FlexNet
+ * residue comes out as 0x7070 is FlexNet; one that does not is a channel-2
+ * frame from somebody who took this port for a multiport one, and is refused
+ * as such.  kiss.c does the same on the serial line, and Dire Wolf warns
+ * about the ambiguity rather than choosing.  WHETHER WE MAY LOOK AT ALL is the
+ * port's "ifconfig <iface> crc" setting (iface.c, ifcrc): "auto" looks, and
+ * learns per partner - bit 7 means SMACK, bit 5 means FlexNet, and whichever
+ * proves out is what we answer with; "smack"/"flexnet" look for exactly one;
+ * "off" does not look, and then 0x20 and 0x80 are simply foreign channels.
+ * A freshly attached port is in auto (see kisstcp_attach()).
+ *
+ * The lower nibble is the command, and none of this touches it: a checksummed
+ * frame still has command 0.
  */
 #define KISS_CMD_DATA_FRAME	0
 
@@ -201,6 +210,56 @@ struct tcpsock *tp)
      * here on is the rest the AX.25 frame.
      */
     type = frame[0];
+
+    /* THE CHECKSUM, AND IT COMES FIRST.  It is computed over [type byte][frame]
+     * - the serial port does it the same way (kiss.c), and a FlexNet partner
+     * who computed his own over that range will not recognise one we computed
+     * without it.  Which dialect a flag means, and why the flag is not simply a
+     * channel, stands at the top of this file.
+     */
+    if ((type & 0x80) || (type & 0x20)) {
+      /* SMACK announces itself in bit 7, FlexNet in bit 5. */
+      int kind = (type & 0x80) ? CRC_16 : CRC_RMNC;
+      /* MAY WE LOOK?  "auto" (crcfixed == 0) may, for both dialects; a pinned
+       * port may look only for the one it was pinned to.  Anything else -
+       * above all "off" - does not look, and the frame then goes the way of
+       * every other unexpected channel, below.
+       */
+      int look = !tp->ifp->crcfixed || tp->ifp->crccontrol == kind;
+      int ok = 0;
+
+      if (look) {
+        struct mbuf *bp = qdata(frame, (uint) flen);
+
+        if (bp != NULL) {
+          ok = (kind == CRC_16) ? (check_crc_16(bp) == 0) :
+                                  (check_crc_rmnc(bp) == 0);
+          free_p(&bp);
+        }
+      }
+      if (!ok) {
+        /* EITHER A BAD CHECKSUM OR A MULTIPORT FRAME.  The two cannot be
+         * told apart - see the collision at the top - and both are the same
+         * error to us: a partner who speaks a dialect this port was not
+         * opened for.  Counted once, in the same place as a foreign channel.
+         */
+        tp->crcerr++;
+        tp->ifp->crcerrors++;
+        continue;
+      }
+      /* THE CHECKSUM WAS RIGHT, so this is a dialect we speak and not a
+       * channel.  Learning is per session and only in auto; a pinned port
+       * must not be overwritten by the peer (iface.c, ifcrc).
+       */
+      if (!tp->ifp->crcfixed)
+        tp->crcmode = kind;
+      /* THE TWO TRAILING BYTES ARE THE CHECKSUM, and the type byte did the
+       * checksum and not a channel: it is 0 from here on.
+       */
+      flen -= 2;
+      type = KISS_CMD_DATA_FRAME;
+    }
+
     flen--;
     memmove(frame, frame + 1, (size_t) flen);
 
@@ -210,6 +269,10 @@ struct tcpsock *tp)
      * be the error that shows up as "unknown callsigns" and not as "wrong
      * channel".  And it is counted, because a partner on one TCP port that
      * speaks for two channels was told to use two ports (Thomas).
+     *
+     * 0x20 and 0x80 never reach here: a frame that carried them was taken for
+     * a checksum above or refused as a foreign channel there, and a checksummed
+     * one had its type byte set to 0 on the way.
      */
     if (((type >> 4) & 0x0f) != KISS_CHAN) {
       tp->crcerr++;
@@ -218,24 +281,23 @@ struct tcpsock *tp)
     }
 
     /* THE LOWER NIBBLE IS THE COMMAND, and only 0 is a data frame.  What
-     * stands in the rest is a TNC parameter being set for a TNC we are not -
-     * a partner that sent us TXDELAY or, worse, command 15 to leave KISS.  It
-     * is not AX.25 data and must not go to ax25() as if it were: a one byte
-     * parameter frame that reaches ax_recv() comes back as a header complaint,
-     * which names the symptom and not the cause.  So it is dropped here, and
-     * counted, because over TCP nobody can set a parameter on a TNC that is
-     * not there.
+     * stands in the rest is a TNC parameter being set (1..6) or, at 15, a
+     * partner leaving KISS - for a TNC we are not.
+     *
+     * BUT IT IS NOT AN ERROR, and it used to be counted as one.  A partner
+     * who sets a TXDELAY is doing what KISS allows him to, and a counter that
+     * punishes it shows a healthy port as a broken one.  So it is ACCEPTED and
+     * dropped, and kept for later: the day this port has a TNC of its own
+     * behind it (a bridge), these are the frames that have to be passed on
+     * (TODO.txt, "KISSTCP/AXTCP: CRC-ERKENNUNG", point 3).
      */
-    if ((type & 0x0f) != KISS_CMD_DATA_FRAME) {
-      tp->crcerr++;
-      tp->ifp->crcerrors++;
+    if ((type & 0x0f) != KISS_CMD_DATA_FRAME)
       continue;
-    }
-    /* AND NO CRC.  Nothing in the type byte announces one - see the comment
-     * at KISS_CMD_DATA_FRAME - so what follows FEND is the AX.25 frame and
-     * nothing else.  The frame carries its own FCS, which check_crc_16() in
-     * ax25 does, and it must NOT be cut off here: ax25 appends one again when
-     * it sends.
+
+    /* AND NOTHING MORE TO CUT OFF.  An announced checksum was handled above;
+     * what follows is the AX.25 frame and nothing else.  The frame carries its
+     * own FCS, which check_crc_16() in ax25 does, and it must NOT be cut off
+     * here: ax25 appends one again when it sends.
      */
     if (flen > 0)
       tcpsock_input(tp, frame, flen, KISS_CHAN);
@@ -254,10 +316,36 @@ struct tcpsock *tp)
 
 /*---------------------------------------------------------------------------*/
 
-/* THE OUTPUT.  FEND, type byte 0x00, the escaped frame, FEND.  We do not do
- * the CRC: over TCP the frame boundary is given by FEND anyway, and the
- * systems that meet here do not send one.  Whoever needs one should add it on
- * the KISS side - that is where the decision belongs and not into the middle.
+/* THE CHECKSUM THIS SESSION SPEAKS ON THE WAY OUT.
+ *
+ * THE PORT SAYS WHAT IS ALLOWED, THE SESSION SAYS WHAT WAS LEARNED.  A port
+ * pinned with "ifconfig <iface> crc off|smack|flexnet" answers with exactly
+ * that; a port left in "auto" answers with what its partner's frames have
+ * taught it, and - until the first checksummed frame arrives - with none at
+ * all.  See the top of this file for why starting with none is right and not
+ * an omission.
+ */
+static int
+kisstcp_crcmode(
+struct tcpsock *tp)
+{
+  if (tp->ifp->crcfixed)
+    return tp->ifp->crccontrol;
+  return tp->crcmode;
+}
+
+/* THE OUTPUT.  FEND, the type byte (with a checksum flag when the partner
+ * speaks one), the escaped frame, FEND.
+ *
+ * THE TYPE BYTE GOES ON BEFORE THE CHECKSUM IS COMPUTED, and that is not
+ * cosmetic: the checksum runs over [type byte][frame], exactly as on the
+ * receiving side, and a FlexNet partner will reject one computed over the
+ * frame alone.  kiss.c's kiss_raw() puts it on first for the same reason.
+ *
+ * WHICH CHECKSUM is asked of kisstcp_crcmode() above.  A client that greeted a
+ * stranger with a SMACK would be told "we do not do that here" and
+ * disconnected, while a client that starts with plain KISS and follows the
+ * peer is welcome everywhere (Thomas).
  */
 static int
 kisstcp_tx(
@@ -269,15 +357,33 @@ struct mbuf **bpp)
   int l;
   int i;
   int n = 0;
-  unsigned char buf[MAX_TXFRAME];
+  /* THREE BYTES MORE THAN THE FRAME tcpsock_raw() hands in: the type byte and,
+   * when a checksum is added, its two.  pullup() never writes more than
+   * sizeof(buf) and leaves the rest in *bpp, so an over-long frame falls
+   * through the test below instead of running over.
+   */
+  unsigned char buf[MAX_TXFRAME + 3];
 
   if (max < 3)
     return -1;
+  pushdown(bpp, NULL, 1);
+  (*bpp)->data[0] = PARAM_DATA;	/* channel 0, data */
+  switch (kisstcp_crcmode(tp)) {
+  case CRC_16:
+    (*bpp)->data[0] |= 0x80;	/* SMACK: bit 7 over the port number */
+    append_crc_16(*bpp);
+    break;
+  case CRC_RMNC:
+    (*bpp)->data[0] |= 0x20;	/* FlexNet: the whole byte, no port */
+    append_crc_rmnc(*bpp);
+    break;
+  default:
+    break;			/* off: type byte 0x00 and no checksum */
+  }
   if ((l = pullup(bpp, buf, sizeof(buf))) <= 0 || *bpp)
     return -1;
 
   out[n++] = FR_END;
-  out[n++] = PARAM_DATA;	/* channel 0, data */
   for (i = 0; i < l; i++) {
     if (n + 3 >= max)
       return -1;
@@ -605,35 +711,28 @@ void *p)
    * not send one along.
    */
   ifp->raw = tcpsock_raw;
-  /* NO AX.25 FCS, AND crccontrol IS DELIBERATELY LEFT ALONE.  The comment
-   * that used to stand here claimed that ax25 appends one when it sends and
-   * that these two bits therefore have to come off again.  Neither half is
-   * true, and the line was a no-op besides:
+  /* THE WIRE CHECKSUM, AND WE START IN "auto".  crccontrol is NOT the AX.25
+   * frame check sequence: that one is not in the KISS picture at all.  Nothing
+   * in the HDLC/LAPB stack computes it (only axip and axtcp append one, both
+   * encapsulations with no TNC in the path), nothing takes it off, and
+   * ntohax25() (ax25hdr.c:102) consumes the addresses and nothing else.
+   * crccontrol names the KISS dialect's checksum - SMACK, FlexNet, or none -
+   * and CRC_AUTO says "learn which one from the partner, per session, and
+   * answer in kind" (kisstcp_crcmode(), and the top of this file).
    *
-   *   - Nothing in the HDLC/LAPB stack computes a frame check sequence.
-   *     ax25_apply_iface_limits() (lapb.c:1916) only RESERVES two bytes for
-   *     it in the length budget.  append_crc_ccitt() is called from exactly
-   *     two places in the whole tree, axip.c:604 and axtcp.c:163, and those
-   *     are encapsulations with no TNC in the path - on the air the TNC adds
-   *     the FCS itself, which is why there is nothing here to do.
+   * A FRESHLY ATTACHED PORT IS IN AUTO, serial or over TCP.  It used to be
+   * "off" here, on the argument that a TCP partner sends no checksum - and
+   * that argument was wrong for the partner we actually met: DG8NGN speaks
+   * FlexNet (type byte 0x20, a FlexNet checksum behind it), and "off" had us
+   * refuse every one of his frames as a foreign channel - which is the crcerr
+   * Thomas saw.  Learning costs nothing and is right in both cases: a partner
+   * who sends no checksum is learned as none and is answered with none.
    *
-   *   - Nothing takes such a bit off either.  check_crc_ccitt() is likewise
-   *     called from those two encapsulations only (axip.c:774, axtcp.c:102).
-   *     A KISS-TCP peer that did send an FCS would have those two bytes stay
-   *     in the UI payload, because ntohax25() (ax25hdr.c:102) consumes the
-   *     addresses and nothing else.  That is the same position the serial
-   *     KISS port is in, and it is the position the KISS dialects are
-   *     specified for.
-   *
-   *   - And crccontrol is read in only two places: kiss_raw() (kiss.c:85),
-   *     which this port does not use - its tx hook is tcpsock_raw() - and the
-   *     "ifconfig <if> verbose" switch (iface.c:1536).  So the line could
-   *     never have done anything except print "crc-ccitt enabled" for a
-   *     procedure that was not running.
-   *
-   * Leaving it at CRC_OFF, which is what the iface initialiser puts there,
-   * makes that line say "crc off" - which is the truth about this port.
+   * A SYSOP WHO KNOWS HIS PARTNER may pin the dialect with "ifconfig <iface>
+   * crc off|smack|flexnet"; the pin then wins and is not re-learned.
    */
+  ifp->crccontrol = CRC_AUTO;
+  ifp->crcfixed = 0;
   /* THE KEEPALIVE, and the default is on: see TCP_KEEPALIVE_DEFAULT for why a
    * line that is quiet needs a packet on it.  The written value wins, and 0 is
    * a written value - "keepalive 0" means off and not "use the default".

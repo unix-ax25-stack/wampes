@@ -11246,3 +11246,66 @@ Dests/quality und das Ein-Spanne-Modell haengen daran).  Vorerst nicht:
 auch auf AX.25/LAPB-Ebene klappt es noch nicht - getestet, eine zweite
 Sitzung ueber ein anderes iface wird nicht etabliert (das UA wird
 ignoriert).  Erst wenn das steht, lohnt der FlexNet-Teil.
+
+
+KISSTCP/AXTCP: CRC-ERKENNUNG, UMBAU UND DER STAT-BEFEHL (Thomas, 2026-10-18)
+
+AUSGANGSLAGE.  DG8NGN spricht auf Port 10093 kein AXTCP und auch kein
+reines kisstcp, sondern KISS mit FlexNet-CRC: Typbyte 0x20, dahinter
+zwei Byte FlexNet-Pruefsumme ueber [Typbyte][Frame], Residuum 0x7070.
+WAMPES kennt das seriell ("ifconfig <if> crc auto"/kiss.c), tnn nennt
+es "RMNC-KISS", mkiss "CRC_MODE_FLEX" - Dire Wolf kennt es nicht und
+liest die zwei Bytes als Rahmeninhalt.  Unser kisstcp verwirft 0x20
+heute als "Kanal 2" (crcerr++), unser axtcp erwartet ein Laengenfeld.
+
+VORHANDEN UND WIEDERVERWENDBAR: "ifconfig <iface> crc
+auto|off|smack|flexnet|ccitt" gibt es schon (iface.c:1074, Crc_usage);
+crcfixed unterscheidet "auto" (lernen) von fest.  Der serielle kiss.c
+benutzt es, kisstcp nicht.  Vorgabe auf einem frischen kisstcp: off und
+fest.
+
+AUFTRAG (Thomas, 2026-10-18), in dieser Reihenfolge:
+
+1. kisstcp lernt die CRC der Gegenseite - JE VERBUNDENEM CLIENT.
+   auto = lernen, off = fest.  Verworfen wird nur, was weder
+   crc-flexnet (0x20) noch crc-smack (0x80) ist: Multiport-KISS
+   (Kanal != 0) von jemandem, der uns als "ein Port je Kanal"
+   verstanden hat.  Ohne CRC liegende Rahmen einer auto-Verbindung
+   bleiben weiter zulaessig; die gelernte CRC bestimmt unser SENDEN.
+   KISS-Parameterrahmen (Kanal 0, Kommando 1..6) akzeptieren wir ab
+   jetzt LAZY und ohne Fehler - heute zaehlen sie als crcerr.
+   GESENDET wird auf einer auto-Session zunaechst OHNE CRC, bis die
+   Gegenseite eines lehrt: kein Blind-Probing wie bei mkiss, denn ein
+   SMACK zum Gruss wird von einem, der nur reines KISS spricht, als
+   "sowas machen wir hier nicht" gelesen und kostet die Verbindung.
+   Das gilt fuer den Listener wie fuer unsere eigene client-Session.
+   Ein "ifconfig <if> crc off|smack|flexnet" nagelt es von Hand fest
+   (der Pin gewinnt und wird nicht umgelernt), "ifconfig <if> crc
+   auto" gibt es wieder frei.  VORGABE eines frischen kisstcp ist
+   damit auto, nicht mehr off.  Umgesetzt: neuer Wert CRC_AUTO
+   (iface.h), ifcrc() setzt ihn fuer kisstcp-Ports (iface.c), je
+   Session steht der gelernte Wert in struct tcpsock.crcmode
+   (tcpsock.h/tcpsock.c) - ein Listener traegt mehrere Partner
+   gleichzeitig, und jeder spricht sein eigenes KISS.
+
+2. TODO: Zustand JE VERBINDUNG merken - welche CRC der Partner
+   spricht und welches Encoding (kiss oder axtcp).  Ziel (Thomas):
+   EIN TCP-Transport mit EINEM Befehl, der auf demselben Port beide
+   Encodings annimmt (lazy: 0xC0 -> KISS, sonst Laenge+CRC) und je
+   Partner die CRC lernt.  Dann auch beide Protokolltypen in der
+   Statistik und den Default-crc-mode des Ports mit ausgeben.
+
+3. TODO: KISS-Parameterrahmen nicht nur akzeptieren, sondern
+   WEITERGEBEN.  Beispiel (Thomas): ein serieller TNC am Knoten und
+   ein kisstcp-Server, beide zu einer Bridge zusammengefasst, und per
+   "param axtcp ..." (TxDelay|Persist|SlotTime|TxTail|FullDup) die
+   Parameter der Gegenseite setzen.  Erst nach dem Umbau unter 2.
+
+4. TODO: "attach axtcp stat" / "attach kisstcp stat" gehoert NICHT an
+   "attach".  attach baut ein Interface; ein Statusbefehl wird dort
+   nicht erwartet - und "atta axt st" legt heute still ein Interface
+   "st" an.  Gehoert als "iface axtcp stat" / "iface kisstcp stat"
+   bzw. ins ifconfig-Umfeld.  Dabei gleich pruefen, warum die
+   crc-error-Statistik bei ifconfig verbose im DG8NGN-Fall 0 war;
+   Zaehler erst ab dem ersten gueltigen Rahmen waeren Thomas ebenfalls
+   recht - so zaehlt ein nmap-Portscan nicht mit.

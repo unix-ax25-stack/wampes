@@ -190,15 +190,23 @@ char Crc_usage[] =
   "  ccitt               the AX.25 frame check sequence, CRC-16/X-25.\n"
   "                      Not a KISS CRC - a TNC does this on the air and\n"
   "                      never puts it on a KISS line.\n"
-  "  auto                let the peer's frames decide.  This is what a\n"
-  "                      freshly attached SERIAL KISS port starts in.\n"
-  /* And the last sentence was wrong for KISSTCP: that port starts in "off", on
-   * purpose (kisstcp.c:511).  "auto" is CRC_TEST_16 and stands only at the
-   * serial port (kiss.c:60).  A sysop who had read "attach kisstcp" and then
-   * called "crc ?" was given two answers that contradict each other, and there
-   * was nothing in either of them to show which one was the wrong one.
+  "  auto                let the peer's frames decide, per partner.  The\n"
+  "                      serial KISS port PROBES for it: one SMACK frame,\n"
+  "                      one FlexNet frame, then none at all.  Both kinds\n"
+  "                      start here - a freshly attached KISS port, serial\n"
+  "                      or over TCP, is in auto.\n"
+  /* UNTIL 2026-10-18 THE LAST SENTENCE SAID "SERIAL", AND KISSTCP STARTED IN
+   * "off".  The two answers contradicted each other: a sysop who had read
+   * "attach kisstcp" and then called "crc ?" was told two different things and
+   * had nothing to show which one was the wrong one.  Now the KISS-over-TCP
+   * port starts in auto as well and carries CRC_AUTO - learn the dialect from
+   * the partner, answer in kind - which is what the partner we met (DG8NGN,
+   * FlexNet) needed; "off" would have refused every one of his frames as a
+   * foreign channel.  See is_kisstcp() and kisstcp.c.
    */
-  "  off                 no checksum on the wire.\n"
+  "  off                 no checksum on the wire, and none is looked\n"
+  "                      for: a KISS-over-TCP frame that announces one is\n"
+  "                      refused as a foreign channel.\n"
   "  The current value is in \"ifconfig <iface> verbose\".";
 
 struct cmds Ifcmds[] = {
@@ -1041,10 +1049,30 @@ ifbroad(int argc,char *argv[],void *p)
 	return 0;
 }
 
+/* IS THIS A KISS-OVER-TCP PORT?  The "crc" word means slightly different
+ * things to the two kinds of KISS port - the serial one PROBES for the
+ * partner's checksum, the TCP one LEARNS it per session - and this is the
+ * question ifcrc() asks to tell them apart.  The port's first session carries
+ * the kind the attach ordered (portproto).
+ */
+static int
+is_kisstcp(
+struct iface *ifp)
+{
+	struct tcpsock *tp;
+
+	if (!tcpsock_isport(ifp))
+		return 0;
+	tp = tcpsock_first(ifp);
+	return tp != NULL && tp->portproto == TCPAD_KISSTCP;
+}
+
 /* Set interface CRC mode.  Naming a mode also stops the KISS receiver from
  * changing it again: an incoming frame with a valid CRC used to overwrite
  * whatever was configured here, so this command did not stick.  "auto" puts
- * the interface back to probing.
+ * the interface back to deciding for itself - the serial KISS port PROBES
+ * (CRC_TEST_16), the KISS-over-TCP port LEARNS per session (CRC_AUTO); see
+ * is_kisstcp() above and the "auto" case below.
  */
 /* THE THREE KISS CHECKSUMS HAVE DIFFERENT NAMES, and so does the AX.25 one.
  * "crc 16" and "crc-ccitt" say nothing about each other that is true at the
@@ -1080,7 +1108,18 @@ ifcrc(int argc,char *argv[],void *p)
 	switch (argv[1][0]) {
 	case 'A':
 	case 'a':
-		ifp->crccontrol = CRC_TEST_16;
+		/* "auto" SAYS THE PEER DECIDES, and the two kinds of KISS let
+		 * him decide differently.  A serial port PROBES - one SMACK
+		 * frame, one FlexNet frame, then none at all (CRC_TEST_16,
+		 * kiss.c).  A KISS-over-TCP port has one partner per session
+		 * and LEARNS from the frames that arrive (CRC_AUTO,
+		 * kisstcp.c): greeting a TCP partner with a checksum he does
+		 * not expect gets us disconnected, and then there is no one
+		 * left to learn from.  The value printed by "verbose" is the
+		 * same word either way, because the sysop asked for the same
+		 * thing (Thomas).
+		 */
+		ifp->crccontrol = is_kisstcp(ifp) ? CRC_AUTO : CRC_TEST_16;
 		ifp->crcfixed = 0;
 		break;
 	case 'O':
@@ -1834,6 +1873,7 @@ showiface(struct iface *ifp, int verbose)
 	 */
 	switch (ifp->crccontrol){
 	default:            printf("           link: crc off");           break;
+	case CRC_AUTO:      printf("           link: crc auto");          break;
 	case CRC_TEST_16:   printf("           link: crc-smack test");     break;
 	case CRC_TEST_RMNC: printf("           link: crc-flexnet test");   break;
 	case CRC_16:        printf("           link: crc-smack enabled");  break;
