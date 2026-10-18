@@ -11795,3 +11795,27 @@ NEBENBEFUNDE (2026-10-19)
      route_show.py diesen Port ohne "bind=" (der Test braucht xnet nur
      als Anzeige-Welt), und die laufende db0fhn-Konfiguration bleibt
      unberuehrt.
+
+NOCH ZU TUN (2026-10-19): leserliche Alter, timer.c statt einer versteckten
+  Hilfe.  VORGESCHLAGEN und zugesagt (Thomas: "Vorschlag zur Notation und
+  Ausgabe ist gut"); das Thema ist ueberschaubar und wird spaeter
+  aufgenommen - jetzt geht der AGWPE-Rest vor.
+  - ORT: nach timer.c/timer.h, neben tformat() (timer.c:211) und secclock().
+    Nicht in axip.c und nicht in tcpsock.c versteckt - timer.c ist die
+    Stelle, an der die Zeit im Haus liegt, und ein zweiter Nutzer (ein Tag
+    "ifconfig ... verbose", die Sessionsalter) soll dieselbe Hilfe rufen und
+    nicht eine zweite Abschrift.  tformat() BLEIBT, wie es ist: es liefert
+    das klassische d:hh:mm:ss, und ueberall dort, wo Spalten zaehlen (ax25
+    und m mit %-17s, iface.c, Uptime in ksubr.c), ist die feste Breite
+    dieser Form Teil der Ausgabe.
+  - FORM, gestaffelt nach "je laenger zurueck, desto grober":
+      unter 1 Min:  %ds        also "45s"
+      unter 1 Std:  %dm%ds     also "10m5s"
+      unter 1 Tag:  %dh%dm     also "23h3m"
+      ab 1 Tag:     %dd%dh     also "3d4h"
+  - ZWEI STELLEN nehmen sie zuerst auf, beide in axip.c: "resolved ... ago"
+    (axip.c:2618) und "heard ... ago" (axip.c:2628); "learned %d (%ld s
+    ago)" (axip.c:2625) benutzt dieselbe Form, statt dort eine zweite
+    Schreibweise stehen zu haben.  In axip route steht die Zeit am
+    Zeilenende hinter variabler Laenge ("to host:port", "on port N
+    (gone)"), dort kostet die kurze Form nichts.
