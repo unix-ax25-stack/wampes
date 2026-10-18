@@ -16,6 +16,7 @@ everywhere else:
     $TCPDIR/sockets/  convers                     0755, socket 0666
                       ax25                        0755, socket 0666
                       monitor                     0755, socket 0660 + group
+                      packet                      0755, socket 0600 + group
     $TCPDIR/.sockets/ netcmd                      0700, socket 0600
     $TCPDIR/          the configuration and the data files, see below
 
@@ -88,6 +89,13 @@ Not an accident of history, but a rights boundary:
   reach it watches every frame on the node.  It comes up 0660 with the group
   of the directory that holds it, so `chgrp hams $TCPDIR/sockets` admits
   hams to it on BSD and Linux alike; `axsock monitor mode`/`group` move it.
+* `sockets/packet` is the write side: the same record stream as the monitor,
+  and a client may put whole AX.25 frames into the node with it (UI frames,
+  out through `ax_send_ui()`), which is what `listen`/`net2kiss`-style
+  programs use a `SOCK_PACKET` socket for.  It comes up **0600** with the
+  directory's group already in place - the widest grant the node has, so it
+  waits for the sysop: `axsock packet group hams` and `axsock packet mode
+  0660` are the two steps, and a `chgrp` alone never opens it.
 
 `lib/rundir.c` enforces both: `mkdir` alone would leave the mode to the umask,
 so `chmod` follows and also repairs a directory that is already there.  The two

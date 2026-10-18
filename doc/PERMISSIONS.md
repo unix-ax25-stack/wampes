@@ -51,14 +51,16 @@ there.
 
 ### What is deliberately not checked
 
-`$TCPDIR/sockets/` is published on purpose: `sockets/ax25` and
-`sockets/monitor` are how libax25 programs reach the node, and the mode
-on each **socket** is the sysop's decision rather than a security
-question.  The directory is **0755** - it decides who may walk the path
-and who may create a socket there, and neither of those decides who may
+`$TCPDIR/sockets/` is published on purpose: `sockets/ax25`,
+`sockets/monitor` and `sockets/packet` are how libax25 programs reach the
+node, and the mode on each **socket** is the sysop's decision rather than a
+security question.  The directory is **0755** - it decides who may walk the
+path and who may create a socket there, and neither of those decides who may
 *reach* one.  What decides that is the socket itself: `sockets/ax25` is
-**0666** and `sockets/monitor` is **0660** with the group of the
-directory around it.  `0660` group `hams` on the service socket is the
+**0666**, `sockets/monitor` is **0660** with the group of the directory
+around it, and `sockets/packet` - the one that injects raw frames - is
+**0600**, with the same group already in place for the day the sysop widens
+the mode.  `0660` group `hams` on the service socket is the
 usual choice, and it is set with `axsock mode 0660` and `axsock group
 hams`; a sysop who does not want the `hams` group transmitting can make
 it `0660` group `staff` instead, or `0606` group `hams`, and either is a
@@ -83,10 +85,12 @@ checked.
 
 `sockets/` is created **0755** and the sockets inside it state the terms
 themselves: **0666** for the service socket, **0660** with the group of
-the directory for the monitor.  Who may reach the node is decided by the
-mode on the socket, and `axsock` moves it without touching the directory:
-the service from one group to another with `axsock group`, the monitor
-with `axsock monitor mode` and `axsock monitor group`.
+the directory for the monitor, **0600** with that same group for the
+packet socket - the one grant kept from everybody until the sysop says
+otherwise.  Who may reach the node is decided by the mode on the socket,
+and `axsock` moves it without touching the directory: the service from one
+group to another with `axsock group`, the monitor and the packet socket
+with `axsock monitor mode`/`group` and `axsock packet mode`/`group`.
 
 The directory keeps two smaller jobs, and both are the sysop's: it
 decides who may walk the path to a socket, and who may create one there -
@@ -117,6 +121,8 @@ wide open is 0666.
     axsock mode 0666             everybody may (the default)
     axsock monitor group hams    the hams group may watch
     axsock monitor mode 0660     the default
+    axsock packet group hams     the hams group may inject raw frames
+    axsock packet mode 0660      the default is 0600: owner only
 
 Guessing a group is what does not work here, and both directions were
 tried on 2026-08-15.  Looking a group up by name handed the transmitter
@@ -134,14 +140,16 @@ differently.**  On BSD and macOS a new socket takes the group of its
 directory, so `sockets/monitor` comes up `root:staff` if `sockets/` does -
 and `staff` is every local account.  On Linux it takes the group of the
 process, so `root:root`.  The same setting, opposite results.  The
-monitor does not leave that to chance: the node gives it the group of the
-directory it sits in, so
+monitor and the packet socket do not leave that to chance: the node gives
+each the group of the directory it sits in, so
 
     chgrp <group> $TCPDIR/sockets
 
-means the same on both platforms, and `axsock monitor group <name>` may
-still override it.  For the service socket the question does not arise -
-0666 names no group.
+means the same on both platforms, and `axsock monitor group <name>`/
+`axsock packet group <name>` may still override it.  For the service
+socket the question does not arise - 0666 names no group, and it is the
+group's decision only once the sysop narrows the mode with `axsock mode`,
+where `axsock group` says the same thing explicitly.
 
 `make install` does not perform that `chgrp`, and does not create a group
 either.  It cannot know who is meant to have the radio, and an install
@@ -217,11 +225,13 @@ the node's.
 The defaults are a starting point.  net.rc runs after the sockets exist,
 so these win:
 
-    axsock                        show owner, group and mode, both sockets
+    axsock                        show owner, group and mode, every socket
     axsock group <name>           set the service socket's group
     axsock mode <octal>           set the service socket's mode
     axsock monitor group <name>   set the monitor's group
     axsock monitor mode <octal>   set the monitor's mode
+    axsock packet group <name>    set the packet socket's group
+    axsock packet mode <octal>    set the packet socket's mode
 
 The one a directory mode cannot express, because it is not a mode the
 directory has:
@@ -238,8 +248,9 @@ directory, and it has to say so itself: 640 or 600, owned by root.
 
 ### Where a group change leaves you, in practice
 
-Who may transmit and who may watch is `axsock group hams` and `axsock
-monitor group hams` now; the directory is not in that path any more.  A
+Who may transmit, who may watch and who may inject is `axsock group hams`,
+`axsock monitor group hams` and `axsock packet group hams` now; the
+directory is not in that path any more.  A
 sysop who wants it in the path anyway - the directory as a second wall, so
 that only one group can even walk to the socket - changes its mode, and
 then it is worth knowing which modes do what.  The default is 0755.
@@ -281,7 +292,7 @@ instead of assumed:
   the socket's own `0666` never comes into it.  Which is also why the
   mistake shows up as a plain `EACCES` and reads like a wrong group.
 
-`make install` does not set a group on either socket, and does not create
+`make install` does not set a group on any of the sockets, and does not create
 one.  It cannot know who is meant to have the radio, and an install that
 reaches into the account database is not one anybody should want to have
 run by accident.  So the group is the one thing a sysop has to think about
@@ -289,11 +300,15 @@ once, and net.rc is where to say it:
 
     axsock group hams            who may transmit
     axsock monitor group hams    who may watch
+    axsock packet group hams     who may inject (with
+                                 `axsock packet mode 0660`)
 
-If the monitor is to follow the directory's group rather than name one
-itself, `chgrp <group> $TCPDIR/sockets` is the line that sets it.  And if
-nothing connects afterwards, `0705` on the directory and a group that does
-not exist are the two things to look at first.
+If the monitor and the packet socket are to follow the directory's group
+rather than name one themselves, `chgrp <group> $TCPDIR/sockets` is the
+line that sets it - the packet socket still needs its mode widened
+before the group may inject, and that is deliberate.  And if nothing
+connects afterwards, `0705` on the directory and a group that does not
+exist are the two things to look at first.
 
 ## What that admission is worth
 

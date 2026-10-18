@@ -69,6 +69,11 @@ struct controlblock {
   /* The raw monitor, on its own listener.  A monitor connection only ever
    * RECEIVES: after "monitor ..." it is a sink for frames, and what it sends
    * afterwards is discarded.  See axmon_frame().
+   *
+   * The packet connection shares the word, the list and the stream with it,
+   * and adds one thing: "packet" (below) reads what it sent back.  That is
+   * the whole difference between the two sockets, and it is the reason there
+   * are two of them - see the rights ladder at the top of this file.
    */
   int monitor;                          /* This connection is a monitor */
   int mon_dirs;                         /* IF_TRACE_IN, plus IF_TRACE_OUT */
@@ -82,6 +87,24 @@ struct controlblock {
   unsigned char *mon_buf;
   int mon_len;                          /* bytes of it in all */
   int mon_off;                          /* bytes of it written */
+  /* The other half of that stream, on its own socket: sockets/packet reads
+   * the same records and is also allowed to put one back.  Nothing on the
+   * frame path grants this - it comes from the listener - so a connection is
+   * only ever able to send by having reached the socket the sysop widened.
+   * See the rights ladder under the monitor command.
+   */
+  int packet;                           /* This connection may inject frames */
+  int mon_warned;                       /* The read-only note has been sent */
+  /* A record on its way in, in the three pieces it is made of: four bytes of
+   * frame length, the interface name and its NUL, then the frame.  Kept
+   * across reads, so a client may hand one over in whatever pieces it likes.
+   */
+  int pk_state;                         /* 0 length, 1 name, 2 frame */
+  int pk_have;                          /* bytes of that piece in hand */
+  int pk_frame;                         /* the length it announced */
+  int pk_namelen;                       /* the name, once its NUL arrived */
+  unsigned char pk_hdr[4];
+  unsigned char *pk_rec;                /* the name, its NUL, the frame */
 };
 
 struct cmdtable {
@@ -97,7 +120,7 @@ static int fkbd = -1;
  */
 static struct controlblock *Monitors;
 
-/* What we listen on.  Three kinds, and the difference is what may be said:
+/* What we listen on.  Four kinds, and the difference is what may be said:
  *
  * The command channel carries "command" and "console" and is therefore the
  * node's own command line - whoever reaches it can reconfigure everything.
@@ -115,6 +138,11 @@ static struct controlblock *Monitors;
  * who may WATCH, and whoever may do one of those is not thereby allowed the
  * other.  See the monitor command below.
  *
+ * The packet socket is the monitor's twin and the third rung: same words,
+ * same record stream, plus the right to hand a record back - to put raw
+ * frames on the air.  That is a stronger grant than watching, so it is a
+ * socket of its own again, with a mode of its own; see "axsock packet".
+ *
  * Each entry keeps its own descriptor.  The accept handler is given the
  * entry, not a global - with one shared variable the first connection would
  * hang the node in accept() on the wrong socket.
@@ -122,10 +150,11 @@ static struct controlblock *Monitors;
 struct listener {
   char *name;                           /* in build_sockaddr() notation */
   int restricted;                       /* 0 command channel, 1 service
-					 * socket, 2 monitor socket - which
-					 * commands it takes and, for the two
-					 * in sockets/, that the directory
-					 * around it is the gate */
+					 * socket, 2 monitor socket, 3
+					 * packet socket - which commands it
+					 * takes and, for the three in
+					 * sockets/, that the directory around
+					 * it is the gate */
   int fd;
 };
 
@@ -140,10 +169,13 @@ static char Axsock_path[512];
 static char Axsock_name[512];
 static char Monitor_path[512];
 static char Monitor_name[512];
+static char Packet_path[512];
+static char Packet_name[512];
 static struct listener Listeners[] = {
   { NULL, 0, -1 },
   { NULL, 1, -1 },
   { NULL, 2, -1 },
+  { NULL, 3, -1 },
   { NULL, 0, -1 }
 };
 
@@ -159,9 +191,12 @@ listener_paths(void)
   snprintf(Axsock_name, sizeof(Axsock_name), "unix:%s", Axsock_path);
   nodedir_path(Monitor_path, sizeof(Monitor_path), "sockets/monitor");
   snprintf(Monitor_name, sizeof(Monitor_name), "unix:%s", Monitor_path);
+  nodedir_path(Packet_path, sizeof(Packet_path), "sockets/packet");
+  snprintf(Packet_name, sizeof(Packet_name), "unix:%s", Packet_path);
   Listeners[0].name = Netcmd_path;
   Listeners[1].name = Axsock_name;
   Listeners[2].name = Monitor_name;
+  Listeners[3].name = Packet_name;
 }
 
 /* The loopback listeners are not among them: they stay closed unless net.rc
@@ -274,6 +309,7 @@ static void delete_controlblock(struct controlblock *cp, int loud,
     free(cp->mon_buf);
     portlist_free(&cp->mon_ports);
   }
+  free(cp->pk_rec);
   off_read(cp->fd);
   off_write(cp->fd);
   close(cp->fd);
@@ -567,6 +603,167 @@ void axmon_frame(struct iface *ifp, int dir, struct mbuf *bp)
 
 /*---------------------------------------------------------------------------*/
 
+/* The other direction of the same stream: one record from a packet client,
+ * out onto the air.  "Was der Monitor liefert, kann man zurückschicken" - the
+ * frame goes in exactly as axmon_frame() wrote it out, and it goes out as it
+ * stands: this source, this destination, this path, this pid.  The client
+ * built that header and knows what it meant, so nothing here is a digipeater
+ * and nothing here adds routing (see ax_send_ui() in ax25.c).
+ *
+ * UI only, deliberately.  An I-frame entering at this point would walk past
+ * the node's own LAPB state machine and leave the other end being polled for
+ * an acknowledgement nobody will send; if that is ever wanted it is a
+ * separate decision, not a wider version of this one.
+ */
+static void packet_send(struct controlblock *cp, const char *name,
+			const unsigned char *frame, int framelen)
+{
+  struct iface *ifp;
+  struct ax25 hdr;
+  struct mbuf *bp;
+  unsigned char ctl, pid;
+
+  /* The three refusals below drop the FRAME and keep the connection.  A
+   * binary stream has no way to say why without breaking its own framing -
+   * a text line would make the next record unreadable for this client - and
+   * closing over a single refused frame would punish a typo with the whole
+   * session.  A framing error, where the stream is past repairing, is the
+   * case that closes it, and THAT is said, in delete_controlblock().
+   */
+  if (!(ifp = if_lookup((char *) name))) return;    /* no such port */
+  if (ifp->output != ax_output) return;             /* not an AX.25 carrier */
+  /* iface= on this connection is the allowlist for putting frames on a port,
+   * as it is the allowlist for watching one - the same list, from the same
+   * one place, defaulting to every port.
+   */
+  if (!portlist_allows(&cp->mon_ports, ifp)) return;
+
+  if (!(bp = qdata(frame, (uint) framelen))) return;
+
+  memset(&hdr, 0, sizeof(hdr));
+  /* ntohax25() takes the whole address field off the front, so what is left
+   * begins with the control byte: ctl, pid, data (ax25hdr.c).
+   */
+  if (ntohax25(&hdr, &bp) < 0 || len_p(bp) < 2) {
+    free_p(&bp);
+    return;
+  }
+  /* Both C bits set is not a frame, and htonax25() - through which every
+   * address field goes back out - would clear one of them for want of a
+   * command/response answer to give it (ntohax25() says LAPB_UNKNOWN when
+   * they agree).  Refusing is the promise that what arrives is what leaves,
+   * kept by dropping rather than by rewriting.
+   */
+  if ((hdr.dest[ALEN] & C) && (hdr.source[ALEN] & C)) {
+    free_p(&bp);
+    return;
+  }
+  if (pullup(&bp, &ctl, 1) != 1 || ctl != UI) {
+    free_p(&bp);                          /* not UI: no second LAPB here */
+    return;
+  }
+  if (pullup(&bp, &pid, 1) != 1) {
+    free_p(&bp);
+    return;
+  }
+  ax_send_ui(ifp, &hdr, pid, &bp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* One byte of a record on its way in, in the three pieces the record is made
+ * of: four bytes of frame length, the interface name and its NUL, then the
+ * frame - the shape axmon_frame() writes, read back the inverse way.  A
+ * client may hand one over in any number of pieces, so each piece is kept.
+ *
+ * Returns -1 only when the stream can no longer be lined up with a record.
+ */
+static int packet_byte(struct controlblock *cp, unsigned char c)
+{
+  const char *why;
+
+  switch (cp->pk_state) {
+  case 0:                               /* four bytes of frame length */
+    cp->pk_hdr[cp->pk_have++] = c;
+    if (cp->pk_have < 4) return 0;
+    cp->pk_frame = ((int) cp->pk_hdr[0] << 24) | ((int) cp->pk_hdr[1] << 16) |
+		   ((int) cp->pk_hdr[2] << 8) | (int) cp->pk_hdr[3];
+    cp->pk_have = 0;
+    if (cp->pk_frame <= 0 || cp->pk_frame >= AXMON_FRAME_MAX) {
+      why = "a record whose length is not one";
+      break;
+    }
+    cp->pk_state = 1;
+    return 0;
+  case 1:                               /* the interface name, up to its NUL */
+    if (c == '\0') {
+      cp->pk_rec[cp->pk_have] = '\0';
+      cp->pk_namelen = cp->pk_have;
+      cp->pk_have = 0;
+      cp->pk_state = 2;
+      return 0;
+    }
+    if (cp->pk_have >= AXMON_NAME_MAX) {
+      why = "an interface name longer than a record allows";
+      break;
+    }
+    cp->pk_rec[cp->pk_have++] = c;
+    return 0;
+  default:                              /* the frame itself */
+    cp->pk_rec[cp->pk_namelen + 1 + cp->pk_have] = c;
+    if (++cp->pk_have < cp->pk_frame) return 0;
+    /* The record is whole, and a record that parses but does not go out is
+     * a dropped frame: the stream is still in step and the client goes on.
+     */
+    packet_send(cp, (const char *) cp->pk_rec,
+		cp->pk_rec + cp->pk_namelen + 1, cp->pk_frame);
+    cp->pk_state = 0;
+    cp->pk_have = 0;
+    return 0;
+  }
+
+  /* Both of those leave the bytes pointing somewhere we cannot find the end
+   * of again: there is no marker to resynchronise on.  Say why - to the
+   * syslog, because a text line here would be read as the start of a record
+   * - and let the client go.
+   */
+  delete_controlblock(cp, 0, why);
+  return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Read records off a packet connection.  A frame arrives in pieces and is
+ * usually far larger than a byte, so this reads in chunks and then hands the
+ * bytes to packet_byte() - one read() per wakeup rather than one syscall per
+ * byte of every frame a client injects.  The connection is O_NONBLOCK (see
+ * accept_connection_net()), which is what ends the loop; anything else is an
+ * error and closes the client, the same as on the command channel.
+ */
+static void packet_receive(struct controlblock *cp)
+{
+  unsigned char buf[1024];
+  int n;
+  int i;
+
+  for (;;) {
+    n = read(cp->fd, buf, sizeof(buf));
+    if (n < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) return;
+      delete_controlblock(cp, 0, strerror(errno));
+      return;
+    }
+    if (n == 0) {
+      delete_controlblock(cp, 0, "end of file - the client closed");
+      return;
+    }
+    for (i = 0; i < n; i++)
+      if (packet_byte(cp, buf[i]) < 0) return;   /* it is gone */
+  }
+}
+
+/*---------------------------------------------------------------------------*/
+
 static void transport_try_send(void *arg)
 {
   struct controlblock *cp = (struct controlblock *) arg;
@@ -818,6 +1015,12 @@ static int close_command(struct controlblock *cp)
  * has nothing to do with the monitor's own callsign - is shown to everyone
  * who may watch that port.  That is what a monitor is for, and why it has a
  * socket and a right of its own.
+ *
+ * The same word runs on sockets/packet, with the same options: the word says
+ * WHAT is watched, the file says what may be done with it.  There the iface
+ * list doubles as the allowlist for putting frames back on those ports - one
+ * list, in one place, so watching a port and sending on it cannot drift
+ * apart, and neither of them can come from anywhere else.
  */
 static int monitor_command(struct controlblock *cp)
 {
@@ -1422,6 +1625,14 @@ static void command_receive(void *arg)
   char c;
   int n;
 
+  /* A packet connection carries records from here on: they are binary and
+   * arrive in pieces, and they are only half the handshake.  The command
+   * channel below is what runs until "monitor" has been said.
+   */
+  if (cp->packet && cp->monitor) {
+    packet_receive(cp);
+    return;
+  }
   /* The ordinary way a client goes: it closed.  Kept apart from a read
    * error, because only one of the two is somebody else's doing.
    */
@@ -1434,8 +1645,20 @@ static void command_receive(void *arg)
    * of the stream - a client that vanishes must free its slot - and throw
    * away whatever else it sent.  Nothing it could say would be an order, and
    * parsing it as one would end the session over a stray byte.
+   *
+   * But an answer is owed to the first of those bytes: somebody got as far
+   * as writing because they expected to be able to.  It is said once, not
+   * per byte - the second would be a flood on a socket whose point is not to
+   * talk - and then it goes on being a sink.  See the rights ladder at the
+   * top of this file: the packet socket is the one that sends.
    */
-  if (cp->monitor) return;
+  if (cp->monitor) {
+    if (!cp->mon_warned) {
+      cp->mon_warned = 1;
+      say(cp, "*** read-only: raw frames go out through sockets/packet");
+    }
+    return;
+  }
   /* Take a line ending however it comes: LF, CRLF or a bare CR.  A telnet
    * sends CRLF, and a stray CR left on the end of the last word turned
    * "datagram hf1:" into an unknown word - it only ever went unnoticed
@@ -1509,7 +1732,7 @@ static void command_receive(void *arg)
     return;
   }
   if (command_switcher(cp, getarg(cp->buffer, 0),
-		       cp->restricted == 2 ? monitor_table
+		       cp->restricted >= 2 ? monitor_table
 		       : cp->restricted ? service_table : full_table))
     delete_controlblock(cp, 0,
 			"unknown command, or the command ended the session");
@@ -1550,12 +1773,30 @@ static void accept_connection_net(void *p)
    * there is something, and a non-blocking read that returns EAGAIN there
    * would be answered by the same nul check as the end of the stream.  The
    * one connect() on accept() does not inherit O_NONBLOCK from the listener,
-   * so it is set here and only for the monitor.
+   * so it is set here and only for the two sockets in sockets/ that carry
+   * frames.
+   *
+   * The packet socket needs it for a second reason, and it is not a matter
+   * of taste: packet_receive() reads until EAGAIN, because a record that
+   * arrived in one read would leave the next one in the socket unread until
+   * the client had nothing left to say.
    */
-  if (l->restricted == 2) {
+  if (l->restricted == 2 || l->restricted == 3) {
     int fl = fcntl(cp->fd, F_GETFL, 0);
 
     if (fl != -1) fcntl(cp->fd, F_SETFL, fl | O_NONBLOCK);
+  }
+  if (l->restricted == 3) {
+    cp->packet = 1;
+    /* One record's worth of room, reserved here rather than grown on the
+     * way: it is a fixed size and there is one connection per client.
+     */
+    if (!(cp->pk_rec = (unsigned char *)
+		    malloc((size_t) (AXMON_NAME_MAX + 1 + AXMON_FRAME_MAX)))) {
+      close(fd);
+      free(cp);
+      return;
+    }
   }
   on_read(cp->fd, command_receive, cp);
 }
@@ -1709,6 +1950,12 @@ int doaxsock(int argc, char *argv[], void *p)
       printf("%s  mode 0%03o  uid %lu  gid %lu\n", Monitor_path,
 	     (unsigned) (st.st_mode & 07777),
 	     (unsigned long) st.st_uid, (unsigned long) st.st_gid);
+    if (stat(Packet_path, &st))
+      printf("%s: not there\n", Packet_path);
+    else
+      printf("%s  mode 0%03o  uid %lu  gid %lu  (raw frames in and out)\n",
+	     Packet_path, (unsigned) (st.st_mode & 07777),
+	     (unsigned long) st.st_uid, (unsigned long) st.st_gid);
     if (Tcpax25gw_port)
       printf("tcp-listen on port %d (127.0.0.1 and ::1)\n", Tcpax25gw_port);
     else
@@ -1750,47 +1997,53 @@ int doaxsock(int argc, char *argv[], void *p)
     return 0;
   }
 
-  /* The monitor socket's rights, on their own because it is a socket of its
-   * own: 0660 and the group of sockets/ is a different answer from 0666, and
-   * the sysop may want to change either - see the note on sockets/ above.
+  /* The two sockets in sockets/ that carry frames, each with its own rights
+   * and one body behind both names: 0660 with the group of sockets/ is a
+   * different answer from the service socket's 0666, and the packet socket's
+   * own default is different again - see the note on sockets/ above.  Two
+   * sockets, because watching and sending are two grants; one pair of
+   * commands, because they are said the same way.
    */
-  if (!strcmp(argv[1], "monitor")) {
+  if (!strcmp(argv[1], "monitor") || !strcmp(argv[1], "packet")) {
+    const char *what = argv[1];
+    const char *path = strcmp(argv[1], "monitor") ? Packet_path : Monitor_path;
+
     if (argc < 3) {
-      printf("axsock monitor mode <octal>|group <name>\n");
+      printf("axsock %s mode <octal>|group <name>\n", what);
       return 1;
     }
     if (!strcmp(argv[2], "mode")) {
       if (argc < 4) {
-	printf("axsock monitor mode <octal>\n");
+	printf("axsock %s mode <octal>\n", what);
 	return 1;
       }
       mode = strtoul(argv[3], &end, 8);
       if (*end || mode > 07777) {
-	printf("axsock monitor mode <octal>, e.g. 0660\n");
+	printf("axsock %s mode <octal>, e.g. 0660\n", what);
 	return 1;
       }
-      if (chmod(Monitor_path, (mode_t) mode)) {
-	printf("%s: cannot set the mode\n", Monitor_path);
+      if (chmod(path, (mode_t) mode)) {
+	printf("%s: cannot set the mode\n", path);
 	return 1;
       }
       return 0;
     }
     if (!strcmp(argv[2], "group")) {
       if (argc < 4) {
-	printf("axsock monitor group <name>\n");
+	printf("axsock %s group <name>\n", what);
 	return 1;
       }
       if (!(gr = getgrnam(argv[3]))) {
 	printf("no group \"%s\"\n", argv[3]);
 	return 1;
       }
-      if (chown(Monitor_path, (uid_t) -1, gr->gr_gid)) {
-	printf("%s: cannot set the group\n", Monitor_path);
+      if (chown(path, (uid_t) -1, gr->gr_gid)) {
+	printf("%s: cannot set the group\n", path);
 	return 1;
       }
       return 0;
     }
-    printf("axsock monitor mode <octal>|group <name>\n");
+    printf("axsock %s mode <octal>|group <name>\n", what);
     return 1;
   }
 
@@ -1835,8 +2088,15 @@ int doaxsock(int argc, char *argv[], void *p)
   }
 
   printf("axsock [group <name>|mode <octal>|tcp-listen <on|off|port <n>>|"
-	 "monitor mode <octal>|group <name>]\n"
-	 "       (tcp-listen default port %d)\n", TCP_AX25_GW_PORT_DEFAULT);
+	 "\n       monitor mode <octal>|group <name>|"
+	 "\n       packet mode <octal>|group <name>]\n"
+	 "\nDefaults for $TCPDIR/sockets/:\n"
+	 "  ax25:     mode 0666, group inherited from the directory\n"
+	 "  monitor:  mode 0660, group inherited from the directory\n"
+	 "  packet:   mode 0600, group inherited from the directory"
+	 "   (raw frames in and out)\n"
+	 "tcp-listen speaks the same protocol as socket ax25; switching it"
+	 " \"on\" defaults to port %d\n", TCP_AX25_GW_PORT_DEFAULT);
   return 1;
 }
 
@@ -1906,6 +2166,16 @@ static int open_listener(struct listener *l, int loud)
        */
       inherit_dir_group(sun);
       chmod(sun, 0660);
+    } else if (l->restricted == 3) {
+      /* The packet socket's group is inherited the same way, but its mode is
+       * not the monitor's: watching a port and putting frames on it are not
+       * the same grant, and a default that made them one would take the
+       * reason for a separate socket away again.  So it comes up 0600 -
+       * nobody injects until the sysop says who may - and "axsock packet
+       * mode 0660" says it, with the group of sockets/ already behind it.
+       */
+      inherit_dir_group(sun);
+      chmod(sun, 0600);
     } else if (l->restricted)
       set_service_rights(sun);
     else
