@@ -11847,7 +11847,8 @@ NOCH ZU TUN (2026-10-19): leserliche Alter, timer.c statt einer versteckten
     zeigen drei Bloecke (fd:18, fd:7, fd:-1), und welcher die Route
     traegt, muss der Leser raten.  Gespeichert ist es da: der
     Eintrag traegt die Sitzung (tsock), und die Sitzung hat ein fd.
-    VORGESCHLAGEN (Richtung "zumindest auf den fd"): "axip rou"
+    VORGESCHLAGEN (Richtung "zumindest auf den fd"; Thomas waere
+    damit zufrieden - angenommen): "axip rou"
     nennt das fd der traegenden Sitzung hinter dem iface -
         DL9SAU     kisstcp93  kiss  fd:18  heard 0:00:01:58 ago
         DB0FHN-10  kisstcp    kiss  fd:3 to 127.0.0.1:8001  heard 0:00:00:16 ago
@@ -11859,13 +11860,25 @@ NOCH ZU TUN (2026-10-19): leserliche Alter, timer.c statt einer versteckten
     "keepalive:120 kp in:1 kp out:3" - "kp" doppelt gesetzt, und die
     Einheit des Intervalls fehlt.  VORGESCHLAGEN (Thomas' Form):
     "keepalive:120s in:1 out:3".
-  - PRUEFPUNKT nach dem net-Update auf db0fhn: derselbe
-    kisstcp-Tunnel meldet an den beiden Enden crc:off in:2/36
-    (dl9sau) gegen crc:flexnet in:2/40 (db0fhn, fd:18).  Die
-    Byte-Differenz ist genau 2x2 CRC, crcerr: und garbage: stehen
-    beidseitig auf 0, Connect und Disconnect liefen sauber - kein
-    Schaeden, aber die beiden Woerter muessen uebereinstimmen.  Nach
-    dem Update (git reset --hard origin/main, make, make install)
-    noch einmal vergleichen; wenn sie sich dann noch widersprechen,
-    ist die Richtungs-Erkennung oder die Zaehlkonvention wirklich
-    falsch.
+  - PRUEFPUNKT geschlossen (Thomas 2026-10-19 nach dem frischen Lauf:
+    "das passt jetzt"): die Gegenueberstellung crc:off in:2/36
+    (dl9sau) gegen crc:flexnet in:2/40 (db0fhn, fd:18) war kein
+    Schaeden - crcerr: und garbage: beidseitig auf 0, Connect und
+    Disconnect liefen sauber, und der neue Lauf (fd:20, in:3/62
+    out:3/60, kp in:1 kp out:1) liest sich stimmig.  Als Wissen
+    stehen bleibt: das crc-Wort ist Richtungssache - jeder Endpunkt
+    erkennt den Dialekt aus seinem eingehenden Verkehr.
+  - Fuenftes und sechstes Feld (Thomas 2026-10-19, netstat-Form):
+    (a) "if <iface> stats" nennt bei angenommenen Sessions
+        from:<ip> und den EIGENEN Port, aber nicht den SRC-PORT der
+        Gegenseite - mit ihm liesse sich die Sitzung unix-seitig in
+        "netstat -t" eindeutig wiederfinden.  Form:
+        "from:44.149.177.122:52341 port:93".  Der Quellport liegt in
+        derselben Ausbeute wie from: (peer-Name des akzeptierten
+        Sockets); tcpsock speichert heute nur die Adresse.
+    (b) Der Lauscher steht bei netstat als
+            tcp6       0      0 [::]:93                 [::]:* LISTEN      2523371/net
+        waehrend seine Stats-Zeile "fd:-1 ... peer:- port:93"
+        schreibt.  Netstat-Form also: die eigene Adresse (v4/v6,
+        "listen:" nennt sie bisher nicht) UND "*" als dst-Port, in
+        der Zeile "peer:*" statt "peer:-".
