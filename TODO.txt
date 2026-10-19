@@ -11787,14 +11787,20 @@ NEBENBEFUNDE (2026-10-19)
      Folge ist "Interface xnet unknown" - jede spaetere "axip route add
      ... :xnet" antwortet dann mit 'No such interface "xnet"'.  Auf
      db0fhn (Linux) ist dieselbe Zeile Teil der laufenden Konfiguration.
-     NICHT der Port und nicht die Adresse: derselbe UDP-Port an
-     127.0.0.1 bindet Python ohne Fehler (und "::1" obendrein), und
-     jenseits von 1024 ist ohnehin kein Privileg noetig; der Knoten
-     oeffnet fuer UDP ein SOCK_DGRAM (axip_open_sock()) und kein RAW.
-     Noch unaufgeklaert, macOS-spezifisch oder nicht - bis dahin bindet
-     route_show.py diesen Port ohne "bind=" (der Test braucht xnet nur
-     als Anzeige-Welt), und die laufende db0fhn-Konfiguration bleibt
-     unberuehrt.
+     GELUEST (2026-10-19, Thomas' Nachtests): der lokale Port 930 ist
+     KLEINER als 1024 - die alte Reserviertport-Regel, kein
+     macOS-Sonderfall und kein Adressproblem.  Nachgemessen als User
+     (Python, derselbe Account): bind 127.0.0.1:930 und :1023 beide
+     "Permission denied" [13] - unter 1024 braucht bind root; der
+     fruehere Python-Vergleich lief also unter anderen Rechten.  Die zweite Stelle derselben Meldung ebenfalls ohne
+     Adressbezug: "attach axip a" (ip-Modus) als User scheitert VOR dem
+     bind schon bei socket(SOCK_RAW, 93) mit "cannot create socket:
+     Operation not permitted" - RAW braucht root, Punkt.  Als root
+     laeuft beides, Test 2026-10-19: udp 9999 bind=127.0.0.1 bindet,
+     udp 1023 gibt exakt die Meldung von axip.c:1475.  Damit ist die
+     Zeile erklaert und dieses Feld zu; die db0fhn-Konfiguration
+     (laeuft als root) bleibt unberuehrt, und route_show.py bindet
+     diesen Port weiter ohne "bind=".
 
 NOCH ZU TUN (2026-10-19): leserliche Alter, timer.c statt einer versteckten
   Hilfe.  VORGESCHLAGEN und zugesagt (Thomas: "Vorschlag zur Notation und
@@ -11819,3 +11825,19 @@ NOCH ZU TUN (2026-10-19): leserliche Alter, timer.c statt einer versteckten
     Schreibweise stehen zu haben.  In axip route steht die Zeit am
     Zeilenende hinter variabler Laenge ("to host:port", "on port N
     (gone)"), dort kostet die kurze Form nichts.
+  - WEITERE STELLEN, gesichtet 2026-10-19 bei "ifconfig <iface> stats":
+    "lastrx:%ld lasttx:%ld now:%ld" (tcpsock.c:2776) druckt drei
+    Roh-Zeitstempel, aus denen der Leser das Alter selbst rechnen soll -
+    dieselbe Hilfe, dort als "vor %s" statt dreier Zahlen.  Und die zwei
+    Notationen gegeneinander: "ax rou l" nennt die Uhrzeit der
+    Wiederanlernung ("19-Oct 05:13"), "axip rou" nennt "heard
+    0:00:02:57 ago" - am Ende soll nur eine von beiden stehen.
+  - Dieselbe Sitzung der Sichtung, zweites Feld (Thomas): die
+    Session-Zeile von "ifconfig <iface> stats" nennt nur die IP
+    ("from:" ist die Adresse), nicht das Rufzeichen, das auf dem Port
+    faehrt - tcpsock hat es nicht, der Knoten kennt es ueber die ax25_cb
+    der Leitung.  Und die Legende der Zeile steht bisher nur im Code
+    (tcpsock.c:2722-2745): fd:-1 = Listener ohne Einzel-fd,
+    listens:2 = v4+v6-Sockets von "bind=0.0.0.0,[::]", peer:- = niemand
+    gewaehlt (angenommene Sessions stehen als "from:"), crc:- =
+    Dialekt noch nicht bekannt, crc-port: = die Einstellung des Ports.
