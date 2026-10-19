@@ -16,6 +16,7 @@
 #include "lapb.h"
 #include "pidfilter.h"
 #include "framefilter.h"
+#include "axip.h"
 
 /* Bring the called side up on the next turn of the event loop rather than
  * from inside the caller's own call - see the note at the use.  One
@@ -138,6 +139,32 @@ const struct ax25_opts *opts    /* per-connection choices, 0 for the usual */
 		return open_ax25_loop(hdr);
 
 	ax25_resolve_path(hdr,&ifp,opts);
+	/* THE WRITTEN AXIP ROUTE DECIDES THE PORT, and not the name in the
+	 * command (Thomas: "permanent ist permanent", and he could live with
+	 * "kisstcp2:" being ignored at a connect): "axip route add
+	 * <call>:<iface> ..." says where this callsign goes, and a connect
+	 * that resolved another port used to send its SABM out of the wrong
+	 * tunnel.  So the resolved port is replaced here, with one line that
+	 * names the winner - and names it once.
+	 */
+	if(mode == AX_ACTIVE){
+		struct iface *routifp = axip_written_port(hdr->dest);
+
+		if(routifp != NULL && routifp != ifp){
+			char rbuf[AXBUF];
+
+			printf("note: %s has a configured permanent route, using iface %s\n",
+			       pax25(rbuf,hdr->dest),routifp->name);
+			ifp = routifp;
+			/* ax25_resolve_path() stamped the source with the
+			 * callsign of the port it chose, and that choice just
+			 * changed - so the stamp belongs to the new port now,
+			 * unless the caller brought its own source.
+			 */
+			if(!(opts != NULL && opts->ownsource) && ifp->hwaddr)
+				addrcp(hdr->source,ifp->hwaddr);
+		}
+	}
 	axp = find_ax25(hdr->source,hdr->dest);
 	/* THE PORT WAS NAMED, AND THE LINK STANDS ON ANOTHER ONE.  A link is
 	 * named by both addresses - one pair, one port - so a second link "on

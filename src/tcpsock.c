@@ -1980,8 +1980,17 @@ struct mbuf **bpp)
     if (addreq(dest, *mpp))
       return -1;
 
-  if ((tp = (struct tcpsock *) axip_transport_route(dest, ifp)) == NULL)
+  if ((tp = (struct tcpsock *) axip_transport_route(dest, ifp)) == NULL) {
+    /* A WRITTEN ROUTE ON ANOTHER PORT SENDS NOTHING THROUGH THIS ONE.  The
+     * sysop wrote "this callsign goes via port X", and this port's client
+     * session must not carry it on as if the command had named this port -
+     * which is exactly how the SABM of "c kisstcp2:db0fhn-13" left via
+     * axtcp.  No session, no silent switch: -1 (Thomas).
+     */
+    if (axip_sysop_route_foreign(dest, ifp))
+      return -1;
     tp = tcpsock_client_session(ifp);
+  }
   /* A WRITTEN ROUTE FOR THIS PORT, and no other session to ask: this is the
    * listener case (a client port already sent by the line above), and here
    * "the port" resolves to a session only while exactly ONE session hangs on

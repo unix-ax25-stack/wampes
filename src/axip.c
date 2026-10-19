@@ -1948,7 +1948,7 @@ struct iface *ifp)
 {
   struct axip_route *rp;
   uint8 buf[AXALEN];
-  int from = AXIP_FROM_LEARNED;
+  int thisdev = axip_ifp_to_rdev(ifp);
 
   /* DER WIRKLICHE PARTNER, und nicht das, was die Sitzung behauptet: das ist
    * dieselbe Frage, die axip_recv() am Adressfeld stellt, und dieselbe
@@ -1957,28 +1957,45 @@ struct iface *ifp)
    */
   addrcp(buf, call);
 
-  for (rp = Axip_routes; rp && !(rp->tsock == tsock && rp->tchan == chan &&
+  for (rp = Axip_routes; rp && !(rp->tsock == tsock &&
                                  axip_call_match(rp->call, buf)); rp = rp->next) ;
   if (rp) {
     /* DIESES RUFZEICHEN IST BEREITS DIESER SITZUNG ZUGEORDNET.  Kein Neuwert,
      * kein counters: der Pfad hat genau eine Adresse, und die ist die, die
-     * schon drin steht.
+     * schon drin steht.  Kanal und Dialekt duerfen sich dabei bewegen - ein
+     * anderer KISS-Kanal derselben Sitzung ist kein Umzug, sondern dieselbe
+     * Leitung mit anderer Zahl, und ihn als Bewegung zu lesen verbot einer
+     * "permanent"-Route das Weiterreden (Thomas).
      */
+    rp->tchan = chan;
+    rp->tproto = proto;
     rp->htime = secclock();
     return 1;
   }
   /* SONST: DAS GLEICHE RUFZEICHEN AUF EINER ANDEREN SITZUNG?  Dann ist das
-   * eine Bewegung, und die richtet sich nach denselben Regeln wie bei axip:
-   * permanent und once stehen still, "off" verbietet, und der Sysop darf
-   * immer.
+   * eine Bewegung, und die richtet sich nach denselben Regeln wie bei axip.
    */
   for (rp = Axip_routes; rp && !axip_call_match(rp->call, buf); rp = rp->next) ;
   if (rp) {
-    if (rp->perm || rp->perm_once) {
-      Axip_refused++;
-      return 0;
-    }
-    if (!axip_may_learn(ifp)) {
+    /* EINE HAND-ROUTE GEHOERT IHREM PORT.  Der Sysop hat hingeschrieben,
+     * ueber welchen Port dieses Rufzeichen laeuft; eine Sitzung, die auf
+     * einem ANDEREN Port davon spricht, ist der fremde Weg.  Sie wird
+     * verworfen und gezaehlt - dieselbe Pruefung, die axudp an der Adresse
+     * macht, hier am Port.  Vorher nahm ein "permanent"-Eintrag auf einem
+     * fremden Port jeden Rahmen an und verriet dann nichts, weil der
+     * Sendeweg ihn fuer seine eigene Route hielt: ein eingehender Blackhole.
+     *
+     * DER EIGENE PORT DARF SICH ANHEFTEN: dort ist die Sitzung der Weg, den
+     * die Route meint, und sie traegt ab jetzt das tsock, das der Sendeweg
+     * fragt.  Eine Route ohne Portbindung bindet sich an die Sitzung, an
+     * der sie zuerst haengt.
+     */
+    if (rp->written || rp->perm || rp->perm_once) {
+      if (rp->rdev && thisdev && rp->rdev != thisdev) {
+        Axip_refused++;
+        return 0;
+      }
+    } else if (!axip_may_learn(ifp)) {
       Axip_refused++;
       return 0;
     }
@@ -1996,25 +2013,41 @@ struct iface *ifp)
     rp->next = Axip_routes;
     Axip_routes = rp;
   }
-  memset(&rp->dest, 0, sizeof(rp->dest));
+  /* NUR EINE BEOBACHTUNG RAEUMT DIE ADRESSE AUS: eine Hand-Route traegt die
+   * Adresse, die der Sysop hingeschrieben hat, und der Verkehr schreibt sie
+   * nicht um - vorher tat er es, und "axip route" zeigte danach eine leere
+   * Adresse, bis der Timer sie neu aufloeste.
+   */
+  if (!(rp->written || rp->perm || rp->perm_once))
+    memset(&rp->dest, 0, sizeof(rp->dest));
   rp->tsock = tsock;
   rp->tchan = chan;
   rp->tproto = proto;
+  /* DER PORT GEHOERT ZUR SITZUNG.  Eine gelernte Route ist an den Port
+   * gebunden, auf dem die Sitzung laeuft - dieselbe Bindung, die axudp beim
+   * ersten Senden setzt (axip_raw()).  Eine Hand-Route MIT Bindung behaelt
+   * die ihre; eine OHNE bindet sich hier, und eine Beobachtung bewegt Port
+   * und Sitzung gemeinsam.
+   */
+  if (rp->written || rp->perm || rp->perm_once) {
+    if (!rp->rdev)
+      rp->rdev = thisdev;
+  } else if (thisdev) {
+    rp->rdev = thisdev;
+  }
   /* htime, weil es hier eine ECHTE Nachricht ist: der Rufzeichen wurde so
-   *eben gesehen.  Ohne das saehe ein frisch gelernter Eintrag im selben
+   * eben gesehen.  Ohne das saehe ein frisch gelernter Eintrag im selben
    * Takt nach dem Lernen aus wie einer seit einer Stunde stumm, und die
    * Stille-Frist wuerde ihn wegraeumen.
    */
   rp->htime = secclock();
-  (void) from;
   return 1;
 }
 
 /* DIE SITZUNG WEG - und damit die ihr gelernten Rufzeichen.  NUR DIE
- * GELERNTEN: "permanent", "once" und der Default sind Absichten des Sysops
- * und haben mit dieser Verbindung nichts zu tun.  Wer hier mehr loescht, als
- * der Port gelernt hat, nimmt einem Port, der zurueckkommt, seine Wege weg
- * (Thomas).
+ * GELERNTEN sterben mit ihr: was von Hand geschrieben ist, verliert die
+ * Sitzung, nicht den Eintrag.  Wer hier mehr loescht, als der Port gelernt
+ * hat, nimmt einem Port, der zurueckkommt, seine Wege weg (Thomas).
  */
 void axip_forget_transport(
 void *tsock)
@@ -2028,14 +2061,25 @@ void *tsock)
    * Vertrauen, sondern eine Eingefrorenheit ohne Ende, und die Route zeigte
    * auf etwas, das nicht mehr existiert.
    *
-   * "permanent" und der Default erreichen diese Schleife gar nicht: die hat
-   * kein tsock, weil der Sysop sie ueber "axip route add" geschrieben hat und
-   * nicht ueber den Verkehr.  Sie sind Absichten, keine Beobachtungen, und
-   * ein Port, der weg ist, loescht keine Absicht (Thomas).
+   * HAND-ROUTES SIND DIE ANDERE HAELFTE.  "axip route add" loescht zwar das
+   * geerbte tsock (doaxiprouteadd()), aber eine Sitzung auf dem EIGENEN Port
+   * haengt sich an eine geschriebene Route an (axip_learn_transport()) - und
+   * wenn genau die stirbt, darf der Eintrag nicht mitgehen.  Er verliert nur
+   * die Sitzung: der Eintrag nennt weiter seinen Port, und die naechste
+   * Sitzung dort haengt sich wieder an.  Ohne diese Unterscheidung war
+   * "permanent" ein Eintrag auf Zeit, sobald der Verkehr ihn einmal
+   * beruehrt hatte (Thomas).
    */
   for (pp = 0, rp = Axip_routes; rp; rp = nx) {
     nx = rp->next;
     if (rp->tsock != tsock) {
+      pp = rp;
+      continue;
+    }
+    if (rp->written || rp->perm || rp->name || rp->is_default) {
+      rp->tsock = NULL;
+      rp->tchan = 0;
+      rp->tproto = 0;
       pp = rp;
       continue;
     }
@@ -2196,9 +2240,15 @@ void)
 
 /*---------------------------------------------------------------------------*/
 
-/* DIE SITZUNG FUER EIN RUFZEICHEN, oder NULL.  Zuerst die exakte Route auf
- * diesem Port, dann die exakte Route irgendwo, dann der Default auf diesem
- * Port, dann der Default irgendwo - dieselbe Reihenfolge wie axip_raw().
+/* DIE SITZUNG FUER EIN RUFZEICHEN, oder NULL.  Zwei Kandidaten gibt es nur
+ * noch: die exakte Route an ihrem EIGENEN Port und den Default auf diesem
+ * Port.  Prio 1 - die Sitzung, die zu einem anderen Port gehoert und hier
+ * trotzdem gewann - ist aus der Wahl genommen: das war der Weg der
+ * Umschwenkung, "c kisstcp2:db0fhn-13" schickte den SABM ueber axtcp, weil
+ * der gelernte Eintrag dort seine Sitzung hatte.  Eine gebundene Route
+ * zaehlt ausserdem nur an ihrem eigenen Port - dieselbe Wahrheitsregel, die
+ * axip_raw() an der UDP-Seite schon hat (Thomas: gelernt ueberschreibt den
+ * benannten Port nie).
  */
 void *axip_transport_route(
 const uint8 *call,
@@ -2214,24 +2264,32 @@ struct iface *ifp)
 
     if (rp->tsock == NULL)
       continue;
+    if (rp->rdev && rp->rdev != thisdev)
+      continue;
     if (rp->is_default)
       prio = (rp->rdev && rp->rdev == thisdev) ? 0 : -1;
-    else
-      prio = (!axip_call_match(rp->call, call)) ? -2 :
-	    ((rp->rdev && rp->rdev == thisdev) ? 2 : 1);
+    else {
+      /* NUR AN IHREM EIGENEN PORT, und ein Eintrag ohne Portbindung nennt
+       * keinen, den der Sendeweg fragen koennte.
+       */
+      if (!axip_call_match(rp->call, call) || !rp->rdev)
+        continue;
+      prio = 2;
+    }
     if (prio > best_prio) {
       best = rp->tsock;
       best_prio = prio;
       if (prio == 2)
-	break;
+        break;
     }
   }
   return best;
 }
 
 /* OB AUF DIESEM PORT EINE VON HAND GESCHRIEBENE ROUTE AUF DAS RUFZEICHEN
- * STEHT, nicht die gelernte: tsock == NULL, wie nur "axip route add" sie
- * schreibt (axip_learn_transport() setzt immer eine Sitzung darunter).
+ * STEHT, und zwar eine OHNE Sitzung: eine mit Sitzung hat
+ * axip_transport_route() schon beantwortet, und ueber TCP ist die Sitzung
+ * die Verbindung selbst, nicht der Port.
  *
  * WOFUER: tcpsock_raw() fragt damit, ob ein auftauchendes Rufzeichen hier
  * ueberhaupt erwartet wird.  Ueber TCP ist die Adresse der Verbindung selbst,
@@ -2255,6 +2313,64 @@ struct iface *ifp)
       return 1;
   }
   return 0;
+}
+
+/* EINE HAND-ROUTE AUF EINEM ANDEREN PORT, oder 0 - die andere Haelfte von
+ * axip_sysop_route_on().  tcpsock_raw() fragt sie, BEVOR es die
+ * Client-Sitzung dieses Ports nimmt: der benannte Port darf eine Route nicht
+ * fortschicken, die der Sysop auf einen anderen Port geschrieben hat.  Ohne
+ * die Frage tat er genau das, und der SABM von "c kisstcp2:db0fhn-13" ging
+ * ueber axtcp, weil dort die Hand-Route stand (Thomas: permanent ist
+ * permanent).  Die Antwort ist -1 und kein stiller Wechsel.
+ *
+ * Der Default zaehlt hier nicht: er gehoert keinem Rufzeichen, und eine
+ * Hand-Route "default:<anderer Port>" duerfte nicht jeden Sendevorgang auf
+ * diesem Port abschalten.
+ */
+int axip_sysop_route_foreign(
+const uint8 *call,
+struct iface *ifp)
+{
+  struct axip_route *rp;
+  int thisdev = axip_ifp_to_rdev(ifp);
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    if (rp->tsock != NULL)
+      continue;
+    if (rp->is_default || !axip_call_match(rp->call, call))
+      continue;
+    if (rp->rdev && rp->rdev != thisdev)
+      return 1;
+  }
+  return 0;
+}
+
+/* DER PORT, DEN EINE HAND-ROUTE FUER DIESES RUFZEICHEN NENNT, oder NULL:
+ * keine Hand-Route, eine ohne Portbindung (die bindet sich beim ersten
+ * Benutzen), oder ein Port, den es nicht mehr gibt.  open_ax25() fragt sie
+ * vor einem Connect und wechselt den aufgeloesten Port, mit einer Meldung -
+ * der benannte Port verliert gegen die Hand-Route, und still darf das nicht
+ * zugehen (Thomas).
+ *
+ * NUR GESCHRIEBENES ZAEHLT (written, "permanent"), nicht "once": once ist
+ * eine Beobachtung des Verkehrs und keine Aussage des Sysops; deren Portfrage
+ * beantwortet axip_transport_route() an ihrem eigenen Port.
+ */
+struct iface *axip_written_port(
+const uint8 *call)
+{
+  struct axip_route *rp;
+
+  for (rp = Axip_routes; rp; rp = rp->next) {
+    if (rp->is_default || !axip_call_match(rp->call, call))
+      continue;
+    if (!rp->written && !rp->perm)
+      continue;
+    if (!rp->rdev)
+      continue;
+    return axip_iface_from_rdev(rp->rdev);
+  }
+  return NULL;
 }
 
 /* DIE LETZTE NACHRICHT VON DIESER ADRESSE GESAGT - und zwar an ALLE ihre
@@ -2590,7 +2706,7 @@ static int doaxiproute(int argc, char *argv[], void *p)
      * die Digipeater), waehrend hier ein Interface steht - zwei Bedeutungen
      * in einem Wort braucht eine Route-Tabelle nicht (Thomas).
      */
-    if (rp->rdev) {
+    if (rp->rdev && rp->dest.ss_family != 0) {
       if ((ifp = axip_iface(rp->rdev)) != NULL)
 	printf("  on %s", ifp->name);
       else
@@ -2826,6 +2942,23 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
    * ausdruecklich "<call>:<iface>" hin.
    */
   rp->rdev = ifp ? axip_ifp_to_rdev(ifp) : 0;
+
+  /* DIE SITZUNG FAELLT WEG, und das ist der Kern: was der Verkehr bis
+   * hierher ueber dieses Rufzeichen gefuehrt hat, ist mit der Hand-Route
+   * nicht mehr gemeint.  Ein geerbtes tsock an dieser Stelle hatte zwei
+   * Folgen, und keine war gemeint: der Sendeweg schickte die Rahmen in die
+   * alte Sitzung, statt in den Port, den der Sysop hingeschrieben hatte
+   * (axip_transport_route() sah tsock und fragte nicht nach dem Port - die
+   * Umschwenkung, bei der "c kisstcp2:db0fhn-13" ueber axtcp ging), und beim
+   * Tod dieser Sitzung loeschte axip_forget_transport() den geschriebenen
+   * Eintrag GANZ.  Ohne tsock ist die Route das, was "axip route add" sagt:
+   * ein Port.  Die Sitzung holt sich der Sendeweg vom Port (tcpsock_raw()),
+   * und eine Sitzung, die dort auftaucht, haengt sich in
+   * axip_learn_transport() an (Thomas).
+   */
+  rp->tsock = NULL;
+  rp->tchan = 0;
+  rp->tproto = 0;
 
   /* UND "PERMANENT" IST EIN SCHALTER, KEIN ZUSTAND, DEN MAN NUR SETZEN KANN:
    * "axip route add DL0AAA ..." ohne das Wort nimmt es wieder weg.  Wer es

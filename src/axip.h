@@ -136,6 +136,18 @@ void *axip_transport_route(const uint8 *call, struct iface *ifp);
  * the session it has (tcpsock_raw(), Thomas).
  */
 int axip_sysop_route_on(const uint8 *call, struct iface *ifp);
+/* A WRITTEN route bound to ANOTHER port - the other half of the question
+ * above.  tcpsock_raw() asks it before it takes this port's client session: a
+ * route the sysop wrote elsewhere is not this port's to carry, and sending it
+ * anyway is the silent switch (Thomas: permanent is permanent).
+ */
+int axip_sysop_route_foreign(const uint8 *call, struct iface *ifp);
+/* THE PORT a written route names for this callsign, or NULL: none written,
+ * one written without a port (it binds at first use), or a port that no
+ * longer exists.  open_ax25() asks before a connect and switches the resolved
+ * port, with a note - the written route beats the port in the command.
+ */
+struct iface *axip_written_port(const uint8 *call);
 /* Der letzte Sitzung eines TCP-Ports weg: die Adress-Routen des Ports, die
  * zu keiner Sitzung gehoeren, sind dann ohne Weg.  Gerufen von tcpsock.c,
  * wenn nach dem Ende einer eingehenden Sitzung keine mehr da ist.
