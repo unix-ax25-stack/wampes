@@ -2762,17 +2762,19 @@ struct iface *ifp)
 	     who, tp->port,
 	     tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
     else {
-      printf("  %-12s fd:%d listens:%d %s port:%d crc-port:%s",
-	     tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, who,
-	     (tp->flags & TCF_LISTEN) ? tp->lport : tp->port,
-	     tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
-      if (tp->laddr.ss_family != 0) {
-	int lp = sockaddr_port((struct sockaddr *)&tp->laddr);
-	if (lp > 0)
-	  printf(" lport:%d", lp);
-      } else if ((tp->flags & TCF_CLIENT) && tp->lport > 0 && !(tp->flags & TCF_LISTEN))
-	printf(" lport:%d", tp->lport);
-      putchar('\n');
+      int lp = -1;
+      if (tp->laddr.ss_family != 0)
+	lp = sockaddr_port((struct sockaddr *)&tp->laddr);
+      else if ((tp->flags & TCF_CLIENT) && tp->lport > 0)
+	lp = tp->lport;
+      printf("  %-12s fd:%d listens:%d %s", tp->ifp ? tp->ifp->name : "-", tp->fd, tp->nlistens, who);
+      if ((tp->flags & TCF_CLIENT) && lp > 0)
+	printf(" lport:%d", lp);
+      if (tp->flags & TCF_CLIENT)
+	printf(" dport:%d", tp->port);
+      else
+	printf(" port:%d", tp->lport);
+      printf(" crc-port:%s\n", tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
     }
 /* "in" AND "out" ARE FRAMES AND BYTES ON THE WIRE, and the two halves do not
      * count the same thing: the first number is AX.25 frames handed over, the
