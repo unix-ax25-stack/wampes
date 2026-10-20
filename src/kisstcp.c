@@ -54,6 +54,7 @@
 #include "crc.h"
 #include "tcpsock.h"
 #include "kiss.h"
+#include "trace.h"
 
 /* THE TYPE BYTE, and it is two fields and not one:
  *
@@ -355,6 +356,16 @@ struct tcpsock *tp)
      * by kiss_send_cmd / slip_raw.
      */
     if (cmd != KISS_CMD_DATA_FRAME) {
+      /* Trace incoming KISS command if enabled */
+      if (tp->ifp && (tp->ifp->trace & IF_TRACE_IN)) {
+        struct mbuf *trace_bp = alloc_mbuf(flen);
+        if (trace_bp != NULL) {
+          memcpy(trace_bp->data, frame, flen);
+          trace_bp->cnt = flen;
+          dump(tp->ifp, IF_TRACE_IN, trace_bp);
+          free_p(&trace_bp);
+        }
+      }
       if (tp->ifp->bridgegroup) {
         /* Save original frame (with type byte) for forwarding */
         kisstcp_forward_cmd(tp, frame, flen, type);
@@ -575,6 +586,7 @@ struct mbuf *bp)
 	int i;
 	unsigned char *frame = bp->data;
 	int flen = bp->cnt;
+	struct mbuf *trace_bp = NULL;
 
 	if (flen < 2)
 		return;
@@ -609,6 +621,16 @@ struct mbuf *bp)
 		}
 	}
 	out[n++] = FR_END;
+
+	/* Trace outgoing KISS command if enabled */
+	if (tp->ifp && (tp->ifp->trace & IF_TRACE_OUT)) {
+		if ((trace_bp = alloc_mbuf(n)) != NULL) {
+			memcpy(trace_bp->data, out, n);
+			trace_bp->cnt = n;
+			dump(tp->ifp, IF_TRACE_OUT, trace_bp);
+			free_p(&trace_bp);
+		}
+	}
 
 	/* Write directly to socket */
 	write(tp->fd, out, n);
