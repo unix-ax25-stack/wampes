@@ -835,6 +835,19 @@ void *p)
 {
 	int i;
 	int r;
+
+	i = (int) Axversion;
+	r = setintrc(&i,"AX25 version",argc,argv,1,2);
+	Axversion = (enum lapb_version) i;
+	return r;
+}
+
+int
+dowampesversion(
+int argc,
+char *argv[],
+void *p)
+{
 	char buf[64];
 	time_t now = time(NULL);
 	struct tm *tm = localtime(&now);
