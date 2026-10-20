@@ -53,7 +53,6 @@ static int dot2(int argc,char *argv[],void *p);
 static int dot3(int argc,char *argv[],void *p);
 static int dot4(int argc,char *argv[],void *p);
 static int dot5(int argc,char *argv[],void *p);
-static int doversion(int argc,char *argv[],void *p);
 static int doaxloop(int argc,char *argv[],void *p);
 static int dorouteadd(int argc,char *argv[],void *p);
 static int doroutedel(int argc,char *argv[],void *p);
@@ -197,7 +196,7 @@ static struct cmds Axcmds[] = {
 	{ "t3",           dot3,           0, 0, NULL },
 	{ "t4",           dot4,           0, 0, NULL },
 	{ "t5",           dot5,           0, 0, NULL },
-	{ "version",      doversion,      0, 0, NULL },
+	{ "version",      doax25version,  0, 0, NULL },
 	{ "window",       doaxwindow,     0, 0, NULL },
 	{ NULL }
 };
@@ -828,7 +827,7 @@ void *p)
 	return setlong(&Blimit,"blimit",argc,argv);
 }
 static int
-doversion(
+doax25version(
 int argc,
 char *argv[],
 void *p)
