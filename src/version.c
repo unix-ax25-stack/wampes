@@ -9,14 +9,14 @@
  * The rest names what is compiled in and is still maintained by hand.
  */
 #include "version_git.h"
+#include <stdio.h>
+#include <time.h>
 
 static char id[] = "@(#)" WAMPES_VERSION
 	"-DL9SAU-VJC-VCompat-KRNLIF-TUNTAP-DIGIARP-GDBM";
 
 /* version control information */
 char *Version = id + 4;
-
-#include <time.h>
 
 int
 doversion(
