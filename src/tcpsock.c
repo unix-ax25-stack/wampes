@@ -710,6 +710,23 @@ void *p)
     tcpsock_auth_send(tp);
   }
   tcpsock_flush(tp);
+  /* NOTHING LEFT TO SEND, AND THE REGISTRATION HAS TO GO WITH IT.  on_write()
+   * is a note to select() that a queue is waiting for the window; a note that
+   * never expires is a note select() answers in EVERY round, because a healthy
+   * TCP socket is always writable.  An accepted session queues its first byte
+   * only after the peer has spoken (TODO.txt, ENTSCHIEDEN G), so behind this
+   * registration there is nothing from the start - and the main loop then runs
+   * at 100% CPU on a connection that never loses a byte.  The same applies to
+   * a client with no shared key, whose auth frame does not exist (tcpsock_connect()
+   * registers on_write() for the build, and the build is finished by now).
+   *
+   * ONLY WHEN THE QUEUE IS EMPTY: flush() has just re-armed the registration for
+   * a partial write, and an EAGAIN leaves the bytes in the queue - in both cases
+   * wlen > 0 and the window is the reason we are here.  A full write has already
+   * called off_write() itself, and calling it twice is worth nothing.
+   */
+   if (tp->fd >= 0 && tp->wlen <= 0)
+     off_write(tp->fd);
 }
 
 /* THE SEND TICK.  on_write() is registered HERE and not in the send(): the
@@ -1745,9 +1762,9 @@ void *p)
   tp->next = Tcp_socks;
   Tcp_socks = tp;
   on_read(fd, tcpsock_on_read, tp);
-  on_write(fd, tcpsock_on_write, tp);
-  /* AND NOT ONE BYTE GOES OUT.  An accepted session says nothing until the peer
-   * has said its first byte (TODO.txt, ENTSCHIEDEN G).  A greeting here would be
+  /* AND NOT ONE BYTE GOES OUT - AND THERE IS NOTHING TO WAIT FOR WRITING EITHER.
+   * An accepted session says nothing until the peer has said its first byte
+   * (TODO.txt, ENTSCHIEDEN G).  A greeting here would be
    * a guess at the peer's dialect, and the guess is destructive: c0 c0 is a
    * length of 0xC0C0 for a peer that reads AXTCP - over AXTCP_MAXLEN, and
    * axtcp_rx() throws the connection away - and 00 02 00 00 only helps a peer
@@ -1758,6 +1775,14 @@ void *p)
    * yet), and because the deadline above runs out on a peer that never says
    * anything, the first keepalive of a real session also falls in the dialect
    * the peer's first byte named - see the keepalive block in the tick.
+   *
+   * AN on_write() REGISTRATION WAS STANDING HERE ONLY TO CARRY THAT GREETING OUT,
+   * and it points at an empty queue from the very first round: select() answers a
+   * writable TCP socket in every round, so the main loop spins at 100% CPU until
+   * the session dies (2026-10-20).  Nothing is missing without it - the first byte
+   * the peer sends comes in through tcpsock_on_read() -> tcpsock_send() ->
+   * tcpsock_flush(), and flush() registers on_write() itself whenever a write
+   * cannot be completed.
    */
 }
 
