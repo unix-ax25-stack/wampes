@@ -40,6 +40,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "global.h"
 #include "mbuf.h"
@@ -108,8 +109,8 @@ static void kisstcp_send_cmd(struct tcpsock *tp, struct mbuf *bp);
 
 /* TRACE A KISS COMMAND for kisstcp interfaces using ki_dump.
  * These interfaces use AX25UI encapsulation (ax25_dump) which doesn't
- * understand KISS command frames.  ki_dump can decode KISS commands
- * properly when given a mbuf with the full KISS frame [type][value...].
+ * understand KISS command frames.  We manually print the header like
+ * dump() does, then call ki_dump for the actual command decoding.
  */
 static void
 kisstcp_trace_cmd(
@@ -119,10 +120,22 @@ unsigned char *frame,
 int flen)
 {
 	struct mbuf *bp;
+	FILE *fp;
+	time_t timer;
+	char *cp;
 
 	if (ifp == NULL || (ifp->trace & direction) == 0
 	 || ifp->trfp == NULL)
 		return;
+
+	fp = ifp->trfp;
+
+	/* Print header like dump() does */
+	timer = (time_t) secclock();
+	cp = ctime(&timer);
+	cp[24] = '\0';
+	fprintf(fp, "\n%s - %s %s:\n", cp, ifp->name,
+		(direction & IF_TRACE_IN) ? "recv" : "sent");
 
 	/* Build mbuf with full KISS frame for ki_dump */
 	if ((bp = alloc_mbuf(flen)) == NULL)
@@ -131,7 +144,7 @@ int flen)
 	bp->cnt = flen;
 
 	/* Call ki_dump with check=0 (no CRC check on commands) */
-	ki_dump(ifp->trfp, &bp, 0);
+	ki_dump(fp, &bp, 0);
 	free_p(&bp);
 }
 
