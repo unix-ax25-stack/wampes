@@ -826,7 +826,7 @@ void *p)
 {
 	return setlong(&Blimit,"blimit",argc,argv);
 }
-int
+static int
 doax25version(
 int argc,
 char *argv[],
