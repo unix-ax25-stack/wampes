@@ -2748,6 +2748,8 @@ struct iface *ifp)
 				  sizeof(abuf)));
     else if (tp->peer != NULL)
       snprintf(who, sizeof(who), "peer:%s", tp->peer);
+    else if (tp->flags & TCF_LISTEN)
+      snprintf(who, sizeof(who), "peer:*");
     else
       snprintf(who, sizeof(who), "peer:-");
     /* "crc-port:" IS THE PORT'S SETTING and stands on the port's line, next to
@@ -2792,7 +2794,7 @@ struct iface *ifp)
      * apart from one where the partner cannot do it.
      */
     if (tp->ifp != NULL && tp->ifp->keepalive > 0)
-      printf("    keepalive:%d kp in:%ld kp out:%ld\n", tp->ifp->keepalive,
+      printf("    keepalive:%ds kp in:%ld kp out:%ld\n", tp->ifp->keepalive,
 	     tp->idlesin, tp->idlesout);
     if (tp->ifp != NULL && tp->ifp->sharedkey[0] != '\0')
       printf("    shared-key:%s\n", tp->ifp->sharedkey);
