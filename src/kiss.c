@@ -101,6 +101,20 @@ struct mbuf **bpp
 	return 0;
 }
 
+/* Send a KISS command frame on serial KISS TNC.
+ * The mbuf already contains the full KISS frame: [type byte][value...]
+ * No CRC, no extra type byte - just SLIP escaping + FEND framing.
+ */
+int
+kiss_send_cmd(
+struct iface *iface,
+struct mbuf **bpp
+){
+	/* The frame already has the KISS type byte with command in lower nibble.
+	 * Just SLIP encode and send. */
+	return slip_raw(iface, bpp);
+}
+
 /* Process incoming KISS TNC frame */
 void
 kiss_recv(

@@ -53,6 +53,7 @@
 #include "axip.h"
 #include "crc.h"
 #include "tcpsock.h"
+#include "kiss.h"
 
 /* THE TYPE BYTE, and it is two fields and not one:
  *
@@ -135,8 +136,15 @@ int orig_type)
     if (ifp == tp->ifp)
       continue;
     if (ifp->bridgegroup && ifp->bridgegroup == tp->ifp->bridgegroup) {
-      /* Found bridged interface - send KISS command via its raw function */
-      if (ifp->raw != NULL) {
+      /* Found bridged interface - send KISS command via appropriate function */
+      if (ifp->raw == kiss_raw) {
+        /* Serial KISS interface - use kiss_send_cmd which skips extra type byte/CRC */
+        struct mbuf *copy = copy_p(bp, bp->cnt);
+        if (copy != NULL) {
+          kiss_send_cmd(ifp, &copy);
+        }
+      } else if (ifp->raw != NULL) {
+        /* Other interface types (e.g., another kisstcp) - use their raw function */
         struct mbuf *copy = copy_p(bp, bp->cnt);
         if (copy != NULL) {
           (*ifp->raw)(ifp, &copy);
