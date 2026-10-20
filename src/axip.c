@@ -2733,7 +2733,7 @@ static int doaxiproute(int argc, char *argv[], void *p)
       if (rp->qdue)
 	printf("  address wrong");
       if (rp->rtime)
-	printf("  resolved %s ago", tformat_short(secclock() - rp->rtime));
+	printf("  resolved %s ago", tformat(secclock() - rp->rtime));
     }
     /* ALTER DER BEIDEN RICHTUNGEN.  Nur was da ist; eine frisch angelegte
      * Route hat noch kein "vor ..." und soll nicht so tun, als waere sie
@@ -2743,7 +2743,7 @@ static int doaxiproute(int argc, char *argv[], void *p)
       printf("  learned %d (%ld s ago)", rp->lport,
              (long) (secclock() - rp->ltime));
     else if (rp->htime)
-      printf("  heard %s ago", tformat_short(secclock() - rp->htime));
+      printf("  heard %s ago", tformat(secclock() - rp->htime));
     putchar('\n');
   }
   return 0;
