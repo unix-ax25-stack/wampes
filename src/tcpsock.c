@@ -2790,6 +2790,8 @@ struct iface *ifp)
 	printf(" lport:%d", lp);
       if (tp->flags & TCF_CLIENT)
 	printf(" dport:%d", tp->port);
+      else if (tp->flags & TCF_LISTEN)
+	printf(" port:%d", tp->lport > 0 ? tp->lport : tp->port);
       else
 	printf(" port:%d", tp->port);
       printf(" crc-port:%s\n", tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
