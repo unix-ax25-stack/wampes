@@ -54,6 +54,7 @@
 #include "crc.h"
 #include "tcpsock.h"
 #include "kiss.h"
+#include "trace.h"
 
 /* THE TYPE BYTE, and it is two fields and not one:
  *
@@ -102,6 +103,37 @@ static void kisstcp_send_cmd(struct tcpsock *tp, struct mbuf *bp);
 /* What fits into one mbuf over TCP: the AX.25 frame without the KISS frame.
  */
 #define MAX_TXFRAME		2048
+
+/*---------------------------------------------------------------------------*/
+
+/* TRACE A KISS COMMAND for kisstcp interfaces using ki_dump.
+ * These interfaces use AX25UI encapsulation (ax25_dump) which doesn't
+ * understand KISS command frames.  ki_dump can decode KISS commands
+ * properly when given a mbuf with the full KISS frame [type][value...].
+ */
+static void
+kisstcp_trace_cmd(
+struct iface *ifp,
+int direction,
+unsigned char *frame,
+int flen)
+{
+	struct mbuf *bp;
+
+	if (ifp == NULL || (ifp->trace & direction) == 0
+	 || ifp->trfp == NULL)
+		return;
+
+	/* Build mbuf with full KISS frame for ki_dump */
+	if ((bp = alloc_mbuf(flen)) == NULL)
+		return;
+	memcpy(bp->data, frame, flen);
+	bp->cnt = flen;
+
+	/* Call ki_dump with check=0 (no CRC check on commands) */
+	ki_dump(ifp->trfp, &bp, 0);
+	free_p(&bp);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -355,6 +387,10 @@ struct tcpsock *tp)
      * by kiss_send_cmd / slip_raw.
      */
     if (cmd != KISS_CMD_DATA_FRAME) {
+      /* Trace incoming KISS command if enabled */
+      if (tp->ifp && (tp->ifp->trace & IF_TRACE_IN))
+        kisstcp_trace_cmd(tp->ifp, IF_TRACE_IN, frame, flen);
+
       if (tp->ifp->bridgegroup) {
         /* Save original frame (with type byte) for forwarding */
         kisstcp_forward_cmd(tp, frame, flen, type);
@@ -609,6 +645,10 @@ struct mbuf *bp)
 		}
 	}
 	out[n++] = FR_END;
+
+	/* Trace outgoing KISS command if enabled */
+	if (tp->ifp && (tp->ifp->trace & IF_TRACE_OUT))
+		kisstcp_trace_cmd(tp->ifp, IF_TRACE_OUT, frame, flen);
 
 	/* Write directly to socket */
 	write(tp->fd, out, n);
