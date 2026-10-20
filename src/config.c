@@ -166,6 +166,7 @@ struct cmds Cmds[] = {
 	{ "rename",       dorename,       0, 3, "rename <oldfile> <newfile>" },
 	{ "repeat",       dorepeat,   16000, 2, "repeat [<interval>] <command> [args...]" },
 	{ "reset",        doreset,        0, 0, NULL },
+	{ "version",      doversion,      0, 0, NULL },
 	{ "rip",          dorip,          0, 0, NULL },
 	{ "rmdir",        dormd,          0, 2, "rmdir <directory>" },
 	{ "route",        doroute,        0, 0, NULL },

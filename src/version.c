@@ -15,3 +15,21 @@ static char id[] = "@(#)" WAMPES_VERSION
 
 /* version control information */
 char *Version = id + 4;
+
+#include <time.h>
+
+int
+doversion(
+int argc,
+char *argv[],
+void *p)
+{
+	char buf[64];
+	time_t now = time(NULL);
+	struct tm *tm = localtime(&now);
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
+	printf("Version: %s\n", Version);
+	printf("       compiled %s\n", buf);
+	printf("      Source code at https://github.com/unix-ax25-stack/wampes\n");
+	return 0;
+}
