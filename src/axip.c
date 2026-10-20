@@ -2742,8 +2742,18 @@ static int doaxiproute(int argc, char *argv[], void *p)
     if (rp->lport)
       printf("  learned %d (%ld s ago)", rp->lport,
              (long) (secclock() - rp->ltime));
-    else if (rp->htime)
-      printf("  heard %s ago", tformat(secclock() - rp->htime));
+    else if (rp->htime) {
+      long s = (long)(secclock() - rp->htime);
+      if (s < 0) s = 0;
+      if (s < 60)
+	printf("  heard %lds ago", s);
+      else if (s < 3600)
+	printf("  heard %ldm ago", s/60);
+      else if (s < 86400)
+	printf("  heard %ldh ago", s/3600);
+      else
+	printf("  heard %ldd ago", s/86400);
+    }
     putchar('\n');
   }
   return 0;
