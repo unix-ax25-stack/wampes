@@ -2742,10 +2742,21 @@ struct iface *ifp)
      * one thing a list of sessions cannot do without when a port has more than
      * one of them (Thomas).
      */
-    if (tp->raddr.ss_family != 0)
-      snprintf(who, sizeof(who), "from:%s",
-	       sockaddr_to_string((struct sockaddr *) &tp->raddr, abuf,
-				  sizeof(abuf)));
+    if (tp->raddr.ss_family != 0) {
+      char rbuf[SOCKADDR_STRLEN];
+      sockaddr_to_string((struct sockaddr *) &tp->raddr, rbuf, sizeof(rbuf));
+      int rp = sockaddr_port((struct sockaddr *) &tp->raddr);
+      if (rp > 0 && strchr(rbuf, ':') && !strrchr(rbuf, ']:')) {
+	/* IPv6 without ]:port? */
+	if (strchr(rbuf, '[') && !strchr(strchr(rbuf, '['), ':')) {
+	  /* unlikely */ snprintf(who, sizeof(who), "from:%s:%d", rbuf, rp);
+	} else if (strchr(rbuf, ':') == strrchr(rbuf, ':')) {
+	  snprintf(who, sizeof(who), "from:%s:%d", rbuf, rp);
+	} else
+	  snprintf(who, sizeof(who), "from:%s", rbuf);
+      } else
+	snprintf(who, sizeof(who), "from:%s", rbuf);
+    }
     else if (tp->peer != NULL)
       snprintf(who, sizeof(who), "peer:%s", tp->peer);
     else if (tp->flags & TCF_LISTEN)
