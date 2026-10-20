@@ -36,6 +36,7 @@ static int dodigipeat(int argc,char *argv[],void *p);
 static int dodigikeepad(int argc,char *argv[],void *p);
 static int dodigiout(int argc,char *argv[],void *p);
 static int doax25v2(int argc,char *argv[],void *p);
+static int doax25version(int argc,char *argv[],void *p);
 static int doxidprobe(int argc,char *argv[],void *p);
 static int doxidretries(int argc,char *argv[],void *p);
 static int doxidexpire(int argc,char *argv[],void *p);
