@@ -320,9 +320,6 @@ struct tcpsock *tp)
       type = KISS_CMD_DATA_FRAME;
     }
 
-    flen--;
-    memmove(frame, frame + 1, (size_t) flen);
-
     /* THE UPPER NIBBLE IS THE CHANNEL.  We take zero and leave everything else
      * lying.  Channel 3 is a partner that wants to tell us something on
      * channel 3, and that is not our channel; reading it as channel zero would
@@ -352,13 +349,20 @@ struct tcpsock *tp)
      * bridged interface (e.g., a serial KISS port).  The bridgegroup
      * mechanism groups interfaces; we find the peer interface and call
      * its raw output function.
+     *
+     * IMPORTANT: Forward BEFORE stripping the type byte, so the bridged
+     * interface receives the full KISS frame [type][value...] as expected
+     * by kiss_send_cmd / slip_raw.
      */
     if (cmd != KISS_CMD_DATA_FRAME) {
       if (tp->ifp->bridgegroup) {
+        /* Save original frame (with type byte) for forwarding */
         kisstcp_forward_cmd(tp, frame, flen, type);
       }
-      continue;
     }
+
+    flen--;
+    memmove(frame, frame + 1, (size_t) flen);
 
     /* AND NOTHING MORE TO CUT OFF.  An announced checksum was handled above;
      * what follows is the AX.25 frame and nothing else.  The frame carries its
