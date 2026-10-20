@@ -2773,7 +2773,7 @@ struct iface *ifp)
       if (tp->flags & TCF_CLIENT)
 	printf(" dport:%d", tp->port);
       else
-	printf(" port:%d", tp->lport);
+	printf(" port:%d", tp->port);
       printf(" crc-port:%s\n", tp->ifp != NULL ? crcword(tp->ifp->crccontrol) : "-");
     }
 /* "in" AND "out" ARE FRAMES AND BYTES ON THE WIRE, and the two halves do not
