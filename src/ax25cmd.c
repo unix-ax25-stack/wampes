@@ -839,10 +839,16 @@ void *p)
 	time_t now = time(NULL);
 	struct tm *tm = localtime(&now);
 	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
-	printf("Version: %s\n", Version);
-	printf("       compiled %s\n", buf);
-	printf("      Source code at https://github.com/unix-ax25-stack/wampes\n");
-	return 0;
+	if (argc == 1) {
+		printf("Version: %s\n", Version);
+		printf("       compiled %s\n", buf);
+		printf("      Source code at https://github.com/unix-ax25-stack/wampes\n");
+		return 0;
+	}
+	i = (int) Axversion;
+	r = setintrc(&i,"AX25 version",argc,argv,1,2);
+	Axversion = (enum lapb_version) i;
+	return r;
 }
 
 static int
