@@ -2804,7 +2804,7 @@ struct iface *ifp)
      * not look dead because it is quiet.  "kp in" below says what those bytes
      * were.
      */
-    printf("    port:%s session:%s crc:%s flags:%s%s%s%s in:%ld/%ld out:%ld/%ld\n",
+    printf("    type:%s session:%s crc:%s flags:%s%s%s%s in:%ld/%ld out:%ld/%ld\n",
 	   tcpsock_portname(tp->portproto),
 	   tp->proto == TCPAD_DETECT ? "unidentified" :
 	   tp->proto == TCPAD_KISSTCP ? "kisstcp" : "axtcp",
