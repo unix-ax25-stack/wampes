@@ -17,6 +17,7 @@ int asy_attach(int argc,char *argv[],void *p);
 
 /* In ax25cmd.c: */
 int doax25(int argc,char *argv[],void *p);
+int dowampesversion(int argc,char *argv[],void *p);
 int doaxheard(int argc,char *argv[],void *p);
 int doaxdest(int argc,char *argv[],void *p);
 int doconnect(int argc,char *argv[],void *p);
