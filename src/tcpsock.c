@@ -59,7 +59,7 @@
  * that does not have a connection yet - otherwise the tick would have to tell
  * two kinds apart that differ only in whether somebody is already there.
  */
-static struct tcpsock *Tcp_socks = NULL;
+struct tcpsock *Tcp_socks = NULL;
 
 static struct timer Tcptimer;
 static int Tcp_timer_running = 0;
@@ -2605,6 +2605,7 @@ int cmdtype)
     tp->tx = kisstcp_tx;
     tp->detect = kisstcp_detect;
     tp->keepalive = kisstcp_keepalive;
+    ifp->ioctl = kisstcp_ioctl;
   } else if (policy == TCPAD_AXTCP) {
     tp->rx = axtcp_rx;
     tp->tx = axtcp_tx;

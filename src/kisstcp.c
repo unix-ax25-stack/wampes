@@ -93,11 +93,59 @@
  */
 #define KISS_CHAN		0
 
+/* Forward declarations */
+static void kisstcp_send_cmd(struct tcpsock *tp, struct mbuf *bp);
+
 /* THE STATE, AND ONE VALUE PER PORT. */
 
 /* What fits into one mbuf over TCP: the AX.25 frame without the KISS frame.
  */
 #define MAX_TXFRAME		2048
+
+/*---------------------------------------------------------------------------*/
+
+/* FORWARD A KISS COMMAND TO BRIDGED INTERFACE.
+ * Called when a KISS command frame (cmd != 0) is received on a kisstcp
+ * interface that has a bridgegroup.  We find the peer interface(s) in the
+ * same bridgegroup and send the KISS command frame to them.
+ */
+static void
+kisstcp_forward_cmd(
+struct tcpsock *tp,
+unsigned char *frame,
+int flen,
+int orig_type)
+{
+  struct iface *ifp;
+  struct mbuf *bp;
+  unsigned char *cp;
+
+  if (flen < 2)
+    return;			/* need at least type byte and value */
+
+  /* Build a KISS frame mbuf: [type byte][value...] */
+  if ((bp = alloc_mbuf(flen)) == NULL)
+    return;
+  cp = bp->data;
+  memcpy(cp, frame, flen);
+  bp->cnt = flen;
+
+  /* Find peer interface(s) in the same bridgegroup */
+  for (ifp = Ifaces; ifp != NULL; ifp = ifp->next) {
+    if (ifp == tp->ifp)
+      continue;
+    if (ifp->bridgegroup && ifp->bridgegroup == tp->ifp->bridgegroup) {
+      /* Found bridged interface - send KISS command via its raw function */
+      if (ifp->raw != NULL) {
+        struct mbuf *copy = copy_p(bp, bp->cnt);
+        if (copy != NULL) {
+          (*ifp->raw)(ifp, &copy);
+        }
+      }
+    }
+  }
+  free_p(&bp);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -117,6 +165,7 @@ struct tcpsock *tp)
   unsigned char raw[TCPSOCK_MAXFRAME];
   unsigned char frame[TCPSOCK_MAXFRAME];
   int type;
+  int cmd;
 
   while (off < tp->len) {
     /* UP TO THE FIRST FEND.  Everything before it is rubbish or the rest of
@@ -208,6 +257,12 @@ struct tcpsock *tp)
      */
     type = frame[0];
 
+    /* SAVE THE COMMAND (lower nibble) before CRC handling modifies the type.
+     * The original type byte has: bits 7-4 = channel, bits 3-0 = command.
+     * CRC flags (0x80, 0x20) are in the upper nibble along with channel.
+     */
+    cmd = type & 0x0f;
+
     /* THE CHECKSUM, AND IT COMES FIRST.  It is computed over [type byte][frame]
      * - the serial port does it the same way (kiss.c), and a FlexNet partner
      * who computed his own over that range will not recognise one we computed
@@ -283,13 +338,19 @@ struct tcpsock *tp)
      *
      * BUT IT IS NOT AN ERROR, and it used to be counted as one.  A partner
      * who sets a TXDELAY is doing what KISS allows him to, and a counter that
-     * punishes it shows a healthy port as a broken one.  So it is ACCEPTED and
-     * dropped, and kept for later: the day this port has a TNC of its own
-     * behind it (a bridge), these are the frames that have to be passed on
-     * (TODO.txt, "KISSTCP/AXTCP: CRC-ERKENNUNG", point 3).
+     * punishes it shows a healthy port as a broken one.
+     *
+     * IF THIS INTERFACE IS BRIDGED, FORWARD THE KISS COMMAND to the
+     * bridged interface (e.g., a serial KISS port).  The bridgegroup
+     * mechanism groups interfaces; we find the peer interface and call
+     * its raw output function.
      */
-    if ((type & 0x0f) != KISS_CMD_DATA_FRAME)
+    if (cmd != KISS_CMD_DATA_FRAME) {
+      if (tp->ifp->bridgegroup) {
+        kisstcp_forward_cmd(tp, frame, flen, type);
+      }
       continue;
+    }
 
     /* AND NOTHING MORE TO CUT OFF.  An announced checksum was handled above;
      * what follows is the AX.25 frame and nothing else.  The frame carries its
@@ -423,6 +484,124 @@ int max)
   out[0] = FR_END;
   out[1] = FR_END;
   return 2;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* IOCTL FOR KISS-TCP - sends KISS command frames to the TNC.
+ * This allows remote configuration of a KISS TNC over TCP.
+ */
+int32
+kisstcp_ioctl(
+struct iface *iface,
+int cmd,
+int set,
+int32 val
+){
+	struct mbuf *hbp;
+	uint8 *cp;
+	int rval = 0;
+	struct tcpsock *tp;
+
+	/* Find the tcpsock for this interface */
+	for (tp = Tcp_socks; tp != NULL; tp = tp->next) {
+		if (tp->ifp == iface)
+			break;
+	}
+	if (tp == NULL)
+		return -1;
+
+	switch(cmd){
+	case PARAM_RETURN:
+		set = 1;        /* Note fall-thru */
+	case PARAM_TXDELAY:
+	case PARAM_PERSIST:
+	case PARAM_SLOTTIME:
+	case PARAM_TXTAIL:
+	case PARAM_FULLDUP:
+	case PARAM_HW:
+	case 12:                /* echo */
+	case 13:                /* rxdelay */
+		if(!set){
+			rval = -1;      /* Can't read back */
+			break;
+		}
+		/* Allocate space for cmd and arg */
+		if((hbp = alloc_mbuf(2)) == NULL){
+			free_p(&hbp);
+			rval = -1;
+			break;
+		}
+		cp = hbp->data;
+		*cp++ = cmd & 0x0f;
+		*cp = (unsigned char) val;
+		hbp->cnt = 2;
+		/* Send via kisstcp_tx directly (bypass normal framing) */
+		kisstcp_send_cmd(tp, hbp);
+		rval = (int) val;
+		break;
+	default:
+		rval = -1;
+		break;
+	}
+	return rval;
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* SEND A KISS COMMAND FRAME.
+ * Frame format: FEND [type byte] [command] [value] FEND
+ * Value byte is escaped if needed (FEND/FESC).
+ */
+static void
+kisstcp_send_cmd(
+struct tcpsock *tp,
+struct mbuf *bp)
+{
+	unsigned char out[MAX_TXFRAME + 3];
+	int n = 0;
+	int i;
+	unsigned char *frame = bp->data;
+	int flen = bp->cnt;
+
+	if (flen < 2)
+		return;
+
+	/* Build KISS frame: type byte (channel 0 | cmd), then value */
+	out[n++] = FR_END;
+	out[n++] = (KISS_CHAN << 4) | (frame[0] & 0x0f);  /* type byte */
+
+	/* Escape the value byte if needed */
+	if (frame[1] == FR_END) {
+		out[n++] = FR_ESC;
+		out[n++] = T_FR_END;
+	} else if (frame[1] == FR_ESC) {
+		out[n++] = FR_ESC;
+		out[n++] = T_FR_ESC;
+	} else {
+		out[n++] = frame[1];
+	}
+
+	/* Any additional data bytes (shouldn't happen for KISS cmd, but be safe) */
+	for (i = 2; i < flen; i++) {
+		if (n + 2 >= (int) sizeof(out))
+			break;
+		if (frame[i] == FR_END) {
+			out[n++] = FR_ESC;
+			out[n++] = T_FR_END;
+		} else if (frame[i] == FR_ESC) {
+			out[n++] = FR_ESC;
+			out[n++] = T_FR_ESC;
+		} else {
+			out[n++] = frame[i];
+		}
+	}
+	out[n++] = FR_END;
+
+	/* Write directly to socket */
+	write(tp->fd, out, n);
+
+	free_p(&bp);
 }
 
 /*---------------------------------------------------------------------------*/

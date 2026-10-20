@@ -512,6 +512,8 @@ int kisstcp_rx(struct tcpsock *tp);
 int kisstcp_tx(struct tcpsock *tp, unsigned char *out, int max, struct mbuf **bpp);
 int kisstcp_detect(struct tcpsock *tp);
 int kisstcp_keepalive(struct tcpsock *tp, unsigned char *out, int max);
+int32 kisstcp_ioctl(struct iface *iface, int cmd, int set, int32 val);
+extern struct tcpsock *Tcp_socks;
 
 /* AND THE HOOK SET OF A PORT THAT TAKES BOTH, hung on the port by the attach
  * when the sysop asked for no particular dialect.  The dispatcher consults
