@@ -583,6 +583,8 @@ int axserv_pipe_attach(struct axservice *sp,int binary,int ownerfd,int *fdp);
  */
 void axserv_sessions(void (*emit)(void *arg,const char *line),void *arg);
 int axserv_session_close(const char *handle);
+int axserv_session_close_by_owner(const char *handle, pid_t owner_pid, uid_t owner_uid, gid_t owner_gid);
+pid_t axserv_peer_cred(int fd, uid_t *uidp, gid_t *gidp);
 int dolisten(int argc,char *argv[],void *p);
 extern char Axlisten_usage[];   /* what "listen ?" prints - see axserver.c */
 

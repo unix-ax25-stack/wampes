@@ -38,6 +38,7 @@
 
 extern char Prompt[];
 extern struct cmds Cmds[];
+extern int doparam(int argc, char *argv[], void *p);
 
 struct controlblock {
   int fd;                               /* Socket descriptor */
@@ -66,6 +67,7 @@ struct controlblock {
                                          * command line; every line after it
                                          * is payload and nothing else */
   struct ax25 dgram_hdr;
+  int dgram_escape;                     /* Escape state for exiting dgram mode */
   /* The raw monitor, on its own listener.  A monitor connection only ever
    * RECEIVES: after "monitor ..." it is a sink for frames, and what it sends
    * afterwards is discarded.  See axmon_frame().
@@ -175,8 +177,7 @@ static struct listener Listeners[] = {
   { NULL, 0, -1 },
   { NULL, 1, -1 },
   { NULL, 2, -1 },
-  { NULL, 3, -1 },
-  { NULL, 0, -1 }
+  { NULL, 3, -1 }
 };
 
 static void
@@ -937,6 +938,48 @@ static void transport_state_upcall(struct transport_cb *tp)
 
 /*---------------------------------------------------------------------------*/
 
+/* Wrapper for doparam to be used in service_table */
+static int param_command(struct controlblock *cp)
+{
+  extern int doparam(int argc, char *argv[], void *p);
+  char copy[sizeof(cp->buffer)];
+  char *argv[16];
+  int argc;
+  char *p, *tok;
+
+  strcpy(copy, getarg(0, 1));
+  for (argc = 0, p = strtok(copy, " \t");
+       p != NULL && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+  argv[argc] = NULL;
+
+  return doparam(argc, argv, cp);
+}
+
+/*---------------------------------------------------------------------------*/
+
+/* Wrapper for doaxsock to be used in full_table (command channel) */
+static int axsock_command(struct controlblock *cp)
+{
+  extern int doaxsock(int argc, char *argv[], void *p);
+  char copy[sizeof(cp->buffer)];
+  char *argv[16];
+  int argc;
+  char *p, *tok;
+
+  strcpy(copy, getarg(0, 1));
+  for (argc = 0, p = strtok(copy, " \t");
+       p != NULL && argc < (int) (sizeof(argv) / sizeof(argv[0]));
+       p = strtok(NULL, " \t"))
+    argv[argc++] = p;
+  argv[argc] = NULL;
+
+  return doaxsock(argc, argv, cp);
+}
+
+/*---------------------------------------------------------------------------*/
+
 static int ascii_command(struct controlblock *cp)
 {
   cp->binary = 0;
@@ -984,12 +1027,23 @@ static int sessions_command(struct controlblock *cp)
 static int close_command(struct controlblock *cp)
 {
   char *handle = getarg(0, 0);
+  pid_t pid;
+  uid_t uid;
+  gid_t gid;
 
   if (handle == 0 || *handle == 0) {
     say(cp, "*** close needs the handle from \"sessions\"");
     return 0;
   }
-  if (axserv_session_close(handle) != 0)
+  /* Get credentials of this connection.  For Unix sockets we get PID+UID+GID.
+   * For TCP, PID=0, UID=-1, GID=-1 (no credentials available). */
+  pid = axserv_peer_cred(cp->fd, &uid, &gid);
+
+  /* On command channel (restricted=0), allow closing any session (sysop). */
+  if (cp->restricted == 0) {
+    pid = 0;  /* 0 = match any */
+  }
+  if (axserv_session_close_by_owner(handle, pid, uid, gid) != 0)
     say(cp, "*** no session %s", handle);
   return 0;
 }
@@ -1579,46 +1633,57 @@ static void command_receive(void *arg)
 {
   struct controlblock *cp = (struct controlblock *) arg;
 
-  /* Everything the command channel offers.  "command" runs the node's own
-   * command table and "console" takes over its console - which is why this
-   * belongs to root alone.
+  /* Everything the command channel offers (netcmd socket, restricted=0).
+   * This is the full command set available on the node's command channel.
    */
   static const struct cmdtable full_table[] = {
-    { "ascii",   ascii_command },
-    { "binary",  binary_command },
-    { "command", command_command },
-    { "connect", connect_command },
-    { "console", console_command },
-    { "datagram", datagram_command },
-    { "handover", handover_command },
-    { "listen",  listen_command },
-    { 0,         0 }
+    { "ascii",     ascii_command },
+    { "binary",    binary_command },
+    { "command",   command_command },
+    { "connect",   connect_command },
+    { "console",   console_command },
+    { "datagram",  datagram_command },
+    { "handover",  handover_command },
+    { "listen",    listen_command },
+    { "param",     param_command },      /* param belongs on command channel */
+    { "sessions",  sessions_command },
+    { "axsock",    axsock_command },      /* axsock config on command channel */
+    { "monitor",   monitor_command },    /* monitor config on command channel */
+    /* "close" last on purpose: names are matched by their first letters, and
+     * a bare "c" has always meant "connect".  "cl" reaches "close".
+     */
+    { "close",     close_command },
+    { 0,           0 }
   };
 
-  /* What the service socket offers: reaching the outside, and nothing that
-   * reaches back into the node.
+  /* What the service socket (axsock) offers: reaching the outside only.
+   * Subset of full_table - no node configuration commands.
+   * "close" allows users to close their own sessions (ownership checked).
    */
   static const struct cmdtable service_table[] = {
     { "ascii",   ascii_command },
     { "binary",  binary_command },
+    { "close",   close_command },
     { "connect", connect_command },
     { "datagram", datagram_command },
     { "handover", handover_command },
     { "listen",  listen_command },
-    { "sessions", sessions_command },
-    /* "close" last on purpose: names are matched by their first letters, and
-     * a bare "c" has always meant "connect".  "cl" reaches "close".
-     */
-    { "close",   close_command },
     { 0,         0 }
   };
 
-  /* What the monitor socket offers, and all it offers.  It is not a place to
-   * connect, send or command from: the one word opens the stream and the
-   * session is a sink afterwards.
-   */
+  /* What the monitor socket offers: watching frames only. */
   static const struct cmdtable monitor_table[] = {
+    { "ascii",   ascii_command },
+    { "binary",  binary_command },
     { "monitor", monitor_command },
+    { 0,         0 }
+  };
+
+  /* What the packet socket offers: raw frame injection. */
+  static const struct cmdtable packet_table[] = {
+    { "ascii",   ascii_command },
+    { "binary",  binary_command },
+    { "datagram", datagram_command },
     { 0,         0 }
   };
 
@@ -1727,13 +1792,28 @@ static void command_receive(void *arg)
     cp->lastcr = 0;
   cp->buffer[cp->bufcnt] = 0;
   cp->bufcnt = 0;
+
+  /* Escape sequence to exit datagram mode: "~." at start of line
+   * (like SSH). Allows user to issue commands (close, etc.) without
+   * opening a second connection. */
+  if (cp->dgram && cp->buffer[0] == '~' && cp->buffer[1] == '.') {
+    say(cp, "*** datagram mode exited, back to command mode");
+    cp->dgram = 0;
+    cp->dgram_fixed = 0;
+    cp->dgram_iface = 0;
+    cp->dgram_escape = 0;
+    return;
+  }
+
   if (cp->dgram) {                      /* no longer commands, frames */
     datagram_line(cp, cp->buffer);
     return;
   }
   if (command_switcher(cp, getarg(cp->buffer, 0),
-		       cp->restricted >= 2 ? monitor_table
-		       : cp->restricted ? service_table : full_table))
+		       cp->restricted == 3 ? packet_table
+		       : cp->restricted == 2 ? monitor_table
+		       : cp->restricted == 1 ? service_table
+		       : full_table))
     delete_controlblock(cp, 0,
 			"unknown command, or the command ended the session");
 }

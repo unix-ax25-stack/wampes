@@ -18,6 +18,10 @@
  * pid and program.  Linux defines what it needs in <sys/socket.h> alone.
  */
 #include <sys/un.h>
+#include <sys/stat.h>
+#include <limits.h>
+
+#include "main.h"
 #include <syslog.h>
 #include <unistd.h>
 #include <poll.h>
@@ -1392,15 +1396,13 @@ struct axpipe {
    */
   struct axpipe *next;
   unsigned long id;
-  /* The service socket of the program that got this forwarding, or -1 when
+  /* The PID of the process that owns this forwarding (via libax25), or 0 when
    * the node runs it itself (a "program:", the node's own login, a dialled
-   * socket).  It is two things at once: what tells a libax25 forwarding from
-   * one of the node's own - only a forwarding with an owner is listed, so the
-   * node's internal services cannot be reached through "sessions" - and where
-   * the owner's pid is read from, the kernel having recorded it at connect()
-   * time (see axserv_peer_pid).
+   * socket).  The PID is obtained via SO_PEERCRED/LOCAL_PEERPID at the time
+   * the forwarding is created (see axserv_peer_pid).  This allows ownership
+   * checks to work even when the user opens a new connection to issue "close".
    */
-  int ownerfd;
+  pid_t owner_pid;
   /* WHO CALLED WHOM.  A row of "sessions" reads like a packet trace -
    * "A > Z via B C D" - and a trace alone does not say which of the two
    * stations opened the link; here it is known exactly.  Every forwarding
@@ -1822,27 +1824,74 @@ static const char *axpipe_nrstate(const struct circuit *pc)
 /* The pid of the program at the far end of a service socket.  The kernel
  * recorded it at connect() time, so it is read back with no more rights than
  * the accept itself needed - see the same recipe in ax25netd's loop.c.  A
- * descriptor the node owns itself (ownerfd -1), or a system with neither
+ * descriptor the node owns itself (owner_pid 0), or a system with neither
  * credential, leaves 0 and the table shows no owner.
  */
 static pid_t axserv_peer_pid(int fd)
 {
+  return axserv_peer_cred(fd, NULL, NULL);
+}
+
+/* Get peer PID, UID, GID from Unix domain socket credentials.
+ * Returns PID (or 0 if not available).  Sets *uidp to UID (or -1 if not available),
+ * *gidp to GID (or -1 if not available).  Works for Unix sockets.  Returns 0 for TCP.
+ */
+pid_t axserv_peer_cred(int fd, uid_t *uidp, gid_t *gidp)
+{
+  pid_t pid = 0;
+  uid_t uid = (uid_t)-1;
+  gid_t gid = (gid_t)-1;
+
 #if defined(SO_PEERCRED)
   struct ucred cr;
   socklen_t len = sizeof(cr);
 
-  if (fd >= 0 && getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cr, &len) == 0)
-    return cr.pid;
+  if (fd >= 0 && getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &cr, &len) == 0) {
+    pid = cr.pid;
+    uid = cr.uid;
+    gid = cr.gid;
+  }
 #elif defined(LOCAL_PEERPID)
-  pid_t pid;
   socklen_t len = sizeof(pid);
 
-  if (fd >= 0 && getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0)
-    return pid;
+  if (fd >= 0 && getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &len) == 0) {
+    /* LOCAL_PEERPID only gives PID; try getpeereid() for UID/GID */
+    if (getpeereid(fd, &uid, &gid) != 0)
+      uid = (uid_t)-1;
+  }
 #else
   (void) fd;
 #endif
-  return 0;
+
+  if (uidp) *uidp = uid;
+  if (gidp) *gidp = gid;
+  return pid;
+}
+
+/* Get UID of the packet socket owner (typically root).  Used for admin check:
+ * users with same UID as packet socket owner can close any session. */
+static uid_t packet_socket_owner_uid(void)
+{
+  struct stat st;
+  char path[PATH_MAX];
+
+  nodedir_path(path, sizeof(path), "sockets/packet");
+  if (stat(path, &st) == 0)
+    return st.st_uid;
+  return 0;  /* fallback: root */
+}
+
+/* Get GID of the packet socket owner.  Used for admin check:
+ * users in same GID as packet socket owner can close any session. */
+static gid_t packet_socket_owner_gid(void)
+{
+  struct stat st;
+  char path[PATH_MAX];
+
+  nodedir_path(path, sizeof(path), "sockets/packet");
+  if (stat(path, &st) == 0)
+    return st.st_gid;
+  return 0;  /* fallback: root */
 }
 
 /* The name of that program, where the system keeps one.  Linux has it in
@@ -1903,7 +1952,7 @@ static void axpipe_line(struct axpipe *pp, char *buf, int len)
   int pid = 0;
   pid_t owner;
 
-  owner = axserv_peer_pid(pp->ownerfd);
+  owner = (pp->owner_pid != 0) ? pp->owner_pid : 0;
   axserv_owner_name(owner, prog, sizeof(prog));
 
   path[0] = 0;
@@ -2000,7 +2049,7 @@ void axserv_sessions(void (*emit)(void *arg, const char *line), void *arg)
   unsigned n = 0;
 
   for (pp = Axpipes; pp; pp = pp->next) {
-    if (pp->ownerfd < 0) continue;      /* the node's own, not a client's */
+    if (pp->owner_pid == 0) continue;      /* the node's own, not a client's */
     if (!axpipe_alive(pp)) continue;    /* on its way out already */
     axpipe_line(pp, line, (int) sizeof(line));
     emit(arg, line);
@@ -2049,6 +2098,13 @@ void axserv_sessions(void (*emit)(void *arg, const char *line), void *arg)
  */
 int axserv_session_close(const char *handle)
 {
+  return axserv_session_close_by_owner(handle, 0, (uid_t)-1, (gid_t)-1);
+}
+
+/* Close a session, but only if owned by the given PID/UID/GID (or any if owner_pid == 0).
+ * Admin check: allow if UID == 0 (root) or UID/GID matches packet socket owner. */
+int axserv_session_close_by_owner(const char *handle, pid_t owner_pid, uid_t owner_uid, gid_t owner_gid)
+{
   char *end;
   unsigned long id;
   struct axpipe *pp;
@@ -2059,6 +2115,22 @@ int axserv_session_close(const char *handle)
   for (pp = Axpipes; pp; pp = pp->next)
     if (pp->id == id) break;
   if (pp == NULL) return -1;
+
+  /* owner_pid == 0 means "match any" (command channel / sysop) */
+  if (owner_pid != 0) {
+    /* Check PID match (same process) */
+    if (pp->owner_pid == owner_pid) {
+      /* PID matches - allow */
+    } else if (owner_uid != (uid_t)-1 && (owner_uid == 0 || owner_uid == packet_socket_owner_uid())) {
+      /* UID is root or packet socket owner UID - allow */
+    } else if (owner_gid != (gid_t)-1 && owner_gid == packet_socket_owner_gid()) {
+      /* GID matches packet socket owner GID - allow (group admin) */
+    } else {
+      return -1;  /* Not our session, not admin */
+    }
+  } else if (pp->owner_pid != 0) {
+    return -1;  /* Client cannot close node's own sessions */
+  }
 
   syslog(LOG_NOTICE, "axserv: session %lu closed on request (%s)",
 	 pp->id, pp->pc ? "netrom" : "ax25");
@@ -2117,7 +2189,7 @@ static struct axpipe *axpipe_new(struct axlisten *lp, int fd)
   }
   pp->fd = fd;
   pp->id = NextAxpipeId++;
-  pp->ownerfd = -1;                     /* the node's own until a caller says */
+  pp->owner_pid = 0;                     /* the node's own until a caller says */
   pp->next = Axpipes;
   Axpipes = pp;
   pp->ascii = !lp->binary;
@@ -2158,7 +2230,7 @@ static struct axservice *axpipe_open(struct ax25_cb *axp, struct axlisten *lp,
   struct axservice *sp;
 
   if (!(pp = axpipe_new(lp, fd))) return NULL;
-  pp->ownerfd = lp->clientfd;           /* a client's claim, or -1 for ours */
+  pp->owner_pid = (lp->clientfd >= 0) ? axserv_peer_pid(lp->clientfd) : 0;
   /* The far end called us: build_path(reverse) turned the header round, so
    * hdr.source is the address that was called (us) and hdr.dest the caller.
    */
@@ -2344,7 +2416,7 @@ int nrserv_listen_start(struct circuit *pc)
   int fd = -1;
   struct axlisten *lp;
   struct axpipe *pp;
-  int ownerfd = -1;                     /* the client's claim, when there is one */
+  pid_t owner_pid = 0;                     /* the client's claim, when there is one */
 
   nrserv_listen_why[0] = '\0';
   if (!(lp = axlisten_netrom())) return 0;      /* nothing configured */
@@ -2394,7 +2466,7 @@ int nrserv_listen_start(struct circuit *pc)
 	       pax25(called, lp->call));
       return 0;
     }
-    ownerfd = cp->clientfd;
+    owner_pid = axserv_peer_pid(cp->clientfd);
   }
 
   if (!(pp = axpipe_new(lp, fd))) {
@@ -2402,7 +2474,7 @@ int nrserv_listen_start(struct circuit *pc)
 	     "the target %s could not be connected", lp->target);
     return 0;
   }
-  pp->ownerfd = ownerfd;
+  pp->owner_pid = owner_pid;
   pp->pc = pc;
   pc->user = (char *) pp;
   pc->r_upcall = nrpipe_recv_upcall;
@@ -2520,7 +2592,7 @@ static struct axservice *axserv_login_open(struct ax25_cb *axp)
  * fed by it.
  */
 
-int axserv_pipe_attach(struct axservice *sp, int binary, int ownerfd, int *fdp)
+int axserv_pipe_attach(struct axservice *sp, int binary, pid_t owner_pid, int *fdp)
 {
   static struct axlisten pipe_lp;       /* only binary is read for a live fd */
   struct axpipe *pp;
@@ -2534,7 +2606,7 @@ int axserv_pipe_attach(struct axservice *sp, int binary, int ownerfd, int *fdp)
     close(sv[1]);
     return -1;
   }
-  pp->ownerfd = ownerfd;                /* the caller that asked to connect */
+  pp->owner_pid = owner_pid;                /* the caller that asked to connect */
   /* We opened this link: ax25_adopt_path() copied the header we built, so
    * hdr.source is our call and hdr.digis runs from our first hop outwards.
    * The row reads from us to the far end, the call's own direction.
