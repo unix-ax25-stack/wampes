@@ -41,12 +41,22 @@ complete:; @-chmod 755 cc
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i all ); fi
 
 install: all
+	@if [ ! -x src/net ]; then \
+		echo "src/net was not built.  The sub-makes run with -i, so the"; \
+		echo "compiler error is above but did not stop this install."; \
+		exit 1; \
+	fi
 	@-for dir in $(MINDIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-. lib/configure.mak; $(MAKE) -i _hostdb
 	@. lib/configure.mak; $(MAKE) _doc
 	@. lib/configure.mak; $(MAKE) _secure
 
 install-complete: complete
+	@if [ ! -x src/net ]; then \
+		echo "src/net was not built.  The sub-makes run with -i, so the"; \
+		echo "compiler error is above but did not stop this install."; \
+		exit 1; \
+	fi
 	@-for dir in $(DIRS); do ( cd $$dir; $(MAKE) -i install ); done
 	@-if [ -d tools ]; then ( cd tools; $(MAKE) -i install ); fi
 	@-. lib/configure.mak; $(MAKE) -i _hostdb

@@ -1,6 +1,11 @@
 For compilation, just type make.
 Installation: make install.
 
+The build needs the gdbm library - both libgdbm and the compat/ndbm part
+(libgdbm-compat-dev on Debian) - and ncurses.  lib/configure names the
+test that failed if one of them is missing; the package names for the
+common distributions are in README.md.
+
 There is no ./configure.  The top-level Makefile descends into lib/, and
 lib/Makefile runs lib/configure on every build, so the environment of the
 make is what decides.  make install depends on all, so one command does
