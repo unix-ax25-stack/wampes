@@ -3,6 +3,17 @@
 #ifndef _PROC_H
 #define _PROC_H
 
+/* HAS_UCONTEXT comes from configure.h via global.h.  Include it here and not
+ * only through mbuf.h further down: the #if below is the first thing this
+ * file asks, and axserver.c includes main.h (-> proc.h) before global.h.
+ * Without this, the first test picks <setjmp.h>, the second one - after
+ * mbuf.h has pulled global.h in - sees HAS_UCONTEXT and declares the struct
+ * with ucontext_t, which was never included.
+ */
+#ifndef _GLOBAL_H
+#include "global.h"
+#endif
+
 #if HAS_UCONTEXT
 #include <ucontext.h>
 #else
