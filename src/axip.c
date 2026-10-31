@@ -173,8 +173,9 @@ struct axip_route {
    * diese Zahl wuerde eine auf axudp 93 gelernte Route auf 931 benutzt und
    * den Rahmen ueber den falschen Socket an die 93-Adresse schicken (siehe
    * "AXIP" in TODO.txt).  0 = noch keiner, dann bindet die Route beim
-   * ersten Benutzen; danach bewegt sie sich nur, wenn der Sysop das
-   * "axip route add" wiederholt.
+   * ersten Benutzen.  Danach folgt eine GELERNTE Route dem Port, auf dem das
+   * Rufzeichen zuletzt gehoert wurde; eine vom Sysop geschriebene bewegt sich
+   * nur, wenn er das "axip route add" wiederholt.
    *
    * Eine axip_ifp_to_rdev()-Nummer und keine Stellung in der Liste - siehe das
    * Feld devnum in struct iface.
@@ -1878,6 +1879,24 @@ static int axip_route_add(uint8 *call, const struct sockaddr *dest,
    * last seen using.  A port given here is for a partner that listens
    * somewhere else, which ax25ipd can express and this could not.
    */
+
+  /* EINE GELERNTE ROUTE FOLGT DEM PORT, AUF DEM SIE ZULETZT GEHOERT WURDE.
+   *
+   * Adresse und Port gehoeren bei einer Beobachtung zusammen.  Wird ein
+   * Rufzeichen zuerst auf dem einen axudp-Port gehoert und spaeter auf einem
+   * anderen, dann wandert oben die Adresse - der rdev blieb aber stehen, und
+   * die Antwort ging ueber den Socket des ersten Ports an die Adresse des
+   * zweiten.  Auf einer Kiste mit zwei AXUDP-Interfaces (Loopback und LAN)
+   * heisst das: der SABM kommt an, die Antwort ist weg.
+   *
+   * Eine vom Sysop geschriebene Route bleibt unberuehrt (written); die
+   * bewegt sich nur mit "axip route add", wie bisher.  perm_once ist eine
+   * Beobachtung und keine Hand-Route: die Adresse ist fixiert, der Port darf
+   * der letzte sein, auf dem der Partner erreichbar war.
+   */
+  if (from == AXIP_FROM_LEARNED && ifp && !rp->written)
+    rp->rdev = axip_ifp_to_rdev(ifp);
+
   return 1;
 }
 
@@ -2424,10 +2443,14 @@ char Axip_learn_usage[] =
 "         partner change address at all.\n"
 "  off:   learn nothing.  Only the callsigns in \"axip route\" are used on\n"
 "         this port.  For a port that carries 93 users one way and your own\n"
-"         infrastructure the other.\n"
+"         infrastructure the other.  A peer that relays other users under\n"
+"         their OWN callsigns - LinBPQ on loopback is the usual case - needs\n"
+"         learning: its frames are dropped before the port counters, so\n"
+"         \"recv: tot 0\" is not evidence that nothing arrived.\n"
 "  Only a LEARNED address is ever affected.  \"axip route add\" and \"add\n"
 "  ... permanent\" are the sysop's business and are not touched by it.\n"
-"  A route belongs to one port: learned on one, it is not used on another.\n"
+"  A route belongs to one port at a time: a learned one moves to the port\n"
+"  where the callsign was last heard; a written one stays where it was put.\n"
 "  An axtcp or kisstcp port has this switch too: what is learned there is\n"
 "  the SESSION a callsign was heard on - the connection is its address.\n"
 "  The current value is in \"ifconfig <iface> verbose\".";
@@ -2945,9 +2968,11 @@ static int doaxiprouteadd(int argc, char *argv[], void *p)
     axip_timer(0);
   }
   /* EIN WIEDERHOLTES "AXIP ROUTE ADD" IST AUCH DIE GELEGENHEIT, EINEN PORT ZU
-   * WECHSELN, und das ist der einzige Ort, an dem sich rdev aendert.  Wer die
-   * Route an einen anderen Port haengen will, schreibt sie einfach hin - das
-   * ist Absicht und nicht ein Nebeneffekt (Thomas).
+   * WECHSELN, und das ist der einzige Ort, an dem der SYSOP rdev aendert.
+   * Eine gelernte Route folgt dagegen dem Port, auf dem sie zuletzt gehoert
+   * wurde (axip_route_add()).  Wer die Route an einen anderen Port haengen
+   * will, schreibt sie einfach hin - das ist Absicht und nicht ein
+   * Nebeneffekt (Thomas).
    *
    * Ohne "<iface>" gehoert die Route danach wieder keinem Port: sie bindet
    * sich beim ersten Benutzen neu.  Wer sie umhaengen will, schreibt also
