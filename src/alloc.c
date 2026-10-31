@@ -3,7 +3,18 @@
 /* memory allocation routines
  */
 
-#if defined PURIFY || defined __NeXT__ || defined __NetBSD__ || defined __sgi || defined __MACOSX__ || defined __x86_64__
+/* The buddy allocator stores addresses in int.  That is not a property of
+ * the processor name but of the data model: on any platform where a pointer
+ * is wider than an int (LP64, LLP64, ILP32-on-64-bit hardware), the casts
+ * truncate and the first allocation crashes.  __x86_64__ was on the list
+ * because that was the 64-bit machine the code was tested on; aarch64,
+ * riscv64, ppc64le and s390x were not, and every one of them fell into the
+ * broken branch.  Ask the compiler for the sizes instead of naming CPUs.
+ */
+#if defined PURIFY || defined __NeXT__ || defined __NetBSD__ || defined __sgi \
+    || defined __MACOSX__ || defined __x86_64__ \
+    || (defined __SIZEOF_POINTER__ && defined __SIZEOF_INT__ \
+	&& __SIZEOF_POINTER__ > __SIZEOF_INT__)
 #define USE_WAMPES_MALLOC 0
 #else
 #define USE_WAMPES_MALLOC 1
