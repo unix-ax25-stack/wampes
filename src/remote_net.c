@@ -1668,6 +1668,7 @@ static void command_receive(void *arg)
     { "datagram", datagram_command },
     { "handover", handover_command },
     { "listen",  listen_command },
+    { "sessions",  sessions_command },
     { 0,         0 }
   };
 
