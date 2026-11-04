@@ -14,6 +14,8 @@
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -915,8 +917,25 @@ static void transport_state_upcall(struct transport_cb *tp)
        * incoming call, so there is nothing to match up.
        */
       int fd = -1;
+      pid_t owner_pid = axserv_peer_cred(cp->fd, NULL, NULL);
+      char peer[64] = "";
+      struct sockaddr_storage ss;
+      socklen_t slen = sizeof(ss);
+      if (getpeername(cp->fd, (struct sockaddr *)&ss, &slen) == 0) {
+        if (ss.ss_family == AF_INET) {
+          struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
+          char tmp[INET_ADDRSTRLEN];
+          if (inet_ntop(AF_INET, &sin->sin_addr, tmp, sizeof(tmp)))
+            snprintf(peer, sizeof(peer), "%s:%d", tmp, ntohs(sin->sin_port));
+        } else if (ss.ss_family == AF_INET6) {
+          struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
+          char tmp[INET6_ADDRSTRLEN];
+          if (inet_ntop(AF_INET6, &sin6->sin6_addr, tmp, sizeof(tmp)))
+            snprintf(peer, sizeof(peer), "[%s]:%d", tmp, ntohs(sin6->sin6_port));
+        }
+      }
 
-      if (!tp->svc || axserv_pipe_attach(tp->svc, cp->binary, cp->fd, &fd)) {
+      if (!tp->svc || axserv_pipe_attach(tp->svc, cp->binary, owner_pid, &fd, peer[0] ? peer : NULL)) {
 	say(cp, "*** link failure with %s - nomem", cp->target);
 	transport_close(tp);
 	return;

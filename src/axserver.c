@@ -12,6 +12,8 @@
 #include <pwd.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 /* <sys/un.h> is what defines SOL_LOCAL and LOCAL_PEERPID, the peer pid a
  * service socket was accepted from on the systems that record it; without it
  * the lookup below would quietly find nothing and every row would lack its
@@ -1401,8 +1403,11 @@ struct axpipe {
    * socket).  The PID is obtained via SO_PEERCRED/LOCAL_PEERPID at the time
    * the forwarding is created (see axserv_peer_pid).  This allows ownership
    * checks to work even when the user opens a new connection to issue "close".
+   * For TCP connections where peer credentials are not available, peer_addr
+   * holds the source IP:port.
    */
   pid_t owner_pid;
+  char peer_addr[64];                   /* source IP:port for TCP connections, empty otherwise */
   /* WHO CALLED WHOM.  A row of "sessions" reads like a packet trace -
    * "A > Z via B C D" - and a trace alone does not say which of the two
    * stations opened the link; here it is known exactly.  Every forwarding
@@ -1832,6 +1837,29 @@ static pid_t axserv_peer_pid(int fd)
   return axserv_peer_cred(fd, NULL, NULL);
 }
 
+static void axserv_peer_addr(int fd, char *buf, size_t len)
+{
+  struct sockaddr_storage ss;
+  socklen_t slen = sizeof(ss);
+
+  if (!buf || len == 0) return;
+  buf[0] = '\0';
+  if (fd < 0) return;
+  if (getpeername(fd, (struct sockaddr *)&ss, &slen) != 0) return;
+  if (ss.ss_family == AF_INET) {
+    struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
+    char tmp[INET_ADDRSTRLEN];
+    if (inet_ntop(AF_INET, &sin->sin_addr, tmp, sizeof(tmp)))
+      snprintf(buf, len, "%s:%d", tmp, ntohs(sin->sin_port));
+  } else if (ss.ss_family == AF_INET6) {
+    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
+    char tmp[INET6_ADDRSTRLEN];
+    if (inet_ntop(AF_INET6, &sin6->sin6_addr, tmp, sizeof(tmp)))
+      snprintf(buf, len, "[%s]:%d", tmp, ntohs(sin6->sin6_port));
+  }
+  /* Unix sockets - leave empty */
+}
+
 /* Get peer PID, UID, GID from Unix domain socket credentials.
  * Returns PID (or 0 if not available).  Sets *uidp to UID (or -1 if not available),
  * *gidp to GID (or -1 if not available).  Works for Unix sockets.  Returns 0 for TCP.
@@ -1951,9 +1979,20 @@ static void axpipe_line(struct axpipe *pp, char *buf, int len)
   const char *state;
   int pid = 0;
   pid_t owner;
+  char *powner = prog;
+  unsigned owner_num = 0;
 
   owner = (pp->owner_pid != 0) ? pp->owner_pid : 0;
-  axserv_owner_name(owner, prog, sizeof(prog));
+  if (pp->peer_addr[0] != '\0') {
+    /* TCP connection - show src IP:port */
+    owner_num = 0;
+    strncpy(prog, pp->peer_addr, sizeof(prog) - 1);
+    prog[sizeof(prog) - 1] = '\0';
+    powner = prog;
+  } else {
+    axserv_owner_name(owner, prog, sizeof(prog));
+    owner_num = owner > 0 ? (unsigned) owner : 0u;
+  }
 
   path[0] = 0;
   if (pp->sp) {
@@ -2022,7 +2061,7 @@ static void axpipe_line(struct axpipe *pp, char *buf, int len)
   if (!path[0]) strcpy(path, "-");
   snprintf(buf, (size_t) len, "%lu %s %s %s %d %s %u %s %s",
 	   pp->id, port, from, to, pid, state,
-	   owner > 0 ? (unsigned) owner : 0u, prog, path);
+	   owner_num, prog, path);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2190,6 +2229,7 @@ static struct axpipe *axpipe_new(struct axlisten *lp, int fd)
   pp->fd = fd;
   pp->id = NextAxpipeId++;
   pp->owner_pid = 0;                     /* the node's own until a caller says */
+  pp->peer_addr[0] = '\0';
   pp->next = Axpipes;
   Axpipes = pp;
   pp->ascii = !lp->binary;
@@ -2592,7 +2632,7 @@ static struct axservice *axserv_login_open(struct ax25_cb *axp)
  * fed by it.
  */
 
-int axserv_pipe_attach(struct axservice *sp, int binary, pid_t owner_pid, int *fdp)
+int axserv_pipe_attach(struct axservice *sp, int binary, pid_t owner_pid, int *fdp, const char *peer_addr)
 {
   static struct axlisten pipe_lp;       /* only binary is read for a live fd */
   struct axpipe *pp;
@@ -2607,6 +2647,11 @@ int axserv_pipe_attach(struct axservice *sp, int binary, pid_t owner_pid, int *f
     return -1;
   }
   pp->owner_pid = owner_pid;                /* the caller that asked to connect */
+  if (peer_addr && peer_addr[0])
+    strncpy(pp->peer_addr, peer_addr, sizeof(pp->peer_addr) - 1);
+  else
+    pp->peer_addr[0] = '\0';
+  pp->peer_addr[sizeof(pp->peer_addr) - 1] = '\0';
   /* We opened this link: ax25_adopt_path() copied the header we built, so
    * hdr.source is our call and hdr.digis runs from our first hop outwards.
    * The row reads from us to the far end, the call's own direction.

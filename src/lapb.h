@@ -576,7 +576,7 @@ int axlisten_active(const uint8 *call);
 const char *axlisten_portname(const struct ax25_cb *axp);
 int axlisten_client_claim(const uint8 *call,int pid,int ui,int fd,char *err,int errlen);
 void axlisten_client_release(int fd);
-int axserv_pipe_attach(struct axservice *sp,int binary,int ownerfd,int *fdp);
+int axserv_pipe_attach(struct axservice *sp,int binary,int ownerfd,int *fdp, const char *peer_addr);
 /* The forwardings WAMPES runs for programs: listed one line at a time for
  * "sessions", and one of them let go by its handle for "close".  See
  * axserver.c for the line.
