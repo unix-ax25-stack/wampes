@@ -2059,9 +2059,9 @@ static void axpipe_line(struct axpipe *pp, char *buf, int len)
     return;                             /* not a forwarding we can describe */
   }
   if (!path[0]) strcpy(path, "-");
-  snprintf(buf, (size_t) len, "%lu %s %s %s %d %s %u %s %s",
+  snprintf(buf, (size_t) len, "%lu %s %s %s %d %s %u %s %s %s",
 	   pp->id, port, from, to, pid, state,
-	   owner_num, prog, path);
+	   owner_num, prog, path, pp->peer_addr[0] ? pp->peer_addr : "-");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -2101,7 +2101,7 @@ void axserv_sessions(void (*emit)(void *arg, const char *line), void *arg)
    * with a state of its own, so an operator can tell the two apart.
    */
   for (lp = Axlisten; lp; lp = lp->next) {
-    char call[AXBUF], port[80], prog[16];
+    char call[AXBUF], port[80], prog[16], peer[64] = "-";
     pid_t owner;
 
     if (lp->netrom || lp->kind != LK_CLIENT) continue;
@@ -2115,10 +2115,27 @@ void axserv_sessions(void (*emit)(void *arg, const char *line), void *arg)
 	       lp->ports.spec);
     owner = axserv_peer_pid(lp->clientfd);
     axserv_owner_name(owner, prog, sizeof(prog));
-    snprintf(line, sizeof(line), "- %s %s * %d %s %u %s -",
+    {
+      struct sockaddr_storage ss;
+      socklen_t slen = sizeof(ss);
+      if (getpeername(lp->clientfd, (struct sockaddr *)&ss, &slen) == 0) {
+        if (ss.ss_family == AF_INET) {
+          struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
+          char tmp[INET_ADDRSTRLEN];
+          if (inet_ntop(AF_INET, &sin->sin_addr, tmp, sizeof(tmp)))
+            snprintf(peer, sizeof(peer), "%s:%d", tmp, ntohs(sin->sin_port));
+        } else if (ss.ss_family == AF_INET6) {
+          struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&ss;
+          char tmp[INET6_ADDRSTRLEN];
+          if (inet_ntop(AF_INET6, &sin6->sin6_addr, tmp, sizeof(tmp)))
+            snprintf(peer, sizeof(peer), "[%s]:%d", tmp, ntohs(sin6->sin6_port));
+        }
+      }
+    }
+    snprintf(line, sizeof(line), "- %s %s * %d %s %u %s - %s",
 	     port, pax25(call, lp->call), lp->pid,
 	     lp->ui ? "DATAGRAM" : "LISTENING",
-	     owner > 0 ? (unsigned) owner : 0u, prog);
+	     owner > 0 ? (unsigned) owner : 0u, prog, peer);
     emit(arg, line);
     n++;
   }
